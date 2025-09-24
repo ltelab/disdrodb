@@ -24,7 +24,7 @@ import shutil
 import pytest
 from click.testing import CliRunner
 
-from disdrodb import __root_path__
+from disdrodb import package_dir
 from disdrodb.api.path import define_data_dir
 from disdrodb.cli.disdrodb_run_l1 import disdrodb_run_l1
 from disdrodb.cli.disdrodb_run_l1_station import disdrodb_run_l1_station
@@ -35,7 +35,7 @@ from disdrodb.routines import (
 )
 from disdrodb.utils.directories import count_files
 
-TEST_DATA_L0C_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "test_data_l0c")
+TEST_DATA_L0C_DIR = os.path.join(package_dir, "tests", "data", "test_data_l0c")
 DATA_SOURCE = "EPFL"
 CAMPAIGN_NAME = "HYMEX_LTE_SOP2"
 STATION_NAME = "10"

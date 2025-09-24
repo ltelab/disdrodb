@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -15,25 +13,21 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 # -----------------------------------------------------------------------------.
-"""Open the documentation for the relevant sensor."""
-
-import os
-import webbrowser
-
-from disdrodb.api.checks import check_sensor_name
+"""This module contains functions for manipulating dictionaries."""
 
 
-def open_sensor_documentation(sensor_name):
-    """Open the sensor documentation PDF in the browser."""
-    from disdrodb import package_dir
+def extract_product_kwargs(kwargs, product):
+    """Infer product kwargs dictionary."""
+    from disdrodb.api.checks import check_product
+    from disdrodb.constants import PRODUCTS_ARGUMENTS
 
-    check_sensor_name(sensor_name)
-    docs_filepath = os.path.join(package_dir, "l0", "manuals", sensor_name + ".pdf")
-    webbrowser.open(docs_filepath)
+    check_product(product)
+    product_kwargs_keys = set(PRODUCTS_ARGUMENTS.get(product, []))
+    return extract_dictionary(kwargs, keys=product_kwargs_keys)
 
 
-def open_documentation():
-    """Open the DISDRODB documentation the browser."""
-    docs_filepath = "https://disdrodb.readthedocs.io/en/latest/"
-    webbrowser.open(docs_filepath)
+def extract_dictionary(dictionary, keys):
+    """Extract a subset of keys from the dictionary, removing them from the input dictionary."""
+    return {k: dictionary.pop(k) for k in keys if k in dictionary}

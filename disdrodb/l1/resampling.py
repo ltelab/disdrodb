@@ -22,6 +22,7 @@ import xarray as xr
 from disdrodb.utils.time import (
     ensure_sample_interval_in_seconds,
     get_dataset_start_end_time,
+    get_sampling_information,
     regularize_dataset,
 )
 
@@ -136,23 +137,24 @@ def _rolling(ds, variables, window_size, op):
     return ds_subset
 
 
-def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
+def resample_dataset(ds, sample_interval, temporal_resolution):
     """
     Resample the dataset to a specified accumulation interval.
+
+    The output timesteps correspond to the starts of the periods over which
+    the resampling operation has been performed !
 
     Parameters
     ----------
     ds : xarray.Dataset
         The input dataset to be resampled.
     sample_interval : int
-        The sample interval of the input dataset.
-    accumulation_interval : int
-        The interval in seconds over which to accumulate the data.
-    rolling : bool, optional
-        If True, apply a rolling window before resampling. Default is True.
-        If True, forward rolling is performed.
-        The output timesteps correspond to the starts of the periods over which
-        the resampling operation has been performed !
+        The sample interval (in seconds) of the input dataset.
+    temporal_resolution : str
+        The desired temporal resolution for resampling.
+        It should be a string representing the accumulation interval,
+        e.g., "5MIN" for 5 minutes, "1H" for 1 hour, "30S" for 30 seconds, etc.
+        Prefixed with "ROLL" for rolling resampling, e.g., "ROLL5MIN".
 
     Returns
     -------
@@ -171,6 +173,9 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
     # --------------------------------------------------------------------------.
     # Ensure sample interval in seconds
     sample_interval = int(ensure_sample_interval_in_seconds(sample_interval))
+
+    # Retrieve accumulation_interval and rolling option
+    accumulation_interval, rolling = get_sampling_information(temporal_resolution)
 
     # --------------------------------------------------------------------------.
     # Raise error if the accumulation_interval is less than the sample interval
@@ -193,6 +198,8 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
     if sample_interval == accumulation_interval:
         attrs["disdrodb_aggregated_product"] = "False"
         attrs["disdrodb_rolled_product"] = "False"
+        attrs["disdrodb_temporal_resolution"] = temporal_resolution
+
         ds = _finalize_qc_resampling(ds, sample_interval=sample_interval, accumulation_interval=accumulation_interval)
         ds = add_sample_interval(ds, sample_interval=accumulation_interval)
         ds.attrs = attrs
@@ -228,10 +235,10 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
     else:
         attrs["disdrodb_rolled_product"] = "False"
 
-    # --------------------------------------------------------------------------.
-    # Resample the dataset
     attrs["disdrodb_aggregated_product"] = "True"
+    attrs["disdrodb_temporal_resolution"] = temporal_resolution
 
+    # --------------------------------------------------------------------------.
     # Initialize resample dataset
     ds_resampled = xr.Dataset()
 

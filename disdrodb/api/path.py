@@ -336,13 +336,13 @@ def define_issue_filepath(
 
 def define_config_dir(product):
     """Define the config directory path of a given DISDRODB product."""
-    from disdrodb import __root_path__
+    from disdrodb import package_dir
 
     if product.upper() in ["RAW", "L0A", "L0B"]:
         dir_name = "l0"
     else:
         raise NotImplementedError(f"Product {product} not implemented.")
-    config_dir = os.path.join(__root_path__, "disdrodb", dir_name, "configs")
+    config_dir = os.path.join(package_dir, dir_name, "configs")
     return config_dir
 
 

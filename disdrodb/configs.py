@@ -64,7 +64,7 @@ def define_configs(
         - "year/month/day": Files are stored under subdirectories by year, month and day (<station_dir>/2025/04/01).
         - "year/month_name": Files are stored under subdirectories by year and month name (<station_dir>/2025/April).
         - "year/quarter": Files are stored under subdirectories by year and quarter (<station_dir>/2025/Q2).
-    zenodo__token: str
+    zenodo_token: str
         Zenodo Access Token. It is required to upload stations data to Zenodo.
     zenodo_sandbox_token: str
         Zenodo Sandbox Access Token. It is required to upload stations data to Zenodo Sandbox.
@@ -242,7 +242,7 @@ def get_default_products_configs_dir():
     """Return the directory path where DISDRODB products default configuration files are stored."""
     import disdrodb
 
-    products_configs_dir = os.path.join(disdrodb.__root_path__, "disdrodb", "etc", "products")
+    products_configs_dir = os.path.join(disdrodb.package_dir, "etc", "products")
     return products_configs_dir
 
 
@@ -251,9 +251,11 @@ def get_products_configs_dir():
     import disdrodb
 
     if os.environ.get("PYTEST_CURRENT_TEST"):
-        products_configs_dir = os.path.join(disdrodb.__root_path__, "disdrodb", "tests", "products")
+        products_configs_dir = os.path.join(disdrodb.package_dir, "tests", "products")
     else:
-        products_configs_dir = disdrodb.config.get("products_configs_dir", get_default_products_configs_dir())
+        products_configs_dir = disdrodb.config.get("products_configs_dir", None)
+        if products_configs_dir is None:
+            products_configs_dir = get_default_products_configs_dir()
     return products_configs_dir
 
 

@@ -173,7 +173,7 @@ __all__ = [
 ]
 
 
-__root_path__ = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+package_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def is_pytmatrix_available():

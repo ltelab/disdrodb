@@ -324,7 +324,7 @@ class TestGroupFilesByTemporalPartitions:
         assert out == []
 
     def test_no_aggregation_case(self):
-        """Test case when sample_interval==accumulation_interval."""
+        """Test case when all data within a single time partition."""
         temporal_partitions = [
             {
                 "start_time": np.datetime64("2017-05-22T00:00:00"),

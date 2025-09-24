@@ -80,6 +80,14 @@ The currently available disdrometer stations are depicted in the figure below.
    :align: center
 
 
+.. warning::
+
+    Users are expected to properly acknowledge the data they use by citing
+    and referencing each station. The corresponding references, recommended
+    citations, and DOIs are available in the DISDRODB netCDFs/xarray.Dataset
+    global attributes, as well as in the DISDRODB Metadata Archive.
+
+
 Community
 ===========
 

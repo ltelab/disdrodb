@@ -131,8 +131,11 @@ def validate_product_configuration(products_configs_dir):
     pass
 
 
-def _define_blocks_offsets(sample_interval, accumulation_interval, rolling):
-    """Define blocks offset for esampling logic."""
+def _define_blocks_offsets(sample_interval, temporal_resolution):
+    """Define blocks offset for resampling logic."""
+    # Retrieve accumulation_interval and rolling option
+    accumulation_interval, rolling = get_sampling_information(temporal_resolution)
+
     # Ensure sample_interval and accumulation_interval is numpy.timedelta64
     accumulation_interval = ensure_timedelta_seconds(accumulation_interval)
     sample_interval = ensure_timedelta_seconds(sample_interval)
@@ -193,9 +196,6 @@ class L1ProcessingOptions:
             # Retrieve product options
             product_options = src_dict_product_options[temporal_resolution].copy()
 
-            # Retrieve accumulation_interval and rolling option
-            accumulation_interval, rolling = get_sampling_information(temporal_resolution)
-
             # Extract processing options
             archive_options = product_options.pop("archive_options")
 
@@ -246,15 +246,13 @@ class L1ProcessingOptions:
             files_partitions = []
             for sample_interval, temporal_partitions in dict_temporal_partitions.items():
                 if is_possible_product(
-                    accumulation_interval=accumulation_interval,
+                    temporal_resolution=temporal_resolution,
                     sample_interval=sample_interval,
-                    rolling=rolling,
                 ):
 
                     block_starts_offset, block_ends_offset = _define_blocks_offsets(
                         sample_interval=sample_interval,
-                        accumulation_interval=accumulation_interval,
-                        rolling=rolling,
+                        temporal_resolution=temporal_resolution,
                     )
 
                     files_partitions.append(

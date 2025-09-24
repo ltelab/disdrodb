@@ -29,10 +29,14 @@ from disdrodb.utils.logger import (
     log_error,
     log_info,
 )
+from disdrodb.utils.time import get_sampling_information
 
 
-def is_possible_product(accumulation_interval, sample_interval, rolling):
+def is_possible_product(temporal_resolution, sample_interval):
     """Assess if production is possible given the requested accumulation interval and source sample_interval."""
+    # Retrieve accumulation_interval and rolling option
+    accumulation_interval, rolling = get_sampling_information(temporal_resolution)
+
     # Avoid rolling product generation at source sample interval
     if rolling and accumulation_interval == sample_interval:
         return False

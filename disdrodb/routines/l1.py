@@ -57,7 +57,6 @@ from disdrodb.utils.logger import (
 from disdrodb.utils.routines import run_product_generation, try_get_required_filepaths
 from disdrodb.utils.time import (
     ensure_sample_interval_in_seconds,
-    get_sampling_information,
 )
 from disdrodb.utils.writer import write_product
 
@@ -158,15 +157,11 @@ def _generate_l1(
         # Define sample interval in seconds
         sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"]).to_numpy().item()
 
-        # Define accumulation interval and rolling option
-        accumulation_interval, rolling = get_sampling_information(temporal_resolution)
-
         # Resample dataset
         ds = resample_dataset(
             ds=ds,
             sample_interval=sample_interval,
-            accumulation_interval=accumulation_interval,
-            rolling=rolling,
+            temporal_resolution=temporal_resolution,
         )
 
         # Produce L1 dataset

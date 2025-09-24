@@ -26,7 +26,7 @@ import pandas as pd
 import pytest
 import pytz
 
-from disdrodb import __root_path__
+from disdrodb import package_dir
 from disdrodb.api.checks import (
     check_campaign_name,
     check_campaign_names,
@@ -55,6 +55,7 @@ from disdrodb.api.checks import (
     check_start_end_time,
     check_station_inputs,
     check_station_names,
+    check_temporal_resolution,
     check_time,
     check_url,
     check_valid_fields,
@@ -65,7 +66,7 @@ from disdrodb.api.checks import (
 from disdrodb.api.path import define_data_dir, define_issue_dir, define_issue_filepath
 from disdrodb.constants import PRODUCTS, PRODUCTS_ARGUMENTS
 
-TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
+TEST_DATA_DIR = os.path.join(package_dir, "tests", "data")
 
 
 def test_check_path():
@@ -393,6 +394,8 @@ def test_check_folder_partitioning():
     for v in valid:
         assert check_folder_partitioning(v) == v
 
+    assert check_folder_partitioning(None) == ""
+
     with pytest.raises(ValueError):
         check_folder_partitioning("month/year")
 
@@ -564,6 +567,62 @@ class TestCheckValidFields:
                 field_name=field_name,
                 invalid_fields_policy="ignore",
             )
+
+
+class TestCheckTemporalResolution:
+    """Test temporal resolution validation."""
+
+    def test_check_temporal_resolution_valid_string(self):
+        """Test valid temporal resolution string passes without error."""
+        check_temporal_resolution("1MIN")
+        check_temporal_resolution("30S")
+        check_temporal_resolution("1MIN30S")
+        check_temporal_resolution("ROLL1MIN")
+        check_temporal_resolution("ROLL1H")
+        check_temporal_resolution("ROLL30S")
+
+    def test_check_temporal_resolution_empty_string(self):
+        """Test empty string input."""
+        with pytest.raises(ValueError):
+            check_temporal_resolution("")
+
+    def test_check_temporal_resolution_invalid_string(self):
+        """Test invalid string input."""
+        with pytest.raises(ValueError):
+            check_temporal_resolution("1min")
+
+        with pytest.raises(ValueError):
+            check_temporal_resolution("1minute")
+
+    def test_check_temporal_resolution_invalid_type(self):
+        """Test invalid type raises TypeError."""
+        # int
+        with pytest.raises(TypeError, match="'temporal_resolution' must be a string"):
+            check_temporal_resolution(60)
+
+        # float
+        with pytest.raises(TypeError, match="'temporal_resolution' must be a string"):
+            check_temporal_resolution(1.5)
+
+        # bool
+        with pytest.raises(TypeError, match="'temporal_resolution' must be a string"):
+            check_temporal_resolution(False)
+
+        # None
+        with pytest.raises(TypeError, match="'temporal_resolution' must be a string"):
+            check_temporal_resolution(None)
+
+        # list
+        with pytest.raises(TypeError, match="'temporal_resolution' must be a string"):
+            check_temporal_resolution(["1min"])
+
+        # dict
+        with pytest.raises(TypeError, match="'temporal_resolution' must be a string"):
+            check_temporal_resolution({"resolution": "1min"})
+
+        # np.array with string
+        with pytest.raises(TypeError, match="'temporal_resolution' must be a string"):
+            check_temporal_resolution(np.array("1MIN"))
 
 
 class TestMeasurementIntervals:

@@ -89,6 +89,12 @@ class DISDRODB_Base_Accessor:
 
         return align(self._obj, *args)
 
+    def plot_spectrum(self, **kwargs):
+        """Plot spectrum."""
+        from disdrodb.viz.plots import plot_spectrum
+
+        plot_spectrum(self._obj, **kwargs)
+
 
 @xr.register_dataset_accessor("disdrodb")
 class DISDRODB_Dataset_Accessor(DISDRODB_Base_Accessor):
@@ -97,7 +103,7 @@ class DISDRODB_Dataset_Accessor(DISDRODB_Base_Accessor):
     def __init__(self, xarray_obj):
         super().__init__(xarray_obj)
 
-    def resample(self, accumulation_interval, rolling=True):
+    def resample(self, temporal_resolution):
         """Resample a L1 or L2 DISDRODB Product."""
         from disdrodb.l1.resampling import resample_dataset
 
@@ -105,8 +111,7 @@ class DISDRODB_Dataset_Accessor(DISDRODB_Base_Accessor):
         ds = resample_dataset(
             self._obj,
             sample_interval=sample_interval,
-            accumulation_interval=accumulation_interval,
-            rolling=rolling,
+            temporal_resolution=temporal_resolution,
         )
         return ds
 
@@ -115,6 +120,12 @@ class DISDRODB_Dataset_Accessor(DISDRODB_Base_Accessor):
         from disdrodb.viz.plots import plot_nd
 
         plot_nd(self._obj, **kwargs)
+
+    def plot_raw_and_filtered_spectra(self, **kwargs):
+        """Plot the raw and filtered spectra."""
+        from disdrodb.viz.plots import plot_raw_and_filtered_spectra
+
+        plot_raw_and_filtered_spectra(self._obj, **kwargs)
 
 
 @xr.register_dataarray_accessor("disdrodb")

@@ -35,9 +35,9 @@ logger = logging.getLogger(__name__)
 
 def define_readers_directory(sensor_name="") -> str:
     """Returns the path to the ``disdrodb.l0.readers`` directory within the disdrodb package."""
-    from disdrodb import __root_path__
+    from disdrodb import package_dir
 
-    reader_dir = os.path.join(__root_path__, "disdrodb", "l0", "readers", sensor_name)
+    reader_dir = os.path.join(package_dir, "l0", "readers", sensor_name)
     return reader_dir
 
 

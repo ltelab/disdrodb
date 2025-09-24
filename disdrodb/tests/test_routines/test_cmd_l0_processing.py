@@ -22,7 +22,7 @@ import shutil
 import pytest
 from click.testing import CliRunner
 
-from disdrodb import __root_path__
+from disdrodb import package_dir
 from disdrodb.api.path import define_data_dir
 from disdrodb.cli.disdrodb_run_l0 import disdrodb_run_l0
 from disdrodb.cli.disdrodb_run_l0_station import disdrodb_run_l0_station
@@ -43,7 +43,7 @@ from disdrodb.routines import (
 )
 from disdrodb.utils.directories import count_files
 
-BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
+BASE_DIR = os.path.join(package_dir, "tests", "data", "check_readers", "DISDRODB")
 DATA_SOURCE = "EPFL"
 CAMPAIGN_NAME = "PARSIVEL_2007"
 STATION_NAME = "10"

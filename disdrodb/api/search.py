@@ -17,6 +17,7 @@ from disdrodb.api.path import (
 )
 from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
 from disdrodb.constants import PRODUCTS_REQUIREMENTS
+from disdrodb.utils.dict import extract_product_kwargs
 from disdrodb.utils.directories import contains_files, contains_netcdf_or_parquet_files, list_directories, list_files
 from disdrodb.utils.yaml import read_yaml
 
@@ -173,7 +174,15 @@ def list_station_names(
 #### Filtering utilities for available_stations
 
 
-def _finalize_output(list_info, return_tuple):
+def _finalize_output(list_info, return_tuple, metadata_archive_dir, filter_kwargs):
+    # Filter stations if metadata filtering values are specified
+    if len(filter_kwargs) != 0:
+        list_info = select_stations_matching_metadata_values(
+            metadata_archive_dir=metadata_archive_dir,
+            list_info=list_info,
+            filter_kwargs=filter_kwargs,
+        )
+
     # - Return the (data_source, campaign_name, station_name) tuple
     if return_tuple:
         return list_info
@@ -192,7 +201,7 @@ def is_disdrodb_data_url_specified(metadata_filepath):
     return isinstance(disdrodb_data_url, str) and len(disdrodb_data_url) > 1
 
 
-def keep_list_info_with_disdrodb_data_url(metadata_archive_dir, list_info):
+def select_stations_with_disdrodb_data_url(metadata_archive_dir, list_info):
     """Keep only the stations with disdrodb_data_url specified in the metadata file."""
     list_info_with_data = []
     for data_source, campaign_name, station_name in list_info:
@@ -209,7 +218,41 @@ def keep_list_info_with_disdrodb_data_url(metadata_archive_dir, list_info):
     return list_info_with_data
 
 
-def keep_list_info_elements_with_product_directory(data_archive_dir, product, list_info):
+def _matches(metadata_value, expected_value):
+    """Return True if metadata_value matches expected_value."""
+    # Case 1: both lists → check any intersection
+    if isinstance(metadata_value, list) and isinstance(expected_value, list):
+        return any(v in metadata_value for v in expected_value)
+    # Case 2: metadata is list → check membership
+    if isinstance(metadata_value, list):
+        return expected_value in metadata_value
+    # Case 3: expected is list → check membership
+    if isinstance(expected_value, list):
+        return metadata_value in expected_value
+    # Case 4: both scalars → direct equality
+    return metadata_value == expected_value
+
+
+def select_stations_matching_metadata_values(metadata_archive_dir, list_info, filter_kwargs):
+    """Keep only the stations with the specified metadata key matching the specified value."""
+    list_info_valid = []
+    for data_source, campaign_name, station_name in list_info:
+        # Define metadata filepath
+        metadata_filepath = define_metadata_filepath(
+            metadata_archive_dir=metadata_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        # Read metadata
+        metadata = read_yaml(metadata_filepath)
+        if np.all([_matches(metadata.get(k), v) for k, v in filter_kwargs.items()]):
+            list_info_valid.append((data_source, campaign_name, station_name))
+
+    return list_info_valid
+
+
+def select_stations_with_product_directory(data_archive_dir, product, list_info):
     """Keep only the stations with the product directory."""
     list_info_with_product_directory = []
     for data_source, campaign_name, station_name in list_info:
@@ -228,7 +271,7 @@ def keep_list_info_elements_with_product_directory(data_archive_dir, product, li
     return list_info_with_product_directory
 
 
-def keep_list_info_elements_with_product_data(data_archive_dir, product, list_info, **product_kwargs):
+def select_stations_with_product_data(data_archive_dir, product, list_info, **product_kwargs):
     """Keep only the stations with product data."""
     # Define file checking function
     checking_function = contains_files if product == "RAW" else contains_netcdf_or_parquet_files
@@ -265,7 +308,7 @@ def available_stations(
     invalid_fields_policy="raise",
     data_archive_dir=None,
     metadata_archive_dir=None,
-    **product_kwargs,
+    **filter_kwargs,
 ):
     """
     Return stations information for which metadata or product data are available on disk.
@@ -289,7 +332,7 @@ def available_stations(
 
         If the DISDRODB product is specified,
         it lists the stations present in the local DISDRODB Data Archive given the specified filtering criteria.
-        The default is is None.
+        The default is None.
 
     data_sources : str or sequence of str, optional
         One or more data source identifiers to filter stations by.
@@ -350,7 +393,7 @@ def available_stations(
     -------
     list
         If ``return_tuple=True``, return a list of tuples ``(data_source, campaign_name, station_name)``.
-        If ``return_tuple=True``,, return a list of station names.
+        If ``return_tuple=True``, return a list of station names.
 
     Examples
     --------
@@ -368,8 +411,11 @@ def available_stations(
     product = check_product(product) if product is not None else None
     invalid_fields_policy = check_invalid_fields_policy(invalid_fields_policy)
 
+    # Extract product_kwargs from filter_kwargs
+    product_kwargs = extract_product_kwargs(filter_kwargs, product=product) if product is not None else {}
+
     # Retrieve available stations from the Metadata Archive
-    # - Raise error if no stations availables !
+    # - Raise error if no stations available !
     list_info = list_station_names(
         metadata_archive_dir=metadata_archive_dir,
         data_sources=data_sources,
@@ -386,24 +432,34 @@ def available_stations(
             raise_error_if_empty=raise_error_if_empty,
             msg="No station available in the DISDRODB Metadata Archive.",
         )
-        return _finalize_output(list_info, return_tuple=return_tuple)
+        return _finalize_output(
+            list_info,
+            return_tuple=return_tuple,
+            metadata_archive_dir=metadata_archive_dir,
+            filter_kwargs=filter_kwargs,
+        )
 
     # Return stations in the Metadata Archive with specified disdrodb_data_url
     if product is None and available_data:
-        list_info = keep_list_info_with_disdrodb_data_url(metadata_archive_dir, list_info)
+        list_info = select_stations_with_disdrodb_data_url(metadata_archive_dir, list_info)
         _raise_an_error_if_no_stations(
             list_info,
             raise_error_if_empty=raise_error_if_empty,
             msg="No station has the disdrodb_data_url specified in the metadata.",
         )
-        return _finalize_output(list_info, return_tuple=return_tuple)
+        return _finalize_output(
+            list_info,
+            return_tuple=return_tuple,
+            metadata_archive_dir=metadata_archive_dir,
+            filter_kwargs=filter_kwargs,
+        )
 
     # If product is specified, select stations available in the local DISDRODB Data Archive
     # - If available_data=False, search for station with the existing product directory (do not check for data)
     data_archive_dir = get_data_archive_dir(data_archive_dir)
     product = check_product(product)
     if not available_data:
-        list_info = keep_list_info_elements_with_product_directory(
+        list_info = select_stations_with_product_directory(
             data_archive_dir=data_archive_dir,
             product=product,
             list_info=list_info,
@@ -413,11 +469,16 @@ def available_stations(
             raise_error_if_empty=raise_error_if_empty,
             msg=f"No station product {product} directory available in the local DISDRODB Data Archive.",
         )
-        return _finalize_output(list_info, return_tuple=return_tuple)
+        return _finalize_output(
+            list_info,
+            return_tuple=return_tuple,
+            metadata_archive_dir=metadata_archive_dir,
+            filter_kwargs=filter_kwargs,
+        )
 
     # - If available_data=True, search for station with product data
     product_kwargs = check_product_kwargs(product, product_kwargs)
-    list_info = keep_list_info_elements_with_product_data(
+    list_info = select_stations_with_product_data(
         data_archive_dir=data_archive_dir,
         product=product,
         list_info=list_info,
@@ -429,7 +490,12 @@ def available_stations(
         raise_error_if_empty=raise_error_if_empty,
         msg=f"No station has {product} {product_kwargs} data available in the local DISDRODB Data Archive.",
     )
-    return _finalize_output(list_info, return_tuple=return_tuple)
+    return _finalize_output(
+        list_info,
+        return_tuple=return_tuple,
+        metadata_archive_dir=metadata_archive_dir,
+        filter_kwargs=filter_kwargs,
+    )
 
 
 def available_data_sources(
@@ -441,7 +507,7 @@ def available_data_sources(
     invalid_fields_policy="raise",
     data_archive_dir=None,
     metadata_archive_dir=None,
-    **product_kwargs,
+    **kwargs,
 ):
     """Return data sources for which stations are available."""
     list_info = available_stations(
@@ -455,7 +521,7 @@ def available_data_sources(
         invalid_fields_policy=invalid_fields_policy,
         data_archive_dir=data_archive_dir,
         metadata_archive_dir=metadata_archive_dir,
-        **product_kwargs,
+        **kwargs,
     )
     data_sources = [info[0] for info in list_info]
     data_sources = np.unique(data_sources).tolist()
@@ -471,7 +537,7 @@ def available_campaigns(
     invalid_fields_policy="raise",
     data_archive_dir=None,
     metadata_archive_dir=None,
-    **product_kwargs,
+    **kwargs,
 ):
     """Return campaigns names for which stations are available."""
     list_info = available_stations(
@@ -485,7 +551,7 @@ def available_campaigns(
         invalid_fields_policy=invalid_fields_policy,
         data_archive_dir=data_archive_dir,
         metadata_archive_dir=metadata_archive_dir,
-        **product_kwargs,
+        **kwargs,
     )
     campaign_names = [info[1] for info in list_info]
     campaign_names = np.unique(campaign_names).tolist()

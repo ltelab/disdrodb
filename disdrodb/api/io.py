@@ -40,6 +40,7 @@ from disdrodb.api.path import (
     define_station_dir,
 )
 from disdrodb.l0.l0_reader import define_readers_directory
+from disdrodb.utils.dict import extract_product_kwargs
 from disdrodb.utils.directories import list_files
 from disdrodb.utils.logger import (
     log_info,
@@ -408,17 +409,19 @@ def open_dataset(
         The name of the station.
     product : str
         The name DISDRODB product.
-    product_kwargs : dict, optional
-        DISDRODB product options dictionary.
-        It must be specified only for product L1, L2E and L2M products !
-        For L1, L2E and L2M products, temporal_resolution is required
-        FOr L2M product, model_name is required.
     debugging_mode : bool, optional
         If ``True``, it select maximum 3 files for debugging purposes.
         The default value is ``False``.
     data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
+    **product_kwargs : optional
+        DISDRODB product options
+        It must be specified only for product L1, L2E and L2M products !
+        For L1, L2E and L2M products, temporal_resolution is required
+        FOr L2M product, model_name is required.
+    **open_kwargs : optional
+        Additional keyword arguments passed to ``xarray.open_mfdataset()``.
 
     Returns
     -------
@@ -427,7 +430,8 @@ def open_dataset(
     """
     from disdrodb.l0.l0a_processing import read_l0a_dataframe
 
-    product_kwargs = product_kwargs if product_kwargs else {}
+    # Extract product kwargs from open_kwargs
+    product_kwargs = extract_product_kwargs(open_kwargs, product=product)
 
     # List product files
     filepaths = find_files(

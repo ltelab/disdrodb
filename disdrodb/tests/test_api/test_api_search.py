@@ -29,6 +29,7 @@ from disdrodb.api.search import (
     list_campaign_names,
     list_data_sources,
     list_station_names,
+    select_stations_matching_metadata_values,
 )
 from disdrodb.tests.conftest import create_fake_raw_data_file
 
@@ -260,6 +261,68 @@ class TestListStationNames:
             return_tuple=True,
         )
         assert station_names == []
+
+
+class TestSelectStationsMatchingMetadataValue:
+    def test_scalar_equal(self, monkeypatch):
+        """It should match when metadata value equals expected scalar."""
+        monkeypatch.setattr("disdrodb.api.search.define_metadata_filepath", lambda *args, **kwargs: "fakepath")
+        monkeypatch.setattr("disdrodb.api.search.read_yaml", lambda _path: {"key": "A"})
+        metadata_archive_dir = os.path.join("DISDRODB-METADATA", "DISDRODB")
+        list_info = [("DS", "CAMP", "ST1")]
+
+        result = select_stations_matching_metadata_values(metadata_archive_dir, list_info, {"key": "A"})
+        assert result == list_info
+
+    def test_scalar_not_equal(self, monkeypatch):
+        """It should not match when metadata value does not equal expected scalar."""
+        monkeypatch.setattr("disdrodb.api.search.define_metadata_filepath", lambda *args, **kwargs: "fakepath")
+        monkeypatch.setattr("disdrodb.api.search.read_yaml", lambda _path: {"key": "B"})
+        metadata_archive_dir = os.path.join("DISDRODB-METADATA", "DISDRODB")
+        list_info = [("DS", "CAMP", "ST1")]
+
+        result = select_stations_matching_metadata_values(metadata_archive_dir, list_info, {"key": "A"})
+        assert result == []
+
+    def test_metadata_list_scalar_value(self, monkeypatch):
+        """It should match when scalar is in metadata list."""
+        monkeypatch.setattr("disdrodb.api.search.define_metadata_filepath", lambda *args, **kwargs: "fakepath")
+        monkeypatch.setattr("disdrodb.api.search.read_yaml", lambda _path: {"key": ["A", "B"]})
+        metadata_archive_dir = os.path.join("DISDRODB-METADATA", "DISDRODB")
+        list_info = [("DS", "CAMP", "ST1")]
+
+        result = select_stations_matching_metadata_values(metadata_archive_dir, list_info, {"key": "A"})
+        assert result == list_info
+
+    def test_metadata_scalar_value_list(self, monkeypatch):
+        """It should match when metadata scalar is in expected list."""
+        monkeypatch.setattr("disdrodb.api.search.define_metadata_filepath", lambda *args, **kwargs: "fakepath")
+        monkeypatch.setattr("disdrodb.api.search.read_yaml", lambda _path: {"key": "A"})
+        metadata_archive_dir = os.path.join("DISDRODB-METADATA", "DISDRODB")
+        list_info = [("DS", "CAMP", "ST1")]
+
+        result = select_stations_matching_metadata_values(metadata_archive_dir, list_info, {"key": ["A", "C"]})
+        assert result == list_info
+
+    def test_both_lists_overlap(self, monkeypatch):
+        """It should match when metadata list and expected list overlap."""
+        monkeypatch.setattr("disdrodb.api.search.define_metadata_filepath", lambda *args, **kwargs: "fakepath")
+        monkeypatch.setattr("disdrodb.api.search.read_yaml", lambda _path: {"key": ["A", "B"]})
+        metadata_archive_dir = os.path.join("DISDRODB-METADATA", "DISDRODB")
+        list_info = [("DS", "CAMP", "ST1")]
+
+        result = select_stations_matching_metadata_values(metadata_archive_dir, list_info, {"key": ["C", "B"]})
+        assert result == list_info
+
+    def test_both_lists_no_overlap(self, monkeypatch):
+        """It should not match when metadata list and expected list have no overlap."""
+        monkeypatch.setattr("disdrodb.api.search.define_metadata_filepath", lambda *args, **kwargs: "fakepath")
+        monkeypatch.setattr("disdrodb.api.search.read_yaml", lambda _path: {"key": ["A", "B"]})
+        metadata_archive_dir = os.path.join("DISDRODB-METADATA", "DISDRODB")
+        list_info = [("DS", "CAMP", "ST1")]
+
+        result = select_stations_matching_metadata_values(metadata_archive_dir, list_info, {"key": ["C", "D"]})
+        assert result == []
 
 
 class TestAvailableStations:

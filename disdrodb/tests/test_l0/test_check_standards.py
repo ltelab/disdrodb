@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from disdrodb import __root_path__
+from disdrodb import package_dir
 from disdrodb.api.configs import available_sensor_names
 from disdrodb.l0.check_standards import (
     _check_raw_fields_available,
@@ -35,7 +35,7 @@ from disdrodb.l0.check_standards import (
 )
 from disdrodb.l0.standards import allowed_l0_variables, get_raw_array_nvalues
 
-BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
+BASE_DIR = os.path.join(package_dir, "tests", "data", "check_readers", "DISDRODB")
 
 
 def test_check_l0a_standards(capfd):

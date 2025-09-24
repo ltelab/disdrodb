@@ -64,7 +64,6 @@ from disdrodb.utils.routines import (
     run_product_generation,
     try_get_required_filepaths,
 )
-from disdrodb.utils.time import get_sampling_information
 from disdrodb.utils.writer import write_product
 
 logger = logging.getLogger(__name__)
@@ -309,15 +308,11 @@ def run_l2e_station(
     temporal_resolutions = get_product_temporal_resolutions(product)
     for temporal_resolution in temporal_resolutions:
 
-        # Retrieve accumulation_interval and rolling option
-        accumulation_interval, rolling = get_sampling_information(temporal_resolution)
-
         # ------------------------------------------------------------------.
         # Check if the product can be generated
         if not is_possible_product(
-            accumulation_interval=accumulation_interval,
+            temporal_resolution=temporal_resolution,
             sample_interval=sample_interval,
-            rolling=rolling,
         ):
             continue
 
@@ -708,15 +703,11 @@ def run_l2m_station(
     temporal_resolutions = get_product_temporal_resolutions(product)
     for temporal_resolution in temporal_resolutions:
 
-        # Retrieve accumulation_interval and rolling option
-        accumulation_interval, rolling = get_sampling_information(temporal_resolution)
-
         # ------------------------------------------------------------------.
         # Check if the product can be generated
         if not is_possible_product(
-            accumulation_interval=accumulation_interval,
+            temporal_resolution=temporal_resolution,
             sample_interval=sample_interval,
-            rolling=rolling,
         ):
             continue
 
@@ -787,7 +778,7 @@ def run_l2m_station(
                 precompute_scattering_tables(verbose=verbose, **radar_options)
 
             # -----------------------------------------------------------------.
-            msg = f"Production of L2M_{model_name} for sample interval {accumulation_interval} s has started."
+            msg = f"Production of L2M_{model_name} for {temporal_resolution} has started."
             log_info(logger=logger, msg=msg, verbose=verbose)
             msg = f"Estimating {psd_model} parameters using {optimization}."
             log_info(logger=logger, msg=msg, verbose=verbose)

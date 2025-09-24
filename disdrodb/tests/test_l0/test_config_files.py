@@ -24,10 +24,10 @@ import pytest
 import yaml
 from pydantic import BaseModel
 
-from disdrodb import __root_path__
+from disdrodb import package_dir
 from disdrodb.utils.directories import list_files
 
-CONFIG_FOLDER = os.path.join(__root_path__, "disdrodb", "l0", "configs")
+CONFIG_FOLDER = os.path.join(package_dir, "l0", "configs")
 
 
 def read_yaml_file(filepath: str) -> dict:

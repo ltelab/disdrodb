@@ -1488,7 +1488,7 @@ def create_summary(
         station_names=station_names,
         # Search options
         product="L2E",
-        product_kwargs={"temporal_resolution": temporal_resolution},
+        temporal_resolution=temporal_resolution,
         raise_error_if_empty=True,
     )
 

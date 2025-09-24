@@ -20,6 +20,13 @@ import numpy as np
 import psutil
 import xarray as xr
 from matplotlib.colors import LogNorm, Normalize
+from matplotlib.gridspec import GridSpec
+
+from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
+from disdrodb.l2.empirical_dsd import get_drop_average_velocity
+
+####-------------------------------------------------------------------------------------------------------
+#### N(D) visualizations
 
 
 def _single_plot_nd_distribution(drop_number_concentration, diameter, diameter_bin_width):
@@ -74,6 +81,206 @@ def plot_nd(ds, var="drop_number_concentration", cmap=None, norm=None):
     p.axes.set_title("Drop number concentration (N(D))")
     p.axes.set_ylabel("Drop diameter (mm)")
     return p
+
+
+####-------------------------------------------------------------------------------------------------------
+#### Spectra visualizations
+
+
+def _check_has_diameter_and_velocity_dims(da):
+    if DIAMETER_DIMENSION not in da.dims or VELOCITY_DIMENSION not in da.dims:
+        raise ValueError(f"The DataArray must have both '{DIAMETER_DIMENSION}' and '{VELOCITY_DIMENSION}' dimensions.")
+    return da
+
+
+def _get_spectrum_variable(xr_obj, variable):
+    if not isinstance(xr_obj, (xr.Dataset, xr.DataArray)):
+        raise TypeError("Expecting xarray object as input.")
+    if isinstance(xr_obj, xr.Dataset):
+        if variable not in xr_obj:
+            raise ValueError(f"The dataset do not include {variable=}.")
+        xr_obj = xr_obj[variable]
+    xr_obj = _check_has_diameter_and_velocity_dims(xr_obj)
+    return xr_obj
+
+
+def plot_spectrum(
+    xr_obj,
+    variable="raw_drop_number",
+    ax=None,
+    cmap=None,
+    norm=None,
+    extend="max",
+    add_colorbar=True,
+    cbar_kwargs=None,
+    title="Drop Spectrum",
+    **plot_kwargs,
+):
+    """Plot the spectrum.
+
+    Parameters
+    ----------
+    xr_obj : xarray.Dataset or xarray.DataArray
+        Input xarray object. If Dataset, the variable to plot must be specified.
+        If DataArray, it must have both diameter and velocity dimensions.
+    variable : str
+        Name of the variable to plot if xr_obj is a Dataset.
+    ax : matplotlib.axes.Axes, optional
+        Axes to plot on. If None, uses current axes or creates a new one.
+    cmap : Colormap, optional
+        Colormap to use. If None, uses 'Spectral_r' with 'under' set to 'none'.
+    norm : matplotlib.colors.Normalize, optional
+        Normalization for colormap. If None, uses LogNorm with vmin=1.
+    extend : {'neither', 'both', 'min', 'max'}, optional
+        Whether to draw arrows on the colorbar to indicate out-of-range values.
+        Default is 'max'.
+    add_colorbar : bool, optional
+        Whether to add a colorbar. Default is True.
+    cbar_kwargs : dict, optional
+        Additional keyword arguments for colorbar. If None, uses {'label': 'Number of particles '}.
+    title : str, optional
+        Title of the plot. Default is 'Drop Spectrum'.
+    **plot_kwargs : dict
+        Additional keyword arguments passed to xarray's plot.pcolormesh method.
+
+    Notes
+    -----
+    - If the input DataArray has a time dimension, it is summed over time before plotting
+        unless FacetGrid options (e.g., col, row) are specified in plot_kwargs.
+    - If FacetGrid options are used, the plot will create a grid of subplots for each time slice.
+      To create a FacetGrid plot, use:
+
+      ds.isel(time=slice(0, 9)).disdrodb.plot_spectrum(col="time", col_wrap=3)
+
+    """
+    # Retrieve spectrum
+    drop_number = _get_spectrum_variable(xr_obj, variable)
+
+    # Check if FacetGrid
+    is_facetgrid = "col" in plot_kwargs or "row" in plot_kwargs
+
+    # Sum over time dimension if still present
+    # - Unless FacetGrid options in plot_kwargs
+    if "time" in drop_number.dims and not is_facetgrid:
+        drop_number = drop_number.sum(dim="time")
+
+    # Define default cbar_kwargs if not specified
+    if cbar_kwargs is None:
+        cbar_kwargs = {"label": "Number of particles"}
+
+    # Define cmap and norm
+    if cmap is None:
+        cmap = plt.get_cmap("Spectral_r").copy()
+        cmap.set_under("none")
+
+    if norm is None:
+        norm = LogNorm(vmin=1, vmax=None) if drop_number.sum() > 0 else None
+
+    # Remove cbar_kwargs if add_colorbar=False
+    if not add_colorbar:
+        cbar_kwargs = None
+
+    # Plot
+    p = drop_number.plot.pcolormesh(
+        ax=ax,
+        x=DIAMETER_DIMENSION,
+        y=VELOCITY_DIMENSION,
+        cmap=cmap,
+        extend=extend,
+        norm=norm,
+        add_colorbar=add_colorbar,
+        cbar_kwargs=cbar_kwargs,
+        **plot_kwargs,
+    )
+    if not is_facetgrid:
+        p.axes.set_xlabel("Diamenter [mm]")
+        p.axes.set_ylabel("Fall velocity [m/s]")
+        p.axes.set_title(title)
+    else:
+        p.set_axis_labels("Diameter [mm]", "Fall velocity [m/s]")
+
+    return p
+
+
+def plot_raw_and_filtered_spectra(
+    ds,
+    cmap=None,
+    norm=None,
+    extend="max",
+    add_theoretical_average_velocity=True,
+    add_measured_average_velocity=True,
+    figsize=(8, 4),
+    dpi=300,
+):
+    """Plot raw and filtered drop spectrum."""
+    # Retrieve spectrum arrays
+    drop_number = _get_spectrum_variable(ds, variable="drop_number")
+    if "time" in drop_number.dims:
+        drop_number = drop_number.sum(dim="time")
+    drop_number = drop_number.compute()
+
+    raw_drop_number = _get_spectrum_variable(ds, variable="raw_drop_number")
+    if "time" in raw_drop_number.dims:
+        raw_drop_number = raw_drop_number.sum(dim="time")
+    raw_drop_number = raw_drop_number.compute()
+
+    # Compute theoretical and measured average velocity if asked
+    if add_theoretical_average_velocity:
+        theoretical_average_velocity = ds["fall_velocity"]
+        if "time" in theoretical_average_velocity.dims:
+            theoretical_average_velocity = theoretical_average_velocity.mean(dim="time")
+    if add_measured_average_velocity:
+        measured_average_velocity = get_drop_average_velocity(drop_number)
+
+    # Define norm if not specified
+    if norm is None:
+        norm = LogNorm(1, raw_drop_number.max())
+
+    # Initialize figure
+    fig = plt.figure(figsize=figsize, dpi=dpi)
+    gs = GridSpec(1, 2, width_ratios=[1, 1.15], wspace=0.05)  # More space for ax2
+    ax1 = fig.add_subplot(gs[0])
+    ax2 = fig.add_subplot(gs[1])
+
+    # Plot raw_drop_number
+    plot_spectrum(raw_drop_number, ax=ax1, cmap=cmap, norm=norm, extend=extend, add_colorbar=False, title="")
+
+    # Add velocities if asked
+    if add_theoretical_average_velocity:
+        theoretical_average_velocity.plot(ax=ax1, c="k", linestyle="dashed")
+    if add_measured_average_velocity:
+        measured_average_velocity.plot(ax=ax1, c="k", linestyle="dotted")
+
+    # Improve plot appearance
+    ax1.set_xlabel("Diamenter [mm]")
+    ax1.set_ylabel("Fall velocity [m/s]")
+    ax1.set_title("Raw Spectrum")
+
+    # Plot drop_number
+    plot_spectrum(drop_number, ax=ax2, cmap=cmap, norm=norm, extend=extend, add_colorbar=True, title="")
+
+    # Add velocities if asked
+    if add_theoretical_average_velocity:
+        theoretical_average_velocity.plot(ax=ax2, c="k", linestyle="dashed", label="Theoretical velocity")
+    if add_measured_average_velocity:
+        measured_average_velocity.plot(ax=ax2, c="k", linestyle="dotted", label="Measured average velocity")
+
+    # Improve plot appearance
+    ax2.set_yticks([])
+    ax2.set_yticklabels([])
+    ax2.set_xlabel("Diamenter [mm]")
+    ax2.set_ylabel("")
+    ax2.set_title("Filtered Spectrum")
+
+    # Add legend
+    if add_theoretical_average_velocity or add_measured_average_velocity:
+        ax2.legend(loc="lower right", frameon=False)
+
+    return fig
+
+
+####-------------------------------------------------------------------------------------------------------
+#### DenseLines
 
 
 def normalize_array(arr, method="max"):
