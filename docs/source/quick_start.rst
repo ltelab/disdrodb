@@ -252,3 +252,11 @@ see the `How to contribute new data <https://disdrodb.readthedocs.io/en/latest/c
 
 To learn more about DISDRODB products, see the `Products <https://disdrodb.readthedocs.io/en/latest/products.html>`_ section.
 To customize the processing chain, see the `DISDRODB Archive Processing <https://disdrodb.readthedocs.io/en/latest/processing.html>`_ section.
+
+
+.. warning::
+
+    Users are expected to properly acknowledge the data they use by citing
+    and referencing each station. The corresponding references, recommended
+    citations, and DOIs are available in the DISDRODB netCDFs/xarray.Dataset
+    global attributes, as well as in the DISDRODB Metadata Archive.

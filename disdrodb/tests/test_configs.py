@@ -37,12 +37,14 @@ from disdrodb.utils.yaml import read_yaml
 
 
 @pytest.fixture
-def temporary_home(tmp_path):
+def temporary_home(tmp_path, monkeypatch):
     """Temporarily set HOME to a tmp_path and restore afterwards."""
-    old_home = os.environ.get("HOME", "")
-    os.environ["HOME"] = str(tmp_path)
-    yield tmp_path
-    os.environ["HOME"] = old_home
+    """Force _define_config_filepath to point into tmp_path."""
+    from disdrodb import configs
+
+    config_path = tmp_path / ".config_disdrodb.yml"
+    monkeypatch.setattr(configs, "_define_config_filepath", lambda: str(config_path))
+    return tmp_path
 
 
 @pytest.fixture(autouse=True)
@@ -253,7 +255,7 @@ def test_get_zenodo_token(sandbox, expected_token):
         {
             "zenodo_token": "my_zenodo_token",
             "zenodo_sandbox_token": "my_sandbox_zenodo_token",
-        }
+        },
     )
     assert get_zenodo_token(sandbox=sandbox) == expected_token
 
