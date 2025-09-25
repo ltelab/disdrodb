@@ -243,6 +243,7 @@ def resample_dataset(ds, sample_interval, temporal_resolution):
     ds_resampled = xr.Dataset()
 
     # Retrieve variables to average/sum
+    # - ATTENTION: it will not resample non-dimensional time coordinates of the dataset !
     var_to_average = ["fall_velocity"]
     var_to_cumulate = [
         "raw_drop_number",

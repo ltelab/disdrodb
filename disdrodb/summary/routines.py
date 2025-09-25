@@ -3853,28 +3853,29 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
     #### Create table with events summary
     if not temporal_resolution.startswith("ROLL"):
         table_events_summary = create_table_events_summary(df, temporal_resolution=temporal_resolution)
-        # - Save table as csv
-        table_events_summary_csv_filename = define_filename(
-            prefix="Events_Summary",
-            extension="csv",
-            data_source=data_source,
-            campaign_name=campaign_name,
-            station_name=station_name,
-            temporal_resolution=temporal_resolution,
-        )
-        table_events_summary_csv_filepath = os.path.join(summary_dir_path, table_events_summary_csv_filename)
-        table_events_summary.to_csv(table_events_summary_csv_filepath)
-        # - Save table as pdf
-        if is_latex_engine_available():
-            table_events_summary_pdf_filename = table_events_summary_csv_filename.replace(".csv", ".pdf")
-            table_events_summary_pdf_filepath = os.path.join(summary_dir_path, table_events_summary_pdf_filename)
-            save_table_to_pdf(
-                df=prepare_latex_table_events_summary(table_events_summary),
-                filepath=table_events_summary_pdf_filepath,
-                index=True,
-                caption="Events Summary",
-                orientation="landscape",
+        if len(table_events_summary) > 0:
+            # - Save table as csv
+            table_events_summary_csv_filename = define_filename(
+                prefix="Events_Summary",
+                extension="csv",
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                temporal_resolution=temporal_resolution,
             )
+            table_events_summary_csv_filepath = os.path.join(summary_dir_path, table_events_summary_csv_filename)
+            table_events_summary.to_csv(table_events_summary_csv_filepath)
+            # - Save table as pdf
+            if is_latex_engine_available():
+                table_events_summary_pdf_filename = table_events_summary_csv_filename.replace(".csv", ".pdf")
+                table_events_summary_pdf_filepath = os.path.join(summary_dir_path, table_events_summary_pdf_filename)
+                save_table_to_pdf(
+                    df=prepare_latex_table_events_summary(table_events_summary),
+                    filepath=table_events_summary_pdf_filepath,
+                    index=True,
+                    caption="Events Summary",
+                    orientation="landscape",
+                )
 
     # ---------------------------------------------------------------------.
     #### Create table with integral DSD parameters statistics
@@ -3904,201 +3905,202 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
 
     #### ---------------------------------------------------------------------.
     #### Create L2E RADAR Summary Plots
-    # Summary plots at X, C, S bands
-    if "DBZH_X" in df:
+    if len(df) > 1000:
+        # Summary plots at X, C, S bands
+        if "DBZH_X" in df:
+            filename = define_filename(
+                prefix="Radar_Band_X",
+                extension="png",
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                temporal_resolution=temporal_resolution,
+            )
+            fig = plot_radar_relationships(df, band="X")
+            fig.savefig(os.path.join(summary_dir_path, filename))
+        if "DBZH_C" in df:
+            filename = define_filename(
+                prefix="Radar_Band_C",
+                extension="png",
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                temporal_resolution=temporal_resolution,
+            )
+            fig = plot_radar_relationships(df, band="C")
+            fig.savefig(os.path.join(summary_dir_path, filename))
+        if "DBZH_S" in df:
+            filename = define_filename(
+                prefix="Radar_Band_S",
+                extension="png",
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                temporal_resolution=temporal_resolution,
+            )
+            fig = plot_radar_relationships(df, band="S")
+            fig.savefig(os.path.join(summary_dir_path, filename))
+
+        # ---------------------------------------------------------------------.
+        #### - Create Z-R figure
         filename = define_filename(
-            prefix="Radar_Band_X",
+            prefix="Z-R",
             extension="png",
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
             temporal_resolution=temporal_resolution,
         )
-        fig = plot_radar_relationships(df, band="X")
-        fig.savefig(os.path.join(summary_dir_path, filename))
-    if "DBZH_C" in df:
+
+        p = plot_R_Z(df, z="Z", r="R", title=r"$Z$ vs $R$")
+        p.figure.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
+
+        #### ---------------------------------------------------------------------.
+        #### Create L2E Kinetic Energy Summary Plots
         filename = define_filename(
-            prefix="Radar_Band_C",
+            prefix="KineticEnergy",
             extension="png",
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
             temporal_resolution=temporal_resolution,
         )
-        fig = plot_radar_relationships(df, band="C")
+        fig = plot_kinetic_energy_relationships(df)
         fig.savefig(os.path.join(summary_dir_path, filename))
-    if "DBZH_S" in df:
+
+        #### ---------------------------------------------------------------------.
+        #### Create L2E DSD Parameters summary plots
+        #### - Create DSD parameters density figures with LWC
         filename = define_filename(
-            prefix="Radar_Band_S",
+            prefix="DSD_Params_Density_with_LWC_LinearDm_MaxNormalized",
             extension="png",
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
             temporal_resolution=temporal_resolution,
         )
-        fig = plot_radar_relationships(df, band="S")
+        fig = plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=False)
         fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    # ---------------------------------------------------------------------.
-    #### - Create Z-R figure
-    filename = define_filename(
-        prefix="Z-R",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        temporal_resolution=temporal_resolution,
-    )
+        filename = define_filename(
+            prefix="DSD_Params_Density_with_LWC_LogDm_MaxNormalized",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dsd_params_density(df, log_dm=True, lwc=True, log_normalize=False)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    p = plot_R_Z(df, z="Z", r="R", title=r"$Z$ vs $R$")
-    p.figure.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        filename = define_filename(
+            prefix="DSD_Params_Density_with_LWC_LinearDm_LogNormalized",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=True)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    #### ---------------------------------------------------------------------.
-    #### Create L2E Kinetic Energy Summary Plots
-    filename = define_filename(
-        prefix="KineticEnergy",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        temporal_resolution=temporal_resolution,
-    )
-    fig = plot_kinetic_energy_relationships(df)
-    fig.savefig(os.path.join(summary_dir_path, filename))
+        filename = define_filename(
+            prefix="DSD_Params_Density_with_LWC_LogDm_LogNormalized",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dsd_params_density(df, log_dm=True, lwc=True, log_normalize=True)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    #### ---------------------------------------------------------------------.
-    #### Create L2E DSD Parameters summary plots
-    #### - Create DSD parameters density figures with LWC
-    filename = define_filename(
-        prefix="DSD_Params_Density_with_LWC_LinearDm_MaxNormalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        temporal_resolution=temporal_resolution,
-    )
-    fig = plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=False)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        ###------------------------------------------------------------------------.
+        #### - Create DSD parameters density figures with R
+        filename = define_filename(
+            prefix="DSD_Params_Density_with_R_LinearDm_MaxNormalized",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dsd_params_density(df, log_dm=False, lwc=False, log_normalize=False)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    filename = define_filename(
-        prefix="DSD_Params_Density_with_LWC_LogDm_MaxNormalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        temporal_resolution=temporal_resolution,
-    )
-    fig = plot_dsd_params_density(df, log_dm=True, lwc=True, log_normalize=False)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        filename = define_filename(
+            prefix="DSD_Params_Density_with_R_LogDm_MaxNormalized",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dsd_params_density(df, log_dm=True, lwc=False, log_normalize=False)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    filename = define_filename(
-        prefix="DSD_Params_Density_with_LWC_LinearDm_LogNormalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        temporal_resolution=temporal_resolution,
-    )
-    fig = plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=True)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        filename = define_filename(
+            prefix="DSD_Params_Density_with_R_LinearDm_LogNormalized",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dsd_params_density(df, log_dm=False, lwc=False, log_normalize=True)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    filename = define_filename(
-        prefix="DSD_Params_Density_with_LWC_LogDm_LogNormalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        temporal_resolution=temporal_resolution,
-    )
-    fig = plot_dsd_params_density(df, log_dm=True, lwc=True, log_normalize=True)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        filename = define_filename(
+            prefix="DSD_Params_Density_with_R_LogDm_LogNormalized",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dsd_params_density(df, log_dm=True, lwc=False, log_normalize=True)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    ###------------------------------------------------------------------------.
-    #### - Create DSD parameters density figures with R
-    filename = define_filename(
-        prefix="DSD_Params_Density_with_R_LinearDm_MaxNormalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        temporal_resolution=temporal_resolution,
-    )
-    fig = plot_dsd_params_density(df, log_dm=False, lwc=False, log_normalize=False)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        ###------------------------------------------------------------------------.
+        #### - Create DSD parameters relationship figures
+        filename = define_filename(
+            prefix="DSD_Params_Relations",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dsd_params_relationships(df, add_nt=True)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    filename = define_filename(
-        prefix="DSD_Params_Density_with_R_LogDm_MaxNormalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        temporal_resolution=temporal_resolution,
-    )
-    fig = plot_dsd_params_density(df, log_dm=True, lwc=False, log_normalize=False)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        ###------------------------------------------------------------------------.
+        #### - Create Dmax relationship figures
+        filename = define_filename(
+            prefix="DSD_Dmax_Relations",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dmax_relationships(df, diameter_bin_edges=diameter_bin_edges, dmax="Dmax", diameter_max=10)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    filename = define_filename(
-        prefix="DSD_Params_Density_with_R_LinearDm_LogNormalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        temporal_resolution=temporal_resolution,
-    )
-    fig = plot_dsd_params_density(df, log_dm=False, lwc=False, log_normalize=True)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
-
-    filename = define_filename(
-        prefix="DSD_Params_Density_with_R_LogDm_LogNormalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        temporal_resolution=temporal_resolution,
-    )
-    fig = plot_dsd_params_density(df, log_dm=True, lwc=False, log_normalize=True)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
-
-    ###------------------------------------------------------------------------.
-    #### - Create DSD parameters relationship figures
-    filename = define_filename(
-        prefix="DSD_Params_Relations",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        temporal_resolution=temporal_resolution,
-    )
-    fig = plot_dsd_params_relationships(df, add_nt=True)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
-
-    ###------------------------------------------------------------------------.
-    #### - Create Dmax relationship figures
-    filename = define_filename(
-        prefix="DSD_Dmax_Relations",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        temporal_resolution=temporal_resolution,
-    )
-    fig = plot_dmax_relationships(df, diameter_bin_edges=diameter_bin_edges, dmax="Dmax", diameter_max=10)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
-
-    #### ---------------------------------------------------------------------.
-    #### Create L2E QC summary plots
-    # TODO:
+        #### ---------------------------------------------------------------------.
+        #### Create L2E QC summary plots
+        # TODO:
 
     ####------------------------------------------------------------------------.
     #### Free space - Remove df from memory
@@ -4187,18 +4189,22 @@ def create_station_summary(
     )
     os.makedirs(summary_dir_path, exist_ok=True)
 
-    # Load L2E 1MIN dataset
-    ds = disdrodb.open_dataset(
-        data_archive_dir=data_archive_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        product="L2E",
-        temporal_resolution=temporal_resolution,
-        parallel=parallel,
-        chunks=-1,
-        compute=True,
-    )
+    # Load L2E dataset
+    try:
+        ds = disdrodb.open_dataset(
+            data_archive_dir=data_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            product="L2E",
+            temporal_resolution=temporal_resolution,
+            parallel=parallel,
+            chunks=-1,
+            compute=True,
+        )
+    except Exception as e:
+        print("Impossible to create the station summary." + str(e))
+        return
 
     # Generate station summary figures and table
     generate_station_summary(

@@ -117,7 +117,12 @@ def split_dataset_by_sampling_intervals(
 
     # If sample_interval is a dataset variable, use it to define dictionary of datasets
     if "sample_interval" in ds:
-        return {int(interval): ds.isel(time=ds["sample_interval"] == interval) for interval in measurement_intervals}
+        dict_ds = {}
+        for interval in measurement_intervals:
+            ds_subset = ds.isel(time=ds["sample_interval"] == interval)
+            if ds_subset.sizes["time"] > 2:
+                dict_ds[int(interval)] = ds_subset
+        return dict_ds
 
     # ---------------------------------------------------------------------------------------.
     # Otherwise exploit difference between timesteps to identify change point
@@ -460,9 +465,8 @@ def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=Tru
         # if last_time == last_time_expected and qc_flag[-1] == flag_next_missing:
         #     qc_flag[-1] = 0
 
-        # Assign time quality flag coordinate
+        # Add time quality flag variable
         ds["time_qc"] = xr.DataArray(qc_flag, dims="time")
-        ds = ds.set_coords("time_qc")
 
         # Add CF attributes for time_qc
         ds["time_qc"].attrs = {
