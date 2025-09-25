@@ -121,9 +121,6 @@ def generate_l1(
     # Add sample interval as coordinate (in seconds)
     ds_l1 = add_sample_interval(ds_l1, sample_interval=sample_interval)
 
-    # Add qc_time to L1 dataset
-    ds_l1["time_qc"] = ds["time_qc"]
-
     # Add optional variables to L1 dataset
     optional_variables = ["time_qc", "qc_resampling"]
     for var in optional_variables:
