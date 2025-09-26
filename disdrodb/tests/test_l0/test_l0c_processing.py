@@ -520,7 +520,7 @@ class TestRegularizeTimesteps:
         np.testing.assert_array_equal(ds_out["time"].to_numpy(), timesteps.to_numpy())
         np.testing.assert_array_equal(ds_out["data"].to_numpy(), arr)
         # QC flags all zero
-        assert "time_qc" in ds_out.coords
+        assert "time_qc" in ds_out
         assert np.all(ds_out["time_qc"].to_numpy() == 0)
 
     def test_unsorted_regular_dataset(self):
@@ -534,7 +534,7 @@ class TestRegularizeTimesteps:
         # Output times sorted ascending
         np.testing.assert_array_equal(ds_out["time"].to_numpy(), timesteps.to_numpy())
         # QC flags all zero
-        assert "time_qc" in ds_out.coords
+        assert "time_qc" in ds_out
         assert np.all(ds_out["time_qc"].to_numpy() == 0)
 
     def test_missing_timesteps_quality_flags(self):
@@ -579,7 +579,7 @@ class TestRegularizeTimesteps:
         expected_timesteps = times.astype("datetime64[s]")
         np.testing.assert_array_equal(ds_out["time"].to_numpy(), expected_timesteps)
         # QC flags all zero
-        assert "time_qc" in ds_out.coords
+        assert "time_qc" in ds_out
         assert np.all(ds_out["time_qc"].to_numpy() == 0)
 
     def test_varying_trailing_seconds_correction(self):
@@ -596,7 +596,7 @@ class TestRegularizeTimesteps:
         expected_timesteps = base + np.array([0, 30, 60, 90, 120]).astype("timedelta64[s]")
         np.testing.assert_array_equal(ds_out["time"].to_numpy(), expected_timesteps)
         # QC flags all zero
-        assert "time_qc" in ds_out.coords
+        assert "time_qc" in ds_out
         assert np.all(ds_out["time_qc"].to_numpy() == 0)
 
     def test_single_duplicate_identified_and_dropped(self):
