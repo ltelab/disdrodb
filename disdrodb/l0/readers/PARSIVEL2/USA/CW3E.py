@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+"""Reader for the OTT Parsivel2 sensors of the CW3E network."""
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -68,11 +69,10 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Define 'time' datetime
+    # Remove rows with invalid number of separators
+    df = df[df["TO_PARSE"].str.count(";") == 1105]
 
     # Split the columns
-    df["TO_PARSE"].iloc[0:5].str.split(";", n=16, expand=True).iloc[0]
-
     df = df["TO_PARSE"].str.split(";", n=16, expand=True)
 
     # Assign column names
@@ -100,7 +100,7 @@ def reader(
     # Derive raw arrays
     df_split = df["TO_SPLIT"].str.split(";", expand=True)
     df["raw_drop_concentration"] = df_split.iloc[:, :32].agg(",".join, axis=1)
-    df["raw_drop_average_velocity"] = df_split.iloc[:, 32:].agg(",".join, axis=1)
+    df["raw_drop_average_velocity"] = df_split.iloc[:, 32:64].agg(",".join, axis=1)
     df["raw_drop_number"] = df_split.iloc[:, 64:1088].agg(",".join, axis=1)
     df["rain_kinetic_energy"] = df_split.iloc[:, 1088]
     df["CHECK_EMPTY"] = df_split.iloc[:, 1089]

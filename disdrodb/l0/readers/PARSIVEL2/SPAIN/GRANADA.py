@@ -109,7 +109,7 @@ def reader(
     # Retrieve raw array
     df_split = df["TO_SPLIT"].str.split(",", expand=True)
     df["raw_drop_concentration"] = df_split.iloc[:, :32].agg(",".join, axis=1)
-    df["raw_drop_average_velocity"] = df_split.iloc[:, 32:].agg(",".join, axis=1)
+    df["raw_drop_average_velocity"] = df_split.iloc[:, 32:64].agg(",".join, axis=1)
     df["raw_drop_number"] = df_split.iloc[:, 64:].agg(",".join, axis=1)
     del df_split
 

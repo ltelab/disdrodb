@@ -21,6 +21,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import warnings
 
 import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
@@ -2031,31 +2032,34 @@ def plot_A_R(
     ax.set_yticklabels([str(v) for v in a_ticks])
     ax.set_title(title)
     if add_fit:
-        # Fit powerlaw k = a * R ** b
-        (a_c, b), _ = fit_powerlaw(x=df[r], y=df[a], xbins=r_bins, x_in_db=False)
-        # Invert for R = A * k ** B
-        A_c, B = inverse_powerlaw_parameters(a_c, b)
-        # Define legend title
-        a_str = _define_coeff_string(a_c)
-        A_str = _define_coeff_string(A_c)
-        legend_str = rf"${a_symbol} =  {a_str} \, R^{{{b:.2f}}}$" "\n" rf"$R = {A_str} \, {a_symbol}^{{{B:.2f}}}$"
-        # Get power law predictions
-        x_pred = np.arange(*rlims)
-        r_pred = predict_from_powerlaw(x_pred, a=a_c, b=b)
-        # Add fitted power law
-        ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit powerlaw k = a * R ** b
+            (a_c, b), _ = fit_powerlaw(x=df[r], y=df[a], xbins=r_bins, x_in_db=False)
+            # Invert for R = A * k ** B
+            A_c, B = inverse_powerlaw_parameters(a_c, b)
+            # Define legend title
+            a_str = _define_coeff_string(a_c)
+            A_str = _define_coeff_string(A_c)
+            legend_str = rf"${a_symbol} =  {a_str} \, R^{{{b:.2f}}}$" "\n" rf"$R = {A_str} \, {a_symbol}^{{{B:.2f}}}$"
+            # Get power law predictions
+            x_pred = np.arange(*rlims)
+            r_pred = predict_from_powerlaw(x_pred, a=a_c, b=b)
+            # Add fitted power law
+            ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_A_R: {e!s}", UserWarning, stacklevel=2)
     return p
 
 
@@ -2136,40 +2140,43 @@ def plot_A_Z(
 
     # Fit and plot the power law
     if add_fit:
-        # Fit powerlaw k = a * Z ** b  (Z in dBZ -> x_in_db=True)
-        (a_c, b), _ = fit_powerlaw(
-            x=df[z],
-            y=df[a],
-            xbins=z_bins,
-            x_in_db=True,
-        )
-        # Invert for Z = A * k ** B
-        A_c, B = inverse_powerlaw_parameters(a_c, b)
-        # Legend text
-        a_str = _define_coeff_string(a_c)
-        A_str = _define_coeff_string(A_c)
-        legend_str = (
-            rf"${a_symbol} = {a_str} \, {z_lower_symbol}^{{{b:.2f}}}$"
-            "\n"
-            rf"${z_lower_symbol} = {A_str} \, {a_symbol}^{{{B:.2f}}}$"
-        )
-        # Predictions
-        x_pred = np.arange(*z_lim)
-        x_pred_linear = disdrodb.idecibel(x_pred)  # convert to linear for prediction
-        y_pred = predict_from_powerlaw(x_pred_linear, a=a_c, b=b)
-        ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit powerlaw k = a * Z ** b  (Z in dBZ -> x_in_db=True)
+            (a_c, b), _ = fit_powerlaw(
+                x=df[z],
+                y=df[a],
+                xbins=z_bins,
+                x_in_db=True,
+            )
+            # Invert for Z = A * k ** B
+            A_c, B = inverse_powerlaw_parameters(a_c, b)
+            # Legend text
+            a_str = _define_coeff_string(a_c)
+            A_str = _define_coeff_string(A_c)
+            legend_str = (
+                rf"${a_symbol} = {a_str} \, {z_lower_symbol}^{{{b:.2f}}}$"
+                "\n"
+                rf"${z_lower_symbol} = {A_str} \, {a_symbol}^{{{B:.2f}}}$"
+            )
+            # Predictions
+            x_pred = np.arange(*z_lim)
+            x_pred_linear = disdrodb.idecibel(x_pred)  # convert to linear for prediction
+            y_pred = predict_from_powerlaw(x_pred_linear, a=a_c, b=b)
+            ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_A_Z: {e!s}", UserWarning, stacklevel=2)
     return p
 
 
@@ -2269,43 +2276,46 @@ def plot_A_KDP(
 
     # Fit and overlay power law: k = a * KDP^b
     if add_fit:
-        (a_c, b), _ = fit_powerlaw(
-            x=df[kdp],
-            y=df[a],
-            xbins=kdp_bins,
-            x_in_db=False,
-        )
-        # Invert: KDP = A * k^B
-        A_c, B = inverse_powerlaw_parameters(a_c, b)
+        try:
+            (a_c, b), _ = fit_powerlaw(
+                x=df[kdp],
+                y=df[a],
+                xbins=kdp_bins,
+                x_in_db=False,
+            )
+            # Invert: KDP = A * k^B
+            A_c, B = inverse_powerlaw_parameters(a_c, b)
 
-        a_str = _define_coeff_string(a_c)
-        A_str = _define_coeff_string(A_c)
-        legend_str = (
-            rf"${a_symbol} = {a_str}\,K_{{\mathrm{{DP}}}}^{{{b:.2f}}}$"
-            "\n"
-            rf"$K_{{\mathrm{{DP}}}} = {A_str}\,{a_symbol}^{{{B:.2f}}}$"
-        )
+            a_str = _define_coeff_string(a_c)
+            A_str = _define_coeff_string(A_c)
+            legend_str = (
+                rf"${a_symbol} = {a_str}\,K_{{\mathrm{{DP}}}}^{{{b:.2f}}}$"
+                "\n"
+                rf"$K_{{\mathrm{{DP}}}} = {A_str}\,{a_symbol}^{{{B:.2f}}}$"
+            )
 
-        # Predictions along KDP axis
-        if log_kdp:
-            x_pred = np.logspace(np.log10(kdp_lim[0]), np.log10(kdp_lim[1]), 400)
-        else:
-            x_pred = np.arange(kdp_lim[0], kdp_lim[1], 0.05)
-        y_pred = predict_from_powerlaw(x_pred, a=a_c, b=b)
+            # Predictions along KDP axis
+            if log_kdp:
+                x_pred = np.logspace(np.log10(kdp_lim[0]), np.log10(kdp_lim[1]), 400)
+            else:
+                x_pred = np.arange(kdp_lim[0], kdp_lim[1], 0.05)
+            y_pred = predict_from_powerlaw(x_pred, a=a_c, b=b)
 
-        ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+            ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_A_KDP: {e!s}", UserWarning, stacklevel=2)
 
     return p
 
@@ -2382,34 +2392,37 @@ def plot_R_Z(
 
     # Fit and plot the powerlaw
     if add_fit:
-        # Fit powerlaw R = a * z ** b
-        (a, b), _ = fit_powerlaw(x=df[z], y=df[r], xbins=np.arange(10, 50, 1), x_in_db=True)
-        # Invert for z = A * R ** B
-        A, B = inverse_powerlaw_parameters(a, b)
-        # Define legend title
-        a_str = _define_coeff_string(a)
-        A_str = _define_coeff_string(A)
-        legend_str = (
-            rf"$R = {a_str} \, {z_lower_symbol}^{{{b:.2f}}}$" "\n" rf"${z_lower_symbol} = {A_str} \, R^{{{B:.2f}}}$"
-        )
-        # Get power law predictions
-        x_pred = np.arange(*z_lims)
-        x_pred_linear = disdrodb.idecibel(x_pred)
-        r_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
-        # Add fitted powerlaw
-        ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit powerlaw R = a * z ** b
+            (a, b), _ = fit_powerlaw(x=df[z], y=df[r], xbins=np.arange(10, 50, 1), x_in_db=True)
+            # Invert for z = A * R ** B
+            A, B = inverse_powerlaw_parameters(a, b)
+            # Define legend title
+            a_str = _define_coeff_string(a)
+            A_str = _define_coeff_string(A)
+            legend_str = (
+                rf"$R = {a_str} \, {z_lower_symbol}^{{{b:.2f}}}$" "\n" rf"${z_lower_symbol} = {A_str} \, R^{{{B:.2f}}}$"
+            )
+            # Get power law predictions
+            x_pred = np.arange(*z_lims)
+            x_pred_linear = disdrodb.idecibel(x_pred)
+            r_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
+            # Add fitted powerlaw
+            ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_R_Z: {e!s}", UserWarning, stacklevel=2)
     return p
 
 
@@ -2492,35 +2505,38 @@ def plot_R_KDP(
 
     # Fit and plot the power law
     if add_fit:
-        # Fit powerlaw R = a * KDP ** b
-        (a, b), _ = fit_powerlaw(x=df[kdp], y=df[r], xbins=xbins, x_in_db=False)
-        # Invert for KDP = A * R ** B
-        A, B = inverse_powerlaw_parameters(a, b)
-        # Define legend title
-        a_str = _define_coeff_string(a)
-        A_str = _define_coeff_string(A)
-        legend_str = (
-            rf"$R = {a_str} \, K_{{\mathrm{{DP}}}}^{{{b:.2f}}}$"
-            "\n"
-            rf"$K_{{\mathrm{{DP}}}} = {A_str} \, R^{{{B:.2f}}}$"
-        )
-        # Get power law predictions
-        x_pred = np.arange(*kdp_lim)
-        r_pred = predict_from_powerlaw(x_pred, a=a, b=b)
-        # Add fitted line
-        ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit powerlaw R = a * KDP ** b
+            (a, b), _ = fit_powerlaw(x=df[kdp], y=df[r], xbins=xbins, x_in_db=False)
+            # Invert for KDP = A * R ** B
+            A, B = inverse_powerlaw_parameters(a, b)
+            # Define legend title
+            a_str = _define_coeff_string(a)
+            A_str = _define_coeff_string(A)
+            legend_str = (
+                rf"$R = {a_str} \, K_{{\mathrm{{DP}}}}^{{{b:.2f}}}$"
+                "\n"
+                rf"$K_{{\mathrm{{DP}}}} = {A_str} \, R^{{{B:.2f}}}$"
+            )
+            # Get power law predictions
+            x_pred = np.arange(*kdp_lim)
+            r_pred = predict_from_powerlaw(x_pred, a=a, b=b)
+            # Add fitted line
+            ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_R_KDP: {e!s}", UserWarning, stacklevel=2)
     return p
 
 
@@ -2588,41 +2604,44 @@ def plot_ZDR_Z(
 
     # Fit and plot the power law
     if add_fit:
-        # Fit powerlaw ZDR = a * Z ** b
-        (a, b), _ = fit_powerlaw(
-            x=df[z],
-            y=df[zdr],
-            xbins=np.arange(5, 40, 1),
-            x_in_db=True,
-        )
-        # Invert for Z = A * ZDR ** B
-        A, B = inverse_powerlaw_parameters(a, b)
-        # Define legend title
-        a_str = _define_coeff_string(a)
-        A_str = _define_coeff_string(A)
-        legend_str = (
-            rf"$Z_{{\mathrm{{DR}}}} = {a_str} \, {z_lower_symbol}^{{{b:.2f}}}$"
-            "\n"
-            rf"${z_lower_symbol} = {A_str} \, Z_{{\mathrm{{DR}}}}^{{{B:.2f}}}$"
-        )
-        # Get power law predictions
-        x_pred = np.arange(0, 70)
-        x_pred_linear = disdrodb.idecibel(x_pred)
-        r_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
-        # Add fitted line
-        ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit powerlaw ZDR = a * Z ** b
+            (a, b), _ = fit_powerlaw(
+                x=df[z],
+                y=df[zdr],
+                xbins=np.arange(5, 40, 1),
+                x_in_db=True,
+            )
+            # Invert for Z = A * ZDR ** B
+            A, B = inverse_powerlaw_parameters(a, b)
+            # Define legend title
+            a_str = _define_coeff_string(a)
+            A_str = _define_coeff_string(A)
+            legend_str = (
+                rf"$Z_{{\mathrm{{DR}}}} = {a_str} \, {z_lower_symbol}^{{{b:.2f}}}$"
+                "\n"
+                rf"${z_lower_symbol} = {A_str} \, Z_{{\mathrm{{DR}}}}^{{{B:.2f}}}$"
+            )
+            # Get power law predictions
+            x_pred = np.arange(0, 70)
+            x_pred_linear = disdrodb.idecibel(x_pred)
+            r_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
+            # Add fitted line
+            ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_ZDR_Z: {e!s}", UserWarning, stacklevel=2)
     return p
 
 
@@ -2709,43 +2728,46 @@ def plot_KDP_Z(
 
     # Fit and overlay power law
     if add_fit:
-        # Fit: KDP = a * Z^b   (Z in dBZ → x_in_db=True)
-        (a, b), _ = fit_powerlaw(
-            x=df[z],
-            y=df[kdp],
-            xbins=np.arange(15, 50),
-            x_in_db=True,
-        )
-        # Invert: Z = A * KDP^B
-        A, B = inverse_powerlaw_parameters(a, b)
+        try:
+            # Fit: KDP = a * Z^b   (Z in dBZ → x_in_db=True)
+            (a, b), _ = fit_powerlaw(
+                x=df[z],
+                y=df[kdp],
+                xbins=np.arange(15, 50),
+                x_in_db=True,
+            )
+            # Invert: Z = A * KDP^B
+            A, B = inverse_powerlaw_parameters(a, b)
 
-        # Define legend title
-        a_str = _define_coeff_string(a)
-        A_str = _define_coeff_string(A)
-        legend_str = (
-            rf"$K_{{\mathrm{{DP}}}} = {a_str}\,{z_lower_symbol}^{{{b:.2f}}}$"
-            "\n"
-            rf"${z_lower_symbol} = {A_str}\,K_{{\mathrm{{DP}}}}^{{{B:.2f}}}$"
-        )
+            # Define legend title
+            a_str = _define_coeff_string(a)
+            A_str = _define_coeff_string(A)
+            legend_str = (
+                rf"$K_{{\mathrm{{DP}}}} = {a_str}\,{z_lower_symbol}^{{{b:.2f}}}$"
+                "\n"
+                rf"${z_lower_symbol} = {A_str}\,K_{{\mathrm{{DP}}}}^{{{B:.2f}}}$"
+            )
 
-        # Get power law predictions
-        x_pred = np.arange(*z_lim)
-        x_pred_linear = disdrodb.idecibel(x_pred)
-        y_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
-        # Add fitted power law
-        ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+            # Get power law predictions
+            x_pred = np.arange(*z_lim)
+            x_pred_linear = disdrodb.idecibel(x_pred)
+            y_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
+            # Add fitted power law
+            ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_KDP_Z: {e!s}", UserWarning, stacklevel=2)
 
     return p
 
@@ -3063,36 +3085,41 @@ def plot_KED_R(
     ax.set_title("KED vs R")
     # Fit and plot a powerlaw
     if add_fit:
-        # Fit a power law KED = a * R**b
-        (a, b), _ = fit_powerlaw(
-            x=df["R"],
-            y=df["KED"],
-            xbins=r_bins,
-            x_in_db=False,
-        )
-        # Invert for R = A * KED**B
-        A, B = inverse_powerlaw_parameters(a, b)
-        # Define legend string
-        a_str = _define_coeff_string(a)
-        A_str = _define_coeff_string(A)
-        legend_str = rf"$\mathrm{{KED}} = {a_str}\,R^{{{b:.2f}}}$" "\n" rf"$R = {A_str}\,\mathrm{{KED}}^{{{B:.2f}}}$"
-        # Get power law predictions
-        x_pred = np.arange(r_lims[0], r_lims[1])
-        y_pred = predict_from_powerlaw(x_pred, a=a, b=b)
-        # Add fitted powerlaw
-        ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit a power law KED = a * R**b
+            (a, b), _ = fit_powerlaw(
+                x=df["R"],
+                y=df["KED"],
+                xbins=r_bins,
+                x_in_db=False,
+            )
+            # Invert for R = A * KED**B
+            A, B = inverse_powerlaw_parameters(a, b)
+            # Define legend string
+            a_str = _define_coeff_string(a)
+            A_str = _define_coeff_string(A)
+            legend_str = (
+                rf"$\mathrm{{KED}} = {a_str}\,R^{{{b:.2f}}}$" "\n" rf"$R = {A_str}\,\mathrm{{KED}}^{{{B:.2f}}}$"
+            )
+            # Get power law predictions
+            x_pred = np.arange(r_lims[0], r_lims[1])
+            y_pred = predict_from_powerlaw(x_pred, a=a, b=b)
+            # Add fitted powerlaw
+            ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_KED_R: {e!s}", UserWarning, stacklevel=2)
 
     return p
 
@@ -3184,36 +3211,41 @@ def plot_KEF_R(
     # Fit and plot the power law
     # - Alternative fit model: a + I *(1 - b*exp(c*I))  (a is upper limit)
     if add_fit:
-        # Fit power law KEF = a * R ** b
-        (a, b), _ = fit_powerlaw(
-            x=df["R"],
-            y=df["KEF"],
-            xbins=r_bins,
-            x_in_db=False,
-        )
-        # Invert parameters for R = A * KEF ** B
-        A, B = inverse_powerlaw_parameters(a, b)
-        # Define legend string
-        a_str = _define_coeff_string(a)
-        A_str = _define_coeff_string(A)
-        legend_str = rf"$\mathrm{{KEF}} = {a_str}\,R^{{{b:.2f}}}$" "\n" rf"$R = {A_str}\,\mathrm{{KEF}}^{{{B:.2f}}}$"
-        # Get power law predictions
-        x_pred = np.arange(*r_lims)
-        kef_pred = predict_from_powerlaw(x_pred, a=a, b=b)
-        # Add fitted powerlaw
-        ax.plot(x_pred, kef_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit power law KEF = a * R ** b
+            (a, b), _ = fit_powerlaw(
+                x=df["R"],
+                y=df["KEF"],
+                xbins=r_bins,
+                x_in_db=False,
+            )
+            # Invert parameters for R = A * KEF ** B
+            A, B = inverse_powerlaw_parameters(a, b)
+            # Define legend string
+            a_str = _define_coeff_string(a)
+            A_str = _define_coeff_string(A)
+            legend_str = (
+                rf"$\mathrm{{KEF}} = {a_str}\,R^{{{b:.2f}}}$" "\n" rf"$R = {A_str}\,\mathrm{{KEF}}^{{{B:.2f}}}$"
+            )
+            # Get power law predictions
+            x_pred = np.arange(*r_lims)
+            kef_pred = predict_from_powerlaw(x_pred, a=a, b=b)
+            # Add fitted powerlaw
+            ax.plot(x_pred, kef_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_KEF_R: {e!s}", UserWarning, stacklevel=2)
     return p
 
 
@@ -3298,41 +3330,44 @@ def plot_KEF_Z(
 
     # Fit and plot the powerlaw
     if add_fit:
-        # Fit power law KEF = a * Z ** b
-        (a, b), _ = fit_powerlaw(
-            x=df[z],
-            y=df["KEF"],
-            xbins=z_bins,
-            x_in_db=True,
-        )
-        # Invert parameters for Z = A * KEF ** B
-        A, B = inverse_powerlaw_parameters(a, b)
-        # Define legend string
-        a_str = _define_coeff_string(a)
-        A_str = _define_coeff_string(A)
-        legend_str = (
-            rf"$\mathrm{{KEF}} = {a_str}\;{z_lower_symbol}^{{{b:.2f}}}$"
-            "\n"
-            rf"${z_lower_symbol} = {A_str}\;\mathrm{{KEF}}^{{{B:.2f}}}$"
-        )
-        # Get power law predictions
-        x_pred = np.arange(*z_lims)
-        x_pred_linear = disdrodb.idecibel(x_pred)
-        kef_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
-        # Add fitted powerlaw
-        ax.plot(x_pred, kef_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit power law KEF = a * Z ** b
+            (a, b), _ = fit_powerlaw(
+                x=df[z],
+                y=df["KEF"],
+                xbins=z_bins,
+                x_in_db=True,
+            )
+            # Invert parameters for Z = A * KEF ** B
+            A, B = inverse_powerlaw_parameters(a, b)
+            # Define legend string
+            a_str = _define_coeff_string(a)
+            A_str = _define_coeff_string(A)
+            legend_str = (
+                rf"$\mathrm{{KEF}} = {a_str}\;{z_lower_symbol}^{{{b:.2f}}}$"
+                "\n"
+                rf"${z_lower_symbol} = {A_str}\;\mathrm{{KEF}}^{{{B:.2f}}}$"
+            )
+            # Get power law predictions
+            x_pred = np.arange(*z_lims)
+            x_pred_linear = disdrodb.idecibel(x_pred)
+            kef_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
+            # Add fitted powerlaw
+            ax.plot(x_pred, kef_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_KEF_Z: {e!s}", UserWarning, stacklevel=2)
 
     return p
 
@@ -3411,37 +3446,42 @@ def plot_TKE_Z(
 
     # Fit and plot the powerlaw
     if add_fit:
-        # Fit power law TKE = a * Z ** b
-        (a, b), _ = fit_powerlaw(
-            x=df[z],
-            y=df["TKE"],
-            xbins=z_bins,
-            x_in_db=True,
-        )
-        # Invert parameters for Z = A * KEF ** B
-        A, B = inverse_powerlaw_parameters(a, b)
-        # Define legend string
-        a_str = _define_coeff_string(a)
-        A_str = _define_coeff_string(A)
-        legend_str = rf"$\mathrm{{TKE}} = {a_str}\;z^{{{b:.2f}}}$" "\n" rf"$z = {A_str}\;\mathrm{{TKE}}^{{{B:.2f}}}$"
-        # Get power law predictions
-        x_pred = np.arange(*z_lims)
-        x_pred_linear = disdrodb.idecibel(x_pred)
-        y_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
-        # Add fitted powerlaw
-        ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit power law TKE = a * Z ** b
+            (a, b), _ = fit_powerlaw(
+                x=df[z],
+                y=df["TKE"],
+                xbins=z_bins,
+                x_in_db=True,
+            )
+            # Invert parameters for Z = A * KEF ** B
+            A, B = inverse_powerlaw_parameters(a, b)
+            # Define legend string
+            a_str = _define_coeff_string(a)
+            A_str = _define_coeff_string(A)
+            legend_str = (
+                rf"$\mathrm{{TKE}} = {a_str}\;z^{{{b:.2f}}}$" "\n" rf"$z = {A_str}\;\mathrm{{TKE}}^{{{B:.2f}}}$"
+            )
+            # Get power law predictions
+            x_pred = np.arange(*z_lims)
+            x_pred_linear = disdrodb.idecibel(x_pred)
+            y_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
+            # Add fitted powerlaw
+            ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_TKE_Z: {e!s}", UserWarning, stacklevel=2)
 
     return p
 
@@ -3942,7 +3982,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             fig.savefig(os.path.join(summary_dir_path, filename))
 
         # ---------------------------------------------------------------------.
-        #### - Create Z-R figure
+        #### Create L2E Z-R figure
         filename = define_filename(
             prefix="Z-R",
             extension="png",
