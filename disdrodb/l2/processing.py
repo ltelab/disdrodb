@@ -27,7 +27,6 @@ from disdrodb.l2.empirical_dsd import (
     add_bins_metrics,
     compute_integral_parameters,
     compute_spectrum_parameters,
-    get_drop_average_velocity,
     get_drop_number_concentration,
     get_effective_sampling_area,
     get_kinetic_energy_variables_from_drop_number,
@@ -273,6 +272,8 @@ def generate_l2e(
         "Dmin",
         "Dmax",
         "fall_velocity",
+        "qc_resampling",
+        "time_qc",
     ]
 
     variables = [var for var in variables if var in ds]
@@ -282,8 +283,8 @@ def generate_l2e(
     # -------------------------------------------------------------------------------------------
     # Compute and add drop average velocity if an optical disdrometer (i.e OTT Parsivel or ThiesLPM)
     # - We recompute it because if the input dataset is aggregated, it must be updated !
-    if has_velocity_dimension:
-        ds["drop_average_velocity"] = get_drop_average_velocity(ds["drop_number"])
+    # if has_velocity_dimension:
+    #     ds["drop_average_velocity"] = get_drop_average_velocity(ds["drop_number"])
 
     # -------------------------------------------------------------------------------------------
     # Define velocity array with dimension 'velocity_method'

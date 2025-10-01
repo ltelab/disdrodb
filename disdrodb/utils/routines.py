@@ -22,24 +22,28 @@ import shutil
 import tempfile
 
 from disdrodb.api.io import find_files
-from disdrodb.api.path import define_file_folder_path, define_temporal_resolution
+from disdrodb.api.path import define_file_folder_path
 from disdrodb.utils.logger import (
     close_logger,
     create_logger_file,
     log_error,
     log_info,
 )
+from disdrodb.utils.time import get_sampling_information
 
 
-def is_possible_product(accumulation_interval, sample_interval, rolling):
+def is_possible_product(temporal_resolution, sample_interval):
     """Assess if production is possible given the requested accumulation interval and source sample_interval."""
+    # Retrieve accumulation_interval and rolling option
+    accumulation_interval, rolling = get_sampling_information(temporal_resolution)
+
     # Avoid rolling product generation at source sample interval
     if rolling and accumulation_interval == sample_interval:
         return False
     # Avoid product generation if the accumulation_interval is less than the sample interval
     if accumulation_interval < sample_interval:
         return False
-    # Avoid producti generation if accumulation_interval is not multiple of sample_interval
+    # Avoid product generation if accumulation_interval is not multiple of sample_interval
     return accumulation_interval % sample_interval == 0
 
 
@@ -67,11 +71,8 @@ def try_get_required_filepaths(
     # If no files available, print informative message
     except Exception as e:
         temporal_resolution = ""
-        if "sample_interval" in product_kwargs and "rolling" in product_kwargs:
-            temporal_resolution = define_temporal_resolution(
-                seconds=product_kwargs["sample_interval"],
-                rolling=product_kwargs["rolling"],
-            )
+        if "temporal_resolution" in product_kwargs:
+            temporal_resolution = product_kwargs["temporal_resolution"]
         print(str(e))
         msg = (
             f"{product} processing of {data_source} {campaign_name} {station_name} "

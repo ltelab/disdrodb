@@ -28,7 +28,7 @@ import pytest
 import xarray as xr
 
 import disdrodb
-from disdrodb import __root_path__
+from disdrodb import package_dir
 from disdrodb.api import io
 from disdrodb.api.io import (
     filter_by_time,
@@ -47,8 +47,8 @@ from disdrodb.api.path import define_data_dir
 from disdrodb.constants import ARCHIVE_VERSION
 from disdrodb.tests.conftest import create_fake_metadata_file, create_fake_raw_data_file
 
-TEST_BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
-TEST_DATA_L0C_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "test_data_l0c")
+TEST_BASE_DIR = os.path.join(package_dir, "tests", "data", "check_readers", "DISDRODB")
+TEST_DATA_L0C_DIR = os.path.join(package_dir, "tests", "data", "test_data_l0c")
 
 
 # import pathlib

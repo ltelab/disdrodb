@@ -118,7 +118,7 @@ Please define the name of your branch based on the scope of the contribution. Tr
 
 
 \* Guidelines for the ``<data_source>``
-- 	We use the institution name when campaign data spans more than 1 country (i.e. ARM, GPM)
+- 	We use the institution name when campaign data spans more than 1 country (i.e. ARM, NASA)
 - 	We use the country name when all campaigns (or sensor networks) are inside a given country.
 
 

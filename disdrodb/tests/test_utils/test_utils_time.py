@@ -570,6 +570,16 @@ class TestGetSamplingInformation:
         assert seconds == 5 * 60
         assert rolling is False
 
+        seconds, rolling = get_sampling_information("300S")
+        assert seconds == 5 * 60
+        assert rolling is False
+
+    def test_minutes_seconds(self):
+        """Composite minutes and seconds temporal resolution string computes proper seconds and non-rolling flag."""
+        seconds, rolling = get_sampling_information("1MIN10S")
+        assert seconds == 70
+        assert rolling is False
+
     def test_hours_and_minutes(self):
         """Composite hours and minutes temporal resolution string computes proper seconds and non-rolling flag."""
         seconds, rolling = get_sampling_information("2H30MIN")

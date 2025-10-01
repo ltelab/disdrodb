@@ -336,13 +336,13 @@ def define_issue_filepath(
 
 def define_config_dir(product):
     """Define the config directory path of a given DISDRODB product."""
-    from disdrodb import __root_path__
+    from disdrodb import package_dir
 
     if product.upper() in ["RAW", "L0A", "L0B"]:
         dir_name = "l0"
     else:
         raise NotImplementedError(f"Product {product} not implemented.")
-    config_dir = os.path.join(__root_path__, "disdrodb", dir_name, "configs")
+    config_dir = os.path.join(package_dir, dir_name, "configs")
     return config_dir
 
 
@@ -448,12 +448,9 @@ def define_product_dir_tree(
     ----------
     product : str
        The DISDRODB product. See ``disdrodb.available_products()``.
-    sample_interval : int, optional
-        The sampling interval in seconds of the product.
-        It must be specified only for product L2E and L2M !
-    rolling : bool, optional
-        Whether the dataset has been resampled by aggregating or rolling.
-        It must be specified only for product L2E and L2M !
+    temporal_resolution : str, optional
+        The temporal resolution of the product.
+        It must be specified only for product L1, L2E and L2M !
     model_name : str
         The custom model name of the fitted statistical distribution.
         It must be specified only for product L2M !
@@ -463,28 +460,23 @@ def define_product_dir_tree(
     data_dir : str
         Station data directory path
     """
-    from disdrodb.api.checks import check_product, check_product_kwargs, check_rolling, check_sample_interval
+    from disdrodb.api.checks import check_product, check_product_kwargs, check_temporal_resolution
 
     product = check_product(product)
     product_kwargs = check_product_kwargs(product, product_kwargs)
     if product.upper() == "RAW":
         return ""
-    if product.upper() in ["L0A", "L0B", "L0C", "L1"]:
+    if product.upper() in ["L0A", "L0B", "L0C"]:
         return ""
-    if product == "L2E":
-        rolling = product_kwargs.get("rolling")
-        sample_interval = product_kwargs.get("sample_interval")
-        check_rolling(rolling)
-        check_sample_interval(sample_interval)
-        temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
-        return os.path.join(temporal_resolution)
+    if product in ["L1", "L2E"]:
+        temporal_resolution = product_kwargs.get("temporal_resolution")
+        check_temporal_resolution(temporal_resolution)
+        return temporal_resolution
     # L2M if product == "L2M":
-    rolling = product_kwargs.get("rolling")
-    sample_interval = product_kwargs.get("sample_interval")
+    temporal_resolution = product_kwargs.get("temporal_resolution")
+    check_temporal_resolution(temporal_resolution)
     model_name = product_kwargs.get("model_name")
-    check_rolling(rolling)
-    check_sample_interval(sample_interval)
-    temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
+
     return os.path.join(model_name, temporal_resolution)
 
 
@@ -611,12 +603,9 @@ def define_data_dir(
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
         Whether to check if the directory exists. The default value is ``False``.
-    sample_interval : int, optional
-        The sampling interval in seconds of the product.
-        It must be specified only for product L2E and L2M !
-    rolling : bool, optional
-        Whether the dataset has been resampled by aggregating or rolling.
-        It must be specified only for product L2E and L2M !
+    temporal_resolution : str, optional
+        The temporal resolution of the product.
+        It must be specified only for product L1, L2E and L2M !
     model_name : str
         The name of the fitted statistical distribution for the DSD.
         It must be specified only for product L2M !
@@ -701,11 +690,8 @@ def define_filename(
     end_time : datetime.datatime, optional
         End time.
         Required if add_time_period = True.
-    sample_interval : int, optional
-        The sampling interval in seconds of the product.
-        It must be specified only for product L0C, L1, L2E and L2M !
-    rolling : bool, optional
-        Whether the dataset has been resampled by aggregating or rolling.
+    temporal_resolution : str, optional
+        The temporal resolution of the product.
         It must be specified only for product L1, L2E and L2M !
     model_name : str
         The model name of the fitted statistical distribution for the DSD.
@@ -716,7 +702,7 @@ def define_filename(
     str
         L0B file name.
     """
-    from disdrodb.api.checks import check_product, check_product_kwargs
+    from disdrodb.api.checks import check_product, check_product_kwargs, check_temporal_resolution
 
     product = check_product(product)
     product_kwargs = check_product_kwargs(product, product_kwargs)
@@ -729,16 +715,9 @@ def define_filename(
     product_name = f"{product}"
 
     # L0C ... sample interval known only per-file
-    # L1 ... in future known a priori
-    # if product in ["L1"]:
-    #     # TODO: HACK FOR CURRENT L0C and L1 log files in create_product_logs
-    #     sample_interval = product_kwargs.get("sample_interval",  0)
-    #     temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=False)
-    #     product_name = f"{product}.{temporal_resolution}"
-    if product in ["L2E", "L2M"]:
-        rolling = product_kwargs.get("rolling")
-        sample_interval = product_kwargs.get("sample_interval")
-        temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
+    if product in ["L1", "L2E", "L2M"]:
+        temporal_resolution = product_kwargs.get("temporal_resolution")
+        check_temporal_resolution(temporal_resolution)
         product_name = f"{product}.{temporal_resolution}"
     if product in ["L2M"]:
         model_name = product_kwargs.get("model_name")
@@ -828,7 +807,7 @@ def define_l0b_filename(ds, campaign_name: str, station_name: str) -> str:
 
 def define_l0c_filename(ds, campaign_name: str, station_name: str) -> str:
     """Define L0C file name."""
-    # TODO: add sample_interval as function argument    s
+    # TODO: add sample_interval as function argument
     sample_interval = int(ensure_sample_interval_in_seconds(ds["sample_interval"]).data.item())
     temporal_resolution = define_temporal_resolution(sample_interval, rolling=False)
     starting_time, ending_time = get_file_start_end_time(ds)
@@ -839,37 +818,26 @@ def define_l0c_filename(ds, campaign_name: str, station_name: str) -> str:
     return filename
 
 
-def define_l1_filename(ds, campaign_name, station_name: str) -> str:
+def define_l1_filename(ds, campaign_name, station_name: str, temporal_resolution: str) -> str:
     """Define L1 file name."""
-    # TODO: add sample_interval and rolling as function argument
-
     starting_time, ending_time = get_file_start_end_time(ds)
-    sample_interval = int(ensure_sample_interval_in_seconds(ds["sample_interval"]).data.item())
-    temporal_resolution = define_temporal_resolution(sample_interval, rolling=False)
-    starting_time, ending_time = get_file_start_end_time(ds)
-    starting_time = starting_time.strftime("%Y%m%d%H%M%S")
-    ending_time = ending_time.strftime("%Y%m%d%H%M%S")
-    version = ARCHIVE_VERSION
-    filename = f"L1.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
-
-    # filename = define_filename(
-    #     product="L1",
-    #     campaign_name=campaign_name,
-    #     station_name=station_name,
-    #     # Filename options
-    #     start_time=starting_time,
-    #     end_time=ending_time,
-    #     add_version=True,
-    #     add_time_period=True,
-    #     add_extension=True,
-    #     # Product options
-    #     # sample_interval=sample_interval,
-    #     # rolling=rolling,
-    # )
+    filename = define_filename(
+        product="L1",
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # Filename options
+        start_time=starting_time,
+        end_time=ending_time,
+        add_version=True,
+        add_time_period=True,
+        add_extension=True,
+        # Product options
+        temporal_resolution=temporal_resolution,
+    )
     return filename
 
 
-def define_l2e_filename(ds, campaign_name: str, station_name: str, sample_interval: int, rolling: bool) -> str:
+def define_l2e_filename(ds, campaign_name: str, station_name: str, temporal_resolution: str) -> str:
     """Define L2E file name."""
     starting_time, ending_time = get_file_start_end_time(ds)
     filename = define_filename(
@@ -883,8 +851,7 @@ def define_l2e_filename(ds, campaign_name: str, station_name: str, sample_interv
         add_time_period=True,
         add_extension=True,
         # Product options
-        sample_interval=sample_interval,
-        rolling=rolling,
+        temporal_resolution=temporal_resolution,
     )
     return filename
 
@@ -893,8 +860,7 @@ def define_l2m_filename(
     ds,
     campaign_name: str,
     station_name: str,
-    sample_interval: int,
-    rolling: bool,
+    temporal_resolution: str,
     model_name: str,
 ) -> str:
     """Define L2M file name."""
@@ -910,8 +876,7 @@ def define_l2m_filename(
         add_time_period=True,
         add_extension=True,
         # Product options
-        sample_interval=sample_interval,
-        rolling=rolling,
+        temporal_resolution=temporal_resolution,
         model_name=model_name,
     )
     return filename

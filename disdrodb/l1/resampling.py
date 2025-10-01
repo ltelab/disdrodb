@@ -19,9 +19,12 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from disdrodb.utils.time import ensure_sample_interval_in_seconds, regularize_dataset
-
-DEFAULT_ACCUMULATIONS = ["10s", "30s", "1min", "2min", "5min", "10min", "30min", "1hour"]
+from disdrodb.utils.time import (
+    ensure_sample_interval_in_seconds,
+    get_dataset_start_end_time,
+    get_sampling_information,
+    regularize_dataset,
+)
 
 
 def add_sample_interval(ds, sample_interval):
@@ -95,6 +98,27 @@ def define_window_size(sample_interval, accumulation_interval):
     return window_size
 
 
+def _finalize_qc_resampling(ds, sample_interval, accumulation_interval):
+    # Compute qc_resampling
+    # - 0 if not missing timesteps
+    # - 1 if all timesteps missing
+    n_timesteps = accumulation_interval / sample_interval
+    ds["qc_resampling"] = np.round(1 - ds["qc_resampling"] / n_timesteps, 1)
+    ds["qc_resampling"].attrs = {
+        "long_name": "Resampling Quality Control Flag",
+        "standard_name": "quality_flag",
+        "units": "",
+        "valid_min": 0.0,
+        "valid_max": 1.0,
+        "description": (
+            "Fraction of timesteps missing when resampling the data."
+            "0 = No timesteps missing; 1 = All timesteps missing;"
+            "Intermediate values indicate partial data coverage."
+        ),
+    }
+    return ds
+
+
 def _resample(ds, variables, accumulation, op):
     if not variables:
         return {}
@@ -113,23 +137,24 @@ def _rolling(ds, variables, window_size, op):
     return ds_subset
 
 
-def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
+def resample_dataset(ds, sample_interval, temporal_resolution):
     """
     Resample the dataset to a specified accumulation interval.
+
+    The output timesteps correspond to the starts of the periods over which
+    the resampling operation has been performed !
 
     Parameters
     ----------
     ds : xarray.Dataset
         The input dataset to be resampled.
     sample_interval : int
-        The sample interval of the input dataset.
-    accumulation_interval : int
-        The interval in seconds over which to accumulate the data.
-    rolling : bool, optional
-        If True, apply a rolling window before resampling. Default is True.
-        If True, forward rolling is performed.
-        The output timesteps correspond to the starts of the periods over which
-        the resampling operation has been performed !
+        The sample interval (in seconds) of the input dataset.
+    temporal_resolution : str
+        The desired temporal resolution for resampling.
+        It should be a string representing the accumulation interval,
+        e.g., "5MIN" for 5 minutes, "1H" for 1 hour, "30S" for 30 seconds, etc.
+        Prefixed with "ROLL" for rolling resampling, e.g., "ROLL5MIN".
 
     Returns
     -------
@@ -149,6 +174,9 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
     # Ensure sample interval in seconds
     sample_interval = int(ensure_sample_interval_in_seconds(sample_interval))
 
+    # Retrieve accumulation_interval and rolling option
+    accumulation_interval, rolling = get_sampling_information(temporal_resolution)
+
     # --------------------------------------------------------------------------.
     # Raise error if the accumulation_interval is less than the sample interval
     if accumulation_interval < sample_interval:
@@ -157,62 +185,84 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
     if not accumulation_interval % sample_interval == 0:
         raise ValueError("The accumulation_interval is not a multiple of sample interval.")
 
-    # --------------------------------------------------------------------------.
-    #### Preprocess the dataset
-    # Here we set NaN in the raw_drop_number to 0
-    # - We assume that NaN corresponds to 0
-    # - When we regularize, we infill with NaN
-    # - When we aggregate with sum, we don't skip NaN
-    # --> Aggregation with original missing timesteps currently results in NaN !
+    # Retrieve input dataset start_time and end_time
+    start_time, end_time = get_dataset_start_end_time(ds, time_dim="time")
 
-    # Infill NaN values with zeros for drop_number and raw_drop_number
-    # - This might alter integrated statistics if NaN in spectrum does not actually correspond to 0 !
-    # - TODO: NaN should not be set as 0 !
-    for var in ["drop_number", "raw_drop_number"]:
-        if var in ds:
-            ds[var] = xr.where(np.isnan(ds[var]), 0, ds[var])
+    # Initialize qc_resampling
+    ds["qc_resampling"] = xr.ones_like(ds["time"], dtype="float")
 
-    # Ensure regular dataset without missing timesteps
-    # --> This adds NaN values for missing timesteps
-    ds = regularize_dataset(ds, freq=f"{sample_interval}s")
-
-    # --------------------------------------------------------------------------.
-    # Define dataset attributes
+    # Retrieve dataset attributes
     attrs = ds.attrs.copy()
-    if rolling:
-        attrs["disdrodb_rolled_product"] = "True"
-    else:
-        attrs["disdrodb_rolled_product"] = "False"
 
+    # If no resampling, return as it is
     if sample_interval == accumulation_interval:
         attrs["disdrodb_aggregated_product"] = "False"
+        attrs["disdrodb_rolled_product"] = "False"
+        attrs["disdrodb_temporal_resolution"] = temporal_resolution
+
+        ds = _finalize_qc_resampling(ds, sample_interval=sample_interval, accumulation_interval=accumulation_interval)
         ds = add_sample_interval(ds, sample_interval=accumulation_interval)
         ds.attrs = attrs
         return ds
 
     # --------------------------------------------------------------------------.
-    # Resample the dataset
-    attrs["disdrodb_aggregated_product"] = "True"
+    #### Preprocess the dataset
+    # - Set timesteps with NaN in drop_number to zero (and set qc_resampling to 0)
+    # - When we aggregate with sum, we don't skip NaN
+    #   --> Resampling over missing timesteps will result in NaN drop_number and qc_resampling = 1
+    #   --> Resampling over timesteps with NaN in drop_number will result in finite drop_number but qc_resampling > 0
+    # - qc_resampling will inform on the amount of timesteps missing
 
+    for var in ["drop_number", "raw_drop_number", "drop_counts", "drop_number_concentration"]:
+        if var in ds:
+            dims = set(ds[var].dims) - {"time"}
+            invalid_timesteps = np.isnan(ds[var]).any(dim=dims)
+            ds[var] = ds[var].where(~invalid_timesteps, 0)
+            ds["qc_resampling"] = ds["qc_resampling"].where(~invalid_timesteps, 0)
+
+            if np.all(invalid_timesteps).item():
+                raise ValueError("No timesteps with valid spectrum.")
+
+    # Ensure regular dataset without missing timesteps
+    # --> This adds NaN values for missing timesteps
+    ds = regularize_dataset(ds, freq=f"{sample_interval}s", start_time=start_time, end_time=end_time)
+    ds["qc_resampling"] = ds["qc_resampling"].where(~np.isnan(ds["qc_resampling"]), 0)
+
+    # --------------------------------------------------------------------------.
+    # Define dataset attributes
+    if rolling:
+        attrs["disdrodb_rolled_product"] = "True"
+    else:
+        attrs["disdrodb_rolled_product"] = "False"
+
+    attrs["disdrodb_aggregated_product"] = "True"
+    attrs["disdrodb_temporal_resolution"] = temporal_resolution
+
+    # --------------------------------------------------------------------------.
     # Initialize resample dataset
     ds_resampled = xr.Dataset()
 
     # Retrieve variables to average/sum
+    # - ATTENTION: it will not resample non-dimensional time coordinates of the dataset !
     var_to_average = ["fall_velocity"]
-    var_to_cumulate = ["raw_drop_number", "drop_number", "drop_counts", "N", "Nraw", "Nremoved"]
+    var_to_cumulate = [
+        "raw_drop_number",
+        "drop_number",
+        "drop_counts",
+        "drop_number_concentration",
+        "N",
+        "Nraw",
+        "Nremoved",
+        "qc_resampling",
+    ]
     var_to_min = ["Dmin"]
-    var_to_max = ["Dmax"]
+    var_to_max = ["Dmax", "time_qc"]
 
     # Retrieve available variables
     var_to_average = [var for var in var_to_average if var in ds]
     var_to_cumulate = [var for var in var_to_cumulate if var in ds]
     var_to_min = [var for var in var_to_min if var in ds]
     var_to_max = [var for var in var_to_max if var in ds]
-
-    # TODO Define custom processing
-    # - quality_flag --> take worst
-    # - skipna if less than fraction (to not waste lot of data when aggregating over i.e. hours)
-    # - Add tolerance on fraction of missing timesteps for large accumulation_intervals
 
     # Resample the dataset
     # - Rolling currently does not allow direct rolling forward.
@@ -238,6 +288,19 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
         ds_resampled = ds_resampled.isel(time=slice(window_size - 1, None)).assign_coords(
             {"time": ds_resampled["time"].data[: -window_size + 1]},
         )
+
+    # Finalize qc_resampling
+    ds_resampled = _finalize_qc_resampling(
+        ds_resampled,
+        sample_interval=sample_interval,
+        accumulation_interval=accumulation_interval,
+    )
+    # Set to NaN timesteps where qc_resampling == 1
+    # --> This occurs for missing timesteps in input dataset or all NaN drop_number arrays
+    variables = list(set(ds_resampled.data_vars) - {"qc_resampling"})
+    mask_missing_timesteps = ds_resampled["qc_resampling"] != 1
+    for var in variables:
+        ds_resampled[var] = ds_resampled[var].where(mask_missing_timesteps)
 
     # Add attributes
     ds_resampled.attrs = attrs

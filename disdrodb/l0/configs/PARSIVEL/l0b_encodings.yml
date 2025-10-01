@@ -216,7 +216,7 @@ rainfall_rate_16bit:
   contiguous: false
   chunksizes: 5000
 rainfall_rate_12bit:
-  dtype: object
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true

@@ -24,7 +24,7 @@ import shutil
 import pytest
 from click.testing import CliRunner
 
-from disdrodb import __root_path__
+from disdrodb import package_dir
 from disdrodb.api.path import define_data_dir
 from disdrodb.cli.disdrodb_run_l1 import disdrodb_run_l1
 from disdrodb.cli.disdrodb_run_l1_station import disdrodb_run_l1_station
@@ -35,7 +35,7 @@ from disdrodb.routines import (
 )
 from disdrodb.utils.directories import count_files
 
-TEST_DATA_L0C_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "test_data_l0c")
+TEST_DATA_L0C_DIR = os.path.join(package_dir, "tests", "data", "test_data_l0c")
 DATA_SOURCE = "EPFL"
 CAMPAIGN_NAME = "HYMEX_LTE_SOP2"
 STATION_NAME = "10"
@@ -44,6 +44,7 @@ VERBOSE = True
 FORCE = False
 PARALLEL = False
 
+
 # from disdrodb.metadata.download import download_metadata_archive
 # import pathlib
 # tmp_path = pathlib.Path("/tmp/10")
@@ -51,6 +52,7 @@ PARALLEL = False
 # dst_dir = os.path.join(test_data_archive_dir, "V0")
 # shutil.copytree(TEST_DATA_L0C_DIR, dst_dir, dirs_exist_ok=True)
 # test_metadata_archive_dir = download_metadata_archive(tmp_path / "original_metadata_archive_repo")
+# os.environ["PYTEST_CURRENT_TEST"] = "1"
 
 
 @pytest.mark.parametrize("cli", [True, False])
@@ -105,15 +107,18 @@ def test_disdrodb_run_l1_station(tmp_path, disdrodb_metadata_archive_dir, parall
             debugging_mode=DEBUGGING_MODE,
         )
 
-    # Check product files are produced
-    data_dir = define_data_dir(
-        data_archive_dir=test_data_archive_dir,
-        product="L1",
-        data_source=DATA_SOURCE,
-        campaign_name=CAMPAIGN_NAME,
-        station_name=STATION_NAME,
-    )
-    assert count_files(data_dir, glob_pattern="L1.30S.*.nc", recursive=True) == 2
+    # Check products at different temporal resolutions are produced
+    temporal_resolutions = ["1MIN", "10MIN", "ROLL2MIN"]
+    for temporal_resolution in temporal_resolutions:
+        data_dir = define_data_dir(
+            data_archive_dir=test_data_archive_dir,
+            product="L1",
+            data_source=DATA_SOURCE,
+            campaign_name=CAMPAIGN_NAME,
+            station_name=STATION_NAME,
+            temporal_resolution=temporal_resolution,
+        )
+        assert count_files(data_dir, glob_pattern=f"L1.{temporal_resolution}.*.nc", recursive=True) == 2
 
 
 @pytest.mark.parametrize("cli", [True, False])
@@ -169,12 +174,15 @@ def test_disdrodb_run_l1(tmp_path, disdrodb_metadata_archive_dir, cli):
             debugging_mode=DEBUGGING_MODE,
         )
 
-    # Check products files are produced
-    data_dir = define_data_dir(
-        data_archive_dir=test_data_archive_dir,
-        product="L1",
-        data_source=DATA_SOURCE,
-        campaign_name=CAMPAIGN_NAME,
-        station_name=STATION_NAME,
-    )
-    assert count_files(data_dir, glob_pattern="L1.30S.*.nc", recursive=True) == 2
+    # Check products at different temporal resolutions are produced
+    temporal_resolutions = ["1MIN", "10MIN", "ROLL2MIN"]
+    for temporal_resolution in temporal_resolutions:
+        data_dir = define_data_dir(
+            data_archive_dir=test_data_archive_dir,
+            product="L1",
+            data_source=DATA_SOURCE,
+            campaign_name=CAMPAIGN_NAME,
+            station_name=STATION_NAME,
+            temporal_resolution=temporal_resolution,
+        )
+        assert count_files(data_dir, glob_pattern=f"L1.{temporal_resolution}.*.nc", recursive=True) == 2

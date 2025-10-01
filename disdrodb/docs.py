@@ -26,10 +26,10 @@ from disdrodb.api.checks import check_sensor_name
 
 def open_sensor_documentation(sensor_name):
     """Open the sensor documentation PDF in the browser."""
-    from disdrodb import __root_path__
+    from disdrodb import package_dir
 
     check_sensor_name(sensor_name)
-    docs_filepath = os.path.join(__root_path__, "disdrodb", "l0", "manuals", sensor_name + ".pdf")
+    docs_filepath = os.path.join(package_dir, "l0", "manuals", sensor_name + ".pdf")
     webbrowser.open(docs_filepath)
 
 

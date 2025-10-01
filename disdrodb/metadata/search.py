@@ -102,10 +102,9 @@ def get_list_metadata(
         Path to the root of the DISDRODB Metadata Archive. Format: ``<...>/DISDRODB``
         If None, the``metadata_archive_dir`` path specified in the DISDRODB active configuratio. The default is None.
     **product_kwargs : dict, optional
-        Additional arguments required for some products.
-        For example, for the "L2E" product, you need to specify ``rolling`` and
-        ``sample_interval``. For the "L2M" product, you need to specify also
-        the ``model_name``.
+        Additional arguments required for DISDRODB products L1, L2E and L2M.
+        For the L1, L2E and L2M products, ``temporal_resolution`` is required.
+        FOr the L2M product, ``model_name`` is required.
 
     Returns
     -------

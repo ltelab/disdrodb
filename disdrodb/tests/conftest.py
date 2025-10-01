@@ -9,7 +9,7 @@ import shutil
 
 import pytest
 
-from disdrodb import __root_path__
+from disdrodb import package_dir
 from disdrodb.constants import PRODUCTS_ARGUMENTS
 from disdrodb.utils.yaml import write_yaml
 
@@ -142,8 +142,7 @@ def get_default_product_kwargs(product, product_kwargs=None):
     # Define default test product_kwargs
     default_kwargs = {
         "model_name": "GAMMA_ML",
-        "sample_interval": 30,
-        "rolling": False,
+        "temporal_resolution": "1MIN",
     }
     # Set missing product kwargs
     required_args = PRODUCTS_ARGUMENTS[product]
@@ -206,7 +205,7 @@ def create_test_config_files(request):
     """
     config_dicts = request.param
     for filename, dictionary in config_dicts.items():
-        config_dir = os.path.join(__root_path__, "disdrodb", "l0", "configs")
+        config_dir = os.path.join(package_dir, "l0", "configs")
 
         test_dir = os.path.join(config_dir, "test")
         if not os.path.exists(test_dir):

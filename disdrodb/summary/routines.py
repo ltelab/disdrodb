@@ -21,6 +21,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import warnings
 
 import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
@@ -46,7 +47,13 @@ from disdrodb.utils.manipulations import (
 from disdrodb.utils.time import get_sampling_information
 from disdrodb.utils.warnings import suppress_warnings
 from disdrodb.utils.yaml import write_yaml
-from disdrodb.viz import compute_dense_lines, max_blend_images, to_rgba
+from disdrodb.viz.plots import (
+    compute_dense_lines,
+    max_blend_images,
+    plot_raw_and_filtered_spectra,
+    plot_spectrum,
+    to_rgba,
+)
 
 ####-----------------------------------------------------------------
 #### PDF Latex Utilities
@@ -152,10 +159,14 @@ def save_table_to_pdf(
 #### Tables summaries
 
 
-def create_table_rain_summary(df):
+def create_table_rain_summary(df, temporal_resolution):
     """Create rainy table summary."""
     # Initialize dictionary
     table = {}
+
+    # Retrieve accumulation interval
+    accumulation_interval, _ = get_sampling_information(temporal_resolution)
+    accumulation_interval_minutes = accumulation_interval / 60
 
     # Keep rows with R > 0
     df = df[df["R"] > 0]
@@ -184,20 +195,34 @@ def create_table_rain_summary(df):
     table["years_month_coverage"] = years_month_coverage
 
     # Rainy minutes statistics
-    table["n_rainy_minutes"] = len(df["R"])
-    table["n_rainy_minutes_<0.1"] = df["R"].between(0, 0.1, inclusive="right").sum().item()
-    table["n_rainy_minutes_0.1_1"] = df["R"].between(0.1, 1, inclusive="right").sum().item()
-    table["n_rainy_minutes_1_10"] = df["R"].between(1, 10, inclusive="right").sum().item()
-    table["n_rainy_minutes_10_25"] = df["R"].between(10, 25, inclusive="right").sum().item()
-    table["n_rainy_minutes_25_50"] = df["R"].between(25, 50, inclusive="right").sum().item()
-    table["n_rainy_minutes_50_100"] = df["R"].between(50, 100, inclusive="right").sum().item()
-    table["n_rainy_minutes_100_200"] = df["R"].between(100, 200, inclusive="right").sum().item()
-    table["n_rainy_minutes_>200"] = np.sum(df["R"] > 200).item()
+    table["n_rainy_minutes"] = len(df["R"]) * accumulation_interval_minutes
+    table["n_rainy_minutes_<0.1"] = (
+        df["R"].between(0, 0.1, inclusive="right").sum().item() * accumulation_interval_minutes
+    )
+    table["n_rainy_minutes_0.1_1"] = (
+        df["R"].between(0.1, 1, inclusive="right").sum().item() * accumulation_interval_minutes
+    )
+    table["n_rainy_minutes_1_10"] = (
+        df["R"].between(1, 10, inclusive="right").sum().item() * accumulation_interval_minutes
+    )
+    table["n_rainy_minutes_10_25"] = (
+        df["R"].between(10, 25, inclusive="right").sum().item() * accumulation_interval_minutes
+    )
+    table["n_rainy_minutes_25_50"] = (
+        df["R"].between(25, 50, inclusive="right").sum().item() * accumulation_interval_minutes
+    )
+    table["n_rainy_minutes_50_100"] = (
+        df["R"].between(50, 100, inclusive="right").sum().item() * accumulation_interval_minutes
+    )
+    table["n_rainy_minutes_100_200"] = (
+        df["R"].between(100, 200, inclusive="right").sum().item() * accumulation_interval_minutes
+    )
+    table["n_rainy_minutes_>200"] = np.sum(df["R"] > 200).item() * accumulation_interval_minutes
 
     # Minutes with larger Dmax
-    table["n_minutes_Dmax_>7"] = np.sum(df["Dmax"] > 7).item()
-    table["n_minutes_Dmax_>8"] = np.sum(df["Dmax"] > 8).item()
-    table["n_minutes_Dmax_>9"] = np.sum(df["Dmax"] > 9).item()
+    table["n_minutes_Dmax_>7"] = np.sum(df["Dmax"] > 7).item() * accumulation_interval_minutes
+    table["n_minutes_Dmax_>8"] = np.sum(df["Dmax"] > 8).item() * accumulation_interval_minutes
+    table["n_minutes_Dmax_>9"] = np.sum(df["Dmax"] > 9).item() * accumulation_interval_minutes
     return table
 
 
@@ -254,17 +279,30 @@ def create_table_dsd_summary(df):
     return df_stats
 
 
-def create_table_events_summary(df):
-    """Creata table with events statistics."""
-    # Event file
+def create_table_events_summary(df, temporal_resolution):
+    """Create table with events statistics."""
+    # Retrieve accumulation interval
+    accumulation_interval, _ = get_sampling_information(temporal_resolution)
+    accumulation_interval_minutes = accumulation_interval / 60
+
+    # Define event settings
     # - Events are separated by 1 hour or more rain-free periods in rain rate time series.
     # - The events that are less than 'min_duration' minutes or the rain total is less than 0.1 mm
     #   are not reported.
+    if accumulation_interval_minutes >= 5 * 60:
+        neighbor_time_interval = temporal_resolution
+        event_min_duration = temporal_resolution
+        neighbor_min_size = 1
+    else:
+        neighbor_time_interval = "5MIN"
+        event_min_duration = "5MIN"
+        neighbor_min_size = 2
+
     event_settings = {
-        "neighbor_min_size": 2,
-        "neighbor_time_interval": "5MIN",
+        "neighbor_min_size": neighbor_min_size,
+        "neighbor_time_interval": neighbor_time_interval,
         "event_max_time_gap": "1H",
-        "event_min_duration": "5MIN",
+        "event_min_duration": event_min_duration,
         "event_min_size": 3,
     }
     # Keep rows with R > 0
@@ -298,9 +336,12 @@ def create_table_events_summary(df):
             # Event time info
             "start_time": start,
             "end_time": end,
-            "duration": int((end - start) / np.timedelta64(1, "m")),
+            "duration": int((end - start) / np.timedelta64(1, "m")) + accumulation_interval_minutes,
             # Rainy minutes above thresholds
-            **{f"rainy_minutes_>{thr}": int((df_event["R"] > thr).sum()) for thr in rain_thresholds},
+            **{
+                f"rainy_minutes_>{thr}": int((df_event["R"] > thr).sum()) * accumulation_interval_minutes
+                for thr in rain_thresholds
+            },
             # Total precipitation (mm)
             "P_total": df_event["P"].sum(),
             # R statistics
@@ -650,99 +691,6 @@ def predict_from_inverse_powerlaw(x, a, b):
         Predicted dependent variable values.
     """
     return (x ** (1 / b)) / (a ** (1 / b))
-
-
-####-------------------------------------------------------------------
-#### Drop spectrum plots
-
-
-def plot_drop_spectrum(drop_number, norm=None, add_colorbar=True, title="Drop Spectrum"):
-    """Plot the drop spectrum."""
-    cmap = plt.get_cmap("Spectral_r").copy()
-    cmap.set_under("none")
-    if "time" in drop_number.dims:
-        drop_number = drop_number.sum(dim="time")
-    if norm is None:
-        norm = LogNorm(vmin=1, vmax=None) if drop_number.sum() > 0 else None
-
-    p = drop_number.plot.pcolormesh(
-        x=DIAMETER_DIMENSION,
-        y=VELOCITY_DIMENSION,
-        cmap=cmap,
-        extend="max",
-        norm=norm,
-        add_colorbar=add_colorbar,
-        cbar_kwargs={"label": "Number of particles"},
-    )
-    p.axes.set_xlabel("Diamenter [mm]")
-    p.axes.set_ylabel("Fall velocity [m/s]")
-    p.axes.set_title(title)
-    return p
-
-
-def plot_raw_and_filtered_spectrums(
-    raw_drop_number,
-    drop_number,
-    theoretical_average_velocity,
-    measured_average_velocity=None,
-    norm=None,
-    figsize=(8, 4),
-    dpi=300,
-):
-    """Plot raw and filtered drop spectrum."""
-    # Drop number matrix
-    cmap = plt.get_cmap("Spectral_r").copy()
-    cmap.set_under("none")
-
-    if "time" in drop_number.dims:
-        drop_number = drop_number.sum(dim="time")
-    if "time" in raw_drop_number.dims:
-        raw_drop_number = raw_drop_number.sum(dim="time")
-    if "time" in theoretical_average_velocity.dims:
-        theoretical_average_velocity = theoretical_average_velocity.mean(dim="time")
-
-    if norm is None:
-        norm = LogNorm(1, None)
-
-    fig = plt.figure(figsize=figsize, dpi=dpi)
-    gs = GridSpec(1, 2, width_ratios=[1, 1.15], wspace=0.05)  # More space for ax2
-    ax1 = fig.add_subplot(gs[0])
-    ax2 = fig.add_subplot(gs[1])
-
-    raw_drop_number.plot.pcolormesh(
-        x=DIAMETER_DIMENSION,
-        y=VELOCITY_DIMENSION,
-        ax=ax1,
-        cmap=cmap,
-        norm=norm,
-        extend="max",
-        add_colorbar=False,
-    )
-    theoretical_average_velocity.plot(ax=ax1, c="k", linestyle="dashed")
-    if measured_average_velocity is not None:
-        measured_average_velocity.plot(ax=ax1, c="k", linestyle="dotted")
-    ax1.set_xlabel("Diamenter [mm]")
-    ax1.set_ylabel("Fall velocity [m/s]")
-    ax1.set_title("Raw Spectrum")
-    drop_number.plot.pcolormesh(
-        x=DIAMETER_DIMENSION,
-        y=VELOCITY_DIMENSION,
-        cmap=cmap,
-        extend="max",
-        ax=ax2,
-        norm=norm,
-        cbar_kwargs={"label": "Number of particles"},
-    )
-    theoretical_average_velocity.plot(ax=ax2, c="k", linestyle="dashed", label="Theoretical velocity")
-    if measured_average_velocity is not None:
-        measured_average_velocity.plot(ax=ax2, c="k", linestyle="dotted", label="Measured average velocity")
-    ax2.set_yticks([])
-    ax2.set_yticklabels([])
-    ax2.set_xlabel("Diamenter [mm]")
-    ax2.set_ylabel("")
-    ax2.set_title("Filtered Spectrum")
-    ax2.legend(loc="lower right", frameon=False)
-    return fig
 
 
 ####-------------------------------------------------------------------
@@ -2084,31 +2032,34 @@ def plot_A_R(
     ax.set_yticklabels([str(v) for v in a_ticks])
     ax.set_title(title)
     if add_fit:
-        # Fit powerlaw k = a * R ** b
-        (a_c, b), _ = fit_powerlaw(x=df[r], y=df[a], xbins=r_bins, x_in_db=False)
-        # Invert for R = A * k ** B
-        A_c, B = inverse_powerlaw_parameters(a_c, b)
-        # Define legend title
-        a_str = _define_coeff_string(a_c)
-        A_str = _define_coeff_string(A_c)
-        legend_str = rf"${a_symbol} =  {a_str} \, R^{{{b:.2f}}}$" "\n" rf"$R = {A_str} \, {a_symbol}^{{{B:.2f}}}$"
-        # Get power law predictions
-        x_pred = np.arange(*rlims)
-        r_pred = predict_from_powerlaw(x_pred, a=a_c, b=b)
-        # Add fitted power law
-        ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit powerlaw k = a * R ** b
+            (a_c, b), _ = fit_powerlaw(x=df[r], y=df[a], xbins=r_bins, x_in_db=False)
+            # Invert for R = A * k ** B
+            A_c, B = inverse_powerlaw_parameters(a_c, b)
+            # Define legend title
+            a_str = _define_coeff_string(a_c)
+            A_str = _define_coeff_string(A_c)
+            legend_str = rf"${a_symbol} =  {a_str} \, R^{{{b:.2f}}}$" "\n" rf"$R = {A_str} \, {a_symbol}^{{{B:.2f}}}$"
+            # Get power law predictions
+            x_pred = np.arange(*rlims)
+            r_pred = predict_from_powerlaw(x_pred, a=a_c, b=b)
+            # Add fitted power law
+            ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_A_R: {e!s}", UserWarning, stacklevel=2)
     return p
 
 
@@ -2189,40 +2140,43 @@ def plot_A_Z(
 
     # Fit and plot the power law
     if add_fit:
-        # Fit powerlaw k = a * Z ** b  (Z in dBZ -> x_in_db=True)
-        (a_c, b), _ = fit_powerlaw(
-            x=df[z],
-            y=df[a],
-            xbins=z_bins,
-            x_in_db=True,
-        )
-        # Invert for Z = A * k ** B
-        A_c, B = inverse_powerlaw_parameters(a_c, b)
-        # Legend text
-        a_str = _define_coeff_string(a_c)
-        A_str = _define_coeff_string(A_c)
-        legend_str = (
-            rf"${a_symbol} = {a_str} \, {z_lower_symbol}^{{{b:.2f}}}$"
-            "\n"
-            rf"${z_lower_symbol} = {A_str} \, {a_symbol}^{{{B:.2f}}}$"
-        )
-        # Predictions
-        x_pred = np.arange(*z_lim)
-        x_pred_linear = disdrodb.idecibel(x_pred)  # convert to linear for prediction
-        y_pred = predict_from_powerlaw(x_pred_linear, a=a_c, b=b)
-        ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit powerlaw k = a * Z ** b  (Z in dBZ -> x_in_db=True)
+            (a_c, b), _ = fit_powerlaw(
+                x=df[z],
+                y=df[a],
+                xbins=z_bins,
+                x_in_db=True,
+            )
+            # Invert for Z = A * k ** B
+            A_c, B = inverse_powerlaw_parameters(a_c, b)
+            # Legend text
+            a_str = _define_coeff_string(a_c)
+            A_str = _define_coeff_string(A_c)
+            legend_str = (
+                rf"${a_symbol} = {a_str} \, {z_lower_symbol}^{{{b:.2f}}}$"
+                "\n"
+                rf"${z_lower_symbol} = {A_str} \, {a_symbol}^{{{B:.2f}}}$"
+            )
+            # Predictions
+            x_pred = np.arange(*z_lim)
+            x_pred_linear = disdrodb.idecibel(x_pred)  # convert to linear for prediction
+            y_pred = predict_from_powerlaw(x_pred_linear, a=a_c, b=b)
+            ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_A_Z: {e!s}", UserWarning, stacklevel=2)
     return p
 
 
@@ -2322,43 +2276,46 @@ def plot_A_KDP(
 
     # Fit and overlay power law: k = a * KDP^b
     if add_fit:
-        (a_c, b), _ = fit_powerlaw(
-            x=df[kdp],
-            y=df[a],
-            xbins=kdp_bins,
-            x_in_db=False,
-        )
-        # Invert: KDP = A * k^B
-        A_c, B = inverse_powerlaw_parameters(a_c, b)
+        try:
+            (a_c, b), _ = fit_powerlaw(
+                x=df[kdp],
+                y=df[a],
+                xbins=kdp_bins,
+                x_in_db=False,
+            )
+            # Invert: KDP = A * k^B
+            A_c, B = inverse_powerlaw_parameters(a_c, b)
 
-        a_str = _define_coeff_string(a_c)
-        A_str = _define_coeff_string(A_c)
-        legend_str = (
-            rf"${a_symbol} = {a_str}\,K_{{\mathrm{{DP}}}}^{{{b:.2f}}}$"
-            "\n"
-            rf"$K_{{\mathrm{{DP}}}} = {A_str}\,{a_symbol}^{{{B:.2f}}}$"
-        )
+            a_str = _define_coeff_string(a_c)
+            A_str = _define_coeff_string(A_c)
+            legend_str = (
+                rf"${a_symbol} = {a_str}\,K_{{\mathrm{{DP}}}}^{{{b:.2f}}}$"
+                "\n"
+                rf"$K_{{\mathrm{{DP}}}} = {A_str}\,{a_symbol}^{{{B:.2f}}}$"
+            )
 
-        # Predictions along KDP axis
-        if log_kdp:
-            x_pred = np.logspace(np.log10(kdp_lim[0]), np.log10(kdp_lim[1]), 400)
-        else:
-            x_pred = np.arange(kdp_lim[0], kdp_lim[1], 0.05)
-        y_pred = predict_from_powerlaw(x_pred, a=a_c, b=b)
+            # Predictions along KDP axis
+            if log_kdp:
+                x_pred = np.logspace(np.log10(kdp_lim[0]), np.log10(kdp_lim[1]), 400)
+            else:
+                x_pred = np.arange(kdp_lim[0], kdp_lim[1], 0.05)
+            y_pred = predict_from_powerlaw(x_pred, a=a_c, b=b)
 
-        ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+            ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_A_KDP: {e!s}", UserWarning, stacklevel=2)
 
     return p
 
@@ -2435,34 +2392,37 @@ def plot_R_Z(
 
     # Fit and plot the powerlaw
     if add_fit:
-        # Fit powerlaw R = a * z ** b
-        (a, b), _ = fit_powerlaw(x=df[z], y=df[r], xbins=np.arange(10, 50, 1), x_in_db=True)
-        # Invert for z = A * R ** B
-        A, B = inverse_powerlaw_parameters(a, b)
-        # Define legend title
-        a_str = _define_coeff_string(a)
-        A_str = _define_coeff_string(A)
-        legend_str = (
-            rf"$R = {a_str} \, {z_lower_symbol}^{{{b:.2f}}}$" "\n" rf"${z_lower_symbol} = {A_str} \, R^{{{B:.2f}}}$"
-        )
-        # Get power law predictions
-        x_pred = np.arange(*z_lims)
-        x_pred_linear = disdrodb.idecibel(x_pred)
-        r_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
-        # Add fitted powerlaw
-        ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit powerlaw R = a * z ** b
+            (a, b), _ = fit_powerlaw(x=df[z], y=df[r], xbins=np.arange(10, 50, 1), x_in_db=True)
+            # Invert for z = A * R ** B
+            A, B = inverse_powerlaw_parameters(a, b)
+            # Define legend title
+            a_str = _define_coeff_string(a)
+            A_str = _define_coeff_string(A)
+            legend_str = (
+                rf"$R = {a_str} \, {z_lower_symbol}^{{{b:.2f}}}$" "\n" rf"${z_lower_symbol} = {A_str} \, R^{{{B:.2f}}}$"
+            )
+            # Get power law predictions
+            x_pred = np.arange(*z_lims)
+            x_pred_linear = disdrodb.idecibel(x_pred)
+            r_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
+            # Add fitted powerlaw
+            ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_R_Z: {e!s}", UserWarning, stacklevel=2)
     return p
 
 
@@ -2545,35 +2505,38 @@ def plot_R_KDP(
 
     # Fit and plot the power law
     if add_fit:
-        # Fit powerlaw R = a * KDP ** b
-        (a, b), _ = fit_powerlaw(x=df[kdp], y=df[r], xbins=xbins, x_in_db=False)
-        # Invert for KDP = A * R ** B
-        A, B = inverse_powerlaw_parameters(a, b)
-        # Define legend title
-        a_str = _define_coeff_string(a)
-        A_str = _define_coeff_string(A)
-        legend_str = (
-            rf"$R = {a_str} \, K_{{\mathrm{{DP}}}}^{{{b:.2f}}}$"
-            "\n"
-            rf"$K_{{\mathrm{{DP}}}} = {A_str} \, R^{{{B:.2f}}}$"
-        )
-        # Get power law predictions
-        x_pred = np.arange(*kdp_lim)
-        r_pred = predict_from_powerlaw(x_pred, a=a, b=b)
-        # Add fitted line
-        ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit powerlaw R = a * KDP ** b
+            (a, b), _ = fit_powerlaw(x=df[kdp], y=df[r], xbins=xbins, x_in_db=False)
+            # Invert for KDP = A * R ** B
+            A, B = inverse_powerlaw_parameters(a, b)
+            # Define legend title
+            a_str = _define_coeff_string(a)
+            A_str = _define_coeff_string(A)
+            legend_str = (
+                rf"$R = {a_str} \, K_{{\mathrm{{DP}}}}^{{{b:.2f}}}$"
+                "\n"
+                rf"$K_{{\mathrm{{DP}}}} = {A_str} \, R^{{{B:.2f}}}$"
+            )
+            # Get power law predictions
+            x_pred = np.arange(*kdp_lim)
+            r_pred = predict_from_powerlaw(x_pred, a=a, b=b)
+            # Add fitted line
+            ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_R_KDP: {e!s}", UserWarning, stacklevel=2)
     return p
 
 
@@ -2641,41 +2604,44 @@ def plot_ZDR_Z(
 
     # Fit and plot the power law
     if add_fit:
-        # Fit powerlaw ZDR = a * Z ** b
-        (a, b), _ = fit_powerlaw(
-            x=df[z],
-            y=df[zdr],
-            xbins=np.arange(5, 40, 1),
-            x_in_db=True,
-        )
-        # Invert for Z = A * ZDR ** B
-        A, B = inverse_powerlaw_parameters(a, b)
-        # Define legend title
-        a_str = _define_coeff_string(a)
-        A_str = _define_coeff_string(A)
-        legend_str = (
-            rf"$Z_{{\mathrm{{DR}}}} = {a_str} \, {z_lower_symbol}^{{{b:.2f}}}$"
-            "\n"
-            rf"${z_lower_symbol} = {A_str} \, Z_{{\mathrm{{DR}}}}^{{{B:.2f}}}$"
-        )
-        # Get power law predictions
-        x_pred = np.arange(0, 70)
-        x_pred_linear = disdrodb.idecibel(x_pred)
-        r_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
-        # Add fitted line
-        ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit powerlaw ZDR = a * Z ** b
+            (a, b), _ = fit_powerlaw(
+                x=df[z],
+                y=df[zdr],
+                xbins=np.arange(5, 40, 1),
+                x_in_db=True,
+            )
+            # Invert for Z = A * ZDR ** B
+            A, B = inverse_powerlaw_parameters(a, b)
+            # Define legend title
+            a_str = _define_coeff_string(a)
+            A_str = _define_coeff_string(A)
+            legend_str = (
+                rf"$Z_{{\mathrm{{DR}}}} = {a_str} \, {z_lower_symbol}^{{{b:.2f}}}$"
+                "\n"
+                rf"${z_lower_symbol} = {A_str} \, Z_{{\mathrm{{DR}}}}^{{{B:.2f}}}$"
+            )
+            # Get power law predictions
+            x_pred = np.arange(0, 70)
+            x_pred_linear = disdrodb.idecibel(x_pred)
+            r_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
+            # Add fitted line
+            ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_ZDR_Z: {e!s}", UserWarning, stacklevel=2)
     return p
 
 
@@ -2762,43 +2728,46 @@ def plot_KDP_Z(
 
     # Fit and overlay power law
     if add_fit:
-        # Fit: KDP = a * Z^b   (Z in dBZ → x_in_db=True)
-        (a, b), _ = fit_powerlaw(
-            x=df[z],
-            y=df[kdp],
-            xbins=np.arange(15, 50),
-            x_in_db=True,
-        )
-        # Invert: Z = A * KDP^B
-        A, B = inverse_powerlaw_parameters(a, b)
+        try:
+            # Fit: KDP = a * Z^b   (Z in dBZ → x_in_db=True)
+            (a, b), _ = fit_powerlaw(
+                x=df[z],
+                y=df[kdp],
+                xbins=np.arange(15, 50),
+                x_in_db=True,
+            )
+            # Invert: Z = A * KDP^B
+            A, B = inverse_powerlaw_parameters(a, b)
 
-        # Define legend title
-        a_str = _define_coeff_string(a)
-        A_str = _define_coeff_string(A)
-        legend_str = (
-            rf"$K_{{\mathrm{{DP}}}} = {a_str}\,{z_lower_symbol}^{{{b:.2f}}}$"
-            "\n"
-            rf"${z_lower_symbol} = {A_str}\,K_{{\mathrm{{DP}}}}^{{{B:.2f}}}$"
-        )
+            # Define legend title
+            a_str = _define_coeff_string(a)
+            A_str = _define_coeff_string(A)
+            legend_str = (
+                rf"$K_{{\mathrm{{DP}}}} = {a_str}\,{z_lower_symbol}^{{{b:.2f}}}$"
+                "\n"
+                rf"${z_lower_symbol} = {A_str}\,K_{{\mathrm{{DP}}}}^{{{B:.2f}}}$"
+            )
 
-        # Get power law predictions
-        x_pred = np.arange(*z_lim)
-        x_pred_linear = disdrodb.idecibel(x_pred)
-        y_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
-        # Add fitted power law
-        ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+            # Get power law predictions
+            x_pred = np.arange(*z_lim)
+            x_pred_linear = disdrodb.idecibel(x_pred)
+            y_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
+            # Add fitted power law
+            ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_KDP_Z: {e!s}", UserWarning, stacklevel=2)
 
     return p
 
@@ -3116,36 +3085,41 @@ def plot_KED_R(
     ax.set_title("KED vs R")
     # Fit and plot a powerlaw
     if add_fit:
-        # Fit a power law KED = a * R**b
-        (a, b), _ = fit_powerlaw(
-            x=df["R"],
-            y=df["KED"],
-            xbins=r_bins,
-            x_in_db=False,
-        )
-        # Invert for R = A * KED**B
-        A, B = inverse_powerlaw_parameters(a, b)
-        # Define legend string
-        a_str = _define_coeff_string(a)
-        A_str = _define_coeff_string(A)
-        legend_str = rf"$\mathrm{{KED}} = {a_str}\,R^{{{b:.2f}}}$" "\n" rf"$R = {A_str}\,\mathrm{{KED}}^{{{B:.2f}}}$"
-        # Get power law predictions
-        x_pred = np.arange(r_lims[0], r_lims[1])
-        y_pred = predict_from_powerlaw(x_pred, a=a, b=b)
-        # Add fitted powerlaw
-        ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit a power law KED = a * R**b
+            (a, b), _ = fit_powerlaw(
+                x=df["R"],
+                y=df["KED"],
+                xbins=r_bins,
+                x_in_db=False,
+            )
+            # Invert for R = A * KED**B
+            A, B = inverse_powerlaw_parameters(a, b)
+            # Define legend string
+            a_str = _define_coeff_string(a)
+            A_str = _define_coeff_string(A)
+            legend_str = (
+                rf"$\mathrm{{KED}} = {a_str}\,R^{{{b:.2f}}}$" "\n" rf"$R = {A_str}\,\mathrm{{KED}}^{{{B:.2f}}}$"
+            )
+            # Get power law predictions
+            x_pred = np.arange(r_lims[0], r_lims[1])
+            y_pred = predict_from_powerlaw(x_pred, a=a, b=b)
+            # Add fitted powerlaw
+            ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_KED_R: {e!s}", UserWarning, stacklevel=2)
 
     return p
 
@@ -3237,36 +3211,41 @@ def plot_KEF_R(
     # Fit and plot the power law
     # - Alternative fit model: a + I *(1 - b*exp(c*I))  (a is upper limit)
     if add_fit:
-        # Fit power law KEF = a * R ** b
-        (a, b), _ = fit_powerlaw(
-            x=df["R"],
-            y=df["KEF"],
-            xbins=r_bins,
-            x_in_db=False,
-        )
-        # Invert parameters for R = A * KEF ** B
-        A, B = inverse_powerlaw_parameters(a, b)
-        # Define legend string
-        a_str = _define_coeff_string(a)
-        A_str = _define_coeff_string(A)
-        legend_str = rf"$\mathrm{{KEF}} = {a_str}\,R^{{{b:.2f}}}$" "\n" rf"$R = {A_str}\,\mathrm{{KEF}}^{{{B:.2f}}}$"
-        # Get power law predictions
-        x_pred = np.arange(*r_lims)
-        kef_pred = predict_from_powerlaw(x_pred, a=a, b=b)
-        # Add fitted powerlaw
-        ax.plot(x_pred, kef_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit power law KEF = a * R ** b
+            (a, b), _ = fit_powerlaw(
+                x=df["R"],
+                y=df["KEF"],
+                xbins=r_bins,
+                x_in_db=False,
+            )
+            # Invert parameters for R = A * KEF ** B
+            A, B = inverse_powerlaw_parameters(a, b)
+            # Define legend string
+            a_str = _define_coeff_string(a)
+            A_str = _define_coeff_string(A)
+            legend_str = (
+                rf"$\mathrm{{KEF}} = {a_str}\,R^{{{b:.2f}}}$" "\n" rf"$R = {A_str}\,\mathrm{{KEF}}^{{{B:.2f}}}$"
+            )
+            # Get power law predictions
+            x_pred = np.arange(*r_lims)
+            kef_pred = predict_from_powerlaw(x_pred, a=a, b=b)
+            # Add fitted powerlaw
+            ax.plot(x_pred, kef_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_KEF_R: {e!s}", UserWarning, stacklevel=2)
     return p
 
 
@@ -3351,41 +3330,44 @@ def plot_KEF_Z(
 
     # Fit and plot the powerlaw
     if add_fit:
-        # Fit power law KEF = a * Z ** b
-        (a, b), _ = fit_powerlaw(
-            x=df[z],
-            y=df["KEF"],
-            xbins=z_bins,
-            x_in_db=True,
-        )
-        # Invert parameters for Z = A * KEF ** B
-        A, B = inverse_powerlaw_parameters(a, b)
-        # Define legend string
-        a_str = _define_coeff_string(a)
-        A_str = _define_coeff_string(A)
-        legend_str = (
-            rf"$\mathrm{{KEF}} = {a_str}\;{z_lower_symbol}^{{{b:.2f}}}$"
-            "\n"
-            rf"${z_lower_symbol} = {A_str}\;\mathrm{{KEF}}^{{{B:.2f}}}$"
-        )
-        # Get power law predictions
-        x_pred = np.arange(*z_lims)
-        x_pred_linear = disdrodb.idecibel(x_pred)
-        kef_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
-        # Add fitted powerlaw
-        ax.plot(x_pred, kef_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit power law KEF = a * Z ** b
+            (a, b), _ = fit_powerlaw(
+                x=df[z],
+                y=df["KEF"],
+                xbins=z_bins,
+                x_in_db=True,
+            )
+            # Invert parameters for Z = A * KEF ** B
+            A, B = inverse_powerlaw_parameters(a, b)
+            # Define legend string
+            a_str = _define_coeff_string(a)
+            A_str = _define_coeff_string(A)
+            legend_str = (
+                rf"$\mathrm{{KEF}} = {a_str}\;{z_lower_symbol}^{{{b:.2f}}}$"
+                "\n"
+                rf"${z_lower_symbol} = {A_str}\;\mathrm{{KEF}}^{{{B:.2f}}}$"
+            )
+            # Get power law predictions
+            x_pred = np.arange(*z_lims)
+            x_pred_linear = disdrodb.idecibel(x_pred)
+            kef_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
+            # Add fitted powerlaw
+            ax.plot(x_pred, kef_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_KEF_Z: {e!s}", UserWarning, stacklevel=2)
 
     return p
 
@@ -3464,37 +3446,42 @@ def plot_TKE_Z(
 
     # Fit and plot the powerlaw
     if add_fit:
-        # Fit power law TKE = a * Z ** b
-        (a, b), _ = fit_powerlaw(
-            x=df[z],
-            y=df["TKE"],
-            xbins=z_bins,
-            x_in_db=True,
-        )
-        # Invert parameters for Z = A * KEF ** B
-        A, B = inverse_powerlaw_parameters(a, b)
-        # Define legend string
-        a_str = _define_coeff_string(a)
-        A_str = _define_coeff_string(A)
-        legend_str = rf"$\mathrm{{TKE}} = {a_str}\;z^{{{b:.2f}}}$" "\n" rf"$z = {A_str}\;\mathrm{{TKE}}^{{{B:.2f}}}$"
-        # Get power law predictions
-        x_pred = np.arange(*z_lims)
-        x_pred_linear = disdrodb.idecibel(x_pred)
-        y_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
-        # Add fitted powerlaw
-        ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
-        # Add legend
-        legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-        ax.text(
-            0.05,
-            0.95,
-            legend_str,
-            transform=ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=legend_fontsize,
-            bbox=legend_bbox_dict,
-        )
+        try:
+            # Fit power law TKE = a * Z ** b
+            (a, b), _ = fit_powerlaw(
+                x=df[z],
+                y=df["TKE"],
+                xbins=z_bins,
+                x_in_db=True,
+            )
+            # Invert parameters for Z = A * KEF ** B
+            A, B = inverse_powerlaw_parameters(a, b)
+            # Define legend string
+            a_str = _define_coeff_string(a)
+            A_str = _define_coeff_string(A)
+            legend_str = (
+                rf"$\mathrm{{TKE}} = {a_str}\;z^{{{b:.2f}}}$" "\n" rf"$z = {A_str}\;\mathrm{{TKE}}^{{{B:.2f}}}$"
+            )
+            # Get power law predictions
+            x_pred = np.arange(*z_lims)
+            x_pred_linear = disdrodb.idecibel(x_pred)
+            y_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
+            # Add fitted powerlaw
+            ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
+            # Add legend
+            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+            ax.text(
+                0.05,
+                0.95,
+                legend_str,
+                transform=ax.transAxes,
+                ha="left",
+                va="top",
+                fontsize=legend_fontsize,
+                bbox=legend_bbox_dict,
+            )
+        except Exception as e:
+            warnings.warn(f"Could not fit power law in plot_TKE_Z: {e!s}", UserWarning, stacklevel=2)
 
     return p
 
@@ -3729,14 +3716,16 @@ def plot_kinetic_energy_relationships(df):
 #### Summary routine
 
 
-def define_filename(prefix, extension, data_source, campaign_name, station_name):
+def define_filename(prefix, extension, data_source, campaign_name, station_name, temporal_resolution):
     """Define filename for summary files."""
     if extension in ["png", "jpeg"]:
-        filename = f"Figure.{prefix}.{data_source}.{campaign_name}.{station_name}.{extension}"
-    if extension in ["csv", "parquet", "pdf", "yaml", "yml"]:
-        filename = f"Table.{prefix}.{data_source}.{campaign_name}.{station_name}.{extension}"
+        filename = f"Figure.{prefix}.{data_source}.{campaign_name}.{station_name}.{temporal_resolution}.{extension}"
+    if extension in ["csv", "pdf", "yaml", "yml"]:
+        filename = f"Table.{prefix}.{data_source}.{campaign_name}.{station_name}.{temporal_resolution}.{extension}"
     if extension in ["nc"]:
-        filename = f"Dataset.{prefix}.{data_source}.{campaign_name}.{station_name}.{extension}"
+        filename = f"Dataset.{prefix}.{data_source}.{campaign_name}.{station_name}.{temporal_resolution}.{extension}"
+    if extension in ["parquet"]:
+        filename = f"Dataframe.{prefix}.{data_source}.{campaign_name}.{station_name}.{temporal_resolution}.{extension}"
     return filename
 
 
@@ -3782,7 +3771,7 @@ def prepare_summary_dataset(ds, velocity_method="fall_velocity", source="drop_nu
     return ds
 
 
-def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, station_name):
+def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, station_name, temporal_resolution):
     """Generate station summary using L2E dataset."""
     # Create summary directory if does not exist
     os.makedirs(summary_dir_path, exist_ok=True)
@@ -3820,6 +3809,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        temporal_resolution=temporal_resolution,
     )
     ds_stats.to_netcdf(os.path.join(summary_dir_path, filename))
 
@@ -3831,8 +3821,9 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        temporal_resolution=temporal_resolution,
     )
-    p = plot_drop_spectrum(raw_drop_number, title="Raw Drop Spectrum")
+    p = plot_spectrum(raw_drop_number, title="Raw Drop Spectrum")
     p.figure.savefig(os.path.join(summary_dir_path, filename))
     plt.close()
 
@@ -3843,8 +3834,9 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        temporal_resolution=temporal_resolution,
     )
-    p = plot_drop_spectrum(drop_number, title="Filtered Drop Spectrum")
+    p = plot_spectrum(drop_number, title="Filtered Drop Spectrum")
     p.figure.savefig(os.path.join(summary_dir_path, filename))
     plt.close()
 
@@ -3855,66 +3847,93 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        temporal_resolution=temporal_resolution,
     )
 
-    fig = plot_raw_and_filtered_spectrums(
-        raw_drop_number=raw_drop_number,
-        drop_number=drop_number,
-        theoretical_average_velocity=theoretical_average_velocity,
-        measured_average_velocity=measured_average_velocity,
-    )
+    fig = plot_raw_and_filtered_spectra(ds)
     fig.savefig(os.path.join(summary_dir_path, filename))
     plt.close()
 
     ####---------------------------------------------------------------------.
-    #### Create L2E 1MIN dataframe
+    #### Create L2E dataframe
     df = create_l2_dataframe(ds)
 
     # Define diameter bin edges
     diameter_bin_edges = get_diameter_bin_edges(ds)
 
     # ---------------------------------------------------------------------.
-    #### Save L2E 1MIN Parquet
-    l2e_parquet_filename = f"L2E.1MIN.PARQUET.{data_source}.{campaign_name}.{station_name}.parquet"
+    #### Save L2E Parquet
+    l2e_parquet_filename = define_filename(
+        prefix="L2E",
+        extension="parquet",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        temporal_resolution=temporal_resolution,
+    )
     l2e_parquet_filepath = os.path.join(summary_dir_path, l2e_parquet_filename)
     df.to_parquet(l2e_parquet_filepath, engine="pyarrow", compression="snappy")
 
     #### ---------------------------------------------------------------------.
     #### Create table with rain summary
-    table_rain_summary = create_table_rain_summary(df)
-    table_rain_summary_filename = f"Station_Summary.{data_source}.{campaign_name}.{station_name}.yaml"
-    table_rain_summary_filepath = os.path.join(summary_dir_path, table_rain_summary_filename)
-    write_yaml(table_rain_summary, filepath=table_rain_summary_filepath)
+    if not temporal_resolution.startswith("ROLL"):
+        table_rain_summary = create_table_rain_summary(df, temporal_resolution=temporal_resolution)
+        table_rain_summary_filename = define_filename(
+            prefix="Station_Summary",
+            extension="yaml",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        table_rain_summary_filepath = os.path.join(summary_dir_path, table_rain_summary_filename)
+        write_yaml(table_rain_summary, filepath=table_rain_summary_filepath)
 
     # ---------------------------------------------------------------------.
-    #### Creata table with events summary
-    table_events_summary = create_table_events_summary(df)
-    # - Save table as csv
-    table_events_summary_csv_filename = f"Events_Summary.{data_source}.{campaign_name}.{station_name}.csv"
-    table_events_summary_csv_filepath = os.path.join(summary_dir_path, table_events_summary_csv_filename)
-    table_events_summary.to_csv(table_events_summary_csv_filepath)
-    # - Save table as pdf
-    if is_latex_engine_available():
-        table_events_summary_pdf_filename = f"Events_Summary.{data_source}.{campaign_name}.{station_name}.pdf"
-        table_events_summary_pdf_filepath = os.path.join(summary_dir_path, table_events_summary_pdf_filename)
-        save_table_to_pdf(
-            df=prepare_latex_table_events_summary(table_events_summary),
-            filepath=table_events_summary_pdf_filepath,
-            index=True,
-            caption="Events Summary",
-            orientation="landscape",
-        )
+    #### Create table with events summary
+    if not temporal_resolution.startswith("ROLL"):
+        table_events_summary = create_table_events_summary(df, temporal_resolution=temporal_resolution)
+        if len(table_events_summary) > 0:
+            # - Save table as csv
+            table_events_summary_csv_filename = define_filename(
+                prefix="Events_Summary",
+                extension="csv",
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                temporal_resolution=temporal_resolution,
+            )
+            table_events_summary_csv_filepath = os.path.join(summary_dir_path, table_events_summary_csv_filename)
+            table_events_summary.to_csv(table_events_summary_csv_filepath)
+            # - Save table as pdf
+            if is_latex_engine_available():
+                table_events_summary_pdf_filename = table_events_summary_csv_filename.replace(".csv", ".pdf")
+                table_events_summary_pdf_filepath = os.path.join(summary_dir_path, table_events_summary_pdf_filename)
+                save_table_to_pdf(
+                    df=prepare_latex_table_events_summary(table_events_summary),
+                    filepath=table_events_summary_pdf_filepath,
+                    index=True,
+                    caption="Events Summary",
+                    orientation="landscape",
+                )
 
     # ---------------------------------------------------------------------.
     #### Create table with integral DSD parameters statistics
     table_dsd_summary = create_table_dsd_summary(df)
     # - Save table as csv
-    table_dsd_summary_csv_filename = f"DSD_Summary.{data_source}.{campaign_name}.{station_name}.csv"
+    table_dsd_summary_csv_filename = define_filename(
+        prefix="DSD_Summary",
+        extension="csv",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        temporal_resolution=temporal_resolution,
+    )
     table_dsd_summary_csv_filepath = os.path.join(summary_dir_path, table_dsd_summary_csv_filename)
     table_dsd_summary.to_csv(table_dsd_summary_csv_filepath)
     # - Save table as pdf
     if is_latex_engine_available():
-        table_dsd_summary_pdf_filename = f"DSD_Summary.{data_source}.{campaign_name}.{station_name}.pdf"
+        table_dsd_summary_pdf_filename = table_dsd_summary_csv_filename.replace(".csv", ".pdf")
         table_dsd_summary_pdf_filepath = os.path.join(summary_dir_path, table_dsd_summary_pdf_filename)
         save_table_to_pdf(
             df=prepare_latex_table_dsd_summary(table_dsd_summary),
@@ -3926,186 +3945,202 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
 
     #### ---------------------------------------------------------------------.
     #### Create L2E RADAR Summary Plots
-    # Summary plots at X, C, S bands
-    if "DBZH_X" in df:
+    if len(df) > 1000:
+        # Summary plots at X, C, S bands
+        if "DBZH_X" in df:
+            filename = define_filename(
+                prefix="Radar_Band_X",
+                extension="png",
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                temporal_resolution=temporal_resolution,
+            )
+            fig = plot_radar_relationships(df, band="X")
+            fig.savefig(os.path.join(summary_dir_path, filename))
+        if "DBZH_C" in df:
+            filename = define_filename(
+                prefix="Radar_Band_C",
+                extension="png",
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                temporal_resolution=temporal_resolution,
+            )
+            fig = plot_radar_relationships(df, band="C")
+            fig.savefig(os.path.join(summary_dir_path, filename))
+        if "DBZH_S" in df:
+            filename = define_filename(
+                prefix="Radar_Band_S",
+                extension="png",
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                temporal_resolution=temporal_resolution,
+            )
+            fig = plot_radar_relationships(df, band="S")
+            fig.savefig(os.path.join(summary_dir_path, filename))
+
+        # ---------------------------------------------------------------------.
+        #### Create L2E Z-R figure
         filename = define_filename(
-            prefix="Radar_Band_X",
+            prefix="Z-R",
             extension="png",
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
+            temporal_resolution=temporal_resolution,
         )
-        fig = plot_radar_relationships(df, band="X")
-        fig.savefig(os.path.join(summary_dir_path, filename))
-    if "DBZH_C" in df:
+
+        p = plot_R_Z(df, z="Z", r="R", title=r"$Z$ vs $R$")
+        p.figure.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
+
+        #### ---------------------------------------------------------------------.
+        #### Create L2E Kinetic Energy Summary Plots
         filename = define_filename(
-            prefix="Radar_Band_C",
+            prefix="KineticEnergy",
             extension="png",
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
+            temporal_resolution=temporal_resolution,
         )
-        fig = plot_radar_relationships(df, band="C")
+        fig = plot_kinetic_energy_relationships(df)
         fig.savefig(os.path.join(summary_dir_path, filename))
-    if "DBZH_S" in df:
+
+        #### ---------------------------------------------------------------------.
+        #### Create L2E DSD Parameters summary plots
+        #### - Create DSD parameters density figures with LWC
         filename = define_filename(
-            prefix="Radar_Band_S",
+            prefix="DSD_Params_Density_with_LWC_LinearDm_MaxNormalized",
             extension="png",
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
+            temporal_resolution=temporal_resolution,
         )
-        fig = plot_radar_relationships(df, band="S")
+        fig = plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=False)
         fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    # ---------------------------------------------------------------------.
-    #### - Create Z-R figure
-    filename = define_filename(
-        prefix="Z-R",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
+        filename = define_filename(
+            prefix="DSD_Params_Density_with_LWC_LogDm_MaxNormalized",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dsd_params_density(df, log_dm=True, lwc=True, log_normalize=False)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    p = plot_R_Z(df, z="Z", r="R", title=r"$Z$ vs $R$")
-    p.figure.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        filename = define_filename(
+            prefix="DSD_Params_Density_with_LWC_LinearDm_LogNormalized",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=True)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    #### ---------------------------------------------------------------------.
-    #### Create L2E Kinetic Energy Summary Plots
-    filename = define_filename(
-        prefix="KineticEnergy",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    fig = plot_kinetic_energy_relationships(df)
-    fig.savefig(os.path.join(summary_dir_path, filename))
+        filename = define_filename(
+            prefix="DSD_Params_Density_with_LWC_LogDm_LogNormalized",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dsd_params_density(df, log_dm=True, lwc=True, log_normalize=True)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    #### ---------------------------------------------------------------------.
-    #### Create L2E DSD Parameters summary plots
-    #### - Create DSD parameters density figures with LWC
-    filename = define_filename(
-        prefix="DSD_Params_Density_with_LWC_LinearDm_MaxNormalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    fig = plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=False)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        ###------------------------------------------------------------------------.
+        #### - Create DSD parameters density figures with R
+        filename = define_filename(
+            prefix="DSD_Params_Density_with_R_LinearDm_MaxNormalized",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dsd_params_density(df, log_dm=False, lwc=False, log_normalize=False)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    filename = define_filename(
-        prefix="DSD_Params_Density_with_LWC_LogDm_MaxNormalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    fig = plot_dsd_params_density(df, log_dm=True, lwc=True, log_normalize=False)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        filename = define_filename(
+            prefix="DSD_Params_Density_with_R_LogDm_MaxNormalized",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dsd_params_density(df, log_dm=True, lwc=False, log_normalize=False)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    filename = define_filename(
-        prefix="DSD_Params_Density_with_LWC_LinearDm_LogNormalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    fig = plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=True)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        filename = define_filename(
+            prefix="DSD_Params_Density_with_R_LinearDm_LogNormalized",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dsd_params_density(df, log_dm=False, lwc=False, log_normalize=True)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    filename = define_filename(
-        prefix="DSD_Params_Density_with_LWC_LogDm_LogNormalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    fig = plot_dsd_params_density(df, log_dm=True, lwc=True, log_normalize=True)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        filename = define_filename(
+            prefix="DSD_Params_Density_with_R_LogDm_LogNormalized",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dsd_params_density(df, log_dm=True, lwc=False, log_normalize=True)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    ###------------------------------------------------------------------------.
-    #### - Create DSD parameters density figures with R
-    filename = define_filename(
-        prefix="DSD_Params_Density_with_R_LinearDm_MaxNormalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    fig = plot_dsd_params_density(df, log_dm=False, lwc=False, log_normalize=False)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        ###------------------------------------------------------------------------.
+        #### - Create DSD parameters relationship figures
+        filename = define_filename(
+            prefix="DSD_Params_Relations",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dsd_params_relationships(df, add_nt=True)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    filename = define_filename(
-        prefix="DSD_Params_Density_with_R_LogDm_MaxNormalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    fig = plot_dsd_params_density(df, log_dm=True, lwc=False, log_normalize=False)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        ###------------------------------------------------------------------------.
+        #### - Create Dmax relationship figures
+        filename = define_filename(
+            prefix="DSD_Dmax_Relations",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        fig = plot_dmax_relationships(df, diameter_bin_edges=diameter_bin_edges, dmax="Dmax", diameter_max=10)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    filename = define_filename(
-        prefix="DSD_Params_Density_with_R_LinearDm_LogNormalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    fig = plot_dsd_params_density(df, log_dm=False, lwc=False, log_normalize=True)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
-
-    filename = define_filename(
-        prefix="DSD_Params_Density_with_R_LogDm_LogNormalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    fig = plot_dsd_params_density(df, log_dm=True, lwc=False, log_normalize=True)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
-
-    ###------------------------------------------------------------------------.
-    #### - Create DSD parameters relationship figures
-    filename = define_filename(
-        prefix="DSD_Params_Relations",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    fig = plot_dsd_params_relationships(df, add_nt=True)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
-
-    ###------------------------------------------------------------------------.
-    #### - Create Dmax relationship figures
-    filename = define_filename(
-        prefix="DSD_Dmax_Relations",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    fig = plot_dmax_relationships(df, diameter_bin_edges=diameter_bin_edges, dmax="Dmax", diameter_max=10)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
-
-    #### ---------------------------------------------------------------------.
-    #### Create L2E QC summary plots
-    # TODO:
+        #### ---------------------------------------------------------------------.
+        #### Create L2E QC summary plots
+        # TODO:
 
     ####------------------------------------------------------------------------.
     #### Free space - Remove df from memory
@@ -4123,6 +4158,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        temporal_resolution=temporal_resolution,
     )
     p = plot_dsd_density(df_nd, diameter_bin_edges=diameter_bin_edges)
     p.figure.savefig(os.path.join(summary_dir_path, filename))
@@ -4135,6 +4171,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        temporal_resolution=temporal_resolution,
     )
     p = plot_normalized_dsd_density(df_nd)
     p.figure.savefig(os.path.join(summary_dir_path, filename))
@@ -4158,6 +4195,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        temporal_resolution=temporal_resolution,
     )
     p = plot_dsd_with_dense_lines(drop_number_concentration=drop_number_concentration, r=r)
     p.figure.savefig(os.path.join(summary_dir_path, filename))
@@ -4191,22 +4229,22 @@ def create_station_summary(
     )
     os.makedirs(summary_dir_path, exist_ok=True)
 
-    # Define product_kwargs
-    sample_interval, rolling = get_sampling_information(temporal_resolution)
-    product_kwargs = {"rolling": rolling, "sample_interval": sample_interval}
-
-    # Load L2E 1MIN dataset
-    ds = disdrodb.open_dataset(
-        data_archive_dir=data_archive_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        product="L2E",
-        product_kwargs=product_kwargs,
-        parallel=parallel,
-        chunks=-1,
-        compute=True,
-    )
+    # Load L2E dataset
+    try:
+        ds = disdrodb.open_dataset(
+            data_archive_dir=data_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            product="L2E",
+            temporal_resolution=temporal_resolution,
+            parallel=parallel,
+            chunks=-1,
+            compute=True,
+        )
+    except Exception as e:
+        print("Impossible to create the station summary." + str(e))
+        return
 
     # Generate station summary figures and table
     generate_station_summary(
@@ -4215,6 +4253,7 @@ def create_station_summary(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        temporal_resolution=temporal_resolution,
     )
 
     print(f"Creation of station summary for {data_source} {campaign_name} {station_name} has terminated.")

@@ -130,8 +130,8 @@ def reader(
         # "23": "station_number",
         "24": "rainfall_amount_absolute_32bit",
         # "25": "error_code",
-        # "30": "rainfall_rate_16_bit_30",
-        # "31": "rainfall_rate_16_bit_1200",
+        # "30": "rainfall_rate_16bit",
+        # "31": "rainfall_rate_12bit",
         "32": "rainfall_accumulated_16bit",
         # "90": "raw_drop_concentration",
         # "91": "raw_drop_average_velocity",
@@ -168,7 +168,7 @@ def reader(
     df = df.drop(columns=columns_to_drop)
 
     # Stations UF4-7 have NAN at the end of the raw drop number
-    df["raw_drop_number"] = df["raw_drop_number"].str.replace("NaN;", "").iloc[0]
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("NaN;", "")
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df

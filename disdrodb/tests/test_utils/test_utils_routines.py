@@ -30,22 +30,22 @@ class TestIsPossibleProduct:
 
     def test_false_when_rolling_and_equal_intervals(self):
         """Should return False if rolling is True and accumulation == sample interval."""
-        assert is_possible_product(accumulation_interval=60, sample_interval=60, rolling=True) is False
+        assert is_possible_product(temporal_resolution="ROLL1MIN", sample_interval=60) is False
 
     def test_false_when_accumulation_smaller_than_sample(self):
         """Should return False if accumulation interval < sample interval."""
-        assert is_possible_product(accumulation_interval=30, sample_interval=60, rolling=False) is False
+        assert is_possible_product(temporal_resolution="30S", sample_interval=60) is False
 
     def test_false_when_not_multiple(self):
         """Should return False if accumulation interval is not multiple of sample interval."""
-        assert is_possible_product(accumulation_interval=70, sample_interval=60, rolling=False) is False
+        assert is_possible_product(temporal_resolution="70S", sample_interval=60) is False
 
     @pytest.mark.parametrize("rolling", [True, False])
     def test_true_when_multiple_and_valid(self, rolling):
         """Should return True if accumulation is a multiple of sample interval and rules are satisfied."""
         # Example: accumulation 120 is multiple of sample interval 60
         # - if rolling=True, it's still valid because intervals are not equal
-        assert is_possible_product(accumulation_interval=120, sample_interval=60, rolling=rolling) is True
+        assert is_possible_product(temporal_resolution="2MIN", sample_interval=60) is True
 
 
 class TestRunProductGeneration:

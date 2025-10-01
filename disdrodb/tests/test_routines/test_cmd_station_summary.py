@@ -24,7 +24,7 @@ import shutil
 import pytest
 from click.testing import CliRunner
 
-from disdrodb import __root_path__
+from disdrodb import package_dir
 from disdrodb.api.path import define_station_dir
 from disdrodb.cli.disdrodb_create_summary import disdrodb_create_summary
 from disdrodb.cli.disdrodb_create_summary_station import disdrodb_create_summary_station
@@ -32,12 +32,13 @@ from disdrodb.constants import ARCHIVE_VERSION
 from disdrodb.routines import create_summary, create_summary_station
 from disdrodb.utils.directories import count_files
 
-TEST_DATA_L2E_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "test_data_l2e")
+TEST_DATA_L2E_DIR = os.path.join(package_dir, "tests", "data", "test_data_l2e")
 
 DATA_SOURCE = "EPFL"
 CAMPAIGN_NAME = "HYMEX_LTE_SOP2"
 STATION_NAME = "10"
 DEBUGGING_MODE = True
+PARALLEL = False
 VERBOSE = False
 FORCE = False
 TEMPORAL_RESOLUTION = "1MIN"
@@ -52,9 +53,8 @@ TEMPORAL_RESOLUTION = "1MIN"
 # os.environ["PYTEST_CURRENT_TEST"] = "1"
 
 
-@pytest.mark.parametrize("parallel", [True, False])
 @pytest.mark.parametrize("cli", [True, False])
-def test_disdrodb_create_summary_station(tmp_path, parallel, cli):
+def test_disdrodb_create_summary_station(tmp_path, cli):
     """Test the disdrodb_create_summary_station command."""
     test_data_archive_dir = tmp_path / "data" / "DISDRODB"
 
@@ -73,7 +73,7 @@ def test_disdrodb_create_summary_station(tmp_path, parallel, cli):
                 STATION_NAME,
                 # Processing options
                 "--parallel",
-                parallel,
+                PARALLEL,
                 "--temporal_resolution",
                 TEMPORAL_RESOLUTION,
                 # DISDRODB root directories
@@ -88,7 +88,7 @@ def test_disdrodb_create_summary_station(tmp_path, parallel, cli):
             campaign_name=CAMPAIGN_NAME,
             station_name=STATION_NAME,
             # Processing options
-            parallel=parallel,
+            parallel=PARALLEL,
             temporal_resolution=TEMPORAL_RESOLUTION,
             # DISDRODB root directories
             data_archive_dir=test_data_archive_dir,
@@ -102,13 +102,14 @@ def test_disdrodb_create_summary_station(tmp_path, parallel, cli):
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
     )
+
     assert count_files(summary_dir, glob_pattern="Dataset.SpectrumStats*.nc", recursive=True) == 1
-    assert count_files(summary_dir, glob_pattern="DSD_Summary.*.csv", recursive=True) == 1
-    assert count_files(summary_dir, glob_pattern="DSD_Summary.*.pdf", recursive=True) == 1
-    assert count_files(summary_dir, glob_pattern="Events_Summary.*.csv", recursive=True) == 1
-    assert count_files(summary_dir, glob_pattern="Events_Summary.*.pdf", recursive=True) == 1
-    assert count_files(summary_dir, glob_pattern="Station_Summary.*.yaml", recursive=True) == 1
-    assert count_files(summary_dir, glob_pattern="L2E.1MIN.PARQUET*.parquet", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="Dataframe.L2E.*.parquet", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="Table.DSD_Summary.*.csv", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="Table.DSD_Summary.*.pdf", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="Table.Events_Summary.*.csv", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="Table.Events_Summary.*.pdf", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="Table.Station_Summary.*.yaml", recursive=True) == 1
     assert count_files(summary_dir, glob_pattern="Figure.*.png", recursive=True) > 4
 
 
@@ -136,7 +137,7 @@ def test_disdrodb_create_summary(tmp_path, disdrodb_metadata_archive_dir, cli):
                 STATION_NAME,
                 # Processing options
                 "--parallel",
-                False,
+                PARALLEL,
                 "--temporal_resolution",
                 TEMPORAL_RESOLUTION,
                 # DISDRODB root directories
@@ -153,7 +154,7 @@ def test_disdrodb_create_summary(tmp_path, disdrodb_metadata_archive_dir, cli):
             campaign_names=CAMPAIGN_NAME,
             station_names=STATION_NAME,
             # Processing options
-            parallel=False,
+            parallel=PARALLEL,
             temporal_resolution=TEMPORAL_RESOLUTION,
             # DISDRODB root directories
             data_archive_dir=test_data_archive_dir,
@@ -169,10 +170,10 @@ def test_disdrodb_create_summary(tmp_path, disdrodb_metadata_archive_dir, cli):
         station_name=STATION_NAME,
     )
     assert count_files(summary_dir, glob_pattern="Dataset.SpectrumStats*.nc", recursive=True) == 1
-    assert count_files(summary_dir, glob_pattern="DSD_Summary.*.csv", recursive=True) == 1
-    assert count_files(summary_dir, glob_pattern="DSD_Summary.*.pdf", recursive=True) == 1
-    assert count_files(summary_dir, glob_pattern="Events_Summary.*.csv", recursive=True) == 1
-    assert count_files(summary_dir, glob_pattern="Events_Summary.*.pdf", recursive=True) == 1
-    assert count_files(summary_dir, glob_pattern="Station_Summary.*.yaml", recursive=True) == 1
-    assert count_files(summary_dir, glob_pattern="L2E.1MIN.PARQUET*.parquet", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="Dataframe.L2E.*.parquet", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="Table.DSD_Summary.*.csv", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="Table.DSD_Summary.*.pdf", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="Table.Events_Summary.*.csv", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="Table.Events_Summary.*.pdf", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="Table.Station_Summary.*.yaml", recursive=True) == 1
     assert count_files(summary_dir, glob_pattern="Figure.*.png", recursive=True) > 4

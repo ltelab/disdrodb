@@ -23,10 +23,10 @@ import os
 import pytest
 import yaml
 
-from disdrodb import __root_path__
+from disdrodb import package_dir
 from disdrodb.utils.yaml import read_yaml, write_yaml
 
-TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
+TEST_DATA_DIR = os.path.join(package_dir, "tests", "data")
 
 
 def test_read_yaml():

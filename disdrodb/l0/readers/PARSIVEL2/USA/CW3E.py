@@ -15,21 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""This reader allows to read raw data from NASA APU stations.
-
-The reader allows to read raw  APU data from the following NASA campaigns:
-
-    - HYMEX
-    - IFLOODS
-    - IPHEX
-    - OLYMPEX
-    - ICEPOP
-    - IMPACTS
-    - GCPEX
-    - WFF
-
-"""
-
+"""Reader for the OTT Parsivel2 sensors of the CW3E network."""
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -44,18 +30,17 @@ def reader(
     """Reader."""
     ##------------------------------------------------------------------------.
     #### Define column names
-    column_names = ["time", "TO_BE_SPLITTED"]
+    column_names = ["TO_PARSE"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
     reader_kwargs = {}
-    # - Define delimiter
-    reader_kwargs["delimiter"] = ";"
-    # - Skip first row as columns names
+    # Skip first row as columns names
     reader_kwargs["header"] = None
-    reader_kwargs["skiprows"] = 0
-    # - Skip file with encoding errors
+    # Skip file with encoding errors
     reader_kwargs["encoding_errors"] = "ignore"
+    # - Define delimiter
+    reader_kwargs["delimiter"] = "\\n"
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
     # - Define behaviour when encountering bad lines
@@ -84,26 +69,60 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Convert time column to datetime
-    df_time = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S", errors="coerce")
+    # Remove rows with invalid number of separators
+    df = df[df["TO_PARSE"].str.count(";") == 1105]
 
-    # Split the 'TO_BE_SPLITTED' column
-    df = df["TO_BE_SPLITTED"].str.split(",", n=3, expand=True)
+    # Split the columns
+    df = df["TO_PARSE"].str.split(";", n=16, expand=True)
 
     # Assign column names
     names = [
-        "station_name",
-        "unknown",
-        "unknown2",
-        "raw_drop_number",
+        "sensor_serial_number",
+        "sensor_status",
+        "laser_amplitude",
+        "sensor_heating_current",
+        "sensor_battery_voltage",
+        "dummy_date",
+        "sensor_time",
+        "sensor_date",
+        "sensor_temperature",
+        "number_particles",
+        "rainfall_rate_32bit",
+        "reflectivity_32bit",
+        "rainfall_accumulated_16bit",
+        "mor_visibility",
+        "weather_code_synop_4680",
+        "weather_code_synop_4677",
+        "TO_SPLIT",
     ]
     df.columns = names
 
+    # Derive raw arrays
+    df_split = df["TO_SPLIT"].str.split(";", expand=True)
+    df["raw_drop_concentration"] = df_split.iloc[:, :32].agg(",".join, axis=1)
+    df["raw_drop_average_velocity"] = df_split.iloc[:, 32:64].agg(",".join, axis=1)
+    df["raw_drop_number"] = df_split.iloc[:, 64:1088].agg(",".join, axis=1)
+    df["rain_kinetic_energy"] = df_split.iloc[:, 1088]
+    df["CHECK_EMPTY"] = df_split.iloc[:, 1089]
+
+    # Ensure valid observation
+    df = df[df["CHECK_EMPTY"] == ""]
+
     # Add the time column
-    df["time"] = df_time
+    time_str = df["sensor_date"] + "-" + df["sensor_time"]
+    df["time"] = pd.to_datetime(time_str, format="%d.%m.%Y-%H:%M:%S", errors="coerce")
 
     # Drop columns not agreeing with DISDRODB L0 standards
-    df = df.drop(columns=["station_name", "unknown", "unknown2"])
+    columns_to_drop = [
+        "dummy_date",
+        "sensor_date",
+        "sensor_time",
+        "sensor_serial_number",
+        "rainfall_accumulated_16bit",  # unexpected format
+        "CHECK_EMPTY",
+        "TO_SPLIT",
+    ]
+    df = df.drop(columns=columns_to_drop)
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df

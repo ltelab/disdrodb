@@ -134,15 +134,15 @@ def execute_tasks_safely(list_tasks, parallel: bool, logs_dir: str):
     """
     from dask.distributed import get_client
 
+    if not parallel:
+        # Non-parallel mode: just return results directly
+        return list_tasks
+
     # Ensure logs_dir exists
     os.makedirs(logs_dir, exist_ok=True)
 
     # Define file name where to log failed dask tasks
     failed_log_path = os.path.join(logs_dir, "FAILED_DASK_TASKS.log")
-
-    if not parallel:
-        # Non-parallel mode: just return results directly
-        return list_tasks
 
     # Ensure we have a Dask client
     try:

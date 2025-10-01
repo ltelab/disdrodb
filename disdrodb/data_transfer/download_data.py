@@ -166,8 +166,8 @@ def download_archive(
                 metadata_archive_dir=metadata_archive_dir,
                 force=force,
             )
-        except Exception:
-            print(" - Download error: {e}")
+        except Exception as e:
+            print(f" - Download error: {e}")
             print(" ")
 
 
@@ -397,6 +397,8 @@ def build_webserver_wget_command(url: str, cut_dirs: int, dst_dir: str, force: b
         "-r",
         "-np",
         "-nH",
+        "--reject",
+        "index.html*",  # avoid to download Apache autoindex index.html
         f"--cut-dirs={cut_dirs}",
     ]
     if force:

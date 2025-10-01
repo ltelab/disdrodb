@@ -39,8 +39,6 @@ from disdrodb.configs import (
     define_configs,
     get_data_archive_dir,
     get_metadata_archive_dir,
-    get_model_options,
-    get_product_options,
     get_scattering_table_dir,
 )
 from disdrodb.data_transfer.download_data import download_archive, download_station
@@ -145,8 +143,6 @@ __all__ = [
     "generate_l2m",
     "get_data_archive_dir",
     "get_metadata_archive_dir",
-    "get_model_options",
-    "get_product_options",
     "get_reader",
     "get_scattering_table_dir",
     "get_station_reader",
@@ -177,7 +173,7 @@ __all__ = [
 ]
 
 
-__root_path__ = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+package_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def is_pytmatrix_available():

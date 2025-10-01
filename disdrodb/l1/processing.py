@@ -121,9 +121,11 @@ def generate_l1(
     # Add sample interval as coordinate (in seconds)
     ds_l1 = add_sample_interval(ds_l1, sample_interval=sample_interval)
 
-    # Add L0C coordinates that might got lost
-    if "time_qc" in ds:
-        ds_l1 = ds_l1.assign_coords({"time_qc": ds["time_qc"]})
+    # Add optional variables to L1 dataset
+    optional_variables = ["time_qc", "qc_resampling"]
+    for var in optional_variables:
+        if var in ds:
+            ds_l1[var] = ds[var]
 
     # -------------------------------------------------------------------------------------------
     # Filter dataset by diameter and velocity bins
@@ -160,10 +162,9 @@ def generate_l1(
     # -------------------------------------------------------------------------------------------
     # Retrieve drop number and drop_counts arrays
     if has_velocity_dimension:
-        drop_number = ds_l1["raw_drop_number"].where(mask)  # 2D (diameter, velocity)
+        drop_number = ds_l1["raw_drop_number"].where(mask, 0)  # 2D (diameter, velocity)
         drop_counts = drop_number.sum(dim=VELOCITY_DIMENSION)  # 1D (diameter)
         drop_counts_raw = ds_l1["raw_drop_number"].sum(dim=VELOCITY_DIMENSION)  # 1D (diameter)
-
     else:
         drop_number = ds_l1["raw_drop_number"]  # 1D (diameter)
         drop_counts = ds_l1["raw_drop_number"]  # 1D (diameter)

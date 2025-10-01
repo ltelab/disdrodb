@@ -387,17 +387,19 @@ class TestProductDirTree:
         res = define_product_dir_tree("L0C")
         assert res == ""
 
-        res = define_product_dir_tree("L1")
-        assert res == ""  # TODO: TO UPDATE IN FUTURE
+    def test_define_product_dir_tree_l1(self):
+        """Test L1 product dir tree."""
+        res = define_product_dir_tree("L1", temporal_resolution="1MIN")
+        assert res == "1MIN"
 
     def test_define_product_dir_tree_l2e(self):
         """Test L2E product dir tree."""
-        res = define_product_dir_tree("L2E", sample_interval=60, rolling=False)
+        res = define_product_dir_tree("L2E", temporal_resolution="1MIN")
         assert res == "1MIN"
 
     def test_define_product_dir_tree_l2m(self):
         """Test L2M product dir tree includes model_name."""
-        res = define_product_dir_tree("L2M", sample_interval=60, rolling=False, model_name="GAMMA")
+        res = define_product_dir_tree("L2M", temporal_resolution="1MIN", model_name="GAMMA")
         assert res == os.path.join("GAMMA", "1MIN")
 
 
@@ -805,8 +807,7 @@ class TestDefineFilename:
             station_name="STATION_NAME",
             start_time=start,
             end_time=end,
-            sample_interval=300,
-            rolling=True,
+            temporal_resolution="ROLL5MIN",
         )
         assert fn == f"L2E.ROLL5MIN.CAMPAIGN_NAME.STATION_NAME.s20220701000000.e20220701003000.{ARCHIVE_VERSION}.nc"
 
@@ -820,8 +821,7 @@ class TestDefineFilename:
             station_name="STATION_NAME",
             start_time=start,
             end_time=end,
-            sample_interval=600,
-            rolling=False,
+            temporal_resolution="10MIN",
             model_name="GAMMA_ML",
         )
         assert (
@@ -917,7 +917,6 @@ def test_define_l0c_filename():
 
     # Set variables
     sample_interval = 60
-    # rolling=True
     start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
     end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
 
@@ -935,7 +934,6 @@ def test_define_l0c_filename():
         ds=ds,
         campaign_name=campaign_name,
         station_name=station_name,
-        # sample_interval=sample_interval, # TODO
     )
     assert fn == f"L0C.1MIN.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"
 
@@ -947,7 +945,7 @@ def test_define_l1_filename():
 
     # Set variables
     sample_interval = 60
-    # rolling=True
+    temporal_resolution = define_temporal_resolution(sample_interval, rolling=False)
 
     start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
     end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
@@ -966,8 +964,7 @@ def test_define_l1_filename():
         ds=ds,
         campaign_name=campaign_name,
         station_name=station_name,
-        # sample_interval=sample_interval,  # TODO
-        # rolling=rolling
+        temporal_resolution=temporal_resolution,
     )
     assert fn == f"L1.1MIN.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"
 
@@ -980,6 +977,7 @@ def test_define_l2e_filename():
     # Set variables
     sample_interval = 60
     rolling = True
+    temporal_resolution = define_temporal_resolution(sample_interval, rolling=rolling)
     start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
     end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
 
@@ -997,8 +995,7 @@ def test_define_l2e_filename():
         ds=ds,
         campaign_name=campaign_name,
         station_name=station_name,
-        sample_interval=sample_interval,
-        rolling=rolling,
+        temporal_resolution=temporal_resolution,
     )
     assert fn == f"L2E.ROLL1MIN.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"
 
@@ -1011,6 +1008,8 @@ def test_define_l2m_filename():
     # Set variables
     sample_interval = 60
     rolling = True
+    temporal_resolution = define_temporal_resolution(sample_interval, rolling=rolling)
+
     model_name = "GAMMA_ML"
     start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
     end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
@@ -1029,8 +1028,7 @@ def test_define_l2m_filename():
         ds=ds,
         campaign_name=campaign_name,
         station_name=station_name,
-        sample_interval=sample_interval,
-        rolling=rolling,
+        temporal_resolution=temporal_resolution,
         model_name=model_name,
     )
     assert (

@@ -29,18 +29,22 @@ def reader(
     """Reader."""
     ##------------------------------------------------------------------------.
     #### Define column names
-    column_names = ["TO_PARSE"]
+    column_names = ["time", "unknown", "raw_drop_number"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
     reader_kwargs = {}
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-    # Skip file with encoding errors
-    reader_kwargs["encoding_errors"] = "ignore"
     # - Define delimiter
-    reader_kwargs["delimiter"] = "\\n"
-    # - Avoid first column to become df index !!!
+    reader_kwargs["delimiter"] = "   "
+    # - Skip first row as columns names
+    reader_kwargs["header"] = None
+    # - Skip file with encoding errors
+    reader_kwargs["encoding_errors"] = "ignore"
+    # - Need for zipped raw file (NASA files)
+    reader_kwargs["zipped"] = True
+    # - Searched file into tar files
+    reader_kwargs["filename_to_read_zipped"] = "spectrum.txt"
+    # - Avoid first column to become df index
     reader_kwargs["index_col"] = False
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
@@ -55,7 +59,7 @@ def reader(
     #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
     #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
     #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
-    reader_kwargs["na_values"] = ["na", "", "error", "NA", "-.-"]
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-"]
 
     ##------------------------------------------------------------------------.
     #### Read the data
@@ -68,61 +72,14 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Define 'time' datetime
-
-    # Split the columns
-    df["TO_PARSE"].iloc[0:5].str.split(";", n=16, expand=True).iloc[0]
-
-    df = df["TO_PARSE"].str.split(";", n=16, expand=True)
-
-    # Assign column names
-    names = [
-        "sensor_serial_number",
-        "sensor_status",
-        "laser_amplitude",
-        "sensor_heating_current",
-        "sensor_battery_voltage",
-        "dummy_date",
-        "sensor_time",
-        "sensor_date",
-        "sensor_temperature",
-        "number_particles",
-        "rainfall_rate_32bit",
-        "reflectivity_32bit",
-        "rainfall_accumulated_16bit",
-        "mor_visibility",
-        "weather_code_synop_4680",
-        "weather_code_synop_4677",
-        "TO_SPLIT",
-    ]
-    df.columns = names
-
-    # Derive raw arrays
-    df_split = df["TO_SPLIT"].str.split(";", expand=True)
-    df["raw_drop_concentration"] = df_split.iloc[:, :32].agg(",".join, axis=1)
-    df["raw_drop_average_velocity"] = df_split.iloc[:, 32:].agg(",".join, axis=1)
-    df["raw_drop_number"] = df_split.iloc[:, 64:1088].agg(",".join, axis=1)
-    df["rain_kinetic_energy"] = df_split.iloc[:, 1088]
-    df["CHECK_EMPTY"] = df_split.iloc[:, 1089]
-
-    # Ensure valid observation
-    df = df[df["CHECK_EMPTY"] == ""]
-
-    # Add the time column
-    time_str = df["sensor_date"] + "-" + df["sensor_time"]
-    df["time"] = pd.to_datetime(time_str, format="%d.%m.%Y-%H:%M:%S", errors="coerce")
+    # Convert time column to datetime
+    try:
+        df["time"] = pd.to_datetime(df["time"], format="%Y %m %d %H %M %S", errors="coerce")
+    except ValueError:
+        df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
 
     # Drop columns not agreeing with DISDRODB L0 standards
-    columns_to_drop = [
-        "dummy_date",
-        "sensor_date",
-        "sensor_time",
-        "sensor_serial_number",
-        "rainfall_accumulated_16bit",  # unexpected format
-        "CHECK_EMPTY",
-        "TO_SPLIT",
-    ]
-    df = df.drop(columns=columns_to_drop)
+    df = df.drop(columns=["unknown"])
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df

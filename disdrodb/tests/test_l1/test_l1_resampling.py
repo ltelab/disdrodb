@@ -20,6 +20,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
+from disdrodb.constants import DIAMETER_DIMENSION
 from disdrodb.l1.resampling import (
     add_sample_interval,
     define_window_size,
@@ -119,25 +120,25 @@ class TestResampleDataset:
     def test_case_sample_interval_equal_accumulation_interval(self):
         """Test it returns regularized input dataset with sample_interval coordinate and flags."""
         ds = xr.Dataset(coords={"time": pd.date_range("2000-01-01 00:00:00", periods=5, freq="1min")})
-        out = resample_dataset(ds, sample_interval=60, accumulation_interval=60, rolling=True)
+        out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL1MIN")
         # Test sample_interval coordinate is added
         assert "sample_interval" in out.coords
         assert out["sample_interval"].item() == 60
         # Test flags set correctly
-        assert out.attrs["disdrodb_rolled_product"] == "True"
+        assert out.attrs["disdrodb_rolled_product"] == "False"
         assert out.attrs["disdrodb_aggregated_product"] == "False"
 
     def test_case_when_accumulation_interval_not_multiple_sample_interval(self):
         """Test raises ValueError if accumulation_interval is not a multiple of sample_interval."""
         ds = xr.Dataset(coords={"time": pd.date_range("2000-01-01", periods=3, freq="2min")})
         with pytest.raises(ValueError):
-            resample_dataset(ds, sample_interval=120, accumulation_interval=200, rolling=True)
+            resample_dataset(ds, sample_interval=120, temporal_resolution="ROLL200S")
 
     def test_case_when_accumulation_interval_smaller_than_sample_interval(self):
         """Test raises ValueError if accumulation_interval is less than sample_interval."""
         ds = xr.Dataset(coords={"time": pd.date_range("2000-01-01", periods=3, freq="1min")})
         with pytest.raises(ValueError):
-            resample_dataset(ds, sample_interval=60, accumulation_interval=30, rolling=False)
+            resample_dataset(ds, sample_interval=60, temporal_resolution="30S")
 
     def test_non_rolling_resample_aggregates_correctly(self):
         """Test aggregates correctly when rolling=False."""
@@ -153,9 +154,11 @@ class TestResampleDataset:
             },
             coords={"time": times},
         )
-        out = resample_dataset(ds, sample_interval=60, accumulation_interval=120, rolling=False)
+        # Resample to 2 minutes timeseries
+        out = resample_dataset(ds, sample_interval=60, temporal_resolution="120S")
 
         # Check expected timesteps
+        # 00:00:00 and 00:02:00 (start of accumulated intervals)
         expected_times = pd.to_datetime(["2000-01-01T00:00:00", "2000-01-01T00:02:00"])
         assert list(out["time"].data) == list(expected_times)
 
@@ -184,10 +187,11 @@ class TestResampleDataset:
             },
             coords={"time": times},
         )
-        out = resample_dataset(ds, sample_interval=60, accumulation_interval=120, rolling=True)
+        # Resample to 2 minutes timeseries
+        out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL120S")
 
         # Window size of 2
-        # Output time indicate start of the measurement interval !
+        # - Output time indicate start of the measurement interval !
         expected_times = pd.to_datetime(
             ["2000-01-01T00:00:00", "2000-01-01T00:01:00", "2000-01-01T00:02:00"],
         )
@@ -202,14 +206,102 @@ class TestResampleDataset:
         assert "sample_interval" in out.coords
         assert out["sample_interval"].item() == 120
 
-    def test_accessor_method(self):
+    def test_resample_accessor_method(self):
         """Test disdrodb resample accessor method."""
         ds = xr.Dataset(coords={"time": pd.date_range("2000-01-01 00:00:00", periods=5, freq="1min")})
         ds = ds.assign_coords({"sample_interval": 60})
-        out = ds.disdrodb.resample(accumulation_interval=60, rolling=True)
+        out = ds.disdrodb.resample(temporal_resolution="ROLL2MIN")
         # Test sample_interval coordinate is added
         assert "sample_interval" in out.coords
-        assert out["sample_interval"].item() == 60
+        assert out["sample_interval"].item() == 120
         # Test flags set correctly
         assert out.attrs["disdrodb_rolled_product"] == "True"
-        assert out.attrs["disdrodb_aggregated_product"] == "False"
+        assert out.attrs["disdrodb_aggregated_product"] == "True"
+
+    def test_qc_resampling_flag(self):
+        """Test qc_resampling flag."""
+        # Test when all timesteps are available and sample_interval=accumulation_interval
+        ds = xr.Dataset(coords={"time": pd.date_range("2000-01-01 00:00:00", periods=5, freq="1min")})
+        # - rolling=True
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL60S")
+        assert np.all(ds_out["qc_resampling"].data == 0)
+        # - rolling=False
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="60S")
+        assert np.all(ds_out["qc_resampling"].data == 0)
+
+        # Test when all timesteps are available
+        ds = xr.Dataset(coords={"time": pd.date_range("2000-01-01 00:00:00", periods=6, freq="1min")})
+        ds["drop_number"] = xr.ones_like(ds["time"], dtype=int)
+        # - rolling=False
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="2MIN")
+        assert np.all(ds_out["qc_resampling"].data == 0)
+        assert ds_out.sizes["time"] == 3
+        # - rolling=True
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL2MIN")
+        assert np.all(ds_out["qc_resampling"].data == 0)
+        assert ds_out.sizes["time"] == 5  #  6 -1
+
+        # Test when some timesteps are not available
+        ds = xr.Dataset(coords={"time": pd.date_range("2000-01-01 00:00:00", periods=6, freq="1min")})
+        ds = ds.isel(time=[0, 4, 5])  # 1, 2, 3 missing
+
+        # - rolling=True
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL2MIN")
+        np.testing.assert_allclose(ds_out["qc_resampling"].data, [0.5, 1.0, 1.0, 0.5, 0.0])
+
+        # - rolling=False
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="2MIN")
+        np.testing.assert_allclose(ds_out["qc_resampling"].data, [0.5, 1.0, 0.0])
+
+    def test_drop_number_with_nan(self):
+        """Test spectrum with NaN are processed correctly."""
+        # Times at 30-second intervals
+        times = pd.date_range("2020-01-01", periods=8, freq="60s")
+
+        # drop_number has NaNs in between
+        drop_number = np.ones((8, 3))
+        drop_number[2, 1] = np.nan  # idx 3 valid data
+        # idx 4:5 missing
+        drop_number[6:8, :] = np.nan  # idx 6:8 NaN
+
+        ds = xr.Dataset(
+            {
+                "drop_number": (("time", DIAMETER_DIMENSION), drop_number),
+            },
+            coords={"time": times},
+        )
+        ds = ds.isel(time=[0, 1, 2, 3, 6, 7])  # Remove 4 and 5
+
+        # Test case with no resampling (sample_interval == accumulation_interval)
+        # - Expect return same dataset as input (no filtering)
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="1MIN")
+        assert ds_out.sizes["time"] == 6
+        np.testing.assert_allclose(ds_out["drop_number"].data, ds["drop_number"].data)
+
+        # Test case with resampling
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="2MIN")
+        assert ds_out.sizes["time"] == 4
+        assert (ds_out["drop_number"].isel(time=0) == 2).all()
+
+        assert (ds_out["drop_number"].isel(time=1) == 1).all()  # timestep with NaN is ignored in the sum
+        assert not np.isnan(ds_out["drop_number"].isel(time=1)).any()
+
+        assert np.isnan(ds_out["drop_number"].isel(time=2)).all()  # missing timesteps lead to NaN array
+
+        assert np.isnan(ds_out["drop_number"].isel(time=3)).all()  # timesteps with only NaN lead to NaN array
+
+    def test_raise_error_if_no_valid_timesteps(self):
+        """Test raise error if all spectrums are NaN."""
+        times = pd.date_range("2020-01-01", periods=3, freq="30s")
+
+        # All drop_number values invalid
+        ds = xr.Dataset(
+            {
+                "drop_number": ("time", [np.nan, np.nan, np.nan]),
+            },
+            coords={"time": times},
+        )
+
+        # Expect ValueError due to no valid timesteps
+        with pytest.raises(ValueError, match="No timesteps with valid spectrum"):
+            resample_dataset(ds, sample_interval=30, temporal_resolution="1MIN")

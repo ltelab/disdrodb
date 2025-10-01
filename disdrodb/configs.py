@@ -37,7 +37,7 @@ def define_configs(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
     scattering_table_dir: Optional[str] = None,
-    configs_path: Optional[str] = None,
+    products_configs_dir: Optional[str] = None,
     folder_partitioning: Optional[str] = None,
     zenodo_token: Optional[str] = None,
     zenodo_sandbox_token: Optional[str] = None,
@@ -53,7 +53,7 @@ def define_configs(
         The directory path where the DISDRODB Metadata Archive is located.
     scattering_table_dir : str
         The directory path where to store DISDRODB T-Matrix scattering tables.
-    configs_path : str
+    products_configs_dir : str
         The directory path where the custom DISDRODB products configurations files are defined.
     folder_partitioning : str
         The folder partitioning scheme used in the DISDRODB Data Archive.
@@ -64,7 +64,7 @@ def define_configs(
         - "year/month/day": Files are stored under subdirectories by year, month and day (<station_dir>/2025/04/01).
         - "year/month_name": Files are stored under subdirectories by year and month name (<station_dir>/2025/April).
         - "year/quarter": Files are stored under subdirectories by year and quarter (<station_dir>/2025/Q2).
-    zenodo__token: str
+    zenodo_token: str
         Zenodo Access Token. It is required to upload stations data to Zenodo.
     zenodo_sandbox_token: str
         Zenodo Sandbox Access Token. It is required to upload stations data to Zenodo Sandbox.
@@ -118,8 +118,8 @@ def define_configs(
     if zenodo_sandbox_token is not None:
         config_dict["zenodo_sandbox_token"] = zenodo_sandbox_token
 
-    if configs_path is not None:
-        config_dict["configs_path"] = configs_path
+    if products_configs_dir is not None:
+        config_dict["products_configs_dir"] = products_configs_dir
 
     # Write the DISDRODB config file
     write_yaml(config_dict, filepath, sort_keys=False)
@@ -238,105 +238,52 @@ def get_zenodo_token(sandbox: bool):
     return token
 
 
-def get_product_default_configs_path():
-    """Return the paths where DISDRODB products configuration files are stored."""
+def get_default_products_configs_dir():
+    """Return the directory path where DISDRODB products default configuration files are stored."""
     import disdrodb
 
-    configs_path = os.path.join(disdrodb.__root_path__, "disdrodb", "etc", "products")
-    return configs_path
+    products_configs_dir = os.path.join(disdrodb.package_dir, "etc", "products")
+    return products_configs_dir
 
 
-def check_availability_radar_simulations(options):
-    """Check radar simulations are possible for L2E and L2M products."""
+def get_products_configs_dir():
+    """Return the DISDRODB products configuration directory."""
     import disdrodb
 
-    if "radar_enabled" in options and not disdrodb.is_pytmatrix_available():
-        options["radar_enabled"] = False
-    return options
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        products_configs_dir = os.path.join(disdrodb.package_dir, "tests", "products")
+    else:
+        products_configs_dir = disdrodb.config.get("products_configs_dir", None)
+        if products_configs_dir is None:
+            products_configs_dir = get_default_products_configs_dir()
+    return products_configs_dir
 
 
-def copy_product_default_configs(configs_path):
+def copy_default_products_configs(products_configs_dir):
     """Copy the default DISDRODB products configuration directory to a custom location.
 
-    This function duplicates the entire directory of default product settings
+    This function duplicates the entire directory of default products settings
     (located at ``disdrodb/etc/products``) into the user-specified
-    ``configs_path``. Once copied, you can safely edit these files without
+    ``products_configs_dir``. Once copied, you can safely edit these files without
     modifying the library's built-in defaults. To have DISDRODB use your
     custom settings, point the global configuration at this new directory
-    (e.g by specifying ``configs_path`` with the ``disdrodb.define_configs`` function).
+    (e.g by specifying ``products_configs_dir`` with the ``disdrodb.define_configs`` function).
 
     Parameters
     ----------
-    configs_path:
-        Destination directory where the default product configuration files
+    products_configs_dir:
+        Directory where the default products configuration files
         will be copied. This directory must not already exist, and later
         needs to be referenced in your DISDRODB global configuration.
 
     Returns
     -------
-    configs_path
+    products_configs_dir
         The path to the newly created custom product configuration directory.
 
     """
-    source_dir_path = get_product_default_configs_path()
-    if os.path.exists(configs_path):
-        raise FileExistsError(f"The {configs_path} directory already exists!")
-    configs_path = shutil.copytree(source_dir_path, configs_path)
-    return configs_path
-
-
-def get_product_options(product, temporal_resolution=None):
-    """Get options for DISDRODB products."""
-    import disdrodb
-    from disdrodb.api.checks import check_product
-
-    # Define configs path
-    if os.environ.get("PYTEST_CURRENT_TEST"):
-        configs_path = os.path.join(disdrodb.__root_path__, "disdrodb", "tests", "products")
-    else:
-        configs_path = disdrodb.config.get("configs_path", get_product_default_configs_path())
-
-    # Validate DISDRODB products configuration
-    validate_product_configuration(configs_path)
-
-    # Check product
-    check_product(product)
-
-    # Retrieve global product options
-    global_options = read_yaml(os.path.join(configs_path, product, "global.yaml"))
-    if temporal_resolution is None:
-        global_options = check_availability_radar_simulations(global_options)
-        return global_options
-
-    # If temporal resolutions are specified, drop 'temporal_resolutions' key
-    global_options.pop("temporal_resolutions", None)
-    custom_options_path = os.path.join(configs_path, product, f"{temporal_resolution}.yaml")
-    if not os.path.exists(custom_options_path):
-        return global_options
-    custom_options = read_yaml(custom_options_path)
-    options = global_options.copy()
-    options.update(custom_options)
-    options = check_availability_radar_simulations(options)
-    return options
-
-
-def get_product_temporal_resolutions(product):
-    """Get DISDRODB L2 product temporal aggregations."""
-    # Check only L2E and L2M
-    return get_product_options(product)["temporal_resolutions"]
-
-
-def get_model_options(product, model_name):
-    """Get DISDRODB L2M model options."""
-    import disdrodb
-
-    configs_path = disdrodb.config.get("configs_path", get_product_default_configs_path())
-    model_options_path = os.path.join(configs_path, product, f"{model_name}.yaml")
-    model_options = read_yaml(model_options_path)
-    return model_options
-
-
-def validate_product_configuration(configs_path):
-    """Validate the DISDRODB products configuration files."""
-    # TODO: Implement validation of DISDRODB products configuration files with pydantic
-    pass
+    source_dir_path = get_default_products_configs_dir()
+    if os.path.exists(products_configs_dir):
+        raise FileExistsError(f"The {products_configs_dir} directory already exists!")
+    products_configs_dir = shutil.copytree(source_dir_path, products_configs_dir)
+    return products_configs_dir

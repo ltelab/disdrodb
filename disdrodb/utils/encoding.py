@@ -31,7 +31,7 @@ def get_encodings_dict():
     """Get encoding dictionary for DISDRODB product variables and coordinates."""
     import disdrodb
 
-    configs_path = os.path.join(disdrodb.__root_path__, "disdrodb", "etc", "configs")
+    configs_path = os.path.join(disdrodb.package_dir, "etc", "configs")
     encodings_dict = read_yaml(os.path.join(configs_path, "encodings.yaml"))
     return encodings_dict
 

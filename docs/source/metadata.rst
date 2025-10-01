@@ -12,7 +12,7 @@ It is mandatory to at least specify values for the following 7 metadata keys:
 * ``campaign_name``: must match the campaign name where the metadata reside.
 * ``station_name``: must match the YAML filename (excluding the ``.yml`` extension).
 * ``sensor_name``: must be one of the configured sensors (see ``disdrodb.available_sensor_names()``). If your sensor is not listed, follow :ref:`Add new sensor configs <sensor_configurations>`.
-* ``reader``: indicates which function ingests the raw data. Readers live in ``disdrodb/l0/readers/<sensor_name>/<DATA_SOURCE>/<READER_NAME>.py``. Set ``reader`` to ``<DATA_SOURCE>/<READER_NAME>`` (e.g. ``GPM/IFLOODS`` for the OTT Parsivel GPM IFLOODS reader).
+* ``reader``: indicates which function ingests the raw data. Readers live in ``disdrodb/l0/readers/<sensor_name>/<DATA_SOURCE>/<READER_NAME>.py``. Set ``reader`` to ``<DATA_SOURCE>/<READER_NAME>`` (e.g. ``NASA/IFLOODS`` for the OTT Parsivel NASA IFLOODS reader).
 * ``raw_data_format``: choose ``txt`` for text/ASCII files or ``netcdf`` for netCDF files.
 * ``raw_data_glob_pattern``: a glob pattern that selects which files in ``DISDRODB/RAW/<DATA_SOURCE>/<CAMPAIGN_NAME>/<STATION_NAME>/data`` are ingested. For example, ``*.txt`` matches all ``.txt`` files recursively. To match only files with a specific prefix, use ``SPECTRUM_*.txt``. To limit to a subfolder, include its name: ``custom/*.txt`` (direct files only) or ``custom/**/*.txt`` (including nested folders).
 * ``measurement_interval``: the sensor measurement sampling interval in seconds.

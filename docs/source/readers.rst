@@ -87,7 +87,7 @@ By specifying the optional ``data_sources`` argument, only the readers reference
 
     sensor_name = "PARSIVEL"
     available_readers(sensor_name)
-    available_readers(sensor_name=sensor_name, data_sources=["EPFL", "GPM"])
+    available_readers(sensor_name=sensor_name, data_sources=["EPFL", "NASA"])
 
 
 When you know the reader reference, you can easily retrieve the reader function by using the ``get_reader`` function:
