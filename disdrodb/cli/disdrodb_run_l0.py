@@ -75,7 +75,7 @@ def disdrodb_run_l0(
         Name of data source(s) to process.
         The name(s) must be UPPER CASE.
         If campaign_names and station are not specified, process all stations.
-        To specify multiple data sources, write i.e.: --data_sources 'GPM EPFL NCAR'
+        To specify multiple data sources, write i.e.: --data_sources 'NASA EPFL NCAR'
     campaign_names : str
         Name of the campaign(s) to process.
         The name(s) must be UPPER CASE.

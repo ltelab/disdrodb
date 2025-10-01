@@ -401,8 +401,8 @@ The ``reader`` reference points the disdrodb software to the correct reader to u
 
 The reeader reference is defined as ``<DATA_SOURCE>/<READER_NAME>``.
 
-For example, to use the `disdrodb.l0.readers.PARSIVEL.GPM.IFLOODS.py reader <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers/PARSIVEL/GPM/IFLOODS.py>`_
-to process the data, you specify the ``reader`` reference as ``GPM/IFLOODS``.
+For example, to use the `disdrodb.l0.readers.PARSIVEL.NASA.IFLOODS.py reader <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers/PARSIVEL/NASA/IFLOODS.py>`_
+to process the data, you specify the ``reader`` reference as ``NASA/IFLOODS``.
 
 To check you are specifying the correct ``reader`` reference in the metadata,
 adapt the following code snippet with your ``reader`` reference and sensor name and then call
@@ -413,7 +413,7 @@ the ``get_reader`` function: it should return a reader function !
     import disdrodb
 
     sensor_name = "PARSIVEL"
-    reader_reference = "GPM/IFLOODS"  # <READER_DATA_SOURCE>/<READER_NAME>
+    reader_reference = "NASA/IFLOODS"  # <READER_DATA_SOURCE>/<READER_NAME>
     reader = disdrodb.get_reader(reader_reference, sensor_name=sensor_name)
     print(reader)
 

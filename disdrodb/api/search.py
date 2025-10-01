@@ -404,7 +404,7 @@ def available_stations(
     >>> # List stations with raw data available in the local DISDRODB Data Archive
     >>> raw_stations = available_stations(product="RAW", available_data=True)
     >>> # List stations of specific data sources
-    >>> stations = available_stations(data_sources=["GPM", "EPFL"])
+    >>> stations = available_stations(data_sources=["NASA", "EPFL"])
     """
     # Retrieve DISDRODB Data and Metadata Archive directories
     metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)

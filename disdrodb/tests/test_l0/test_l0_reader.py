@@ -104,7 +104,7 @@ class TestAvailableReaders:
         assert isinstance(readers_references, list)
         assert all(isinstance(reader_reference, str) for reader_reference in readers_references)
         assert "EPFL/EPFL_2009" in readers_references
-        assert "GPM/IFLOODS" in readers_references
+        assert "NASA/IFLOODS" in readers_references
 
     def test_filter_references_by_source(self):
         """Should filter reference list by given data source."""
@@ -112,7 +112,7 @@ class TestAvailableReaders:
         assert isinstance(readers_references, list)
         assert all(isinstance(reader_reference, str) for reader_reference in readers_references)
         assert "EPFL/EPFL_2009" in readers_references
-        assert "GPM/IFLOODS" not in readers_references  # Filtered out
+        assert "NASA/IFLOODS" not in readers_references  # Filtered out
 
     def test_list_of_paths(self):
         """Should return a list of reader file paths as strings."""
@@ -120,7 +120,7 @@ class TestAvailableReaders:
         assert isinstance(readers_paths, list)
         assert all(isinstance(reader_path, str) for reader_path in readers_paths)
         assert define_reader_path(reader_reference="EPFL/EPFL_2009", sensor_name=SENSOR_NAME) in readers_paths
-        assert define_reader_path(reader_reference="GPM/IFLOODS", sensor_name=SENSOR_NAME) in readers_paths
+        assert define_reader_path(reader_reference="NASA/IFLOODS", sensor_name=SENSOR_NAME) in readers_paths
 
     def test_filter_paths_by_source(self):
         """Should filter path list by given data source."""
@@ -128,7 +128,7 @@ class TestAvailableReaders:
         assert isinstance(readers_paths, list)
         assert all(isinstance(reader_path, str) for reader_path in readers_paths)
         assert define_reader_path(reader_reference="EPFL/EPFL_2009", sensor_name=SENSOR_NAME) in readers_paths
-        assert define_reader_path(reader_reference="GPM/IFLOODS", sensor_name=SENSOR_NAME) not in readers_paths
+        assert define_reader_path(reader_reference="NASA/IFLOODS", sensor_name=SENSOR_NAME) not in readers_paths
 
 
 class TestCheckMetadataReader:

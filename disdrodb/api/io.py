@@ -118,7 +118,7 @@ def filter_by_time(filepaths, start_time=None, end_time=None):
     start_time, end_time = check_start_end_time(start_time, end_time)
 
     # -------------------------------------------------------------------------.
-    # - Retrieve start_time and end_time of GPM granules
+    # - Retrieve files start_time and end_time
     l_start_time, l_end_time = get_start_end_time_from_filepaths(filepaths)
 
     # -------------------------------------------------------------------------.

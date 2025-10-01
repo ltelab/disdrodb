@@ -15,21 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""This reader allows to read raw data from NASA APU stations.
-
-The reader allows to read raw  APU data from the following NASA campaigns:
-
-    - HYMEX
-    - IFLOODS
-    - IPHEX
-    - OLYMPEX
-    - ICEPOP
-    - IMPACTS
-    - GCPEX
-    - WFF
-
-"""
-
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -44,19 +29,22 @@ def reader(
     """Reader."""
     ##------------------------------------------------------------------------.
     #### Define column names
-    column_names = ["time", "TO_BE_SPLITTED"]
+    column_names = ["time", "unknown", "raw_drop_number"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs["delimiter"] = ";"
+    reader_kwargs["delimiter"] = "   "
     # - Skip first row as columns names
     reader_kwargs["header"] = None
-    reader_kwargs["skiprows"] = 0
     # - Skip file with encoding errors
     reader_kwargs["encoding_errors"] = "ignore"
-    # - Avoid first column to become df index !!!
+    # - Need for zipped raw file (NASA files)
+    reader_kwargs["zipped"] = True
+    # - Searched file into tar files
+    reader_kwargs["filename_to_read_zipped"] = "spectrum.txt"
+    # - Avoid first column to become df index
     reader_kwargs["index_col"] = False
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
@@ -71,7 +59,7 @@ def reader(
     #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
     #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
     #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
-    reader_kwargs["na_values"] = ["na", "", "error", "NA", "-.-"]
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-"]
 
     ##------------------------------------------------------------------------.
     #### Read the data
@@ -85,25 +73,13 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Convert time column to datetime
-    df_time = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S", errors="coerce")
-
-    # Split the 'TO_BE_SPLITTED' column
-    df = df["TO_BE_SPLITTED"].str.split(",", n=3, expand=True)
-
-    # Assign column names
-    names = [
-        "station_name",
-        "unknown",
-        "unknown2",
-        "raw_drop_number",
-    ]
-    df.columns = names
-
-    # Add the time column
-    df["time"] = df_time
+    try:
+        df["time"] = pd.to_datetime(df["time"], format="%Y %m %d %H %M %S", errors="coerce")
+    except ValueError:
+        df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
 
     # Drop columns not agreeing with DISDRODB L0 standards
-    df = df.drop(columns=["station_name", "unknown", "unknown2"])
+    df = df.drop(columns=["unknown"])
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df
