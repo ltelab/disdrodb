@@ -678,6 +678,16 @@ def create_l0c_datasets(
         log_info(logger=logger, msg=f"No data between {start_time} and {end_time}.", verbose=verbose)
         return {}
 
+    # If 1 or 2 timesteps per time block, return empty dictionary
+    n_timesteps = len(ds["time"])
+    if n_timesteps < 3:
+        log_info(
+            logger=logger,
+            msg=f"Only {n_timesteps} timesteps between {start_time} and {end_time}.",
+            verbose=verbose,
+        )
+        return {}
+
     # ---------------------------------------------------------------------------------------.
     # If sample interval is a dataset variable, drop timesteps with unexpected measurement intervals !
     if "sample_interval" in ds:

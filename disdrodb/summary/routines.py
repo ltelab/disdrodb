@@ -3795,14 +3795,15 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
 
     # Define theoretical and measured average velocity
     theoretical_average_velocity = ds["fall_velocity"].mean(dim="time")
-    measured_average_velocity = get_drop_average_velocity(drop_number)
+    measured_average_velocity = get_drop_average_velocity(drop_number) if VELOCITY_DIMENSION in ds.dims else None
 
     # Save raw and filtered spectrum over time & theoretical and measured average fall velocity
     ds_stats = xr.Dataset()
     ds_stats["raw_drop_number"] = raw_drop_number
     ds_stats["drop_number"] = raw_drop_number
     ds_stats["theoretical_average_velocity"] = theoretical_average_velocity
-    ds_stats["measured_average_velocity"] = measured_average_velocity
+    if measured_average_velocity is not None:
+        ds_stats["measured_average_velocity"] = measured_average_velocity
     filename = define_filename(
         prefix="SpectrumStats",
         extension="nc",
