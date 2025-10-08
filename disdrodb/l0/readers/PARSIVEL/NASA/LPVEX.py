@@ -71,25 +71,25 @@ def reader(
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Remove rows with invalid number of separators
     df = df[df["TO_PARSE"].str.count(";") == 1]
-    if len(df) == 0: 
+    if len(df) == 0:
         raise ValueError(f"No valid data in {filepath}")
-    
+
     # Split the columns
     df = df["TO_PARSE"].str.split(";", n=2, expand=True)
 
     # Assign column names
     df.columns = ["time", "TO_BE_SPLITTED"]
-    
+
     # Convert time column to datetime
     df_time = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S", errors="coerce")
 
     # Split the 'TO_BE_SPLITTED' column
     df = df["TO_BE_SPLITTED"].str.split(",", n=3, expand=True)
     df.columns = ["station_id", "sensor_status", "sensor_temperature", "raw_drop_number"]
-    
-    # Add time 
+
+    # Add time
     df["time"] = df_time
-    
+
     # Drop columns not agreeing with DISDRODB L0 standards
     df = df.drop(columns=["station_id"])
 

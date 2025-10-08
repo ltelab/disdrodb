@@ -71,12 +71,11 @@ def reader(
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Remove rows with invalid number of separators
     df = df[df["TO_PARSE"].str.count(";").isin([1104, 1105])]
-    if len(df) == 0: 
+    if len(df) == 0:
         raise ValueError(f"No valid data in {filepath}")
-    
-    
+
     n_delimiters = int(df["TO_PARSE"].str.count(";").iloc[0])
-    if n_delimiters == 1104: 
+    if n_delimiters == 1104:
         names = [
             "sensor_serial_number",
             "sensor_status",
@@ -97,7 +96,7 @@ def reader(
             "TO_SPLIT",
         ]
         n = 15
-    else: 
+    else:
         names = [
             "sensor_serial_number",
             "sensor_status",
@@ -118,7 +117,7 @@ def reader(
             "TO_SPLIT",
         ]
         n = 16
-    
+
     # Split the columns
     df = df["TO_PARSE"].str.split(";", n=n, expand=True)
 
