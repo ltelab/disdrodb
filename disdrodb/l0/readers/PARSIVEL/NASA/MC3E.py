@@ -116,7 +116,7 @@ def reader(
         return df
     # ---------------------------------------------------------
     #### Case of 1032 delimiters
-    if n_delimiters == 1033:  # (most of the files)
+    if n_delimiters == 1033:  # (most of the files ... PIERS FORMAT)
         # Select valid rows
         df = df.loc[df["TO_BE_SPLITTED"].str.count(",") == 1033]
         # Get time column

@@ -29,22 +29,19 @@ def reader(
     """Reader."""
     ##------------------------------------------------------------------------.
     #### Define column names
-    column_names = ["time", "unknown", "raw_drop_number"]
+    column_names = ["TO_PARSE"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs["delimiter"] = "   "
+    reader_kwargs["delimiter"] = "//n"
     # - Skip first row as columns names
     reader_kwargs["header"] = None
+    reader_kwargs["skiprows"] = 0
     # - Skip file with encoding errors
     reader_kwargs["encoding_errors"] = "ignore"
-    # - Need for zipped raw file (NASA files)
-    reader_kwargs["zipped"] = True
-    # - Searched file into tar files
-    reader_kwargs["filename_to_read_zipped"] = "spectrum.txt"
-    # - Avoid first column to become df index
+    # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
@@ -59,7 +56,7 @@ def reader(
     #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
     #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
     #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
-    reader_kwargs["na_values"] = ["na", "", "error", "-.-"]
+    reader_kwargs["na_values"] = ["na", "", "error", "NA", "-.-"]
 
     ##------------------------------------------------------------------------.
     #### Read the data
@@ -72,14 +69,29 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Convert time column to datetime
-    try:
-        df["time"] = pd.to_datetime(df["time"], format="%Y %m %d %H %M %S", errors="coerce")
-    except ValueError:
-        df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
+    # Remove rows with invalid number of separators
+    df = df[df["TO_PARSE"].str.count(";") == 1]
+    if len(df) == 0: 
+        raise ValueError(f"No valid data in {filepath}")
+    
+    # Split the columns
+    df = df["TO_PARSE"].str.split(";", n=2, expand=True)
 
+    # Assign column names
+    df.columns = ["time", "TO_BE_SPLITTED"]
+    
+    # Convert time column to datetime
+    df_time = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S", errors="coerce")
+
+    # Split the 'TO_BE_SPLITTED' column
+    df = df["TO_BE_SPLITTED"].str.split(",", n=3, expand=True)
+    df.columns = ["station_id", "sensor_status", "sensor_temperature", "raw_drop_number"]
+    
+    # Add time 
+    df["time"] = df_time
+    
     # Drop columns not agreeing with DISDRODB L0 standards
-    df = df.drop(columns=["unknown"])
+    df = df.drop(columns=["station_id"])
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df
