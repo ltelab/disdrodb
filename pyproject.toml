@@ -39,6 +39,7 @@ dependencies = [
 
 ]
 dynamic = ["version"]
+license-files = ["LICENSE"]
 
 [project.optional-dependencies]
 dev = [
@@ -65,9 +66,6 @@ changelog = "https://github.com/ltelab/disdrodb/blob/main/CHANGELOG.md"
 
 [tool.setuptools_scm]
 write_to = "disdrodb/_version.py"
-
-[tool.setuptools]
-license-files = ["LICENSE"]
 
 [tool.setuptools.packages.find]
 include = ["disdrodb*"]
@@ -223,11 +221,16 @@ select = [
 ignore = [
     "E722",
     "PT011", # pytest raised error must be checked if match the expected error msg
+    "PT030",
     "PERF203",
 	"PLW2901",
     "B904",
 	"RET504",
-    "PD901",
+    #  "PD901",
+    "RUF043",
+    "PLC0415",
+    "PLW1641",
+    "RUF059",
 
     # Docstyle Rules
     "D100", # Missing docstring in public module

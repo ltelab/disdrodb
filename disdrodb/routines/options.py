@@ -35,7 +35,7 @@ from disdrodb.utils.yaml import read_yaml
 # get_product_options(product="L1", temporal_resolution="1MIN")
 # get_product_options(product="L1", temporal_resolution="1MIN", sensor_name="PARSIVEL")
 
-# test temporal_resolutions are unique 
+# test temporal_resolutions are unique
 
 # TODO: test return list
 # get_product_temporal_resolutions(product="L1")

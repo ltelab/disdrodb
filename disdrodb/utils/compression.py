@@ -82,7 +82,7 @@ def unzip_file_on_terminal(filepath: str, dest_path: str) -> str:
     subprocess.run(cmd, check=True)
 
 
-def _zip_dir(dir_path: str) -> str:
+def _zip_dir(dir_path: str, dst_dir=None) -> str:
     """Zip a directory into a file located in the same directory.
 
     Parameters
@@ -95,7 +95,9 @@ def _zip_dir(dir_path: str) -> str:
     str
         Path of the zip archive.
     """
-    output_path_without_extension = os.path.join(tempfile.gettempdir(), os.path.basename(dir_path))
+    if dst_dir is None:
+        dst_dir = tempfile.gettempdir()
+    output_path_without_extension = os.path.join(dst_dir, os.path.basename(dir_path))
     output_path = output_path_without_extension + ".zip"
     shutil.make_archive(output_path_without_extension, "zip", dir_path)
     return output_path

@@ -173,7 +173,7 @@ def check_time_periods(time_periods):
 
 def _get_issue_timesteps(issue_dict):
     """Get timesteps from issue dictionary."""
-    timesteps = issue_dict.get("timesteps", None)
+    timesteps = issue_dict.get("timesteps")
     # Check validity
     timesteps = check_timesteps(timesteps)
     # Sort
@@ -183,7 +183,7 @@ def _get_issue_timesteps(issue_dict):
 
 def _get_issue_time_periods(issue_dict):
     """Get time_periods from issue dictionary."""
-    time_periods = issue_dict.get("time_periods", None)
+    time_periods = issue_dict.get("time_periods")
     time_periods = check_time_periods(time_periods)
     return time_periods
 

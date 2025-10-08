@@ -60,7 +60,7 @@ we welcome your help. We're especially interested in adding support for:
 
 - Eigenbrot Optical Disdrometer 470 (``ODM470``),
 - Vaisala Forward Scatter Sensor FD70 (``FD70``),
-- Biral Visibility and Present Weather Sensors (``SW250``, ``VPF730``, ``VPF750``),
+- Biral Visibility and Present Weather Sensors (``SWS250``, ``VPF730``, ``VPF750``),
 - Joanneum Research Two Dimensional Video Disdrometer (``2DVD``).
 
 

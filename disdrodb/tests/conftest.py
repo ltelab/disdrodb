@@ -127,8 +127,8 @@ def create_fake_issue_file(
     # Write issue
     write_issue(
         filepath=issue_filepath,
-        timesteps=issue_dict.get("timesteps", None),
-        time_periods=issue_dict.get("time_periods", None),
+        timesteps=issue_dict.get("timesteps"),
+        time_periods=issue_dict.get("time_periods"),
     )
     # Return filepath
     return str(issue_filepath)
