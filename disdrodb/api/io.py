@@ -347,6 +347,7 @@ def open_netcdf_files(
     ds = xr.open_mfdataset(
         filepaths,
         chunks=chunks,
+        data_vars="all",
         combine="nested",
         join="outer",
         concat_dim="time",

@@ -91,7 +91,7 @@ def format_string_array(string: str, n_values: int) -> np.array:
 
         e.g. : format_string_array("2,44,22,33", 4) will return [ 2. 44. 22. 33.]
 
-    If empty string ("") --> Return an arrays of zeros
+    If empty string ("") or "" --> Return an arrays of zeros
     If the list length is not n_values -> Return an arrays of np.nan
 
     The function strip potential delimiters at start and end before splitting.
@@ -108,31 +108,38 @@ def format_string_array(string: str, n_values: int) -> np.array:
     np.array
         array of float
     """
-    split_str = infer_split_str(string)
-    values = np.array(string.strip(split_str).split(split_str))
-
-    # -------------------------------------------------------------------------.
-    ## Assumptions !!!
-    # If empty list --> Assume no precipitation recorded. Return an arrays of zeros
-    if len(values) == 0:
+    # Check for empty string or "0" case
+    # - Assume no precipitation recorded. Return an arrays of zeros
+    if string in {"", "0"}:
         values = np.zeros(n_values)
         return values
 
-    # -------------------------------------------------------------------------.
+    # Check for NaN case
+    # - Assume no data available. Return an arrays of NaN
+    if string == "NaN":
+        values = np.zeros(n_values) * np.nan
+        return values
+
+    # Retrieve list of values
+    split_str = infer_split_str(string)
+    values = np.array(string.strip(split_str).split(split_str))
+
     # If the length is not as expected --> Assume data corruption
     # --> Return an array with nan
     if len(values) != n_values:
         values = np.zeros(n_values) * np.nan
-    else:
-        # Ensure string type
-        values = values.astype("str")
-        # Replace '' with 0
-        values = replace_empty_strings_with_zeros(values)
-        # Replace "-9.999" with 0
-        values = np.char.replace(values, "-9.999", "0")
-        # Cast values to float type
-        # --> Note: the disk encoding is specified in the l0b_encodings.yml
-        values = values.astype(float)
+        return values
+
+    # Otherwise sanitize the list of value
+    # Ensure string type
+    values = values.astype("str")
+    # Replace '' with 0
+    values = replace_empty_strings_with_zeros(values)
+    # Replace "-9.999" with 0
+    values = np.char.replace(values, "-9.999", "0")
+    # Cast values to float type
+    # --> Note: the disk encoding is specified in the l0b_encodings.yml
+    values = values.astype(float)
     return values
 
 

@@ -165,7 +165,7 @@ def execute_tasks_safely(list_tasks, parallel: bool, logs_dir: str, max_tasks_pe
     # Batch execution
     task_batches = list(_batch_iterable(list_tasks, max_tasks_per_batch)) if max_tasks_per_batch else [list_tasks]
 
-    for i, batch in enumerate(task_batches, start=1):
+    for batch in task_batches:
         # Compute tasks (all concurrently)
         # - Runs tasks == num_workers * threads_per_worker (which is 1 for DISDRODB)
         # - If errors occurs in some, skip it

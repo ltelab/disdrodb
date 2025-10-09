@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -16,20 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB reader for GID LPM sensors not measuring wind."""
+"""DISDRODB reader for GID LPM sensors not reporting time."""
+import numpy as np
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
+from disdrodb.utils.logger import log_error, log_warning
 
 
-@is_documented_by(reader_generic_docstring)
-def reader(
-    filepath,
-    logger=None,
-):
-    """Reader."""
-    ##------------------------------------------------------------------------.
+def read_txt_file(file, filename, logger):
+    """Parse ULIEGE LPM hourly file."""
     #### - Define raw data headers
     column_names = ["TO_PARSE"]
 
@@ -71,7 +66,7 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Read the data
     df = read_raw_text_file(
-        filepath=filepath,
+        filepath=file,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
         logger=logger,
@@ -80,7 +75,11 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Count number of delimiters to identify valid rows
-    df = df[df["TO_PARSE"].str.count(";") == 519]
+    df = df[df["TO_PARSE"].str.count(";") == 520]
+
+    # Check there are still valid rows
+    if len(df) == 0:
+        raise ValueError(f"No valid rows in {filename}.")
 
     # Split by ; delimiter (before raw drop number)
     df = df["TO_PARSE"].str.split(";", expand=True, n=79)
@@ -170,18 +169,36 @@ def reader(
     ]
     df.columns = column_names
 
-    # Remove checksum from raw_drop_number
-    df["raw_drop_number"] = df["raw_drop_number"].str.rsplit(";", n=1, expand=True)[0]
+    # Deal with case if there are 61 timesteps
+    # - Occurs sometimes when previous hourly file miss timesteps
+    if len(df) == 61:
+        log_warning(logger=logger, msg=f"{filename} contains 61 timesteps. Dropping the first.")
+        df = df.iloc[1:]
 
-    # Define datetime "time" column
-    df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
-    df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y-%H:%M:%S", errors="coerce")
+    # Raise error if more than 60 timesteps/rows
+    n_rows = len(df)
+    if n_rows > 60:
+        raise ValueError(f"The hourly file contains {n_rows} timesteps.")
 
-    # Drop row if start_identifier different than 00
-    df = df[df["start_identifier"].astype(str) == "00"]
+    # Infer and define "time" column
+    start_time_str = filename.split(".")[0]  # '2024020200.txt'
+    start_time = pd.to_datetime(start_time_str, format="%Y%m%d%H")
+
+    # - Define timedelta based on sensor_time
+    dt = pd.to_timedelta(df["sensor_time"]).to_numpy().astype("m8[s]")
+    dt = dt - dt[0]
+
+    # - Define approximate time
+    df["time"] = start_time + dt
+
+    # - Keep rows where time increment is between 00 and 59 minutes
+    valid_rows = dt <= np.timedelta64(3540, "s")
+    df = df[valid_rows]
 
     # Drop rows with invalid raw_drop_number
-    df = df[df["raw_drop_number"].astype(str).str.len() == 1759]
+    # --> 440 value # 22x20
+    # --> 400 here  # 20x20
+    df = df[df["raw_drop_number"].astype(str).str.len() == 1763]
 
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
@@ -192,4 +209,63 @@ def reader(
         "sensor_time",
     ]
     df = df.drop(columns=columns_to_drop)
+    return df
+
+
+@is_documented_by(reader_generic_docstring)
+def reader(
+    filepath,
+    logger=None,
+):
+    """Reader."""
+    import zipfile
+
+    ##------------------------------------------------------------------------.
+    # filename = os.path.basename(filepath)
+    # return read_txt_file(file=filepath, filename=filename, logger=logger)
+
+    # ---------------------------------------------------------------------.
+    #### Iterate over all files (aka timesteps) in the daily zip archive
+    # - Each file contain a single timestep !
+    # list_df = []
+    # with tempfile.TemporaryDirectory() as temp_dir:
+    #     # Extract all files
+    #     unzip_file_on_terminal(filepath, temp_dir)
+
+    #     # Walk through extracted files
+    #     for root, _, files in os.walk(temp_dir):
+    #         for filename in sorted(files):
+    #             if filename.endswith(".txt"):
+    #                 full_path = os.path.join(root, filename)
+    #                 try:
+    #                     df = read_txt_file(file=full_path, filename=filename, logger=logger)
+    #                     if df is not None:
+    #                         list_df.append(df)
+    #                 except Exception as e:
+    #                     msg = f"An error occurred while reading {filename}: {e}"
+    #                     log_error(logger=logger, msg=msg, verbose=True)
+
+    list_df = []
+    with zipfile.ZipFile(filepath, "r") as zip_ref:
+        filenames = sorted(zip_ref.namelist())
+        for filename in filenames:
+            if filename.endswith(".txt"):
+                # Open file
+                with zip_ref.open(filename) as file:
+                    try:
+                        df = read_txt_file(file=file, filename=filename, logger=logger)
+                        if df is not None:
+                            list_df.append(df)
+                    except Exception as e:
+                        msg = f"An error occurred while reading {filename}. The error is: {e}"
+                        log_error(logger=logger, msg=msg, verbose=True)
+
+    # Check the zip file contains at least some non.empty files
+    if len(list_df) == 0:
+        raise ValueError(f"{filepath} contains only empty files!")
+
+    # Concatenate all dataframes into a single one
+    df = pd.concat(list_df)
+
+    # ---------------------------------------------------------------------.
     return df

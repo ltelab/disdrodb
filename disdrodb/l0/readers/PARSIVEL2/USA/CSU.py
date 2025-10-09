@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB reader for University of Bergen OTT Parsivel 2 raw data."""
+"""DISDRODB reader for Colorado State University OTT Parsivel 2 raw data."""
 
 import pandas as pd
 
@@ -30,7 +30,7 @@ def reader(
     """Reader."""
     ##------------------------------------------------------------------------.
     #### Define column names
-    column_names = ["TO_SPLIT"]
+    column_names = ["TO_PARSE"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
@@ -81,50 +81,56 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Remove corrupted rows
-    df = df[df["TO_SPLIT"].str.count(";").isin([1101])]
+    df = df[df["TO_PARSE"].str.count(",").isin([15, 1040])]
 
     # Split into columns
-    df = df["TO_SPLIT"].str.split(";", expand=True, n=13)
-
+    df["TO_PARSE"] = df["TO_PARSE"] + ",0"
+    df = df["TO_PARSE"].str.split(",", expand=True, n=16)
+    
     # Assign columns names
     names = [
         "date",
         "time",
         "rainfall_rate_32bit",
         "rainfall_accumulated_32bit",
-        "snowfall_rate",
         "weather_code_synop_4680",
+        "weather_code_metar_4678",   
+        "weather_code_nws",  
         "reflectivity_32bit",
         "mor_visibility",
-        "rain_kinetic_energy",
-        "sensor_temperature",
         "laser_amplitude",
         "number_particles",
-        "sensor_battery_voltage",
-        "TO_SPLIT",
+        "sensor_temperature",
+        "sensor_heating_current",
+        "sensor_battery_voltage", 
+        "rain_kinetic_energy",    
+        "snowfall_rate", 
+        "raw_drop_number",
     ]
-    df.columns = names
+    df.columns = names   
 
     # Add datetime time column
-    # TODO: daily files: take valid date !
-    time_str = df["date"].str.replace("\x00", "").str.strip() + "-" + df["time"]
-    time_datetime = pd.to_datetime(time_str, format="%d.%m.%Y-%H:%M:%S", errors="coerce")
-    df["time"] = time_datetime
-    df = df.drop(columns=["date"])
+    time_str = df["date"] + "-" + df["time"]
+    df["time"] = pd.to_datetime(time_str, format="%d.%m.%Y-%H:%M:%S", errors="coerce")
+    
+    # Derive the raw spectrum
+    # - When no drops detected, None
+    # - After conversion to string, becomes NaN
+    df["raw_drop_number"] = df["raw_drop_number"].astype("string")
+    df["raw_drop_number"] = df["raw_drop_number"].str.strip()
+    
+    # Remove <SPECTRUM> and </SPECTRUM> prefix and suffix from the raw_drop_number field
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>,0", "")
 
-    # time_str[np.isnan(time_datetime)].iloc[2]
-    # df[np.isnan(time_datetime)].iloc[0]
-
-    # Derive raw drop arrays
-    df_split = df["TO_SPLIT"].str.split(";", expand=True)
-    df["raw_drop_concentration"] = df_split.iloc[:, :32].agg(";".join, axis=1)
-    df["raw_drop_average_velocity"] = df_split.iloc[:, 32:64].agg(";".join, axis=1)
-    df["raw_drop_number"] = df_split.iloc[:, 64:].agg(";".join, axis=1)
-    del df_split
-
+    # Preprocess the raw spectrum and raw_drop_average_velocity
+    # - Add 0 before every ; if ; not preceded by a digit
+    # - Example: ';;1;;' --> '0;0;1;0;'
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d),", "0,", regex=True)
+    
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
-        "TO_SPLIT",
+        "date"
     ]
     df = df.drop(columns=columns_to_drop)
 

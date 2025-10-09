@@ -716,7 +716,7 @@ def create_nd_dataframe(ds, variables=None):
         "sample_interval",
         *RADAR_OPTIONS,
     ]
-    df_nd = ds_stack.to_dataframe().drop(columns=coords_to_drop, errors="ignore")
+    df_nd = ds_stack.to_dataframe().drop(columns=coords_to_drop, errors="ignore").reset_index()
     df_nd["D"] = df_nd["diameter_bin_center"]
     df_nd["N(D)"] = df_nd["drop_number_concentration"]
     df_nd = df_nd[df_nd["R"] != 0]
