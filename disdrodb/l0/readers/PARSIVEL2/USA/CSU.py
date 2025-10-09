@@ -86,7 +86,7 @@ def reader(
     # Split into columns
     df["TO_PARSE"] = df["TO_PARSE"] + ",0"
     df = df["TO_PARSE"].str.split(",", expand=True, n=16)
-    
+
     # Assign columns names
     names = [
         "date",
@@ -94,31 +94,31 @@ def reader(
         "rainfall_rate_32bit",
         "rainfall_accumulated_32bit",
         "weather_code_synop_4680",
-        "weather_code_metar_4678",   
-        "weather_code_nws",  
+        "weather_code_metar_4678",
+        "weather_code_nws",
         "reflectivity_32bit",
         "mor_visibility",
         "laser_amplitude",
         "number_particles",
         "sensor_temperature",
         "sensor_heating_current",
-        "sensor_battery_voltage", 
-        "rain_kinetic_energy",    
-        "snowfall_rate", 
+        "sensor_battery_voltage",
+        "rain_kinetic_energy",
+        "snowfall_rate",
         "raw_drop_number",
     ]
-    df.columns = names   
+    df.columns = names
 
     # Add datetime time column
     time_str = df["date"] + "-" + df["time"]
     df["time"] = pd.to_datetime(time_str, format="%d.%m.%Y-%H:%M:%S", errors="coerce")
-    
+
     # Derive the raw spectrum
     # - When no drops detected, None
     # - After conversion to string, becomes NaN
     df["raw_drop_number"] = df["raw_drop_number"].astype("string")
     df["raw_drop_number"] = df["raw_drop_number"].str.strip()
-    
+
     # Remove <SPECTRUM> and </SPECTRUM> prefix and suffix from the raw_drop_number field
     df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
     df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>,0", "")
@@ -127,10 +127,10 @@ def reader(
     # - Add 0 before every ; if ; not preceded by a digit
     # - Example: ';;1;;' --> '0;0;1;0;'
     df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d),", "0,", regex=True)
-    
+
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
-        "date"
+        "date",
     ]
     df = df.drop(columns=columns_to_drop)
 
