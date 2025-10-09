@@ -113,7 +113,14 @@ def close_dask_cluster(cluster, client):
         logger.setLevel(original_level)
 
 
-def execute_tasks_safely(list_tasks, parallel: bool, logs_dir: str):
+def _batch_iterable(iterable, n):
+    """Yield successive n-sized chunks from iterable."""
+    for i in range(0, len(iterable), n):
+        yield iterable[i:i + n]
+            
+
+def execute_tasks_safely(list_tasks, parallel: bool, logs_dir: str, 
+                         max_tasks_per_batch=5_000):
     """
     Execute Dask tasks and skip failed ones.
 
@@ -125,7 +132,10 @@ def execute_tasks_safely(list_tasks, parallel: bool, logs_dir: str):
         Whether to execute in parallel with Dask or not.
     logs_dir : str
         Directory to store FAILED_TASKS.log.
-
+    max_tasks_per_batch : int or None, optional
+     Maximum number of tasks to submit to `client.compute()` at once.
+     The default is 5000. Dask struggle if more than 10_000 tasks are submitted.
+        
     Returns
     -------
     list_logs : list
@@ -149,15 +159,26 @@ def execute_tasks_safely(list_tasks, parallel: bool, logs_dir: str):
         client = get_client()
     except ValueError:
         raise ValueError("No Dask Distributed Client found.")
-
-    # Compute tasks (all concurrently)
-    # - Runs tasks == num_workers * threads_per_worker (which is 1 for DISDRODB)
-    # - If errors occurs in some, skip it
-    futures = client.compute(list_tasks)
-    results = client.gather(futures, errors="skip")
-
-    # Collect failed futures
-    failed_futures = [f for f in futures if f.status != "finished"]  # "error"
+    
+    all_results = []
+    failed_futures = []
+    
+    # Batch execution
+    task_batches = list(_batch_iterable(list_tasks, max_tasks_per_batch)) if max_tasks_per_batch else [list_tasks]
+    
+    for i, batch in enumerate(task_batches, start=1):
+        # Compute tasks (all concurrently)
+        # - Runs tasks == num_workers * threads_per_worker (which is 1 for DISDRODB)
+        # - If errors occurs in some, skip it
+        futures = client.compute(batch)
+        results = client.gather(futures, errors="skip")
+    
+        # Identify and collect failed futures
+        batch_failed = [f for f in futures if f.status != "finished"]
+        failed_futures.extend(batch_failed)
+        
+        # Collect results from successful tasks
+        all_results.extend(results)
 
     # If no tasks failed, return results
     if not failed_futures:
