@@ -44,7 +44,7 @@ def reader(
     """Reader."""
     ##------------------------------------------------------------------------.
     #### Define column names
-    column_names = ["TO_PARSE"] 
+    column_names = ["TO_PARSE"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
@@ -86,23 +86,23 @@ def reader(
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Remove rows with invalid number of separators
     df = df[df["TO_PARSE"].str.count(";") == 1]
-    if len(df) == 0: 
+    if len(df) == 0:
         raise ValueError(f"No valid data in {filepath}")
-    
+
     # Retrieve time and telegram field
     df = df["TO_PARSE"].str.split(";", expand=True)
     df.columns = ["time", "TO_BE_SPLITTED"]
-    
+
     # Remove rows with invalid number of separators
     df = df[df["TO_BE_SPLITTED"].str.count(",") == 1033]
-    if len(df) == 0: 
+    if len(df) == 0:
         raise ValueError(f"No valid data in {filepath}")
-    
+
     # Convert time column to datetime
     df_time = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S", errors="coerce")
 
     # Split the 'TO_BE_SPLITTED' column
-    df = df["TO_BE_SPLITTED"].str.split(",",  n=9, expand=True)
+    df = df["TO_BE_SPLITTED"].str.split(",", n=9, expand=True)
 
     # Assign column names
     columns_names = [
@@ -132,5 +132,3 @@ def reader(
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df
-
-
