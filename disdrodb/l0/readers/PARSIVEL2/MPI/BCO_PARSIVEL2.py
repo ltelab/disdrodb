@@ -38,11 +38,14 @@ def reader(
     # - Define delimiter
     reader_kwargs["delimiter"] = "/\n"
 
-    # Skip first row as columns names
+    # - Skip first row as columns names
     reader_kwargs["header"] = None
 
-    # Skip first 2 rows
-    reader_kwargs["skiprows"] = 1
+    # - Skip first 2 rows
+    reader_kwargs["skiprows"] = 0
+    
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
