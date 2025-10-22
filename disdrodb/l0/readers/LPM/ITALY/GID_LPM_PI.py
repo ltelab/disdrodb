@@ -76,8 +76,8 @@ def read_txt_file(file, filename, logger):
     # Raise error if empty file
     if len(df) == 0:
         raise ValueError(f"{filename} is empty.")
-        
-    # Select only rows with expected number of delimiters 
+
+    # Select only rows with expected number of delimiters
     df = df[df["TO_PARSE"].str.count(" ") == 526]
 
     # Check there are still valid rows
@@ -86,10 +86,10 @@ def read_txt_file(file, filename, logger):
 
     # Split by ; delimiter (before raw drop number)
     df = df["TO_PARSE"].str.split(" ", expand=True, n=82)
-    
+
     # Assign column names
     names = [
-        "date", 
+        "date",
         "time",
         "unknown",
         "start_identifier",
@@ -174,14 +174,14 @@ def read_txt_file(file, filename, logger):
         "TO_BE_FURTHER_PROCESSED",
     ]
     df.columns = names
-    
+
     # Define datetime "time" column
     df["time"] = df["date"] + " " + df["time"]
     df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
 
     # Drop row if start_identifier different than 00
     df = df[df["start_identifier"].astype(str) == "00"]
-    
+
     # Extract the last variables remained in raw_drop_number
     df_parsed = df["TO_BE_FURTHER_PROCESSED"].str.rsplit(" ", n=5, expand=True)
     df_parsed.columns = [
@@ -194,7 +194,7 @@ def read_txt_file(file, filename, logger):
     ]
 
     # Assign columns to the original dataframe
-    df[df_parsed.columns] = df_parsed 
+    df[df_parsed.columns] = df_parsed
 
     # Drop rows with invalid raw_drop_number
     # --> 440 value # 22x20
@@ -215,7 +215,6 @@ def read_txt_file(file, filename, logger):
         "wind_speed",
         "wind_direction",
         "checksum",
- 
     ]
     df = df.drop(columns=columns_to_drop)
     return df

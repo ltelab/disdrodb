@@ -77,8 +77,8 @@ def read_txt_file(file, filename, logger):
     # Raise error if empty file
     if len(df) == 0:
         raise ValueError(f"{filename} is empty.")
-        
-    # Select only rows with expected number of delimiters 
+
+    # Select only rows with expected number of delimiters
     df = df[df["TO_PARSE"].str.count(";") == 442]
 
     # Check there are still valid rows
@@ -136,7 +136,7 @@ def read_txt_file(file, filename, logger):
         "raw_drop_number",
     ]
     df.columns = names
-    
+
     # Deal with case if there are 61 timesteps
     # - Occurs sometimes when previous hourly file miss timesteps
     if len(df) == 61:
@@ -154,10 +154,10 @@ def read_txt_file(file, filename, logger):
 
     # - Define timedelta based on sensor_time
     dt = pd.to_timedelta(df["sensor_time"] + ":00").to_numpy().astype("m8[s]")
-    rollover_indices = np.where(np.diff(dt) < np.timedelta64(0, 's'))[0]
+    rollover_indices = np.where(np.diff(dt) < np.timedelta64(0, "s"))[0]
     if rollover_indices.size > 0:
         for idx in rollover_indices:
-            dt[idx + 1:] += np.timedelta64(24, 'h')
+            dt[idx + 1 :] += np.timedelta64(24, "h")
     dt = dt - dt[0]
 
     # - Define approximate time

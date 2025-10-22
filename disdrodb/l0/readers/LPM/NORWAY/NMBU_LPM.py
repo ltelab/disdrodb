@@ -18,6 +18,7 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for NMBU BIOKLIM LPM sensor."""
 import os
+
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -83,14 +84,14 @@ def reader(
     # Raise error if empty file
     if len(df) == 0:
         raise ValueError(f"{filepath} is empty.")
-        
-    # Select only rows with expected number of delimiters 
+
+    # Select only rows with expected number of delimiters
     df = df[df["TO_PARSE"].str.count(";") == 525]
-    
+
     # Raise error if no data left
     if len(df) == 0:
         raise ValueError(f"No valid data in {filepath}.")
-        
+
     # Split by ; delimiter (before raw drop number)
     df = df["TO_PARSE"].str.split(";", expand=True, n=80)
 
@@ -184,9 +185,9 @@ def reader(
     df["raw_drop_number"] = df["raw_drop_number"].str.rsplit(";", n=6, expand=True)[0]
 
     # Define datetime "time" column
-    # df["time"] = df["sensor_date"] + "-" + df["sensor_time"] 
+    # df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
     date_str = os.path.basename(filepath).split(".")[0]
-    time_str = date_str + "T"  + df["time"]
+    time_str = date_str + "T" + df["time"]
     df["time"] = pd.to_datetime(time_str, format="%Y-%m-%dT%H:%M:%S", errors="coerce")
 
     # Drop row if start_identifier different than 00

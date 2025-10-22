@@ -17,9 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for CHARLESTON experiment LPM sensors."""
+import os
+
 import numpy as np
 import pandas as pd
-import os
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
@@ -48,7 +49,7 @@ def reader(
 
     # - Define encoding
     reader_kwargs["encoding"] = "ISO-8859-1"
-    
+
     # - Since column names are expected to be passed explicitly, header is set to None
     reader_kwargs["header"] = None
 
@@ -88,9 +89,9 @@ def reader(
     if len(df) == 0:
         raise ValueError(f"{filepath} is empty.")
 
-    # Select only rows with expected number of delimiters 
+    # Select only rows with expected number of delimiters
     df = df[df["TO_PARSE"].str.count(";") == 520]
-        
+
     # Raise error if no data left
     if len(df) == 0:
         raise ValueError(f"No valid data in {filepath}.")
@@ -100,8 +101,8 @@ def reader(
 
     # Assign column names
     names = [
-        "start_identifier", 
-        "device_address", 
+        "start_identifier",
+        "device_address",
         "sensor_serial_number",
         "sensor_date",
         "sensor_time",
@@ -182,44 +183,44 @@ def reader(
         "raw_drop_number",
     ]
     df.columns = names
-    
+
     # Remove checksum from raw_drop_number
     df["raw_drop_number"] = df["raw_drop_number"].str.rsplit(";", n=2, expand=True)[0]
-    
+
     # Remove corrupted characters
-    df = df.replace('°', '', regex=True) # station N
-    
+    df = df.replace("°", "", regex=True)  # station N
+
     # Keep only rows where sensor_time matches HH:MM:SS format
     df = df[df["sensor_time"].astype(str).str.match(r"^\d{2}:\d{2}:\d{2}$")]
-   
-    # Keep only rows with valid spectrum 
+
+    # Keep only rows with valid spectrum
     df = df[df["raw_drop_number"].astype(str).str.match(r"^(?:\d{3};)*\d{3};?$")]
-    if len(df) == 0: 
-        raise ValueError("Spectra is corrupted")  
+    if len(df) == 0:
+        raise ValueError("Spectra is corrupted")
 
     # Define datetime "time" column
     # - Define start time
     filename = os.path.basename(filepath)
     _, delta_dt, doy, year = filename.split(".")[0].split("_")
-    start_time = pd.to_datetime(f"{year}_{doy}", format="%y_%j") + pd.to_timedelta(int(delta_dt), unit="s")    
+    start_time = pd.to_datetime(f"{year}_{doy}", format="%y_%j") + pd.to_timedelta(int(delta_dt), unit="s")
     # - Define timedelta based on sensor_time
-    # --> Add +24h to subsequent times when time resets 
+    # --> Add +24h to subsequent times when time resets
     dt = pd.to_timedelta(df["sensor_time"]).to_numpy().astype("m8[s]")
-    rollover_indices = np.where(np.diff(dt) < np.timedelta64(0, 's'))[0]
+    rollover_indices = np.where(np.diff(dt) < np.timedelta64(0, "s"))[0]
     if rollover_indices.size > 0:
         for idx in rollover_indices:
-            dt[idx + 1:] += np.timedelta64(24, 'h')
+            dt[idx + 1 :] += np.timedelta64(24, "h")
     dt = dt - dt[0]
     # - Define measurement datetime
-    df["time"] = start_time + dt        
+    df["time"] = start_time + dt
 
     # Drop rows with invalid raw_drop_number
     df = df[df["raw_drop_number"].astype(str).str.len() == 1759]
 
     # Drop columns not agreeing with DISDRODB L0 standards
     variables_to_drop = [
-        "start_identifier", 
-        "device_address", 
+        "start_identifier",
+        "device_address",
         "sensor_serial_number",
         "sensor_date",
         "sensor_time",
