@@ -892,12 +892,12 @@ class TestCreateL0cDatasets:
     def test_too_few_timesteps_after_invalid_sample_interval_removal(self, mocker):
         """Test error raised when too few timesteps remain after invalid interval removal."""
         # Mock dataset with mostly invalid sample intervals
-        times = pd.date_range("2023-01-01", periods=2, freq="60s")
+        times = pd.date_range("2023-01-01", periods=3, freq="60s")
         ds = xr.Dataset(
             {
-                "raw_drop_number": ("time", [1, 2]),
-                "sample_interval": ("time", [30, 45]),  # Invalid intervals
-                "data": ("time", [1.0, 2.0]),
+                "raw_drop_number": ("time", [1, 2, 3]),
+                "sample_interval": ("time", [30, 45, 60]),  # 2 invalid timesteps
+                "data": ("time", [1.0, 2.0, 3.0]),
             },
             coords={"time": times},
         )
@@ -928,6 +928,7 @@ class TestCreateL0cDatasets:
             },
             coords={"time": times},
         )
+        ds = xr.concat([ds, ds], dim="time")
 
         mocker.patch("disdrodb.l0.l0c_processing.open_netcdf_files", return_value=ds)
 

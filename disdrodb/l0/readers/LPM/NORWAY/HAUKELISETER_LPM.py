@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB reader for GID LPM sensors measuring also wind."""
+"""DISDRODB reader for Haukeliseter Test Site LPM sensors."""
+import numpy as np
 import pandas as pd
-
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
 
@@ -31,7 +31,7 @@ def reader(
     """Reader."""
     ##------------------------------------------------------------------------.
     #### - Define raw data headers
-    column_names = ["TO_BE_SPLITTED"]
+    column_names = ["TO_PARSE"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
@@ -44,7 +44,10 @@ def reader(
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
 
-    # Since column names are expected to be passed explicitly, header is set to None
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
+    
+    # - Since column names are expected to be passed explicitly, header is set to None
     reader_kwargs["header"] = None
 
     # - Number of rows to be skipped at the beginning of the file
@@ -79,17 +82,36 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Count number of delimiters to identify valid rows
-    df = df[df["TO_BE_SPLITTED"].str.count(";") == 523]
+    # Raise error if empty file
+    if len(df) == 0:
+        raise ValueError(f"{filepath} is empty.")
 
+    # Select only rows with expected number of delimiters 
+    df = df[df["TO_PARSE"].str.count(";").isin([520, 521])]
+        
+    # Raise error if no data left
+    if len(df) == 0:
+        raise ValueError(f"No valid data in {filepath}.")
+
+    # Retrieve most frequent number of delimiters
+    possible_delimiters, counts = np.unique(df["TO_PARSE"].str.count(";"), return_counts=True)
+    n_delimiters = possible_delimiters[np.argmax(counts)]
+    
+    if n_delimiters == 520: 
+        n = 79 
+        columns_to_drop = ["device_address", "sensor_serial_number"]
+    else: # n_delimiters == 521
+        n = 80
+        columns_to_drop = ["start_identifier", "device_address", "sensor_serial_number"]
+ 
+    
     # Split by ; delimiter (before raw drop number)
-    df = df["TO_BE_SPLITTED"].str.split(";", expand=True, n=79)
+    df = df["TO_PARSE"].str.split(";", expand=True, n=n)
 
     # Assign column names
     names = [
-        "start_identifier",
-        "device_address",
-        "sensor_serial_number",
+        "time",
+        *columns_to_drop,
         "sensor_date",
         "sensor_time",
         "weather_code_synop_4677_5min",
@@ -166,45 +188,29 @@ def reader(
         "number_particles_class_8_internal_data",
         "number_particles_class_9",
         "number_particles_class_9_internal_data",
-        "TO_BE_FURTHER_PROCESSED",
+        "raw_drop_number",
     ]
     df.columns = names
 
-    # Extract the last variables remained in raw_drop_number
-    df_parsed = df["TO_BE_FURTHER_PROCESSED"].str.rsplit(";", n=5, expand=True)
-    df_parsed.columns = [
-        "raw_drop_number",
-        "air_temperature",
-        "relative_humidity",
-        "wind_speed",
-        "wind_direction",
-        "checksum",
-    ]
-
-    # Assign columns to the original dataframe
-    df[df_parsed.columns] = df_parsed
+    # Remove checksum from raw_drop_number
+    df["raw_drop_number"] = df["raw_drop_number"].str.rsplit(";", n=2, expand=True)[0]
 
     # Define datetime "time" column
-    df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
-    df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y-%H:%M:%S", errors="coerce")
-
-    # Drop row if start_identifier different than 00
-    df = df[df["start_identifier"].astype(str) == "00"]
+    if n_delimiters == 520:
+        time_str = df["time"].str.extract(r'(\d{8}_\d{6})')[0]
+        df["time"] = pd.to_datetime(time_str, format="%Y%m%d_%H%M%S", errors="coerce")
+    else: 
+        time_str = df["time"].str.extract(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})')[0]
+        df["time"] = pd.to_datetime(time_str, format="%Y-%m-%d %H:%M:%S", errors="coerce")
 
     # Drop rows with invalid raw_drop_number
     df = df[df["raw_drop_number"].astype(str).str.len() == 1759]
 
     # Drop columns not agreeing with DISDRODB L0 standards
-    columns_to_drop = [
-        "start_identifier",
-        "device_address",
-        "sensor_serial_number",
+    variables_to_drop = [
+       *columns_to_drop,
         "sensor_date",
         "sensor_time",
-        "checksum",
-        "relative_humidity",  # TO DROP? ALWAYS NOT AVAILABLE?
-        "TO_BE_FURTHER_PROCESSED",
     ]
-    df = df.drop(columns=columns_to_drop)
-
+    df = df.drop(columns=variables_to_drop)
     return df

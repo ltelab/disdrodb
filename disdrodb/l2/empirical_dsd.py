@@ -224,7 +224,7 @@ def get_effective_sampling_area(sensor_name, diameter):
         B = 30 / 1000  # Width of the Parsivel beam in m (30mm)
         sampling_area = L * (B - diameter / 2)
         return sampling_area
-    if sensor_name == "LPM":
+    if sensor_name in ["LPM", "LPM_V0"]:
         # Calculate sampling area for each diameter bin (S_i)
         L = 228 / 1000  # Length of the Parsivel beam in m (228 mm)
         B = 20 / 1000  # Width of the Parsivel beam in m (20 mm)

@@ -30,7 +30,7 @@ def reader(
     """Reader."""
     ##------------------------------------------------------------------------.
     #### Define column names
-    column_names = ["TO_SPLIT"]
+    column_names = ["TO_PARSE"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
@@ -81,10 +81,10 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Remove corrupted rows
-    df = df[df["TO_SPLIT"].str.count(";").isin([1101])]
+    df = df[df["TO_PARSE"].str.count(";") == 1101]
 
     # Split into columns
-    df = df["TO_SPLIT"].str.split(";", expand=True, n=13)
+    df = df["TO_PARSE"].str.split(";", expand=True, n=13)
 
     # Assign columns names
     names = [
@@ -105,15 +105,14 @@ def reader(
     ]
     df.columns = names
 
-    # Add datetime time column
-    # TODO: daily files: take valid date !
-    time_str = df["date"].str.replace("\x00", "").str.strip() + "-" + df["time"]
-    time_datetime = pd.to_datetime(time_str, format="%d.%m.%Y-%H:%M:%S", errors="coerce")
-    df["time"] = time_datetime
-    df = df.drop(columns=["date"])
+    # Sanitize date
+    date = pd.to_datetime(df["date"], format="%d.%m.%Y", errors="coerce")
+    date = date.ffill().bfill()
 
-    # time_str[np.isnan(time_datetime)].iloc[2]
-    # df[np.isnan(time_datetime)].iloc[0]
+    # Add datetime time column
+    time_str = date.astype(str) + "T" + df["time"]
+    df["time"] = pd.to_datetime(time_str, format="%Y-%m-%dT%H:%M:%S", errors="coerce")
+    df = df.drop(columns=["date"])
 
     # Derive raw drop arrays
     df_split = df["TO_SPLIT"].str.split(";", expand=True)

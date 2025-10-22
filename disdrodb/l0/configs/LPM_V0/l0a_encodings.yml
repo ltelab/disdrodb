@@ -1,0 +1,45 @@
+weather_code_synop_4680_5min: "float32" # 'uint8'
+weather_code_metar_4678_5min: "str"
+precipitation_rate_5min: "float32"
+weather_code_synop_4680: "float32" # 'uint8'
+weather_code_metar_4678: "str"
+precipitation_rate: "float32"
+precipitation_accumulated: "float32"
+temperature_interior: "float32" # 'uint16'
+laser_temperature: "float32" # 'uint16'
+laser_current_average: "float32" # 'uint16'
+control_voltage: "float32"
+optical_control_voltage_output: "float32"
+number_particles: "float32" # 'uint16'
+number_particles_internal_data: "float32"
+number_particles_min_speed: "float32" # 'uint16'
+number_particles_min_speed_internal_data: "float32"
+number_particles_max_speed: "float32" # 'uint16'
+number_particles_max_speed_internal_data: "float32"
+number_particles_min_diameter: "float32" # 'uint16'
+number_particles_min_diameter_internal_data: "float32"
+number_particles_no_hydrometeor: "float32" # 'uint16'
+number_particles_no_hydrometeor_internal_data: "float32"
+number_particles_unknown_classification: "float32" # 'uint16'
+total_gross_volume_unknown_classification: "float32"
+number_particles_hail: "float32" #  'uint16'
+total_gross_volume_hail: "float32"
+number_particles_solid_precipitation: "float32" # 'uint16'
+total_gross_volume_solid_precipitation: "float32"
+number_particles_great_pellet: "float32" # 'uint16'
+total_gross_volume_great_pellet: "float32"
+number_particles_small_pellet: "float32" # 'uint16'
+total_gross_volume_small_pellet: "float32"
+number_particles_snowgrain: "float32" # 'uint16'
+total_gross_volume_snowgrain: "float32"
+number_particles_rain: "float32" # 'uint16'
+total_gross_volume_rain: "float32"
+number_particles_small_rain: "float32" # 'uint16'
+total_gross_volume_small_rain: "float32"
+number_particles_drizzle: "float32" # 'uint16'
+total_gross_volume_drizzle: "float32"
+raw_drop_number: "str"
+air_temperature: "float32"
+relative_humidity: "float32"
+wind_speed: "float32"
+wind_direction: "float32"

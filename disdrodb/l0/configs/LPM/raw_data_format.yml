@@ -73,7 +73,7 @@ weather_code_synop_4680_5min:
     - -1
     - 89
   nan_flags: -1
-  field_number: 08
+  field_number: "08"
 weather_code_metar_4678_5min:
   n_digits: 0
   n_characters: 5
@@ -81,7 +81,7 @@ weather_code_metar_4678_5min:
   n_naturals: 0
   data_range: null
   nan_flags: null
-  field_number: 09
+  field_number: "09"
 precipitation_rate_5min:
   n_digits: 6
   n_characters: 7
@@ -90,7 +90,7 @@ precipitation_rate_5min:
   data_range:
     - 0.0
     - 999.999
-  nan_flags: null
+  nan_flags: 999.999
   field_number: "10"
 weather_code_synop_4677:
   n_digits: 0
@@ -128,7 +128,7 @@ precipitation_rate:
   data_range:
     - 0.0
     - 999.999
-  nan_flags: null
+  nan_flags: 999.999
   field_number: "14"
 rainfall_rate:
   n_digits: 6
@@ -138,7 +138,7 @@ rainfall_rate:
   data_range:
     - 0.0
     - 999.999
-  nan_flags: null
+  nan_flags: 999.999
   field_number: "15"
 snowfall_rate:
   n_digits: 6
@@ -148,7 +148,7 @@ snowfall_rate:
   data_range:
     - 0.0
     - 999.999
-  nan_flags: null
+  nan_flags: 999.999
   field_number: "16"
 precipitation_accumulated:
   n_digits: 6
@@ -158,7 +158,7 @@ precipitation_accumulated:
   data_range:
     - 0.0
     - 9999.99
-  nan_flags: null
+  nan_flags: 9999.99
   field_number: "17"
 mor_visibility:
   n_digits: 5
@@ -168,7 +168,7 @@ mor_visibility:
   data_range:
     - 0
     - 99999
-  nan_flags: null
+  nan_flags: 99999
   field_number: "18"
 reflectivity:
   n_digits: 3
@@ -178,7 +178,7 @@ reflectivity:
   data_range:
     - -9.9
     - 99.9
-  nan_flags: null
+  nan_flags: 99.9
   field_number: "19"
 quality_index:
   n_digits: 3
@@ -410,7 +410,7 @@ temperature_interior:
   data_range:
     - -30
     - 999
-  nan_flags: null
+  nan_flags: 999
   field_number: "38"
 laser_temperature:
   n_digits: 2
@@ -430,7 +430,7 @@ laser_current_average:
   data_range:
     - 0
     - 9999
-  nan_flags: null
+  nan_flags: 9999
   field_number: "40"
 control_voltage:
   n_digits: 4
@@ -448,7 +448,7 @@ optical_control_voltage_output:
   data_range:
     - 0
     - 9999
-  nan_flags: null
+  nan_flags: 9999
   field_number: "42"
 sensor_voltage_supply:
   n_digits: 3

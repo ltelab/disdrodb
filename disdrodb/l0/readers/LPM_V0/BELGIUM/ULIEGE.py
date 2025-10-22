@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -14,7 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB reader for GID LPM sensors not reporting time (TC-MI2, TC-MI3, TC-ER e TC-FI)."""
+"""DISDRODB reader for ULIEGE LPM stations."""
+
 import numpy as np
 import pandas as pd
 
@@ -24,7 +27,7 @@ from disdrodb.utils.logger import log_error, log_warning
 
 
 def read_txt_file(file, filename, logger):
-    """Parse for LPM hourly file."""
+    """Parse ULIEGE LPM hourly file."""
     #### - Define raw data headers
     column_names = ["TO_PARSE"]
 
@@ -75,66 +78,32 @@ def read_txt_file(file, filename, logger):
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Count number of delimiters to identify valid rows
-    df = df[df["TO_PARSE"].str.count(";") == 520]
+    df = df[df["TO_PARSE"].str.count(";") == 442]
 
     # Check there are still valid rows
     if len(df) == 0:
         raise ValueError(f"No valid rows in {filename}.")
 
     # Split by ; delimiter (before raw drop number)
-    df = df["TO_PARSE"].str.split(";", expand=True, n=79)
+    df = df["TO_PARSE"].str.split(";", expand=True, n=43)
 
     # Assign column names
-    column_names = [
+    names = [
         "start_identifier",
-        "device_address",
         "sensor_serial_number",
-        "sensor_date",
-        "sensor_time",
-        "weather_code_synop_4677_5min",
         "weather_code_synop_4680_5min",
         "weather_code_metar_4678_5min",
         "precipitation_rate_5min",
-        "weather_code_synop_4677",
         "weather_code_synop_4680",
         "weather_code_metar_4678",
         "precipitation_rate",
-        "rainfall_rate",
-        "snowfall_rate",
         "precipitation_accumulated",
-        "mor_visibility",
-        "reflectivity",
-        "quality_index",
-        "max_hail_diameter",
-        "laser_status",
-        "static_signal_status",
-        "laser_temperature_analog_status",
-        "laser_temperature_digital_status",
-        "laser_current_analog_status",
-        "laser_current_digital_status",
-        "sensor_voltage_supply_status",
-        "current_heating_pane_transmitter_head_status",
-        "current_heating_pane_receiver_head_status",
-        "temperature_sensor_status",
-        "current_heating_voltage_supply_status",
-        "current_heating_house_status",
-        "current_heating_heads_status",
-        "current_heating_carriers_status",
-        "control_output_laser_power_status",
-        "reserved_status",
+        "sensor_time",
         "temperature_interior",
         "laser_temperature",
         "laser_current_average",
         "control_voltage",
         "optical_control_voltage_output",
-        "sensor_voltage_supply",
-        "current_heating_pane_transmitter_head",
-        "current_heating_pane_receiver_head",
-        "temperature_ambient",
-        "current_heating_voltage_supply",
-        "current_heating_house",
-        "current_heating_heads",
-        "current_heating_carriers",
         "number_particles",
         "number_particles_internal_data",
         "number_particles_min_speed",
@@ -146,28 +115,26 @@ def read_txt_file(file, filename, logger):
         "number_particles_no_hydrometeor",
         "number_particles_no_hydrometeor_internal_data",
         "number_particles_unknown_classification",
-        "number_particles_unknown_classification_internal_data",
-        "number_particles_class_1",
-        "number_particles_class_1_internal_data",
-        "number_particles_class_2",
-        "number_particles_class_2_internal_data",
-        "number_particles_class_3",
-        "number_particles_class_3_internal_data",
-        "number_particles_class_4",
-        "number_particles_class_4_internal_data",
-        "number_particles_class_5",
-        "number_particles_class_5_internal_data",
-        "number_particles_class_6",
-        "number_particles_class_6_internal_data",
-        "number_particles_class_7",
-        "number_particles_class_7_internal_data",
-        "number_particles_class_8",
-        "number_particles_class_8_internal_data",
-        "number_particles_class_9",
-        "number_particles_class_9_internal_data",
+        "total_gross_volume_unknown_classification",
+        "number_particles_hail",
+        "total_gross_volume_hail",
+        "number_particles_solid_precipitation",
+        "total_gross_volume_solid_precipitation",
+        "number_particles_great_pellet",
+        "total_gross_volume_great_pellet",
+        "number_particles_small_pellet",
+        "total_gross_volume_small_pellet",
+        "number_particles_snowgrain",
+        "total_gross_volume_snowgrain",
+        "number_particles_rain",
+        "total_gross_volume_rain",
+        "number_particles_small_rain",
+        "total_gross_volume_small_rain",
+        "number_particles_drizzle",
+        "total_gross_volume_drizzle",
         "raw_drop_number",
     ]
-    df.columns = column_names
+    df.columns = names
 
     # Deal with case if there are 61 timesteps
     # - Occurs sometimes when previous hourly file miss timesteps
@@ -185,12 +152,12 @@ def read_txt_file(file, filename, logger):
     start_time = pd.to_datetime(start_time_str, format="%Y%m%d%H")
 
     # - Define timedelta based on sensor_time
-    # --> Add +24h to subsequent times when time resets
-    dt = pd.to_timedelta(df["sensor_time"]).to_numpy().astype("m8[s]")
-    rollover_indices = np.where(np.diff(dt) < np.timedelta64(0, "s"))[0]
+    # --> Add +24h to subsequent times when time resets 
+    dt = pd.to_timedelta(df["sensor_time"] + ":00").to_numpy().astype("m8[s]")
+    rollover_indices = np.where(np.diff(dt) < np.timedelta64(0, 's'))[0]
     if rollover_indices.size > 0:
         for idx in rollover_indices:
-            dt[idx + 1 :] += np.timedelta64(24, "h")
+            dt[idx + 1:] += np.timedelta64(24, 'h')
     dt = dt - dt[0]
 
     # - Define approximate time
@@ -201,16 +168,13 @@ def read_txt_file(file, filename, logger):
     df = df[valid_rows]
 
     # Drop rows with invalid raw_drop_number
-    # --> 440 value # 22x20
     # --> 400 here  # 20x20
-    df = df[df["raw_drop_number"].astype(str).str.len() == 1763]
+    df = df[df["raw_drop_number"].astype(str).str.len() == 1599]
 
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
         "start_identifier",
-        "device_address",
         "sensor_serial_number",
-        "sensor_date",
         "sensor_time",
     ]
     df = df.drop(columns=columns_to_drop)

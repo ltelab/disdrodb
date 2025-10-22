@@ -1,0 +1,474 @@
+start_identifier:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 0
+  n_naturals: 1
+  data_range:
+    - 0
+    - 9
+  nan_flags: null
+  field_number: "01"
+sensor_serial_number:
+  n_digits: 6
+  n_characters: 6
+  n_decimals: 0
+  n_naturals: 6
+  data_range:
+    - 0
+    - 999999
+  nan_flags: null
+  field_number: "02"
+weather_code_synop_4680_5min:
+  n_digits: 2
+  n_characters: 2
+  n_decimals: 0
+  n_naturals: 2
+  data_range:
+    - -1
+    - 89
+  nan_flags: -1
+  field_number: "03"
+weather_code_metar_4678_5min:
+  n_digits: 0
+  n_characters: 5
+  n_decimals: 0
+  n_naturals: 0
+  data_range: null
+  nan_flags: "?????"
+  field_number: "04"
+precipitation_rate_5min:
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 3
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 999.999
+  nan_flags: 999.999
+  field_number: "05"
+weather_code_synop_4680:
+  n_digits: 0
+  n_characters: 5
+  n_decimals: 0
+  n_naturals: 0
+  data_range:
+    - -1
+    - 89
+  nan_flags: -1
+  field_number: "06"
+weather_code_metar_4678:
+  n_digits: 0
+  n_characters: 5
+  n_decimals: 0
+  n_naturals: 0
+  data_range: null
+  nan_flags: "?????"
+  field_number: "07"
+precipitation_rate:
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 3
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 999.999
+  nan_flags: 999.999
+  field_number: "08"
+precipitation_accumulated:
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 4
+  n_naturals: 2
+  data_range:
+    - 0.0
+    - 9999.99
+  nan_flags: 9999.99
+  field_number: "09"
+sensor_time:
+  n_digits: 6
+  n_characters: 8
+  n_decimals: 6
+  n_naturals: 0
+  data_range: null
+  nan_flags: null
+  field_number: "10"
+temperature_interior:
+  n_digits: 3
+  n_characters: 3
+  n_decimals: 3
+  n_naturals: 0
+  data_range:
+    - -30
+    - 999
+  nan_flags: null
+  field_number: "11"
+laser_temperature:
+  n_digits: 2
+  n_characters: 2
+  n_decimals: 2
+  n_naturals: 0
+  data_range:
+    - 0
+    - 80
+  nan_flags: null
+  field_number: "12"
+laser_current_average:
+  n_digits: 4
+  n_characters: 4
+  n_decimals: 4
+  n_naturals: 0
+  data_range:
+    - 0
+    - 9999
+  nan_flags: null
+  field_number: "13"
+control_voltage:
+  n_digits: 4
+  n_characters: 4
+  n_decimals: 4
+  n_naturals: 0
+  data_range: null
+  nan_flags: null
+  field_number: "14"
+optical_control_voltage_output:
+  n_digits: 4
+  n_characters: 4
+  n_decimals: 4
+  n_naturals: 0
+  data_range:
+    - 0
+    - 9999
+  nan_flags: null
+  field_number: "15"
+number_particles:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+    - 0
+    - 99999
+  nan_flags: null
+  field_number: "16"
+number_particles_internal_data:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 99999.999
+  nan_flags: null
+  field_number: "17"
+number_particles_min_speed:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+    - 0
+    - 99999
+  nan_flags: null
+  field_number: "18"
+number_particles_min_speed_internal_data:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 99999.999
+  nan_flags: null
+  field_number: "19"
+number_particles_max_speed:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+    - 0
+    - 99999
+  nan_flags: null
+  field_number: "20"
+number_particles_max_speed_internal_data:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 99999.999
+  nan_flags: null
+  field_number: "21"
+number_particles_min_diameter:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+    - 0
+    - 99999
+  nan_flags: null
+  field_number: "22"
+number_particles_min_diameter_internal_data:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 99999.999
+  nan_flags: null
+  field_number: "23"
+number_particles_no_hydrometeor:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+    - 0
+    - 99999
+  nan_flags: null
+  field_number: "24"
+number_particles_no_hydrometeor_internal_data:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 99999.999
+  nan_flags: null
+  field_number: "25"
+number_particles_unknown_classification:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+    - 0
+    - 99999
+  nan_flags: null
+  field_number: "26"
+total_gross_volume_unknown_classification:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 99999.999
+  nan_flags: null
+  field_number: "27"
+number_particles_hail:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+    - 0
+    - 99999
+  nan_flags: null
+  field_number: "28"
+total_gross_volume_hail:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 99999.999
+  nan_flags: null
+  field_number: "29"
+number_particles_solid_precipitation:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+    - 0
+    - 99999
+  nan_flags: null
+  field_number: "30"
+total_gross_volume_solid_precipitation:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 99999.999
+  nan_flags: null
+  field_number: "31"
+number_particles_great_pellet:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+    - 0
+    - 99999
+  nan_flags: null
+  field_number: "32"
+total_gross_volume_great_pellet:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 99999.999
+  nan_flags: null
+  field_number: "33"
+number_particles_small_pellet:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+    - 0
+    - 99999
+  nan_flags: null
+  field_number: "34"
+total_gross_volume_small_pellet:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 99999.999
+  nan_flags: null
+  field_number: "35"
+number_particles_snowgrain:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+    - 0
+    - 99999
+  nan_flags: null
+  field_number: "36"
+total_gross_volume_snowgrain:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 99999.999
+  nan_flags: null
+  field_number: "37"
+number_particles_rain:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+    - 0
+    - 99999
+  nan_flags: null
+  field_number: "38"
+total_gross_volume_rain:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 99999.999
+  nan_flags: null
+  field_number: "39"
+number_particles_small_rain:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+    - 0
+    - 99999
+  nan_flags: null
+  field_number: "40"
+total_gross_volume_small_rain:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 99999.999
+  nan_flags: null
+  field_number: "41"
+number_particles_drizzle:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+    - 0
+    - 99999
+  nan_flags: null
+  field_number: "42"
+total_gross_volume_drizzle:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 99999.999
+  nan_flags: null
+  field_number: "43"
+raw_drop_number:
+  n_digits: 1317
+  n_characters: 1756
+  n_decimals: 1317
+  n_naturals: 0
+  data_range: null
+  nan_flags: null
+  dimension_order:
+    - diameter_bin_center
+    - velocity_bin_center
+  n_values: 400
+  field_number: "81"
+air_temperature:
+  n_digits: 4
+  n_characters: 5
+  n_decimals: 1
+  n_naturals: 2
+  data_range:
+    - -40
+    - 70
+  nan_flags: 99999
+  field_number: "444"
+relative_humidity:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 0
+  n_naturals: 5
+  data_range:
+    - 0
+    - 99999
+  nan_flags: 99999
+  field_number: "445"
+wind_speed:
+  n_digits: 3
+  n_characters: 4
+  n_decimals: 1
+  n_naturals: 2
+  data_range:
+    - 0
+    - 60
+  nan_flags: null
+  field_number: "446"
+wind_direction:
+  n_digits: 3
+  n_characters: 3
+  n_decimals: 0
+  n_naturals: 3
+  data_range:
+    - 0
+    - 360
+  nan_flags: 999
+  field_number: "447"

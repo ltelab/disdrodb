@@ -16,8 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB reader for GID LPM sensors measuring also wind."""
+"""DISDRODB reader for CHARLESTON experiment LPM sensors."""
+import numpy as np
 import pandas as pd
+import os
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
@@ -31,7 +33,7 @@ def reader(
     """Reader."""
     ##------------------------------------------------------------------------.
     #### - Define raw data headers
-    column_names = ["TO_BE_SPLITTED"]
+    column_names = ["TO_PARSE"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
@@ -44,7 +46,10 @@ def reader(
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
 
-    # Since column names are expected to be passed explicitly, header is set to None
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
+    
+    # - Since column names are expected to be passed explicitly, header is set to None
     reader_kwargs["header"] = None
 
     # - Number of rows to be skipped at the beginning of the file
@@ -79,16 +84,24 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Count number of delimiters to identify valid rows
-    df = df[df["TO_BE_SPLITTED"].str.count(";") == 523]
+    # Raise error if empty file
+    if len(df) == 0:
+        raise ValueError(f"{filepath} is empty.")
+
+    # Select only rows with expected number of delimiters 
+    df = df[df["TO_PARSE"].str.count(";") == 520]
+        
+    # Raise error if no data left
+    if len(df) == 0:
+        raise ValueError(f"No valid data in {filepath}.")
 
     # Split by ; delimiter (before raw drop number)
-    df = df["TO_BE_SPLITTED"].str.split(";", expand=True, n=79)
+    df = df["TO_PARSE"].str.split(";", expand=True, n=79)
 
     # Assign column names
     names = [
-        "start_identifier",
-        "device_address",
+        "start_identifier", 
+        "device_address", 
         "sensor_serial_number",
         "sensor_date",
         "sensor_time",
@@ -166,45 +179,50 @@ def reader(
         "number_particles_class_8_internal_data",
         "number_particles_class_9",
         "number_particles_class_9_internal_data",
-        "TO_BE_FURTHER_PROCESSED",
+        "raw_drop_number",
     ]
     df.columns = names
-
-    # Extract the last variables remained in raw_drop_number
-    df_parsed = df["TO_BE_FURTHER_PROCESSED"].str.rsplit(";", n=5, expand=True)
-    df_parsed.columns = [
-        "raw_drop_number",
-        "air_temperature",
-        "relative_humidity",
-        "wind_speed",
-        "wind_direction",
-        "checksum",
-    ]
-
-    # Assign columns to the original dataframe
-    df[df_parsed.columns] = df_parsed
+    
+    # Remove checksum from raw_drop_number
+    df["raw_drop_number"] = df["raw_drop_number"].str.rsplit(";", n=2, expand=True)[0]
+    
+    # Remove corrupted characters
+    df = df.replace('°', '', regex=True) # station N
+    
+    # Keep only rows where sensor_time matches HH:MM:SS format
+    df = df[df["sensor_time"].astype(str).str.match(r"^\d{2}:\d{2}:\d{2}$")]
+   
+    # Keep only rows with valid spectrum 
+    df = df[df["raw_drop_number"].astype(str).str.match(r"^(?:\d{3};)*\d{3};?$")]
+    if len(df) == 0: 
+        raise ValueError("Spectra is corrupted")  
 
     # Define datetime "time" column
-    df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
-    df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y-%H:%M:%S", errors="coerce")
-
-    # Drop row if start_identifier different than 00
-    df = df[df["start_identifier"].astype(str) == "00"]
+    # - Define start time
+    filename = os.path.basename(filepath)
+    _, delta_dt, doy, year = filename.split(".")[0].split("_")
+    start_time = pd.to_datetime(f"{year}_{doy}", format="%y_%j") + pd.to_timedelta(int(delta_dt), unit="s")    
+    # - Define timedelta based on sensor_time
+    # --> Add +24h to subsequent times when time resets 
+    dt = pd.to_timedelta(df["sensor_time"]).to_numpy().astype("m8[s]")
+    rollover_indices = np.where(np.diff(dt) < np.timedelta64(0, 's'))[0]
+    if rollover_indices.size > 0:
+        for idx in rollover_indices:
+            dt[idx + 1:] += np.timedelta64(24, 'h')
+    dt = dt - dt[0]
+    # - Define measurement datetime
+    df["time"] = start_time + dt        
 
     # Drop rows with invalid raw_drop_number
     df = df[df["raw_drop_number"].astype(str).str.len() == 1759]
 
     # Drop columns not agreeing with DISDRODB L0 standards
-    columns_to_drop = [
-        "start_identifier",
-        "device_address",
+    variables_to_drop = [
+        "start_identifier", 
+        "device_address", 
         "sensor_serial_number",
         "sensor_date",
         "sensor_time",
-        "checksum",
-        "relative_humidity",  # TO DROP? ALWAYS NOT AVAILABLE?
-        "TO_BE_FURTHER_PROCESSED",
     ]
-    df = df.drop(columns=columns_to_drop)
-
+    df = df.drop(columns=variables_to_drop)
     return df

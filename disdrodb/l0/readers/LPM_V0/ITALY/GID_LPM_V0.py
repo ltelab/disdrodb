@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -16,8 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB reader for ULIEGE LPM stations."""
-
+"""DISDRODB reader for GID LPM V0 sensor (TC-TO) with incorrect reported time."""
 import numpy as np
 import pandas as pd
 
@@ -27,7 +24,7 @@ from disdrodb.utils.logger import log_error, log_warning
 
 
 def read_txt_file(file, filename, logger):
-    """Parse ULIEGE LPM hourly file."""
+    """Parse for TC-TO LPM hourly file."""
     #### - Define raw data headers
     column_names = ["TO_PARSE"]
 
@@ -77,7 +74,11 @@ def read_txt_file(file, filename, logger):
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Count number of delimiters to identify valid rows
+    # Raise error if empty file
+    if len(df) == 0:
+        raise ValueError(f"{filename} is empty.")
+        
+    # Select only rows with expected number of delimiters 
     df = df[df["TO_PARSE"].str.count(";") == 442]
 
     # Check there are still valid rows
@@ -88,31 +89,22 @@ def read_txt_file(file, filename, logger):
     df = df["TO_PARSE"].str.split(";", expand=True, n=43)
 
     # Assign column names
-    column_names = [
-        "id",
-        "sample_interval",
-        "weather_code_synop_4677_5min",  # or  "weather_code_synop_4680_5min",
+    names = [
+        "start_identifier",
+        "sensor_serial_number",
+        "weather_code_synop_4680_5min",
         "weather_code_metar_4678_5min",
         "precipitation_rate_5min",
-        "weather_code_synop_4677",  # or "weather_code_synop_4680",
+        "weather_code_synop_4680",
         "weather_code_metar_4678",
         "precipitation_rate",
         "precipitation_accumulated",
         "sensor_time",
-        # "mor_visibility",
-        # "reflectivity",
-        # "quality_index",
-        # "max_hail_diameter",
-        # "laser_status",
-        "dummy1",
-        "dummy2",
-        # "laser_temperature",
+        "temperature_interior",
+        "laser_temperature",
         "laser_current_average",
         "control_voltage",
         "optical_control_voltage_output",
-        # "current_heating_house",
-        # "current_heating_heads",
-        # "current_heating_carriers",
         "number_particles",
         "number_particles_internal_data",
         "number_particles_min_speed",
@@ -123,30 +115,28 @@ def read_txt_file(file, filename, logger):
         "number_particles_min_diameter_internal_data",
         "number_particles_no_hydrometeor",
         "number_particles_no_hydrometeor_internal_data",
-        # "number_particles_unknown_classification",  # ????
-        # "number_particles_unknown_classification_internal_data",
-        "number_particles_class_1",
-        "number_particles_class_1_internal_data",
-        "number_particles_class_2",
-        "number_particles_class_2_internal_data",
-        "number_particles_class_3",
-        "number_particles_class_3_internal_data",
-        "number_particles_class_4",
-        "number_particles_class_4_internal_data",
-        "number_particles_class_5",
-        "number_particles_class_5_internal_data",
-        "number_particles_class_6",
-        "number_particles_class_6_internal_data",
-        "number_particles_class_7",
-        "number_particles_class_7_internal_data",
-        "number_particles_class_8",
-        "number_particles_class_8_internal_data",
-        "number_particles_class_9",
-        "number_particles_class_9_internal_data",
+        "number_particles_unknown_classification",
+        "total_gross_volume_unknown_classification",
+        "number_particles_hail",
+        "total_gross_volume_hail",
+        "number_particles_solid_precipitation",
+        "total_gross_volume_solid_precipitation",
+        "number_particles_great_pellet",
+        "total_gross_volume_great_pellet",
+        "number_particles_small_pellet",
+        "total_gross_volume_small_pellet",
+        "number_particles_snowgrain",
+        "total_gross_volume_snowgrain",
+        "number_particles_rain",
+        "total_gross_volume_rain",
+        "number_particles_small_rain",
+        "total_gross_volume_small_rain",
+        "number_particles_drizzle",
+        "total_gross_volume_drizzle",
         "raw_drop_number",
     ]
-    df.columns = column_names
-
+    df.columns = names
+    
     # Deal with case if there are 61 timesteps
     # - Occurs sometimes when previous hourly file miss timesteps
     if len(df) == 61:
@@ -164,6 +154,10 @@ def read_txt_file(file, filename, logger):
 
     # - Define timedelta based on sensor_time
     dt = pd.to_timedelta(df["sensor_time"] + ":00").to_numpy().astype("m8[s]")
+    rollover_indices = np.where(np.diff(dt) < np.timedelta64(0, 's'))[0]
+    if rollover_indices.size > 0:
+        for idx in rollover_indices:
+            dt[idx + 1:] += np.timedelta64(24, 'h')
     dt = dt - dt[0]
 
     # - Define approximate time
@@ -173,25 +167,15 @@ def read_txt_file(file, filename, logger):
     valid_rows = dt <= np.timedelta64(3540, "s")
     df = df[valid_rows]
 
-    # Drop rows where sample interval is not 60 seconds
-    df = df[df["sample_interval"] == "000060"]
-
     # Drop rows with invalid raw_drop_number
     # --> 440 value # 22x20
-    # --> 400 here  # 20x20
     df = df[df["raw_drop_number"].astype(str).str.len() == 1599]
-
-    # Deal with old LPM version 20x20 spectrum
-    # - Add 000 in first two velocity bins
-    df["raw_drop_number"] = df["raw_drop_number"] + ";" + ";".join(["000"] * 40)
 
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
-        "sample_interval",
         "sensor_time",
-        "dummy1",
-        "dummy2",
-        "id",
+        "start_identifier",
+        "sensor_serial_number",
     ]
     df = df.drop(columns=columns_to_drop)
     return df

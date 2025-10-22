@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -16,22 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB reader for GID LPM sensors measuring also wind."""
+"""DISDRODB reader for GID LPM sensor TC-PI with incorrect reported time."""
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
+from disdrodb.utils.logger import log_error
 
 
-@is_documented_by(reader_generic_docstring)
-def reader(
-    filepath,
-    logger=None,
-):
-    """Reader."""
-    ##------------------------------------------------------------------------.
+def read_txt_file(file, filename, logger):
+    """Parse for TC-PI LPM file."""
     #### - Define raw data headers
-    column_names = ["TO_BE_SPLITTED"]
+    column_names = ["TO_PARSE"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
@@ -48,7 +42,7 @@ def reader(
     reader_kwargs["header"] = None
 
     # - Number of rows to be skipped at the beginning of the file
-    reader_kwargs["skiprows"] = None
+    reader_kwargs["skiprows"] = 1
 
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
@@ -71,7 +65,7 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Read the data
     df = read_raw_text_file(
-        filepath=filepath,
+        filepath=file,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
         logger=logger,
@@ -79,14 +73,25 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Count number of delimiters to identify valid rows
-    df = df[df["TO_BE_SPLITTED"].str.count(";") == 523]
+    # Raise error if empty file
+    if len(df) == 0:
+        raise ValueError(f"{filename} is empty.")
+        
+    # Select only rows with expected number of delimiters 
+    df = df[df["TO_PARSE"].str.count(" ") == 526]
+
+    # Check there are still valid rows
+    if len(df) == 0:
+        raise ValueError(f"No valid rows in {filename}.")
 
     # Split by ; delimiter (before raw drop number)
-    df = df["TO_BE_SPLITTED"].str.split(";", expand=True, n=79)
-
+    df = df["TO_PARSE"].str.split(" ", expand=True, n=82)
+    
     # Assign column names
     names = [
+        "date", 
+        "time",
+        "unknown",
         "start_identifier",
         "device_address",
         "sensor_serial_number",
@@ -169,9 +174,16 @@ def reader(
         "TO_BE_FURTHER_PROCESSED",
     ]
     df.columns = names
+    
+    # Define datetime "time" column
+    df["time"] = df["date"] + " " + df["time"]
+    df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
 
+    # Drop row if start_identifier different than 00
+    df = df[df["start_identifier"].astype(str) == "00"]
+    
     # Extract the last variables remained in raw_drop_number
-    df_parsed = df["TO_BE_FURTHER_PROCESSED"].str.rsplit(";", n=5, expand=True)
+    df_parsed = df["TO_BE_FURTHER_PROCESSED"].str.rsplit(" ", n=5, expand=True)
     df_parsed.columns = [
         "raw_drop_number",
         "air_temperature",
@@ -182,16 +194,10 @@ def reader(
     ]
 
     # Assign columns to the original dataframe
-    df[df_parsed.columns] = df_parsed
-
-    # Define datetime "time" column
-    df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
-    df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y-%H:%M:%S", errors="coerce")
-
-    # Drop row if start_identifier different than 00
-    df = df[df["start_identifier"].astype(str) == "00"]
+    df[df_parsed.columns] = df_parsed 
 
     # Drop rows with invalid raw_drop_number
+    # --> 440 value # 22x20
     df = df[df["raw_drop_number"].astype(str).str.len() == 1759]
 
     # Drop columns not agreeing with DISDRODB L0 standards
@@ -201,10 +207,74 @@ def reader(
         "sensor_serial_number",
         "sensor_date",
         "sensor_time",
-        "checksum",
-        "relative_humidity",  # TO DROP? ALWAYS NOT AVAILABLE?
+        "date",
+        "unknown",
         "TO_BE_FURTHER_PROCESSED",
+        "air_temperature",
+        "relative_humidity",
+        "wind_speed",
+        "wind_direction",
+        "checksum",
+ 
     ]
     df = df.drop(columns=columns_to_drop)
+    return df
 
+
+@is_documented_by(reader_generic_docstring)
+def reader(
+    filepath,
+    logger=None,
+):
+    """Reader."""
+    import zipfile
+
+    ##------------------------------------------------------------------------.
+    # filename = os.path.basename(filepath)
+    # return read_txt_file(file=filepath, filename=filename, logger=logger)
+
+    # ---------------------------------------------------------------------.
+    #### Iterate over all files (aka timesteps) in the daily zip archive
+    # - Each file contain a single timestep !
+    # list_df = []
+    # with tempfile.TemporaryDirectory() as temp_dir:
+    #     # Extract all files
+    #     unzip_file_on_terminal(filepath, temp_dir)
+
+    #     # Walk through extracted files
+    #     for root, _, files in os.walk(temp_dir):
+    #         for filename in sorted(files):
+    #             if filename.endswith(".txt"):
+    #                 full_path = os.path.join(root, filename)
+    #                 try:
+    #                     df = read_txt_file(file=full_path, filename=filename, logger=logger)
+    #                     if df is not None:
+    #                         list_df.append(df)
+    #                 except Exception as e:
+    #                     msg = f"An error occurred while reading {filename}: {e}"
+    #                     log_error(logger=logger, msg=msg, verbose=True)
+
+    list_df = []
+    with zipfile.ZipFile(filepath, "r") as zip_ref:
+        filenames = sorted(zip_ref.namelist())
+        for filename in filenames:
+            if filename.endswith(".txt"):
+                # Open file
+                with zip_ref.open(filename) as file:
+                    try:
+                        df = read_txt_file(file=file, filename=filename, logger=logger)
+                        if df is not None:
+                            list_df.append(df)
+                    except Exception as e:
+                        msg = f"An error occurred while reading {filename}. The error is: {e}"
+                        log_error(logger=logger, msg=msg, verbose=True)
+
+    # Check the zip file contains at least some non.empty files
+    if len(list_df) == 0:
+        raise ValueError(f"{filepath} contains only empty files!")
+
+    # Concatenate all dataframes into a single one
+    df = pd.concat(list_df)
+
+    # ---------------------------------------------------------------------.
     return df

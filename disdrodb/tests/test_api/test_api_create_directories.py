@@ -194,8 +194,8 @@ def test_create_product_directory(tmp_path):
     station_name = "station_1"
     # Define mandatory metadata
     metadata_dict = {}
-    metadata_dict["sensor_name"] = "PARSIVEL"
-    metadata_dict["reader"] = "NASA/IFLOODS"
+    metadata_dict["sensor_name"] = "PARSIVEL2"
+    metadata_dict["reader"] = "NASA/APU"
     metadata_dict["measurement_interval"] = 60
     metadata_dict["deployment_status"] = "terminated"
     metadata_dict["deployment_mode"] = "land"

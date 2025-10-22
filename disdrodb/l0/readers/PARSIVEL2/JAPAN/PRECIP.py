@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -15,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+"""DISDRODB reader for Colorado State University PRECIP OTT Parsivel 2 raw data."""
+
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -29,19 +30,19 @@ def reader(
     """Reader."""
     ##------------------------------------------------------------------------.
     #### Define column names
-    column_names = ["TO_BE_PARSED"]
+    column_names = ["TO_PARSE"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
     reader_kwargs = {}
 
     # - Define delimiter
-    reader_kwargs["delimiter"] = "/\n"
+    reader_kwargs["delimiter"] = "\\n"
 
     # - Skip first row as columns names
     reader_kwargs["header"] = None
 
-    # - Skip first 2 rows
+    # - Skip header
     reader_kwargs["skiprows"] = 0
 
     # - Define encoding
@@ -60,13 +61,13 @@ def reader(
 
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
-    reader_kwargs["compression"] = "infer"
+    # reader_kwargs['compression'] = 'xz'
 
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
     #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
     #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
-    reader_kwargs["na_values"] = ["na", "", "error", "NA"]
+    reader_kwargs["na_values"] = ["na", "error", "-.-", " NA"]
 
     ##------------------------------------------------------------------------.
     #### Read the data
@@ -83,61 +84,73 @@ def reader(
     if len(df) == 0:
         raise ValueError(f"{filepath} is empty.")
 
-    # Select only rows with expected number of delimiters
-    df = df[df["TO_BE_PARSED"].str.count(";") == 1107]
-
+    # Select only rows with expected number of delimiters 
+    df = df[df["TO_PARSE"].str.count(",") == 1041]
+        
     # Raise error if no data left
     if len(df) == 0:
         raise ValueError(f"No valid data in {filepath}.")
 
-    # Split by ; delimiter
-    df = df["TO_BE_PARSED"].str.split(";", expand=True, n=19)
+    # Split into columns
+    df = df["TO_PARSE"].str.split(",", expand=True, n=17)
 
-    # Assign column names
+    # Assign columns names
     names = [
         "date",
         "time",
         "rainfall_rate_32bit",
         "rainfall_accumulated_32bit",
         "weather_code_synop_4680",
-        # "weather_code_synop_4677",
-        # "weather_code_metar_4678",
+        "weather_code_metar_4678",
+        "weather_code_nws",
         "reflectivity_32bit",
         "mor_visibility",
-        "sample_interval",
         "laser_amplitude",
         "number_particles",
         "sensor_temperature",
-        "sensor_serial_number",
-        "firmware_iop",
         "sensor_heating_current",
         "sensor_battery_voltage",
         "sensor_status",
-        "station_name",
-        "rainfall_amount_absolute_32bit",
-        "error_code",
-        "ARRAY_TO_SPLIT",
+        "rain_kinetic_energy",
+        "snowfall_rate",
+        "raw_drop_number",
     ]
-
     df.columns = names
 
-    # Define time in datetime format
-    time_str = df["date"] + " " + df["time"]
-    df["time"] = pd.to_datetime(time_str, format="%d.%m.%Y %H:%M:%S", errors="coerce")
+    # Add datetime time column
+    time_str = df["date"] + "-" + df["time"]
+    df["time"] = pd.to_datetime(time_str, format="%d.%m.%Y-%H:%M:%S", errors="coerce")
 
-    # Add raw array
-    df["raw_drop_concentration"] = df["ARRAY_TO_SPLIT"].str[:224]
-    df["raw_drop_average_velocity"] = df["ARRAY_TO_SPLIT"].str[224:448]
-    df["raw_drop_number"] = df["ARRAY_TO_SPLIT"].str[448:]
+    # Derive the raw spectrum
+    # Remove <SPECTRUM> and </SPECTRUM> prefix and suffix from the raw_drop_number field
+    df["raw_drop_number"] = df["raw_drop_number"].astype("string")
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
+
+    # Preprocess the raw spectrum and raw_drop_average_velocity
+    # - Add 0 before every ; if ; not preceded by a digit
+    # - Example: ';;1;;' --> '0;0;1;0;'
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d),", "0,", regex=True)
+    
+    # Infill missing timesteps with raw_drop_number = 0 spectrum
+    # - Define the full time range with 30-second frequency
+    full_time_index = pd.date_range(start=df["time"].iloc[0], 
+                                    end=df["time"].iloc[-1], freq="30s")
+
+    # - Reindex the DataFrame to include all 30-second timesteps
+    df = df.set_index("time").reindex(full_time_index)
+
+    # - Fill missing raw_drop_number with 0
+    df["raw_drop_number"] = df["raw_drop_number"].fillna(0)
+
+    # - Restore 'time' as a column
+    df = df.rename_axis("time").reset_index()
 
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
         "date",
-        "station_name",
-        "firmware_iop",
-        "ARRAY_TO_SPLIT",
-        "sensor_serial_number",
-        "sample_interval",
     ]
     df = df.drop(columns=columns_to_drop)
+
+    # Return the dataframe adhering to DISDRODB L0 standards
     return df

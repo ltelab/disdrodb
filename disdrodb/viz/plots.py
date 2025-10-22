@@ -96,6 +96,8 @@ def _check_has_diameter_and_velocity_dims(da):
 def _get_spectrum_variable(xr_obj, variable):
     if not isinstance(xr_obj, (xr.Dataset, xr.DataArray)):
         raise TypeError("Expecting xarray object as input.")
+    if VELOCITY_DIMENSION not in xr_obj.dims:
+        raise ValueError("2D spectrum not available.")
     if isinstance(xr_obj, xr.Dataset):
         if variable not in xr_obj:
             raise ValueError(f"The dataset do not include {variable=}.")

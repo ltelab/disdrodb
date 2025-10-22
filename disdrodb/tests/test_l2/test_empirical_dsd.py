@@ -126,7 +126,7 @@ class TestEffectiveSamplingArea:
         """Test Parsivel sampling area calculation."""
         diameter = template_dataset["diameter_bin_center"] / 1000  # meters
         sampling_area = get_effective_sampling_area(sensor_name, diameter)
-        if sensor_name in ["PARSIVEL", "PARSIVEL2", "LPM"]:
+        if sensor_name in ["PARSIVEL", "PARSIVEL2", "LPM", "LPM_V0"]:
             assert isinstance(sampling_area, xr.DataArray)
             assert np.all(sampling_area.to_numpy() > 0), "Sampling area should be positive"
         else:  # IMPACT_SENSORS

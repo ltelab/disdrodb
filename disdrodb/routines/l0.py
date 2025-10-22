@@ -696,7 +696,7 @@ def run_l0b_station(
     # -----------------------------------------------------------------.
     # Start L0B processing
     t_i = time.time()
-    msg = f"{product} processing of station_name {station_name} has started."
+    msg = f"{product} processing of station {station_name} has started."
     log_info(logger=logger, msg=msg, verbose=verbose)
 
     # -----------------------------------------------------------------.
@@ -774,7 +774,7 @@ def run_l0b_station(
     # -----------------------------------------------------------------.
     # End L0B processing
     timedelta_str = str(datetime.timedelta(seconds=round(time.time() - t_i)))
-    msg = f"{product} processing of station_name {station_name} completed in {timedelta_str}"
+    msg = f"{product} processing of station {station_name} completed in {timedelta_str}"
     log_info(logger=logger, msg=msg, verbose=verbose)
 
     # -----------------------------------------------------------------.

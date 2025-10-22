@@ -1,9 +1,3 @@
-temporal_resolutions: ["1MIN"] #  # "ROLL1MIN"
-archive_options:
-  strategy: time_block
-  strategy_options:
-    freq: day
-  folder_partitioning: "year"
 product_options:
   fall_velocity_model: "Beard1976"
   minimum_diameter: 0
