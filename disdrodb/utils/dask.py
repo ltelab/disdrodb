@@ -181,7 +181,7 @@ def execute_tasks_safely(list_tasks, parallel: bool, logs_dir: str, max_tasks_pe
 
     # If no tasks failed, return results
     if not failed_futures:
-        return results
+        return all_results
 
     # Otherwise define log file listing failed tasks
     with open(failed_log_path, "w") as f:
@@ -190,5 +190,5 @@ def execute_tasks_safely(list_tasks, parallel: bool, logs_dir: str, max_tasks_pe
             f.write(f"ERROR - DASK TASK FAILURE - Task {fut.key} failed: {err}\n")
 
     # Append to list of log filepaths (results) the dask failing log
-    results.append(failed_log_path)
-    return results
+    all_results.append(failed_log_path)
+    return all_results

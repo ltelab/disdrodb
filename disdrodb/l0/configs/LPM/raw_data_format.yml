@@ -168,7 +168,7 @@ mor_visibility:
   data_range:
     - 0
     - 99999
-  nan_flags: 99999
+  nan_flags: null
   field_number: "18"
 reflectivity:
   n_digits: 3

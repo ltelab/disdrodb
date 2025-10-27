@@ -72,7 +72,7 @@ mor_visibility:
   data_range:
     - 0
     - 9999
-  nan_flags: 9999
+  nan_flags: null
   field_number: 08
 sample_interval:
   n_digits: 5

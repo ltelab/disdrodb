@@ -19,6 +19,7 @@
 """DISDRODB reader for Haukeliseter Test Site LPM sensors."""
 import numpy as np
 import pandas as pd
+
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
 
@@ -46,7 +47,7 @@ def reader(
 
     # - Define encoding
     reader_kwargs["encoding"] = "ISO-8859-1"
-    
+
     # - Since column names are expected to be passed explicitly, header is set to None
     reader_kwargs["header"] = None
 
@@ -86,9 +87,9 @@ def reader(
     if len(df) == 0:
         raise ValueError(f"{filepath} is empty.")
 
-    # Select only rows with expected number of delimiters 
+    # Select only rows with expected number of delimiters
     df = df[df["TO_PARSE"].str.count(";").isin([520, 521])]
-        
+
     # Raise error if no data left
     if len(df) == 0:
         raise ValueError(f"No valid data in {filepath}.")
@@ -96,15 +97,14 @@ def reader(
     # Retrieve most frequent number of delimiters
     possible_delimiters, counts = np.unique(df["TO_PARSE"].str.count(";"), return_counts=True)
     n_delimiters = possible_delimiters[np.argmax(counts)]
-    
-    if n_delimiters == 520: 
-        n = 79 
+
+    if n_delimiters == 520:
+        n = 79
         columns_to_drop = ["device_address", "sensor_serial_number"]
-    else: # n_delimiters == 521
+    else:  # n_delimiters == 521
         n = 80
         columns_to_drop = ["start_identifier", "device_address", "sensor_serial_number"]
- 
-    
+
     # Split by ; delimiter (before raw drop number)
     df = df["TO_PARSE"].str.split(";", expand=True, n=n)
 
@@ -197,10 +197,10 @@ def reader(
 
     # Define datetime "time" column
     if n_delimiters == 520:
-        time_str = df["time"].str.extract(r'(\d{8}_\d{6})')[0]
+        time_str = df["time"].str.extract(r"(\d{8}_\d{6})")[0]
         df["time"] = pd.to_datetime(time_str, format="%Y%m%d_%H%M%S", errors="coerce")
-    else: 
-        time_str = df["time"].str.extract(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})')[0]
+    else:
+        time_str = df["time"].str.extract(r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")[0]
         df["time"] = pd.to_datetime(time_str, format="%Y-%m-%d %H:%M:%S", errors="coerce")
 
     # Drop rows with invalid raw_drop_number
@@ -208,7 +208,7 @@ def reader(
 
     # Drop columns not agreeing with DISDRODB L0 standards
     variables_to_drop = [
-       *columns_to_drop,
+        *columns_to_drop,
         "sensor_date",
         "sensor_time",
     ]

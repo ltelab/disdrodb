@@ -356,7 +356,7 @@ def open_netcdf_files(
         preprocess=preprocess,
         compat="no_conflicts",
         combine_attrs="override",
-        coords="different",  # maybe minimal?
+        coords="different",  # maybe minimal? would remove lon/lat/alt?
         decode_timedelta=False,
         cache=False,
         autoclose=True,
@@ -476,6 +476,10 @@ def open_dataset(
         compute=compute,
         **open_kwargs,
     )
+
+    # Ensure coordinates in memory
+    # for coord in list(ds.coords):
+    #     ds[coord] = ds[coord].compute()
     return ds
 
 

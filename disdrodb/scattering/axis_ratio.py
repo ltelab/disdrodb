@@ -83,6 +83,9 @@ def get_axis_ratio_battaglia_2010(diameter):
     """
     Compute the axis ratio of raindrops using the Battaglia et al. (2010) model.
 
+    This axis ratio is assumed by OTT Parsivel sensors internally to compute the
+    reported particle size (Deq).
+
     Parameters
     ----------
     diameter : array-like

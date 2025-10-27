@@ -157,6 +157,8 @@ def define_raindrop_spectrum_mask(
         A boolean mask array indicating valid bins according to the specified criteria.
 
     """
+    # TODO: use lower and upper fall_velocity !
+
     # Ensure it creates a 2D mask if the fall_velocity does not vary over time
     if "time" in drop_number.dims and "time" not in fall_velocity.dims:
         drop_number = drop_number.isel(time=0)

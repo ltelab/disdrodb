@@ -16,10 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB reader for CHARLESTON experiment LPM sensors."""
-import os
-
-import numpy as np
+"""DISDRODB reader for the MANCHESTER Withworth Meteorological Observatory LPM sensor."""
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -48,9 +45,9 @@ def reader(
     reader_kwargs["index_col"] = False
 
     # - Define encoding
-    reader_kwargs["encoding"] = "ISO-8859-1"
+    reader_kwargs["encoding"] = "latin"
 
-    # - Since column names are expected to be passed explicitly, header is set to None
+    # Since column names are expected to be passed explicitly, header is set to None
     reader_kwargs["header"] = None
 
     # - Number of rows to be skipped at the beginning of the file
@@ -90,17 +87,28 @@ def reader(
         raise ValueError(f"{filepath} is empty.")
 
     # Select only rows with expected number of delimiters
-    df = df[df["TO_PARSE"].str.count(";") == 520]
+    df = df[df["TO_PARSE"].str.count(";").isin([45, 522])]
 
     # Raise error if no data left
     if len(df) == 0:
         raise ValueError(f"No valid data in {filepath}.")
 
     # Split by ; delimiter (before raw drop number)
-    df = df["TO_PARSE"].str.split(";", expand=True, n=79)
+    # - Add a dummy row with 82 delimiters so that str.split expand also if only 45 delimiters are present
+    dummy_row = ";".join(["DUMMY"] * 82)
+    df = pd.concat([df, pd.DataFrame({"TO_PARSE": [dummy_row]})], ignore_index=True)
+    # - Split columns
+    df = df["TO_PARSE"].str.split(";", expand=True, n=81)
+    # - Drop the dummy row (last one)
+    df = df.iloc[:-1, :]
+    # - Fill empty columns
+    df.loc[:, 46:50] = df.loc[:, 46:50].fillna("NaN")
+    df.loc[:, 51:] = df.loc[:, 51:].fillna("0")
 
     # Assign column names
     names = [
+        "date",
+        "time",
         "start_identifier",
         "device_address",
         "sensor_serial_number",
@@ -184,46 +192,28 @@ def reader(
     ]
     df.columns = names
 
+    # Define datetime "time" column
+    time_str = df["date"] + " " + df["time"]
+    df["time"] = pd.to_datetime(time_str, format="%d/%m/%Y %H:%M:%S", errors="coerce")
+
     # Remove checksum from raw_drop_number
     df["raw_drop_number"] = df["raw_drop_number"].str.rsplit(";", n=2, expand=True)[0]
 
-    # Remove corrupted characters
-    df = df.replace("°", "", regex=True)  # station N
-
-    # Keep only rows where sensor_time matches HH:MM:SS format
-    df = df[df["sensor_time"].astype(str).str.match(r"^\d{2}:\d{2}:\d{2}$")]
-
-    # Keep only rows with valid spectrum
-    df = df[df["raw_drop_number"].astype(str).str.match(r"^(?:\d{3};)*\d{3};?$")]
-    if len(df) == 0:
-        raise ValueError("Spectra is corrupted")
-
-    # Define datetime "time" column
-    # - Define start time
-    filename = os.path.basename(filepath)
-    _, delta_dt, doy, year = filename.split(".")[0].split("_")
-    start_time = pd.to_datetime(f"{year}_{doy}", format="%y_%j") + pd.to_timedelta(int(delta_dt), unit="s")
-    # - Define timedelta based on sensor_time
-    # --> Add +24h to subsequent times when time resets
-    dt = pd.to_timedelta(df["sensor_time"]).to_numpy().astype("m8[s]")
-    rollover_indices = np.where(np.diff(dt) < np.timedelta64(0, "s"))[0]
-    if rollover_indices.size > 0:
-        for idx in rollover_indices:
-            dt[idx + 1 :] += np.timedelta64(24, "h")
-    dt = dt - dt[0]
-    # - Define measurement datetime
-    df["time"] = start_time + dt
-
     # Drop rows with invalid raw_drop_number
-    df = df[df["raw_drop_number"].astype(str).str.len() == 1759]
+    df = df[df["raw_drop_number"].astype(str).str.len().isin([1, 1759])]
+
+    # Drop row if start_identifier different than 00
+    # df["start_identifier"] = df["start_identifier"].astype(str).str[-2:]
+    # df = df[df["start_identifier"] == "00"]
 
     # Drop columns not agreeing with DISDRODB L0 standards
-    variables_to_drop = [
+    columns_to_drop = [
         "start_identifier",
         "device_address",
         "sensor_serial_number",
         "sensor_date",
         "sensor_time",
+        "date",
     ]
-    df = df.drop(columns=variables_to_drop)
+    df = df.drop(columns=columns_to_drop)
     return df

@@ -157,11 +157,16 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Remove rows with invalid length
-    # df = df[df["TO_BE_PARSED"].str.len().isin([4664])]
+    # Raise error if empty file
+    if len(df) == 0:
+        raise ValueError(f"{filepath} is empty.")
 
-    # Count number of delimiters to select valid rows
+    # Select only rows with expected number of delimiters
     df = df[df["TO_BE_PARSED"].str.count(";") == 1107]
+
+    # Raise error if no data left
+    if len(df) == 0:
+        raise ValueError(f"No valid data in {filepath}.")
 
     # Split by ; delimiter
     df = df["TO_BE_PARSED"].str.split(";", expand=True, n=19)

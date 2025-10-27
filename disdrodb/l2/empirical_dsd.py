@@ -220,27 +220,31 @@ def get_effective_sampling_area(sensor_name, diameter):
     check_sensor_name(sensor_name)
     if sensor_name in ["PARSIVEL", "PARSIVEL2"]:
         # Calculate sampling area for each diameter bin (S_i)
+        # - Parsivel remove margin fallers !
+        # - The effective sampling area decreases with increasing drop diameter
+        # sampling_area = 0.0054 # m2
         L = 180 / 1000  # Length of the Parsivel beam in m (180 mm)
         B = 30 / 1000  # Width of the Parsivel beam in m (30mm)
-        sampling_area = L * (B - diameter / 2)
+        sampling_area = L * (B - diameter / 2)  # d_eq
         return sampling_area
     if sensor_name in ["LPM", "LPM_V0"]:
         # Calculate sampling area for each diameter bin (S_i)
-        L = 228 / 1000  # Length of the Parsivel beam in m (228 mm)
-        B = 20 / 1000  # Width of the Parsivel beam in m (20 mm)
-        sampling_area = L * (B - diameter / 2)
+        # L = 228 / 1000  # Length of the beam in m (228 mm)
+        # B = 20 / 1000  # Width of the beam in m (20 mm)
+        # sampling_area = L * (B - diameter / 2)
+        sampling_area = 0.0045  # m2
         return sampling_area
     if sensor_name == "PWS100":
-        sampling_area = 0.004  # m2  # TODO: L * (B - diameter / 2) ?
+        sampling_area = 0.004  # m2
         return sampling_area
     if sensor_name == "RD80":
         sampling_area = 0.005  # m2
         return sampling_area
-    if sensor_name == "SWS250":  # TODO: L * (B - diameter / 2) ?
+    if sensor_name == "SWS250":
         # Table 29 of the manual that the sample volume is 400cm3, path length?
         # Distance between the end of the hood heaters is 291 mm.
         # Adding a factor of 1.5 for better representation of the Tx-Rx distance: L= 436 mm.
-        sampling_area = 0.0091  # m2
+        sampling_area = 0.0091  # m2 #  0.006504 m2 maybe?
         return sampling_area
     raise NotImplementedError(f"Effective sampling area for {sensor_name} must yet to be specified in the software.")
 

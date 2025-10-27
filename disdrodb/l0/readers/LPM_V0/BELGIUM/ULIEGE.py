@@ -152,12 +152,12 @@ def read_txt_file(file, filename, logger):
     start_time = pd.to_datetime(start_time_str, format="%Y%m%d%H")
 
     # - Define timedelta based on sensor_time
-    # --> Add +24h to subsequent times when time resets 
+    # --> Add +24h to subsequent times when time resets
     dt = pd.to_timedelta(df["sensor_time"] + ":00").to_numpy().astype("m8[s]")
-    rollover_indices = np.where(np.diff(dt) < np.timedelta64(0, 's'))[0]
+    rollover_indices = np.where(np.diff(dt) < np.timedelta64(0, "s"))[0]
     if rollover_indices.size > 0:
         for idx in rollover_indices:
-            dt[idx + 1:] += np.timedelta64(24, 'h')
+            dt[idx + 1 :] += np.timedelta64(24, "h")
     dt = dt - dt[0]
 
     # - Define approximate time

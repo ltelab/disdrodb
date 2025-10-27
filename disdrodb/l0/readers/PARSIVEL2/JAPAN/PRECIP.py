@@ -84,9 +84,9 @@ def reader(
     if len(df) == 0:
         raise ValueError(f"{filepath} is empty.")
 
-    # Select only rows with expected number of delimiters 
+    # Select only rows with expected number of delimiters
     df = df[df["TO_PARSE"].str.count(",") == 1041]
-        
+
     # Raise error if no data left
     if len(df) == 0:
         raise ValueError(f"No valid data in {filepath}.")
@@ -131,11 +131,10 @@ def reader(
     # - Add 0 before every ; if ; not preceded by a digit
     # - Example: ';;1;;' --> '0;0;1;0;'
     df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d),", "0,", regex=True)
-    
+
     # Infill missing timesteps with raw_drop_number = 0 spectrum
     # - Define the full time range with 30-second frequency
-    full_time_index = pd.date_range(start=df["time"].iloc[0], 
-                                    end=df["time"].iloc[-1], freq="30s")
+    full_time_index = pd.date_range(start=df["time"].iloc[0], end=df["time"].iloc[-1], freq="30s")
 
     # - Reindex the DataFrame to include all 30-second timesteps
     df = df.set_index("time").reindex(full_time_index)
