@@ -96,6 +96,8 @@ def _check_has_diameter_and_velocity_dims(da):
 def _get_spectrum_variable(xr_obj, variable):
     if not isinstance(xr_obj, (xr.Dataset, xr.DataArray)):
         raise TypeError("Expecting xarray object as input.")
+    if VELOCITY_DIMENSION not in xr_obj.dims:
+        raise ValueError("2D spectrum not available.")
     if isinstance(xr_obj, xr.Dataset):
         if variable not in xr_obj:
             raise ValueError(f"The dataset do not include {variable=}.")
@@ -229,7 +231,7 @@ def plot_raw_and_filtered_spectra(
         theoretical_average_velocity = ds["fall_velocity"]
         if "time" in theoretical_average_velocity.dims:
             theoretical_average_velocity = theoretical_average_velocity.mean(dim="time")
-    if add_measured_average_velocity:
+    if add_measured_average_velocity and VELOCITY_DIMENSION in drop_number.dims:
         measured_average_velocity = get_drop_average_velocity(drop_number)
 
     # Define norm if not specified
@@ -248,7 +250,7 @@ def plot_raw_and_filtered_spectra(
     # Add velocities if asked
     if add_theoretical_average_velocity:
         theoretical_average_velocity.plot(ax=ax1, c="k", linestyle="dashed")
-    if add_measured_average_velocity:
+    if add_measured_average_velocity and VELOCITY_DIMENSION in drop_number.dims:
         measured_average_velocity.plot(ax=ax1, c="k", linestyle="dotted")
 
     # Improve plot appearance
@@ -262,7 +264,7 @@ def plot_raw_and_filtered_spectra(
     # Add velocities if asked
     if add_theoretical_average_velocity:
         theoretical_average_velocity.plot(ax=ax2, c="k", linestyle="dashed", label="Theoretical velocity")
-    if add_measured_average_velocity:
+    if add_measured_average_velocity and VELOCITY_DIMENSION in drop_number.dims:
         measured_average_velocity.plot(ax=ax2, c="k", linestyle="dotted", label="Measured average velocity")
 
     # Improve plot appearance

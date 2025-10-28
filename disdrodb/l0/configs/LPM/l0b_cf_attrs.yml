@@ -1,7 +1,3 @@
-device_address:
-  description: "Device address (factory setting \u201E00\") (NN)"
-  long_name: Device address
-  units: ""
 weather_code_synop_4677_5min:
   description: 5M SYNOP Tab.4677 (5 minutes mean value) (NN)
   long_name: 5 min SYNOP Tab.4677

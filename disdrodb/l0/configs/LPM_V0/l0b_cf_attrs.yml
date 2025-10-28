@@ -1,0 +1,180 @@
+weather_code_synop_4680_5min:
+  description: 5M SYNOP Tab.4680 (5 minutes mean value) (NN)
+  long_name: 5 min SYNOP Tab.4680
+  units: ""
+weather_code_metar_4678_5min:
+  description: 5M METAR Tab.4678 (5 minutes mean value) (AAAAA)
+  long_name: 5 min METAR Tab.4678
+  units: ""
+precipitation_rate_5min:
+  description: "5M Intensit\xE4t [mm/h] (5 minutes mean value) (NNN.NNN)"
+  long_name: 5 min precipitation rate
+  units: mm/h
+weather_code_synop_4680:
+  description: 1M SYNOP Tab.4680 (1 minute value) (NN)
+  long_name: SYNOP Tab.4680
+  units: ""
+weather_code_metar_4678:
+  description: 1M METAR Tab.4678 (1 minute value) (AAAAA)
+  long_name: METAR Tab.4678
+  units: ""
+precipitation_rate:
+  description: 1M Intensity [mm/h] total precipitation (1 minute value) (NNN.NNN)
+  long_name: Total precipitation intensity
+  units: mm/h
+precipitation_accumulated:
+  description: "Precipitation amount [mm] (Reset with command \u201ERA\") (NNNN.NN)"
+  long_name: Precipitation amount
+  units: mm
+temperature_interior:
+  description: "Interior temperature [C] (NNN)"
+  long_name: Interior temperature
+  units: "degC"
+laser_temperature:
+  description: "Temperature of laser driver 0-80C (NN)"
+  long_name: Temperature of laser driver
+  units: "degC"
+laser_current_average:
+  description: Mean value laser current [1/100 mA] (NNNN)
+  long_name: Mean value laser current
+  units: mA
+control_voltage:
+  description: "Control voltage [mV] (reference value: 4010\xB15) (NNNN)"
+  long_name: Control voltage
+  units: mV
+optical_control_voltage_output:
+  description: "Optical control output [mV] (2300 \u2026 6500) (NNNN)"
+  long_name: Optical control output
+  units: mV
+number_particles:
+  description: Number of all measured particles (NNNNN)
+  long_name: Number of all measured particles
+  units: ""
+number_particles_internal_data:
+  description: "\u201E00000.000\" (internal data)"
+  long_name: Number of all measured particles internal data
+  units: ""
+number_particles_min_speed:
+  description: Number of particles < minimal speed (0.15m/s) (NNNNN)
+  long_name: Number of particles < minimal speed (0.15m/s)
+  units: ""
+number_particles_min_speed_internal_data:
+  description: "\u201E00000.000\" (internal data)"
+  long_name: Number of particles < minimal speed (0.15m/s) internal data
+  units: ""
+number_particles_max_speed:
+  description: Number of particles > maximal speed (20m/s) (NNNNN)
+  long_name: Number of particles > maximal speed (20m/s)
+  units: ""
+number_particles_max_speed_internal_data:
+  description: "\u201E00000.000\" (internal data)"
+  long_name: Number of particles > maximal speed (20m/s) internal data
+  units: ""
+number_particles_min_diameter:
+  description: Number of particles < minimal diameter (0.15mm) (NNNNN)
+  long_name: Number of particles < minimal diameter (0.15mm)
+  units: ""
+number_particles_min_diameter_internal_data:
+  description: "\u201E00000.000\" (internal data)"
+  long_name: Number of particles < minimal diameter (0.15mm) internal data
+  units: ""
+number_particles_no_hydrometeor:
+  description: Number of particles no hydrometeor
+  long_name: Number of particles no hydrometeor
+  units: ""
+number_particles_no_hydrometeor_internal_data:
+  description: Total volume (gross) of this class
+  long_name: Total volume of this class
+  units: ""
+number_particles_unknown_classification:
+  description: Number of particles classified as unknown
+  long_name: Number of particles classified as unknown
+  units: ""
+total_gross_volume_unknown_classification:
+  description: Total (gross) volume of particles classified as unknown
+  long_name: Total (gross) volume of particles classified as unknown
+  units: ""
+number_particles_hail:
+  description: Number of particles classified as hail
+  long_name: Number of particles classified as hail
+  units: ""
+total_gross_volume_hail:
+  description: Total (gross) volume of particles classified as hail
+  long_name: Total (gross) volume of particles classified as hail
+  units: ""
+number_particles_solid_precipitation:
+  description: Number of particles classified as solid precipitation
+  long_name: Number of particles classified as solid precipitation
+  units: ""
+total_gross_volume_solid_precipitation:
+  description: Total (gross) volume of particles classified as solid precipitation
+  long_name: Total (gross) volume of particles classified as solid precipitation
+  units: ""
+number_particles_great_pellet:
+  description: Number of particles classified as great pellet
+  long_name: Number of particles classified as great pellet
+  units: ""
+total_gross_volume_great_pellet:
+  description: Total (gross) volume of particles classified as great pellet
+  long_name: Total (gross) volume of particles classified as great pellet
+  units: ""
+number_particles_small_pellet:
+  description: Number of particles classified as small pellet
+  long_name: Number of particles classified as small pellet
+  units: ""
+total_gross_volume_small_pellet:
+  description: Total (gross) volume of particles classified as small pellet
+  long_name: Total (gross) volume of particles classified as small pellet
+  units: ""
+number_particles_snowgrain:
+  description: Number of particles classified as snowgrain
+  long_name: Number of particles classified as snowgrain
+  units: ""
+total_gross_volume_snowgrain:
+  description: Total (gross) volume of particles classified as snowgrain
+  long_name: Total (gross) volume of particles classified as snowgrain
+  units: ""
+number_particles_rain:
+  description: Number of particles classified as rain
+  long_name: Number of particles classified as rain
+  units: ""
+total_gross_volume_rain:
+  description: Total (gross) volume of particles classified as rain
+  long_name: Total (gross) volume of particles classified as rain
+  units: ""
+number_particles_small_rain:
+  description: Number of particles classified as small rain
+  long_name: Number of particles classified as small rain
+  units: ""
+total_gross_volume_small_rain:
+  description: Total (gross) volume of particles classified as small rain
+  long_name: Total (gross) volume of particles classified as small rain
+  units: ""
+number_particles_drizzle:
+  description: Number of particles classified as drizzle
+  long_name: Number of particles classified as drizzle
+  units: ""
+total_gross_volume_drizzle:
+  description: Total (gross) volume of particles classified as drizzle
+  long_name: Total (gross) volume of particles classified as drizzle
+  units: ""
+raw_drop_number:
+  description: Precipitation spectrum
+  long_name: Precipitation spectrum
+  units: ""
+air_temperature:
+  description: "Air temperature in degrees Celsius (C)"
+  long_name: Air temperature
+  units: "degC"
+relative_humidity:
+  description: "Relative humidity in percent (%)"
+  long_name: Relative humidity
+  units: "%"
+wind_speed:
+  description: "Wind speed in m/s"
+  long_name: Wind speed
+  units: "m/s"
+wind_direction:
+  description: "Wind direction in degrees (0-360)"
+  long_name: Wind direction
+  units: "degrees"

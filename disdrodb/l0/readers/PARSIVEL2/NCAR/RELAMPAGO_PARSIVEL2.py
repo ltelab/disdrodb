@@ -42,7 +42,7 @@ def reader(
     # - Define encoding
     reader_kwargs["encoding"] = "ISO-8859-1"
 
-    # Skip first row as columns names
+    # - Skip first row as columns names
     reader_kwargs["header"] = None
 
     # - Avoid first column to become df index !!!

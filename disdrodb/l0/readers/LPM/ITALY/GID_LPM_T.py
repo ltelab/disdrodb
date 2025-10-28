@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -16,8 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB reader for ULIEGE LPM stations."""
-
+"""DISDRODB reader for GID LPM sensors not reporting time (TC-MI2, TC-MI3, TC-ER e TC-FI)."""
 import numpy as np
 import pandas as pd
 
@@ -27,7 +24,7 @@ from disdrodb.utils.logger import log_error, log_warning
 
 
 def read_txt_file(file, filename, logger):
-    """Parse ULIEGE LPM hourly file."""
+    """Parse for LPM hourly file."""
     #### - Define raw data headers
     column_names = ["TO_PARSE"]
 
@@ -78,41 +75,66 @@ def read_txt_file(file, filename, logger):
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Count number of delimiters to identify valid rows
-    df = df[df["TO_PARSE"].str.count(";") == 442]
+    df = df[df["TO_PARSE"].str.count(";") == 520]
 
     # Check there are still valid rows
     if len(df) == 0:
         raise ValueError(f"No valid rows in {filename}.")
 
     # Split by ; delimiter (before raw drop number)
-    df = df["TO_PARSE"].str.split(";", expand=True, n=43)
+    df = df["TO_PARSE"].str.split(";", expand=True, n=79)
 
     # Assign column names
     column_names = [
-        "id",
-        "sample_interval",
-        "weather_code_synop_4677_5min",  # or  "weather_code_synop_4680_5min",
+        "start_identifier",
+        "device_address",
+        "sensor_serial_number",
+        "sensor_date",
+        "sensor_time",
+        "weather_code_synop_4677_5min",
+        "weather_code_synop_4680_5min",
         "weather_code_metar_4678_5min",
         "precipitation_rate_5min",
-        "weather_code_synop_4677",  # or "weather_code_synop_4680",
+        "weather_code_synop_4677",
+        "weather_code_synop_4680",
         "weather_code_metar_4678",
         "precipitation_rate",
+        "rainfall_rate",
+        "snowfall_rate",
         "precipitation_accumulated",
-        "sensor_time",
-        # "mor_visibility",
-        # "reflectivity",
-        # "quality_index",
-        # "max_hail_diameter",
-        # "laser_status",
-        "dummy1",
-        "dummy2",
-        # "laser_temperature",
+        "mor_visibility",
+        "reflectivity",
+        "quality_index",
+        "max_hail_diameter",
+        "laser_status",
+        "static_signal_status",
+        "laser_temperature_analog_status",
+        "laser_temperature_digital_status",
+        "laser_current_analog_status",
+        "laser_current_digital_status",
+        "sensor_voltage_supply_status",
+        "current_heating_pane_transmitter_head_status",
+        "current_heating_pane_receiver_head_status",
+        "temperature_sensor_status",
+        "current_heating_voltage_supply_status",
+        "current_heating_house_status",
+        "current_heating_heads_status",
+        "current_heating_carriers_status",
+        "control_output_laser_power_status",
+        "reserved_status",
+        "temperature_interior",
+        "laser_temperature",
         "laser_current_average",
         "control_voltage",
         "optical_control_voltage_output",
-        # "current_heating_house",
-        # "current_heating_heads",
-        # "current_heating_carriers",
+        "sensor_voltage_supply",
+        "current_heating_pane_transmitter_head",
+        "current_heating_pane_receiver_head",
+        "temperature_ambient",
+        "current_heating_voltage_supply",
+        "current_heating_house",
+        "current_heating_heads",
+        "current_heating_carriers",
         "number_particles",
         "number_particles_internal_data",
         "number_particles_min_speed",
@@ -123,8 +145,8 @@ def read_txt_file(file, filename, logger):
         "number_particles_min_diameter_internal_data",
         "number_particles_no_hydrometeor",
         "number_particles_no_hydrometeor_internal_data",
-        # "number_particles_unknown_classification",  # ????
-        # "number_particles_unknown_classification_internal_data",
+        "number_particles_unknown_classification",
+        "number_particles_unknown_classification_internal_data",
         "number_particles_class_1",
         "number_particles_class_1_internal_data",
         "number_particles_class_2",
@@ -163,7 +185,12 @@ def read_txt_file(file, filename, logger):
     start_time = pd.to_datetime(start_time_str, format="%Y%m%d%H")
 
     # - Define timedelta based on sensor_time
-    dt = pd.to_timedelta(df["sensor_time"] + ":00").to_numpy().astype("m8[s]")
+    # --> Add +24h to subsequent times when time resets
+    dt = pd.to_timedelta(df["sensor_time"]).to_numpy().astype("m8[s]")
+    rollover_indices = np.where(np.diff(dt) < np.timedelta64(0, "s"))[0]
+    if rollover_indices.size > 0:
+        for idx in rollover_indices:
+            dt[idx + 1 :] += np.timedelta64(24, "h")
     dt = dt - dt[0]
 
     # - Define approximate time
@@ -173,25 +200,18 @@ def read_txt_file(file, filename, logger):
     valid_rows = dt <= np.timedelta64(3540, "s")
     df = df[valid_rows]
 
-    # Drop rows where sample interval is not 60 seconds
-    df = df[df["sample_interval"] == "000060"]
-
     # Drop rows with invalid raw_drop_number
     # --> 440 value # 22x20
     # --> 400 here  # 20x20
-    df = df[df["raw_drop_number"].astype(str).str.len() == 1599]
-
-    # Deal with old LPM version 20x20 spectrum
-    # - Add 000 in first two velocity bins
-    df["raw_drop_number"] = df["raw_drop_number"] + ";" + ";".join(["000"] * 40)
+    df = df[df["raw_drop_number"].astype(str).str.len() == 1763]
 
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
-        "sample_interval",
+        "start_identifier",
+        "device_address",
+        "sensor_serial_number",
+        "sensor_date",
         "sensor_time",
-        "dummy1",
-        "dummy2",
-        "id",
     ]
     df = df.drop(columns=columns_to_drop)
     return df

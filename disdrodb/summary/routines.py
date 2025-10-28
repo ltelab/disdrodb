@@ -716,7 +716,7 @@ def create_nd_dataframe(ds, variables=None):
         "sample_interval",
         *RADAR_OPTIONS,
     ]
-    df_nd = ds_stack.to_dataframe().drop(columns=coords_to_drop, errors="ignore")
+    df_nd = ds_stack.to_dask_dataframe().drop(columns=coords_to_drop, errors="ignore").compute()
     df_nd["D"] = df_nd["diameter_bin_center"]
     df_nd["N(D)"] = df_nd["drop_number_concentration"]
     df_nd = df_nd[df_nd["R"] != 0]
@@ -3789,70 +3789,72 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
 
     ####---------------------------------------------------------------------.
     #### Create drop spectrum figures and statistics
-    # Compute sum of raw and filtered spectrum over time
-    raw_drop_number = ds["raw_drop_number"].sum(dim="time")
-    drop_number = ds["drop_number"].sum(dim="time")
+    if VELOCITY_DIMENSION in ds.dims:
+        # Compute sum of raw and filtered spectrum over time
+        raw_drop_number = ds["raw_drop_number"].sum(dim="time")
+        drop_number = ds["drop_number"].sum(dim="time")
 
-    # Define theoretical and measured average velocity
-    theoretical_average_velocity = ds["fall_velocity"].mean(dim="time")
-    measured_average_velocity = get_drop_average_velocity(drop_number)
+        # Define theoretical and measured average velocity
+        theoretical_average_velocity = ds["fall_velocity"].mean(dim="time")
+        measured_average_velocity = get_drop_average_velocity(drop_number)
 
-    # Save raw and filtered spectrum over time & theoretical and measured average fall velocity
-    ds_stats = xr.Dataset()
-    ds_stats["raw_drop_number"] = raw_drop_number
-    ds_stats["drop_number"] = raw_drop_number
-    ds_stats["theoretical_average_velocity"] = theoretical_average_velocity
-    ds_stats["measured_average_velocity"] = measured_average_velocity
-    filename = define_filename(
-        prefix="SpectrumStats",
-        extension="nc",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        temporal_resolution=temporal_resolution,
-    )
-    ds_stats.to_netcdf(os.path.join(summary_dir_path, filename))
+        # Save raw and filtered spectrum over time & theoretical and measured average fall velocity
+        ds_stats = xr.Dataset()
+        ds_stats["raw_drop_number"] = raw_drop_number
+        ds_stats["drop_number"] = raw_drop_number
+        ds_stats["theoretical_average_velocity"] = theoretical_average_velocity
+        if measured_average_velocity is not None:
+            ds_stats["measured_average_velocity"] = measured_average_velocity
+        filename = define_filename(
+            prefix="SpectrumStats",
+            extension="nc",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        ds_stats.to_netcdf(os.path.join(summary_dir_path, filename))
 
-    # Create figures with raw and filtered spectrum
-    # - Raw
-    filename = define_filename(
-        prefix="SpectrumRaw",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        temporal_resolution=temporal_resolution,
-    )
-    p = plot_spectrum(raw_drop_number, title="Raw Drop Spectrum")
-    p.figure.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        # Create figures with raw and filtered spectrum
+        # - Raw
+        filename = define_filename(
+            prefix="SpectrumRaw",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        p = plot_spectrum(raw_drop_number, title="Raw Drop Spectrum")
+        p.figure.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    # - Filtered
-    filename = define_filename(
-        prefix="SpectrumFiltered",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        temporal_resolution=temporal_resolution,
-    )
-    p = plot_spectrum(drop_number, title="Filtered Drop Spectrum")
-    p.figure.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        # - Filtered
+        filename = define_filename(
+            prefix="SpectrumFiltered",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
+        p = plot_spectrum(drop_number, title="Filtered Drop Spectrum")
+        p.figure.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
-    # Create figure comparing raw and filtered spectrum
-    filename = define_filename(
-        prefix="SpectrumSummary",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        temporal_resolution=temporal_resolution,
-    )
+        # Create figure comparing raw and filtered spectrum
+        filename = define_filename(
+            prefix="SpectrumSummary",
+            extension="png",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            temporal_resolution=temporal_resolution,
+        )
 
-    fig = plot_raw_and_filtered_spectra(ds)
-    fig.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
+        fig = plot_raw_and_filtered_spectra(ds)
+        fig.savefig(os.path.join(summary_dir_path, filename))
+        plt.close()
 
     ####---------------------------------------------------------------------.
     #### Create L2E dataframe

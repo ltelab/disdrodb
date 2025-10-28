@@ -6,7 +6,7 @@ rainfall_rate_32bit:
   data_range:
     - 0
     - 9999.999
-  nan_flags: null
+  nan_flags: 9999.999
   field_number: "01"
 rainfall_accumulated_32bit:
   n_digits: 6
@@ -16,7 +16,7 @@ rainfall_accumulated_32bit:
   data_range:
     - 0
     - 9999.0
-  nan_flags: null
+  nan_flags: 9999.0
   field_number: "02"
 weather_code_synop_4680:
   n_digits: 2
@@ -62,7 +62,7 @@ reflectivity_32bit:
   data_range:
     - -9.999
     - 99.999
-  nan_flags: null
+  nan_flags: 99.999
   field_number: "07"
 mor_visibility:
   n_digits: 4
@@ -92,7 +92,7 @@ laser_amplitude:
   data_range:
     - 0
     - 99999
-  nan_flags: null
+  nan_flags: 99999
   field_number: "10"
 number_particles:
   n_digits: 5
@@ -102,7 +102,7 @@ number_particles:
   data_range:
     - 0
     - 99999
-  nan_flags: null
+  nan_flags: 99999
   field_number: "11"
 sensor_temperature:
   n_digits: 3
@@ -221,7 +221,7 @@ rainfall_amount_absolute_32bit:
   data_range:
     - 0
     - 999.999
-  nan_flags: null
+  nan_flags: 999.999
   field_number: "24"
 error_code:
   n_digits: 3
@@ -245,7 +245,7 @@ rainfall_rate_16bit:
   data_range:
     - 0
     - 9999.999
-  nan_flags: null
+  nan_flags: 9999.999
   field_number: "30"
 rainfall_rate_12bit:
   n_digits: 5
@@ -273,7 +273,7 @@ reflectivity_16bit:
   data_range:
     - -9.99
     - 99.99
-  nan_flags: null
+  nan_flags: 99.99
   field_number: "33"
 raw_drop_concentration:
   n_digits: 0

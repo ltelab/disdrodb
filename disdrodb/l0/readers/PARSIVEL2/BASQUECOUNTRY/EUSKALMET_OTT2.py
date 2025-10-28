@@ -124,7 +124,7 @@ def read_txt_file(file, filename, logger):
     # Select rows with valid spectrum
     # df = df[df["TO_PARSE"].str.count(";") == 1191]  # 1112
 
-    # Raise errof if corrupted file
+    # Raise error if corrupted file
     if len(df) == 4:
         raise ValueError(f"{filename} is corrupted.")
 

@@ -26,7 +26,13 @@ from disdrodb.utils.xarray import unstack_datarray_dimension
 
 def get_diameter_bin_edges(ds):
     """Retrieve diameter bin edges."""
-    bin_edges = np.append(ds["diameter_bin_lower"].compute().data, ds["diameter_bin_upper"].compute().data[-1])
+    bin_edges = np.append(ds["diameter_bin_lower"].to_numpy(), ds["diameter_bin_upper"].to_numpy()[-1])
+    return bin_edges
+
+
+def get_velocity_bin_edges(ds):
+    """Retrieve velocity bin edges."""
+    bin_edges = np.append(ds["velocity_bin_lower"].to_numpy(), ds["velocity_bin_upper"].to_numpy()[-1])
     return bin_edges
 
 

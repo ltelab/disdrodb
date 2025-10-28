@@ -7,15 +7,15 @@
 #   contiguous: false
 #   chunksizes: 5000
 #   _FillValue: 255
-device_address:
-  dtype: uint8
-  zlib: true
-  complevel: 3
-  shuffle: true
-  fletcher32: false
-  contiguous: false
-  chunksizes: 5000
-  _FillValue: 255
+# device_address:
+#   dtype: uint8
+#   zlib: true
+#   complevel: 3
+#   shuffle: true
+#   fletcher32: false
+#   contiguous: false
+#   chunksizes: 5000
+#   _FillValue: 255
 # sensor_serial_number:
 #   dtype: uint16
 #   zlib: false

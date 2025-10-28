@@ -31,7 +31,7 @@ def reader(
     """Reader."""
     ##------------------------------------------------------------------------.
     #### - Define raw data headers
-    column_names = ["TO_BE_SPLITTED"]
+    column_names = ["TO_PARSE"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
@@ -79,14 +79,22 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Count number of delimiters to identify valid rows
-    df = df[df["TO_BE_SPLITTED"].str.count(";") == 519]
+    # Raise error if empty file
+    if len(df) == 0:
+        raise ValueError(f"{filepath} is empty.")
+
+    # Select only rows with expected number of delimiters
+    df = df[df["TO_PARSE"].str.count(";").isin([519, 520])]
+
+    # Check there are still valid rows
+    if len(df) == 0:
+        raise ValueError(f"No valid rows in {filepath}.")
 
     # Split by ; delimiter (before raw drop number)
-    df = df["TO_BE_SPLITTED"].str.split(";", expand=True, n=79)
+    df = df["TO_PARSE"].str.split(";", expand=True, n=79)
 
     # Assign column names
-    column_names = [
+    names = [
         "start_identifier",
         "device_address",
         "sensor_serial_number",
@@ -168,10 +176,10 @@ def reader(
         "number_particles_class_9_internal_data",
         "raw_drop_number",
     ]
-    df.columns = column_names
+    df.columns = names
 
     # Remove checksum from raw_drop_number
-    df["raw_drop_number"] = df["raw_drop_number"].str.rsplit(";", n=1, expand=True)[0]
+    df["raw_drop_number"] = df["raw_drop_number"].str.strip(";").str.rsplit(";", n=1, expand=True)[0]
 
     # Define datetime "time" column
     df["time"] = df["sensor_date"] + "-" + df["sensor_time"]

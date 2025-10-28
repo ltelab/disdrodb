@@ -70,31 +70,58 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Remove rows with invalid number of separators
-    df = df[df["TO_PARSE"].str.count(";") == 1105]
+    df = df[df["TO_PARSE"].str.count(";").isin([1104, 1105])]
+    if len(df) == 0:
+        raise ValueError(f"No valid data in {filepath}")
+
+    n_delimiters = int(df["TO_PARSE"].str.count(";").iloc[0])
+    if n_delimiters == 1104:
+        names = [
+            "sensor_serial_number",
+            "sensor_status",
+            "laser_amplitude",
+            "sensor_heating_current",
+            "sensor_battery_voltage",
+            "dummy_date",
+            "sensor_time",
+            "sensor_date",
+            # "sensor_temperature",
+            "number_particles",
+            "rainfall_rate_32bit",
+            "reflectivity_32bit",
+            "rainfall_accumulated_16bit",
+            "mor_visibility",
+            "weather_code_synop_4680",
+            "weather_code_synop_4677",
+            "TO_SPLIT",
+        ]
+        n = 15
+    else:
+        names = [
+            "sensor_serial_number",
+            "sensor_status",
+            "laser_amplitude",
+            "sensor_heating_current",
+            "sensor_battery_voltage",
+            "dummy_date",
+            "sensor_time",
+            "sensor_date",
+            "sensor_temperature",
+            "number_particles",
+            "rainfall_rate_32bit",
+            "reflectivity_32bit",
+            "rainfall_accumulated_16bit",
+            "mor_visibility",
+            "weather_code_synop_4680",
+            "weather_code_synop_4677",
+            "TO_SPLIT",
+        ]
+        n = 16
 
     # Split the columns
-    df = df["TO_PARSE"].str.split(";", n=16, expand=True)
+    df = df["TO_PARSE"].str.split(";", n=n, expand=True)
 
     # Assign column names
-    names = [
-        "sensor_serial_number",
-        "sensor_status",
-        "laser_amplitude",
-        "sensor_heating_current",
-        "sensor_battery_voltage",
-        "dummy_date",
-        "sensor_time",
-        "sensor_date",
-        "sensor_temperature",
-        "number_particles",
-        "rainfall_rate_32bit",
-        "reflectivity_32bit",
-        "rainfall_accumulated_16bit",
-        "mor_visibility",
-        "weather_code_synop_4680",
-        "weather_code_synop_4677",
-        "TO_SPLIT",
-    ]
     df.columns = names
 
     # Derive raw arrays

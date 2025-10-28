@@ -44,13 +44,13 @@ def reader(
     """Reader."""
     ##------------------------------------------------------------------------.
     #### Define column names
-    column_names = ["time", "TO_BE_SPLITTED"]
+    column_names = ["TO_PARSE"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs["delimiter"] = ";"
+    reader_kwargs["delimiter"] = "//n"
     # - Skip first row as columns names
     reader_kwargs["header"] = None
     reader_kwargs["skiprows"] = 0
@@ -84,6 +84,20 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
+    # Remove rows with invalid number of separators
+    df = df[df["TO_PARSE"].str.count(";") == 1]
+    if len(df) == 0:
+        raise ValueError(f"No valid data in {filepath}")
+
+    # Retrieve time and telegram field
+    df = df["TO_PARSE"].str.split(";", expand=True)
+    df.columns = ["time", "TO_BE_SPLITTED"]
+
+    # Remove rows with invalid number of separators
+    df = df[df["TO_BE_SPLITTED"].str.count(",") == 1033]
+    if len(df) == 0:
+        raise ValueError(f"No valid data in {filepath}")
+
     # Convert time column to datetime
     df_time = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S", errors="coerce")
 
@@ -91,7 +105,7 @@ def reader(
     df = df["TO_BE_SPLITTED"].str.split(",", n=9, expand=True)
 
     # Assign column names
-    names = [
+    columns_names = [
         "station_name",
         "sensor_status",
         "sensor_temperature",
@@ -103,7 +117,7 @@ def reader(
         "weather_code_synop_4677",
         "raw_drop_number",
     ]
-    df.columns = names
+    df.columns = columns_names
 
     # Add the time column
     df["time"] = df_time
@@ -111,10 +125,19 @@ def reader(
     # Drop columns not agreeing with DISDRODB L0 standards
     df = df.drop(columns=["station_name"])
 
+    # Remove rows with invalid raw drop number
+    # --> Occurs e.g. in UCONN apu28
+    # def mask_invalid_raw_drop_number(df)
+    #     df_split = df["raw_drop_number"].str.split(",", expand=True)
+    #     idx = np.where(np.any(df_split.astype(float) > 998, axis=1))[0]
+    #     df.loc[idx, "raw_drop_number"] = "NaN"
+    #     return df
+    df = df[df["raw_drop_number"].str.len() == 4096]
+
     # Drop rows with invalid values
     # --> Ensure that weather_code_synop_4677 has length 2
     # --> If a previous column is missing it will have 000
-    df = df[df["weather_code_synop_4677"].str.len() == 2]
+    # df = df[df["weather_code_synop_4677"].str.len() == 2]
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df

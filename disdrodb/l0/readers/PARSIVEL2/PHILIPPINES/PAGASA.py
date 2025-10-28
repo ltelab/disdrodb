@@ -154,9 +154,12 @@ def read_txt_file(file, filename, logger):
     df["time"] = pd.to_datetime(time_str, format="%Y%m%d%H%M%S", errors="coerce")
 
     # Keep only rows with valid raw_drop_number
-    df = df[df["raw_drop_number"].str.count(";") == 1024]
-    if len(df) == 0:
-        raise ValueError("Invalid raw drop number field.")
+    invalid_data = df["raw_drop_number"].str.count(";") != 1024
+    df.loc[invalid_data, "raw_drop_number"] = "NaN"  # TODO: if number_particles = 0, could be set to "0".
+
+    # df = df[df["raw_drop_number"].str.count(";") == 1024]
+    # if len(df) == 0:
+    #     raise ValueError("Invalid raw drop number field.")
 
     # Drop columns not agreeing with DISDRODB L0 standards
     # columns_to_drop = [

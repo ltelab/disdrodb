@@ -385,6 +385,49 @@ def get_water_density(temperature, air_pressure, sea_level_air_pressure=101_325)
     return get_pure_water_density(temperature) * np.exp(-1 * water_compressibility * delta_pressure)
 
 
+####---------------------------------------------------------------------------.
+#### Wrappers
+def retrieve_air_pressure(ds_env):
+    """Retrieve air pressure."""
+    if "air_pressure" in ds_env:
+        return ds_env["air_pressure"]
+    air_pressure = get_air_pressure_at_height(
+        altitude=ds_env["altitude"],
+        latitude=ds_env["latitude"],
+        temperature=ds_env["temperature"],
+        sea_level_air_pressure=ds_env["sea_level_air_pressure"],
+        lapse_rate=ds_env["lapse_rate"],
+    )
+    return air_pressure
+
+
+def retrieve_air_dynamic_viscosity(ds_env):
+    """Retrieve air dynamic viscosity."""
+    air_viscosity = get_air_dynamic_viscosity(ds_env["temperature"])
+    return air_viscosity
+
+
+def retrieve_air_density(ds_env):
+    """Retrieve air density."""
+    temperature = ds_env["temperature"]
+    relative_humidity = ds_env["relative_humidity"]
+    air_pressure = retrieve_air_pressure(ds_env)
+    vapor_pressure = get_vapor_actual_pressure(
+        relative_humidity=relative_humidity,
+        temperature=temperature,
+    )
+    air_density = get_air_density(
+        temperature=temperature,
+        air_pressure=air_pressure,
+        vapor_pressure=vapor_pressure,
+    )
+    return air_density
+
+
+####---------------------------------------------------------------------------.
+#### Beard model
+
+
 def get_raindrop_reynolds_number(diameter, temperature, air_density, water_density, g):
     """Compute raindrop Reynolds number.
 
@@ -395,6 +438,7 @@ def get_raindrop_reynolds_number(diameter, temperature, air_density, water_densi
     Coefficients are taken from Table 1 of Beard 1976.
 
     Reference: Beard 1976; Pruppacher & Klett 1978
+    See also Table A1 in Rahman et al., 2020.
 
     Parameters
     ----------
@@ -422,7 +466,7 @@ def get_raindrop_reynolds_number(diameter, temperature, air_density, water_densi
     air_viscosity = get_air_dynamic_viscosity(temperature)  # kg/(m*s) (aka Pa*s).
     delta_density = water_density - air_density
 
-    # Compute Davis number for small droplets
+    # Compute Davies number for small droplets
     davis_number = 4 * air_density * delta_density * g * diameter**3 / (3 * air_viscosity**2)
 
     # Compute the slip correction (is approx 1 and can be discarded)

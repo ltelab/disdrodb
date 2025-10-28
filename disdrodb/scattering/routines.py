@@ -973,7 +973,7 @@ def get_radar_parameters(
         list_ds = [func(ds_subset, **params) for params in list_params]
 
     # Merge into a single dataset
-    ds_radar = xr.merge(list_ds)
+    ds_radar = xr.merge(list_ds, compat="no_conflicts", join="outer")
 
     # Order frequency from lowest to highest
     # --> ['S', 'C', 'X', 'Ku', 'K', 'Ka', 'W']

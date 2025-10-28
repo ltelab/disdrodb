@@ -161,7 +161,7 @@ def check_temporal_resolution(temporal_resolution):
     if not isinstance(temporal_resolution, str):
         raise TypeError("'temporal_resolution' must be a string.")
     # If correct, the follow should not raise error
-    sample_interval, rolling = get_sampling_information(temporal_resolution)
+    _ = get_sampling_information(temporal_resolution)
 
 
 def check_folder_partitioning(folder_partitioning):

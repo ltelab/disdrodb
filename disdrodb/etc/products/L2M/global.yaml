@@ -1,4 +1,4 @@
-temporal_resolutions: ["1MIN"] #, "5MIN", "10MIN"]
+temporal_resolutions: ["1MIN", "5MIN", "10MIN"]
 models:
   [
     "GAMMA_ML",

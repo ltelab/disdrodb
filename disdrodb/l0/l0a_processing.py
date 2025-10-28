@@ -267,8 +267,8 @@ def remove_issue_timesteps(df, issue_dict, logger=None, verbose=False):
     n_initial_rows = len(df)
 
     # Retrieve timesteps and time_periods
-    timesteps = issue_dict.get("timesteps", None)
-    time_periods = issue_dict.get("time_periods", None)
+    timesteps = issue_dict.get("timesteps")
+    time_periods = issue_dict.get("time_periods")
     timesteps = [] if timesteps is None else timesteps
     time_periods = [] if time_periods is None else time_periods
 
@@ -614,6 +614,10 @@ def sanitize_df(
 
     # - Strip first and last delimiter from the raw arrays
     df = strip_delimiter_from_raw_arrays(df)
+
+    # - Ensure raw drop number variable max value is < 999
+    #   - Raise error otherwise
+    # TODO:
 
     # - Remove corrupted rows
     df = remove_corrupted_rows(df)

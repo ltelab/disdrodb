@@ -86,7 +86,7 @@ def reader(
     df = df["TO_BE_SPLITTED"].str.split(";", expand=True, n=79)
 
     # Assign column names
-    column_names = [
+    names = [
         "start_identifier",
         "device_address",
         "sensor_serial_number",
@@ -168,7 +168,7 @@ def reader(
         "number_particles_class_9_internal_data",
         "TO_BE_FURTHER_PROCESSED",
     ]
-    df.columns = column_names
+    df.columns = names
 
     # Extract the last variables remained in raw_drop_number
     df_parsed = df["TO_BE_FURTHER_PROCESSED"].str.rsplit(";", n=5, expand=True)

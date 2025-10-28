@@ -251,7 +251,7 @@ class RawDataFormatSchema(BaseModel):
     n_decimals: Optional[int]
     n_naturals: Optional[int]
     data_range: Optional[list[float]]
-    nan_flags: Optional[Union[int, str]] = None
+    nan_flags: Optional[Union[int, float, str]] = None
     valid_values: Optional[list[float]] = None
     dimension_order: Optional[list[str]] = None
     n_values: Optional[int] = None

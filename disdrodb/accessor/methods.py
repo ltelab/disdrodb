@@ -64,6 +64,13 @@ class DISDRODB_Base_Accessor:
 
         return get_diameter_bin_edges(self._obj)
 
+    @property
+    def velocity_bin_edges(self):
+        """Return velocity bin edges."""
+        from disdrodb.utils.manipulations import get_velocity_bin_edges
+
+        return get_velocity_bin_edges(self._obj)
+
     def regularize(self):
         """Regularize timesteps."""
         from disdrodb.utils.time import regularize_dataset
@@ -93,7 +100,7 @@ class DISDRODB_Base_Accessor:
         """Plot spectrum."""
         from disdrodb.viz.plots import plot_spectrum
 
-        plot_spectrum(self._obj, **kwargs)
+        return plot_spectrum(self._obj, **kwargs)
 
 
 @xr.register_dataset_accessor("disdrodb")
@@ -119,13 +126,13 @@ class DISDRODB_Dataset_Accessor(DISDRODB_Base_Accessor):
         """Plot drop number concentration N(D) timeseries."""
         from disdrodb.viz.plots import plot_nd
 
-        plot_nd(self._obj, **kwargs)
+        return plot_nd(self._obj, **kwargs)
 
     def plot_raw_and_filtered_spectra(self, **kwargs):
         """Plot the raw and filtered spectra."""
         from disdrodb.viz.plots import plot_raw_and_filtered_spectra
 
-        plot_raw_and_filtered_spectra(self._obj, **kwargs)
+        return plot_raw_and_filtered_spectra(self._obj, **kwargs)
 
 
 @xr.register_dataarray_accessor("disdrodb")
