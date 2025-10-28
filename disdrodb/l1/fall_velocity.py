@@ -45,11 +45,6 @@ def get_fall_velocity_atlas_1973(diameter):
     Reviews of Geophysics, 11(1), 1-35.
     https://doi.org/10.1029/RG011i001p00001
 
-    Atlas, D., & Ulbrich, C. W. (1977).
-    Path- and area-integrated rainfall measurement by microwave attenuation in the 1-3 cm band.
-    Journal of Applied Meteorology, 16(12), 1322-1331.
-    https://doi.org/10.1175/1520-0450(1977)016<1322:PAAIRM>2.0.CO;2
-
     Gunn, R., & Kinzer, G. D. (1949).
     The terminal velocity of fall for water droplets in stagnant air.
     Journal of Meteorology, 6(4), 243-248.
@@ -111,7 +106,7 @@ def get_fall_velocity_uplinger_1981(diameter):
 
     """
     # Valid between 0.1 and 7 mm
-    fall_velocity = 4.874 * diameter * np.exp(-0.195 * diameter)
+    fall_velocity = 4.874 * diameter * np.exp(-0.195 * diameter)  # 4.854?
     fall_velocity = fall_velocity.clip(min=0, max=None)
     return fall_velocity
 

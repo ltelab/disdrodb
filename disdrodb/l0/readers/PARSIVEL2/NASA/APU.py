@@ -125,6 +125,15 @@ def reader(
     # Drop columns not agreeing with DISDRODB L0 standards
     df = df.drop(columns=["station_name"])
 
+    # Remove rows with invalid raw drop number
+    # --> Occurs e.g. in UCONN apu28
+    # def mask_invalid_raw_drop_number(df)
+    #     df_split = df["raw_drop_number"].str.split(",", expand=True)
+    #     idx = np.where(np.any(df_split.astype(float) > 998, axis=1))[0]
+    #     df.loc[idx, "raw_drop_number"] = "NaN"
+    #     return df
+    df = df[df["raw_drop_number"].str.len() == 4096]
+
     # Drop rows with invalid values
     # --> Ensure that weather_code_synop_4677 has length 2
     # --> If a previous column is missing it will have 000

@@ -615,6 +615,10 @@ def sanitize_df(
     # - Strip first and last delimiter from the raw arrays
     df = strip_delimiter_from_raw_arrays(df)
 
+    # - Ensure raw drop number variable max value is < 999
+    #   - Raise error otherwise
+    # TODO:
+
     # - Remove corrupted rows
     df = remove_corrupted_rows(df)
 
