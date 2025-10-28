@@ -85,7 +85,7 @@ def reader(
 
     # Select only rows with expected number of delimiters
     df = df[df["TO_PARSE"].str.count(";").isin([519, 520])]
-   
+
     # Check there are still valid rows
     if len(df) == 0:
         raise ValueError(f"No valid rows in {filepath}.")
