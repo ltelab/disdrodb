@@ -1,4 +1,4 @@
-temporal_resolutions: ["1MIN", "5MIN", "10MIN", "ROLL1MIN"]  
+temporal_resolutions: ["1MIN", "5MIN", "10MIN", "ROLL1MIN"]
 archive_options:
   strategy: time_block
   strategy_options:
