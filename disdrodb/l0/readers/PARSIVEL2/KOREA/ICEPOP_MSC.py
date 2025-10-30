@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -14,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB reader for University of Bergen OTT Parsivel 2 raw data."""
-
+import numpy as np
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -39,14 +39,11 @@ def reader(
     # - Define delimiter
     reader_kwargs["delimiter"] = "\\n"
 
-    # - Skip first row as columns names
-    reader_kwargs["header"] = None
-
-    # - Skip header
-    reader_kwargs["skiprows"] = 0
-
     # - Define encoding
     reader_kwargs["encoding"] = "ISO-8859-1"
+
+    # - Skip first row as columns names
+    reader_kwargs["header"] = None
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
@@ -61,13 +58,13 @@ def reader(
 
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
-    # reader_kwargs['compression'] = 'xz'
+    reader_kwargs["compression"] = "infer"
 
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
     #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
     #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
-    reader_kwargs["na_values"] = ["na", "error", "-.-", " NA"]
+    reader_kwargs["na_values"] = ["na", "", "error"]
 
     ##------------------------------------------------------------------------.
     #### Read the data
@@ -80,58 +77,81 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Raise error if empty file
-    if len(df) == 0:
-        raise ValueError(f"{filepath} is empty.")
+    # Create ID and Value columns
+    df = df["TO_PARSE"].str.split(":", expand=True, n=1)
+    df.columns = ["ID", "Value"]
 
-    # Select only rows with expected number of delimiters
-    df = df[df["TO_PARSE"].str.count(";") == 1101]
+    # Select only rows with values
+    df = df[df["Value"].astype(bool)]
+    df = df[df["Value"].apply(lambda x: x is not None)]
 
-    # Check there are still valid rows
-    if len(df) == 0:
-        raise ValueError(f"No valid rows in {filepath}.")
+    # Drop rows with invalid IDs
+    # - Corrupted rows
+    valid_id_str = np.char.rjust(np.arange(0, 94).astype(str), width=2, fillchar="0")
+    df = df[df["ID"].astype(str).isin(valid_id_str)]
 
-    # Split into columns
-    df = df["TO_PARSE"].str.split(";", expand=True, n=13)
+    # Create the dataframe where each row corresponds to a timestep
+    df["_group"] = (df["ID"].astype(int).diff() <= 0).cumsum()
+    df = df.pivot(index="_group", columns="ID")  # noqa
+    df.columns = df.columns.get_level_values("ID")
+    df = df.reset_index(drop=True)
 
-    # Assign columns names
-    names = [
-        "date",
-        "time",
-        "rainfall_rate_32bit",
-        "rainfall_accumulated_32bit",
-        "snowfall_rate",
-        "weather_code_synop_4680",
-        "reflectivity_32bit",
-        "mor_visibility",
-        "rain_kinetic_energy",
-        "sensor_temperature",
-        "laser_amplitude",
-        "number_particles",
-        "sensor_battery_voltage",
-        "TO_SPLIT",
-    ]
-    df.columns = names
+    # Assign column names
+    column_dict = {
+        "01": "rainfall_rate_32bit",
+        "02": "rainfall_accumulated_32bit",
+        "03": "weather_code_synop_4680",
+        "04": "weather_code_synop_4677",
+        "05": "weather_code_metar_4678",
+        "06": "weather_code_nws",
+        "07": "reflectivity_32bit",
+        "08": "mor_visibility",
+        "09": "sample_interval",
+        "10": "laser_amplitude",
+        "11": "number_particles",
+        "12": "sensor_temperature",
+        # "13": "sensor_serial_number",
+        # "14": "firmware_iop",
+        # "15": "firmware_dsp",
+        "16": "sensor_heating_current",
+        "17": "sensor_battery_voltage",
+        "18": "sensor_status",
+        # "19": "start_time",
+        "20": "sensor_time",
+        "21": "sensor_date",
+        # "22": "station_name",
+        # "23": "station_number",
+        "90": "raw_drop_concentration",
+        "91": "raw_drop_average_velocity",
+        "93": "raw_drop_number",
+    }
 
-    # Sanitize date
-    date = pd.to_datetime(df["date"], format="%d.%m.%Y", errors="coerce")
-    date = date.ffill().bfill()
+    # Identify missing columns and add NaN
+    expected_columns = np.array(list(column_dict.keys()))
+    missing_columns = expected_columns[np.isin(expected_columns, df.columns, invert=True)].tolist()
+    if len(missing_columns) > 0:
+        for column in missing_columns:
+            df[column] = "NaN"
 
-    # Add datetime time column
-    time_str = date.astype(str) + "T" + df["time"]
-    df["time"] = pd.to_datetime(time_str, format="%Y-%m-%dT%H:%M:%S", errors="coerce")
-    df = df.drop(columns=["date"])
+    # Rename columns
+    df = df.rename(column_dict, axis=1)
 
-    # Derive raw drop arrays
-    df_split = df["TO_SPLIT"].str.split(";", expand=True)
-    df["raw_drop_concentration"] = df_split.iloc[:, :32].agg(";".join, axis=1)
-    df["raw_drop_average_velocity"] = df_split.iloc[:, 32:64].agg(";".join, axis=1)
-    df["raw_drop_number"] = df_split.iloc[:, 64:].agg(";".join, axis=1)
-    del df_split
+    # Keep only columns defined in the dictionary
+    df = df[list(column_dict.values())]
+
+    # Define datetime "time" column
+    df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
+    df["time"] = pd.to_datetime(df["time"], format="%d.%m.%Y-%H:%M:%S", errors="coerce")
 
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
-        "TO_SPLIT",
+        "sensor_date",
+        "sensor_time",
+        # "firmware_iop",
+        # "firmware_dsp",
+        # "sensor_serial_number",
+        # "station_name",
+        # "station_number",
     ]
     df = df.drop(columns=columns_to_drop)
 

@@ -85,53 +85,39 @@ def reader(
         raise ValueError(f"{filepath} is empty.")
 
     # Select only rows with expected number of delimiters
-    df = df[df["TO_PARSE"].str.count(";") == 1101]
+    df = df[df["TO_PARSE"].str.count(";") == 1027]
 
     # Check there are still valid rows
     if len(df) == 0:
         raise ValueError(f"No valid rows in {filepath}.")
 
     # Split into columns
-    df = df["TO_PARSE"].str.split(";", expand=True, n=13)
+    df = df["TO_PARSE"].str.split(";", expand=True, n=4)
 
     # Assign columns names
     names = [
         "date",
         "time",
-        "rainfall_rate_32bit",
-        "rainfall_accumulated_32bit",
-        "snowfall_rate",
-        "weather_code_synop_4680",
-        "reflectivity_32bit",
-        "mor_visibility",
-        "rain_kinetic_energy",
-        "sensor_temperature",
-        "laser_amplitude",
-        "number_particles",
-        "sensor_battery_voltage",
-        "TO_SPLIT",
+        "id",
+        "unknown",
+        "raw_drop_number",
     ]
     df.columns = names
 
-    # Sanitize date
-    date = pd.to_datetime(df["date"], format="%d.%m.%Y", errors="coerce")
-    date = date.ffill().bfill()
-
     # Add datetime time column
-    time_str = date.astype(str) + "T" + df["time"]
-    df["time"] = pd.to_datetime(time_str, format="%Y-%m-%dT%H:%M:%S", errors="coerce")
+    time_str = df["date"] + "T" + df["time"]
+    df["time"] = pd.to_datetime(time_str, format="%Y/%m/%dT%H:%M:%S", errors="coerce")
     df = df.drop(columns=["date"])
 
-    # Derive raw drop arrays
-    df_split = df["TO_SPLIT"].str.split(";", expand=True)
-    df["raw_drop_concentration"] = df_split.iloc[:, :32].agg(";".join, axis=1)
-    df["raw_drop_average_velocity"] = df_split.iloc[:, 32:64].agg(";".join, axis=1)
-    df["raw_drop_number"] = df_split.iloc[:, 64:].agg(";".join, axis=1)
-    del df_split
-
+    # Retrieve raw spectrum
+    # - Add 0 before every , if , not preceded by a digit
+    # - Example: ',,1,,' --> '0,0,1,0,'
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d);", "0;", regex=True)
+    
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
-        "TO_SPLIT",
+        "id",
+        "unknown",
     ]
     df = df.drop(columns=columns_to_drop)
 

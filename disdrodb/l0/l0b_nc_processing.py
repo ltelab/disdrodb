@@ -50,7 +50,7 @@ def _check_dict_names_validity(dict_names, sensor_name):
     keys = np.array(list(dict_names.keys()))
     values = np.array(list(dict_names.values()))
     # Get invalid keys
-    invalid_keys = keys[np.isin(values, valid_names, invert=True)]
+    invalid_keys = keys[np.isin(values, valid_names, invert=True)].tolist()
     if len(invalid_keys) > 0:
         # Report invalid keys and raise error
         invalid_dict = {k: dict_names[k] for k in invalid_keys}
