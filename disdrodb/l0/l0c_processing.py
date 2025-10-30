@@ -587,6 +587,7 @@ def _finalize_l0c_dataset(ds, sample_interval, sensor_name, verbose=True, logger
     ds = add_sample_interval(ds, sample_interval=sample_interval)
 
     # Regularize timesteps (for trailing seconds)
+    # --> This remove time encoding
     ds = regularize_timesteps(
         ds,
         sample_interval=sample_interval,

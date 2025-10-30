@@ -144,7 +144,7 @@ def get_time_encoding() -> dict:
     """
     encoding = {}
     encoding["dtype"] = "int64"  # if float trailing sub-seconds values
-    encoding["fillvalue"] = np.iinfo(np.int64).max
+    encoding["_FillValue"] = np.iinfo(np.int64).max
     encoding["units"] = EPOCH
     encoding["calendar"] = "proleptic_gregorian"
     return encoding
