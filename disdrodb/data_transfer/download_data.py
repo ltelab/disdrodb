@@ -270,7 +270,9 @@ def download_station_data(metadata_filepath: str, data_archive_dir: str, force: 
         product="RAW",
     )
     # Check DISDRODB data url
-    disdrodb_data_url = metadata_dict.get("disdrodb_data_url", None)
+    disdrodb_data_url = metadata_dict.get("disdrodb_data_url", "")
+    if disdrodb_data_url == "":
+        raise ValueError(f"{campaign_name} {station_name} station data are not yet publicly available.")
     if not _is_valid_disdrodb_data_url(disdrodb_data_url):
         raise ValueError(f"Invalid disdrodb_data_url '{disdrodb_data_url}' for station {station_name}")
 

@@ -21,7 +21,7 @@ import xarray as xr
 
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l1.filters import (
-    define_raindrop_spectrum_mask,
+    define_rain_spectrum_mask,
     filter_diameter_bins,
     filter_velocity_bins,
 )
@@ -110,7 +110,7 @@ class TestDefineRainDropSpectrumMask:
         """Test spectrum mask creation with velocity fraction thresholds."""
         ds = create_test_dataset()
         fall_velocity = xr.DataArray([3.0, 6.0, 12.0, 20.0], dims=[DIAMETER_DIMENSION])
-        ds_mask = define_raindrop_spectrum_mask(
+        ds_mask = define_rain_spectrum_mask(
             ds["drop_number"],
             fall_velocity,
             above_velocity_fraction=0.2,
@@ -133,7 +133,7 @@ class TestDefineRainDropSpectrumMask:
         """Test spectrum mask creation with velocity tolerance thresholds."""
         ds = create_test_dataset()
         fall_velocity = xr.DataArray([3.0, 6.0, 12.0, 20.0], dims=[DIAMETER_DIMENSION])
-        ds_mask = define_raindrop_spectrum_mask(
+        ds_mask = define_rain_spectrum_mask(
             ds["drop_number"],
             fall_velocity,
             above_velocity_tolerance=1.0,
@@ -156,7 +156,7 @@ class TestDefineRainDropSpectrumMask:
         """Test spectrum mask without arguments returns True array."""
         ds = create_test_dataset()
         fall_velocity = xr.DataArray([3.0, 6.0, 12.0, 20.0], dims=[DIAMETER_DIMENSION])
-        ds_mask = define_raindrop_spectrum_mask(
+        ds_mask = define_rain_spectrum_mask(
             ds["drop_number"],
             fall_velocity,
         )
@@ -165,13 +165,13 @@ class TestDefineRainDropSpectrumMask:
         assert ds_mask.shape == ds["drop_number"].shape
         assert ds_mask.to_numpy().all()  # all True
 
-    def test_define_raindrop_spectrum_mask_conflicting_args(self):
+    def test_define_rain_spectrum_mask_conflicting_args(self):
         """Test spectrum mask raises error if both fraction and tolerance are given."""
         ds = create_test_dataset()
         fall_velocity = xr.DataArray([3.0, 6.0, 12.0, 20.0], dims=[DIAMETER_DIMENSION])
 
         with pytest.raises(ValueError):
-            define_raindrop_spectrum_mask(
+            define_rain_spectrum_mask(
                 ds["drop_number"],
                 fall_velocity,
                 above_velocity_fraction=0.1,
@@ -179,18 +179,18 @@ class TestDefineRainDropSpectrumMask:
             )
 
         with pytest.raises(ValueError):
-            define_raindrop_spectrum_mask(
+            define_rain_spectrum_mask(
                 ds["drop_number"],
                 fall_velocity,
                 below_velocity_fraction=0.1,
                 below_velocity_tolerance=1.0,
             )
 
-    def test_define_raindrop_spectrum_mask_keep_smallest(self):
+    def test_define_rain_spectrum_mask_keep_smallest(self):
         """Test spectrum mask retains smallest drops when maintain_smallest_drops=True."""
         ds = create_test_dataset()
         fall_velocity = xr.DataArray([3.0, 6.0, 12.0, 20.0], dims=[DIAMETER_DIMENSION])
-        ds_mask = define_raindrop_spectrum_mask(
+        ds_mask = define_rain_spectrum_mask(
             ds["drop_number"],
             fall_velocity,
             above_velocity_fraction=0.1,
@@ -213,7 +213,7 @@ class TestDefineRainDropSpectrumMask:
         )
         np.testing.assert_allclose(ds_mask.to_numpy(), expected_mask)
 
-    def test_define_raindrop_spectrum_mask_with_fixed_fall_velocity(self):
+    def test_define_rain_spectrum_mask_with_fixed_fall_velocity(self):
         """Test spectrum mask works with fall_velocity not varying with time."""
         ds = create_test_dataset()
         ds = ds.expand_dims({"time": 3})
@@ -222,7 +222,7 @@ class TestDefineRainDropSpectrumMask:
 
         fall_velocity = xr.DataArray([3.0, 6.0, 12.0, 20.0], dims=[DIAMETER_DIMENSION])
 
-        ds_mask = define_raindrop_spectrum_mask(
+        ds_mask = define_rain_spectrum_mask(
             drop_number,
             fall_velocity,
             above_velocity_fraction=0.2,
@@ -231,7 +231,7 @@ class TestDefineRainDropSpectrumMask:
         assert isinstance(ds_mask, xr.DataArray)
         assert "time" not in ds_mask.dims
 
-    def test_define_raindrop_spectrum_mask_with_fall_velocity_varying_with_time(self):
+    def test_define_rain_spectrum_mask_with_fall_velocity_varying_with_time(self):
         """Test spectrum mask works with fall_velocity varying with time."""
         ds = create_test_dataset()
         ds = ds.expand_dims({"time": 3})
@@ -241,7 +241,7 @@ class TestDefineRainDropSpectrumMask:
         fall_velocity = xr.DataArray([3.0, 6.0, 12.0, 20.0], dims=[DIAMETER_DIMENSION])
         fall_velocity = fall_velocity.expand_dims({"time": 3})
 
-        ds_mask = define_raindrop_spectrum_mask(
+        ds_mask = define_rain_spectrum_mask(
             drop_number,
             fall_velocity,
             above_velocity_fraction=0.2,
@@ -251,7 +251,7 @@ class TestDefineRainDropSpectrumMask:
         assert "time" in ds_mask.dims
         assert ds_mask.sizes["time"] == 3
 
-    def test_define_raindrop_spectrum_mask_with_dask_array(self):
+    def test_define_rain_spectrum_mask_with_dask_array(self):
         """Test spectrum mask works correctly with xarray DataArray backed by dask array."""
         ds = create_test_dataset()
         ds = ds.expand_dims({"time": 3})
@@ -261,7 +261,7 @@ class TestDefineRainDropSpectrumMask:
         drop_number = ds["drop_number"].chunk({"time": 1})
         fall_velocity = fall_velocity.chunk({"time": 1})
 
-        ds_mask = define_raindrop_spectrum_mask(
+        ds_mask = define_rain_spectrum_mask(
             drop_number,
             fall_velocity,
             above_velocity_fraction=0.2,

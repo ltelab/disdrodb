@@ -108,7 +108,7 @@ def filter_velocity_bins(ds, minimum_velocity=None, maximum_velocity=None):
     return ds
 
 
-def define_raindrop_spectrum_mask(
+def define_rain_spectrum_mask(
     drop_number,
     fall_velocity,
     above_velocity_fraction=None,

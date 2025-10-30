@@ -202,7 +202,7 @@ def test_bins_format(yaml_filepath: str) -> None:
         Path of the YAML file to test.
     """
     data = read_yaml_file(yaml_filepath)
-    if data:  # deal with empty bins_velocity.yml (impact disdrometers)
+    if data:  # deal with empty bins_velocity.yml (impact disdrometers and ODM-470)
         assert is_dict(data)
         assert is_string_list(list(data.keys()))
         assert is_list(list(data.values()))
@@ -226,7 +226,7 @@ def test_bins_format(yaml_filepath: str) -> None:
         # Check that the bounds distance is equal to the width (but not for the first key)
         for idx in list(data.get("bounds").keys())[1:-1]:
             [bound_min, bound_max] = data.get("bounds")[idx]
-            width = data.get("width")[idx]
+            width = round(data.get("width")[idx], 3)
             distance = round(bound_max - bound_min, 3)
             assert distance == width
 

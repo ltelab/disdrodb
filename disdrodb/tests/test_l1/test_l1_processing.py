@@ -20,7 +20,7 @@ import pytest
 import xarray as xr
 
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
-from disdrodb.l1.fall_velocity import available_raindrop_fall_velocity_models
+from disdrodb.fall_velocity import available_rain_fall_velocity_models
 from disdrodb.l1.processing import generate_l1
 from disdrodb.tests.fake_datasets import create_template_l0c_dataset
 
@@ -48,7 +48,7 @@ class TestGenerateL1:
         for var in expected_vars:
             assert var in ds_l1, f"Missing variable {var}"
 
-    @pytest.mark.parametrize("model", available_raindrop_fall_velocity_models())
+    @pytest.mark.parametrize("model", available_rain_fall_velocity_models())
     def test_fall_velocity_is_computed(self, model):
         """Test all fall velocity models produce non-negative fall velocities."""
         ds = create_template_l0c_dataset()

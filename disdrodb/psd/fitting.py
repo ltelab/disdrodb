@@ -23,7 +23,7 @@ from scipy.optimize import minimize
 from scipy.special import gamma, gammaln  # Regularized lower incomplete gamma function
 
 from disdrodb.constants import DIAMETER_DIMENSION
-from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity_from_ds
+from disdrodb.fall_velocity import get_rain_fall_velocity_from_ds
 from disdrodb.l2.empirical_dsd import (
     get_median_volume_drop_diameter,
     get_moment,
@@ -2356,7 +2356,7 @@ def get_gs_parameters(ds, psd_model, target="ND", transformation="log", error_or
 
     # Check fall velocity is available if target R
     if "fall_velocity" not in ds:
-        ds["fall_velocity"] = get_raindrop_fall_velocity_from_ds(ds)
+        ds["fall_velocity"] = get_rain_fall_velocity_from_ds(ds)
 
     # Retrieve estimation function
     func = OPTIMIZATION_ROUTINES_DICT["GS"][psd_model]

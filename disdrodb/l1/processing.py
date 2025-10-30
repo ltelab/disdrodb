@@ -19,8 +19,8 @@
 import xarray as xr
 
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
-from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity_from_ds
-from disdrodb.l1.filters import define_raindrop_spectrum_mask, filter_diameter_bins, filter_velocity_bins
+from disdrodb.fall_velocity import get_rain_fall_velocity_from_ds
+from disdrodb.l1.filters import define_rain_spectrum_mask, filter_diameter_bins, filter_velocity_bins
 from disdrodb.l1.resampling import add_sample_interval
 from disdrodb.l1_env.routines import load_env_dataset
 from disdrodb.l2.empirical_dsd import (  # TODO: maybe move out of L2
@@ -142,12 +142,12 @@ def generate_l1(
 
     # -------------------------------------------------------------------------------------------
     # Compute fall velocity
-    ds_l1["fall_velocity"] = get_raindrop_fall_velocity_from_ds(ds=ds_l1, ds_env=ds_env, model=fall_velocity_model)
+    ds_l1["fall_velocity"] = get_rain_fall_velocity_from_ds(ds=ds_l1, ds_env=ds_env, model=fall_velocity_model)
 
     # -------------------------------------------------------------------------------------------
     # Define filtering mask according to fall velocity
     if has_velocity_dimension:
-        mask = define_raindrop_spectrum_mask(
+        mask = define_rain_spectrum_mask(
             drop_number=ds_l1["raw_drop_number"],
             fall_velocity=ds_l1["fall_velocity"],
             above_velocity_fraction=above_velocity_fraction,

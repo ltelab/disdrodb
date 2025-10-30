@@ -234,6 +234,9 @@ def get_effective_sampling_area(sensor_name, diameter):
         # sampling_area = L * (B - diameter / 2)
         sampling_area = 0.0045  # m2
         return sampling_area
+    if sensor_name == "ODM470":
+        sampling_area = 0.00264  # 26.4 cm2
+        return sampling_area
     if sensor_name == "PWS100":
         sampling_area = 0.004  # m2
         return sampling_area

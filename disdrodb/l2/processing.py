@@ -20,7 +20,7 @@ import numpy as np
 import xarray as xr
 
 from disdrodb.constants import DIAMETER_DIMENSION
-from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity
+from disdrodb.fall_velocity import get_rain_fall_velocity
 from disdrodb.l1_env.routines import load_env_dataset
 from disdrodb.l2.empirical_dsd import (
     BINS_METRICS,
@@ -549,7 +549,7 @@ def generate_l2m(
     drop_number_concentration = psd(diameter)
 
     # Retrieve fall velocity for each new diameter bin
-    velocity = get_raindrop_fall_velocity(diameter=diameter, model=fall_velocity_model, ds_env=ds_env)  # mm
+    velocity = get_rain_fall_velocity(diameter=diameter, model=fall_velocity_model, ds_env=ds_env)  # mm
 
     # Compute integral parameters
     ds_params = compute_integral_parameters(
