@@ -21,7 +21,7 @@ from disdrodb.fall_velocity.graupel import (
     get_graupel_fall_velocity_model,
 )
 from disdrodb.fall_velocity.hail import (
-    available_hail_fall_velocity_models, 
+    available_hail_fall_velocity_models,
     get_hail_fall_velocity,
     get_hail_fall_velocity_model,
 )
@@ -36,14 +36,11 @@ __all__ = [
     "available_graupel_fall_velocity_models",
     "available_hail_fall_velocity_models",
     "available_rain_fall_velocity_models",
-
     "get_graupel_fall_velocity",
-    "get_hail_fall_velocity",
-    "get_rain_fall_velocity",
-    
-    "get_rain_fall_velocity_from_ds",
     "get_graupel_fall_velocity_model",
+    "get_hail_fall_velocity",
+    "get_hail_fall_velocity_model",
+    "get_rain_fall_velocity",
+    "get_rain_fall_velocity_from_ds",
     "get_rain_fall_velocity_model",
-    "get_hail_fall_velocity_model", 
-    
 ]

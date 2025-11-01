@@ -113,7 +113,7 @@ def reader(
     # - Add 0 before every , if , not preceded by a digit
     # - Example: ',,1,,' --> '0,0,1,0,'
     df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d);", "0;", regex=True)
-    
+
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
         "id",

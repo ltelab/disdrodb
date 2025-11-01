@@ -67,6 +67,30 @@ sample_interval:
   long_name: Sampling interval
   description: Sampling interval in seconds.
   unit: s
+n_particles:
+  long_name: "number of particles"
+  standard_name: "number_of_particles"
+  units: "1"
+  description: "Total count of hydrometeor particles."
+  valid_min: 0
+n_graupel:
+  long_name: "number of graupel particles"
+  standard_name: "number_of_graupel_particles"
+  units: "1"
+  description: "Count of graupel particles."
+  valid_min: 0
+n_small_hail:
+  long_name: "number of small hail particles"
+  standard_name: "number_of_small_hail_particles"
+  units: "1"
+  description: "Count of hail particles smaller than 8 mm in diameter."
+  valid_min: 0
+n_large_hail:
+  long_name: "number of large hail particles"
+  standard_name: "number_of_large_hail_particles"
+  units: "1"
+  description: "Count of hail particles larger than 8 mm in diameter."
+  valid_min: 0
 drop_number:
   description: Counts of drops per diameter and velocity class
   long_name: Drop counts per diameter and velocity class

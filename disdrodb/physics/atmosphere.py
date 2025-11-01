@@ -174,7 +174,6 @@ def get_air_density(temperature, air_pressure, vapor_pressure, gas_constant_dry_
     return air_pressure * (1 - 0.378 * vapor_pressure / air_pressure) / (gas_constant_dry_air * temperature)
 
 
-
 def get_vapor_actual_pressure_at_height(
     altitude,
     sea_level_temperature,

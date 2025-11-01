@@ -16,12 +16,14 @@
 # -----------------------------------------------------------------------------.
 """Testing water physics functions."""
 import pytest
+
 from disdrodb.physics.water import (
-    get_water_density,
     get_pure_water_compressibility,
     get_pure_water_density,
     get_pure_water_surface_tension,
+    get_water_density,
 )
+
 
 class TestWaterProperties:
     """Test water property calculations."""

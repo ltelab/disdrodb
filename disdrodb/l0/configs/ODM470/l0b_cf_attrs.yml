@@ -13,7 +13,7 @@ relative_wind_speed:
 precip_flag:
   description: Precipitation classification
   long_name: Precipitation flag
-  flag_meanings: 'rain snow mixed_phase true_zero_value inoperative_instrument harbor_time_no_data'
+  flag_meanings: "rain snow mixed_phase true_zero_value inoperative_instrument harbor_time_no_data"
   flag_values: "0 1 2 3 4 5"
   units: ""
 raw_drop_number:

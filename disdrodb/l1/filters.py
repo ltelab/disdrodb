@@ -110,7 +110,8 @@ def filter_velocity_bins(ds, minimum_velocity=None, maximum_velocity=None):
 
 def define_rain_spectrum_mask(
     drop_number,
-    fall_velocity,
+    fall_velocity_lower,
+    fall_velocity_upper,
     above_velocity_fraction=None,
     above_velocity_tolerance=None,
     below_velocity_fraction=None,
@@ -125,8 +126,10 @@ def define_rain_spectrum_mask(
     ----------
     drop_number : xarray.DataArray
         Array of drop counts per diameter and velocity bins.
-    fall_velocity : array-like
-        The expected terminal fall velocities for rain drops of given sizes.
+    fall_velocity_lower : array-like
+        The expected terminal fall velocities lower bound for rain drops of given size interval.
+    fall_velocity_upper : array-like
+         The expected terminal fall velocities upper bound for rain drops of given size interval.
     above_velocity_fraction : float, optional
         Fraction of terminal fall velocity above which rain drops are considered too fast.
         Either specify ``above_velocity_fraction`` or ``above_velocity_tolerance``.
@@ -157,10 +160,8 @@ def define_rain_spectrum_mask(
         A boolean mask array indicating valid bins according to the specified criteria.
 
     """
-    # TODO: use lower and upper fall_velocity !
-
     # Ensure it creates a 2D mask if the fall_velocity does not vary over time
-    if "time" in drop_number.dims and "time" not in fall_velocity.dims:
+    if "time" in drop_number.dims and "time" not in fall_velocity_lower.dims:
         drop_number = drop_number.isel(time=0)
 
     # Check arguments
@@ -171,16 +172,16 @@ def define_rain_spectrum_mask(
 
     # Define above/below velocity thresholds
     if above_velocity_fraction is not None:
-        above_fall_velocity = fall_velocity * (1 + above_velocity_fraction)
+        above_fall_velocity = fall_velocity_upper * (1 + above_velocity_fraction)
     elif above_velocity_tolerance is not None:
-        above_fall_velocity = fall_velocity + above_velocity_tolerance
+        above_fall_velocity = fall_velocity_upper + above_velocity_tolerance
     else:
         above_fall_velocity = np.inf
 
     if below_velocity_fraction is not None:
-        below_fall_velocity = fall_velocity * (1 - below_velocity_fraction)
+        below_fall_velocity = fall_velocity_lower * (1 - below_velocity_fraction)
     elif below_velocity_tolerance is not None:
-        below_fall_velocity = fall_velocity - below_velocity_tolerance
+        below_fall_velocity = fall_velocity_lower - below_velocity_tolerance
     else:
         below_fall_velocity = 0
 

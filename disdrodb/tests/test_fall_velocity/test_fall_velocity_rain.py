@@ -25,12 +25,12 @@ from disdrodb.constants import DIAMETER_DIMENSION
 from disdrodb.fall_velocity.rain import (
     available_rain_fall_velocity_models,
     check_rain_fall_velocity_model,
+    get_drag_coefficient,
     get_rain_fall_velocity,
     get_rain_fall_velocity_from_ds,
     get_rain_fall_velocity_model,
-    get_drag_coefficient,
-    get_raindrop_reynolds_number,
     get_raindrop_beard1976_fall_velocity,
+    get_raindrop_reynolds_number,
     retrieve_raindrop_beard_fall_velocity,
 )
 from disdrodb.l1_env.routines import load_env_dataset
@@ -141,7 +141,7 @@ def test_models_expected_values(model, diameter, expected):
 
 class TestBeard1976:
     """Test Beard1976 model."""
-    
+
     def test_beard1976_expected_values(self):
         """Test selected models against reference values at D=2 mm."""
         ds_env = xr.Dataset(
@@ -159,12 +159,11 @@ class TestBeard1976:
                 "altitude": 0,
             },
         )
-    
+
         diameter = np.arange(1, 6)
         da_fall_velocity = get_rain_fall_velocity(diameter, ds_env=ds_env, model="Beard1976")
         expected_values = np.array([4.01598392, 6.52857255, 8.07642473, 8.85000858, 9.123762])
         np.testing.assert_allclose(da_fall_velocity.to_numpy(), expected_values, rtol=1e-3, atol=1e-4)
-
 
     def test_beard1976_model_works_without_ds_env(self):
         """Beard1976 model works also if ds_env not specified."""
@@ -172,23 +171,22 @@ class TestBeard1976:
         result = get_rain_fall_velocity(diameter, model="Beard1976")
         assert result.shape == diameter.shape
         assert np.all(result > 0)
-    
-    
+
     def test_beard_1976_xarray_broadcasting(self):
         """Test get_rain_fall_velocity broadcasts correctly ENV variables for Beard1976."""
         # Define model
         model = "Beard1976"
-    
+
         # Define default ENV dataset
         ds_env = load_env_dataset()
-    
+
         # Define diameter
         diameter = [1, 2, 3, 4]
-    
+
         # Define temperature
         temperature = np.array([5, 10, 20]) + 273.15
         temperature = xr.DataArray(temperature, dims="temperature", coords={"temperature": temperature})
-    
+
         # Define relative humidity
         relative_humidity = np.array([0.1, 0.5, 0.8, 1.0])
         relative_humidity = xr.DataArray(
@@ -196,69 +194,68 @@ class TestBeard1976:
             dims="relative_humidity",
             coords={"relative_humidity": relative_humidity},
         )
-    
+
         # Define altitude
         altitude = np.array([0, 1000, 2000, 3000])
         altitude = xr.DataArray(altitude, dims="altitude", coords={"altitude": altitude})
-    
+
         # Define latitude
         latitude = np.array([0, 40, 60])
         latitude = xr.DataArray(latitude, dims="latitude", coords={"latitude": latitude})
-    
+
         # Update ENV dataset
         ds_env = ds_env.drop_vars(["latitude", "altitude", "relative_humidity", "temperature"])
         ds_env["latitude"] = latitude
         ds_env["altitude"] = altitude
         ds_env["relative_humidity"] = relative_humidity
         ds_env["temperature"] = temperature
-    
+
         # Compute fall velocity
         fall_velocity = get_rain_fall_velocity(diameter, model=model, ds_env=ds_env)
-    
+
         # Check dimensions
         assert set(fall_velocity.dims) == {*list(ds_env.dims), DIAMETER_DIMENSION}
         assert np.all(fall_velocity > 0)
-    
 
     def test_beard_1976_with_time_varying_env_variables(self):
         """Test get_rain_fall_velocity works correctly with time-varying ENV variables."""
         # Define model
         model = "Beard1976"
-    
+
         # Define default ENV dataset
         ds_env = load_env_dataset()
-    
+
         # Define diameter
         diameter = [1, 2, 3, 4]
-    
+
         # Define timesteps
         timesteps = pd.date_range("2023-01-01", periods=3, freq="min")
-    
+
         # Define temperature
         temperature = np.array([5, 10, 20]) + 273.15
         temperature = xr.DataArray(temperature, dims="time", coords={"time": ("time", timesteps)})
-    
+
         # Define relative humidity
         relative_humidity = np.array([0.1, 0.5, 0.8])
         relative_humidity = xr.DataArray(relative_humidity, dims="time", coords={"time": ("time", timesteps)})
-    
+
         # Define latitude
         latitude = np.array([0, 40, 60])
         latitude = xr.DataArray(latitude, dims="time", coords={"time": ("time", timesteps)})
-    
+
         # Update ENV dataset
         ds_env = ds_env.drop_vars(["latitude", "relative_humidity", "temperature"])
         ds_env["latitude"] = latitude
         ds_env["relative_humidity"] = relative_humidity
         ds_env["temperature"] = temperature
-    
+
         # Compute fall velocity
         fall_velocity = get_rain_fall_velocity(diameter, model=model, ds_env=ds_env)
-    
+
         # Check dimensions
         assert set(fall_velocity.dims) == {DIAMETER_DIMENSION, "time"}
         assert np.all(fall_velocity > 0)
-    
+
 
 @pytest.mark.parametrize("model", ["InvalidModel", "", None, 123])
 def test_invalid_raindrop_fall_velocity_models_raise(model):
@@ -301,8 +298,7 @@ def test_get_rain_fall_velocity_from_ds():
         get_rain_fall_velocity_from_ds(ds.drop_dims(DIAMETER_DIMENSION))
 
 
-
-#### Beard model components 
+#### Beard model components
 
 
 class TestDragCoefficient:
@@ -354,7 +350,7 @@ class TestBeardFallVelocity:
     def test_get_raindrop_beard1976_fall_velocity(self):
         """Test Beard 1976 fall velocity model."""
         fall_velocity = get_raindrop_beard1976_fall_velocity(
-            diameter=2,   # mm 
+            diameter=2,  # mm
             temperature=293.15,
             air_density=1.2,
             water_density=998,
@@ -392,9 +388,9 @@ class TestBeardFallVelocity:
                 "altitude": 500,
             },
         )
-    
+
         fall_velocity = retrieve_raindrop_beard_fall_velocity(
-            diameter=2,   # mm 
+            diameter=2,  # mm
             ds_env=ds_env,
         )
         assert fall_velocity > 0
@@ -418,9 +414,8 @@ class TestBeardFallVelocity:
             },
         )
         fall_velocity = retrieve_raindrop_beard_fall_velocity(
-            diameter=2,   # mm 
+            diameter=2,  # mm
             ds_env=ds_env,
         )
         assert fall_velocity > 0
         assert pytest.approx(fall_velocity, abs=0.001) == 6.5006
-

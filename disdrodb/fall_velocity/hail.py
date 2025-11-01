@@ -19,15 +19,15 @@ import numpy as np
 import xarray as xr
 
 from disdrodb.constants import DIAMETER_DIMENSION
-from disdrodb.utils.warnings import suppress_warnings
-from disdrodb.physics.wrappers import retrieve_air_pressure
 from disdrodb.l0.l0b_processing import ensure_valid_geolocation
 from disdrodb.l1_env.routines import load_env_dataset
+from disdrodb.physics.wrappers import retrieve_air_pressure
+from disdrodb.utils.warnings import suppress_warnings
 
 
 def get_fall_velocity_laurie_1960(diameter):
     """Get hailstones fall velocity based on Laurie 1960 data.
-    
+
     The parametrizazion is reported in Table 3 of Heymsfield et al., 2018.
 
     Parameters
@@ -35,25 +35,25 @@ def get_fall_velocity_laurie_1960(diameter):
     diameter : array-like or float
         Particle maximum diameter in millimeters [mm].
 
-    
+
     Returns
     -------
     fall_velocity : array-like or float
         Terminal fall velocity [m s⁻¹].
-        
+
     References
     ----------
     Heymsfield, A., M. Szakáll, A. Jost, I. Giammanco, and R. Wright, 2018.
     A Comprehensive Observational Study of Graupel and Hail Terminal Velocity, Mass Flux, and Kinetic Energy.
-    J. Atmos. Sci., 75, 3861–3885, https://doi.org/10.1175/JAS-D-18-0035.1. 
+    J. Atmos. Sci., 75, 3861-3885, https://doi.org/10.1175/JAS-D-18-0035.1.
     """
-    fall_velocity = 13.95*(0.1*diameter)**0.51
+    fall_velocity = 13.95 * (0.1 * diameter) ** 0.51
     return fall_velocity
 
 
 def get_fall_velocity_knight_1983_low_density(diameter):
     """Get low-density hailstones fall velocity based on Knight et al. 1983.
-    
+
     The parametrization is reported in Figure 3 of Knight et al. 1983.
     It's valid for hail stone density between 0.31 and 0.61 g cm-3.
 
@@ -62,25 +62,25 @@ def get_fall_velocity_knight_1983_low_density(diameter):
     diameter : array-like or float
         Particle maximum diameter in millimeters [mm].
 
-    
+
     Returns
     -------
     fall_velocity : array-like or float
         Terminal fall velocity [m s⁻¹].
-        
+
     References
     ----------
-    Knight, N. C., and A. J. Heymsfield, 1983. 
+    Knight, N. C., and A. J. Heymsfield, 1983.
     Measurement and Interpretation of Hailstone Density and Terminal Velocity.
-    J. Atmos. Sci., 40, 1510–1516. https://doi.org/10.1175/1520-0469(1983)040<1510:MAIOHD>2.0.CO;2.
+    J. Atmos. Sci., 40, 1510-1516. https://doi.org/10.1175/1520-0469(1983)040<1510:MAIOHD>2.0.CO;2.
     """
-    fall_velocity = 8.445*(0.1*diameter)**0.553
+    fall_velocity = 8.445 * (0.1 * diameter) ** 0.553
     return fall_velocity
 
 
 def get_fall_velocity_knight_1983_high_density(diameter):
     """Get low-density hailstones fall velocity based on Knight et al. 1983.
-    
+
     The parametrization is reported in Figure 6 of Knight et al. 1983.
     It's valid for hail stone density around 0.82 g cm-3.
 
@@ -89,25 +89,25 @@ def get_fall_velocity_knight_1983_high_density(diameter):
     diameter : array-like or float
         Particle maximum diameter in millimeters [mm].
 
-    
+
     Returns
     -------
     fall_velocity : array-like or float
         Terminal fall velocity [m s⁻¹].
-        
+
     References
     ----------
-    Knight, N. C., and A. J. Heymsfield, 1983. 
+    Knight, N. C., and A. J. Heymsfield, 1983.
     Measurement and Interpretation of Hailstone Density and Terminal Velocity.
-    J. Atmos. Sci., 40, 1510–1516. https://doi.org/10.1175/1520-0469(1983)040<1510:MAIOHD>2.0.CO;2.
+    J. Atmos. Sci., 40, 1510-1516. https://doi.org/10.1175/1520-0469(1983)040<1510:MAIOHD>2.0.CO;2.
     """
-    fall_velocity = 10.58*(0.1*diameter)**0.267
+    fall_velocity = 10.58 * (0.1 * diameter) ** 0.267
     return fall_velocity
 
 
-def get_fall_velocity_heymsfield_2014b(diameter): 
+def get_fall_velocity_heymsfield_2014b(diameter):
     """Get hail fall velocity from Heymsfield et al., 2014.
-    
+
     Use the Heymsfield et al., 2014 parameterization.
 
     Parameters
@@ -119,44 +119,44 @@ def get_fall_velocity_heymsfield_2014b(diameter):
     -------
     fall_velocity : xarray.DataArray or numpy.ndarray
         Terminal fall velocity [m s⁻¹].
-        
+
     References
     ----------
     Heymsfield, A. J., I. M. Giammanco, and R. Wright (2014).
     Terminal velocities and kinetic energies of natural hailstones.
-    Geophys. Res. Lett., 41, 8666–8672, https://doi.org/10.1002/2014GL062324
+    Geophys. Res. Lett., 41, 8666-8672, https://doi.org/10.1002/2014GL062324
     """
-    fall_velocity = 12.28*(0.1*diameter)**0.57  # Dmax > 1.3 mm
+    fall_velocity = 12.28 * (0.1 * diameter) ** 0.57  # Dmax > 1.3 mm
     return fall_velocity
 
- 
+
 def get_fall_velocity_heymsfield_2018(diameter):
     """Get hailstones fall velocity from Heymsfield et al., 2018.
-    
+
     Parameters
     ----------
     diameter : array-like or float
         Particle maximum diameter in millimeters [mm].
 
-    
+
     Returns
     -------
     fall_velocity : array-like or float
         Terminal fall velocity [m s⁻¹].
-    
+
     References
     ----------
     Heymsfield, A., M. Szakáll, A. Jost, I. Giammanco, and R. Wright, 2018.
     A Comprehensive Observational Study of Graupel and Hail Terminal Velocity, Mass Flux, and Kinetic Energy.
-    J. Atmos. Sci., 75, 3861–3885, https://doi.org/10.1175/JAS-D-18-0035.1. 
+    J. Atmos. Sci., 75, 3861-3885, https://doi.org/10.1175/JAS-D-18-0035.1.
     """
-    fall_velocity = 6.1*(0.1*diameter)**0.72 # eq 7 and 15
+    fall_velocity = 6.1 * (0.1 * diameter) ** 0.72  # eq 7 and 15
     return fall_velocity
 
 
 def get_fall_velocity_fehlmann_2020(diameter):
     """Get hailstones fall velocity from Fehlmann et al., 2020."""
-    fall_velocity = 3.74*diameter**0.5
+    fall_velocity = 3.74 * diameter**0.5
     return fall_velocity
 
 
@@ -230,7 +230,7 @@ def get_hail_fall_velocity(diameter, model, ds_env=None, minimum_diameter=4):
         - 'sea_level_air_pressure' : Sea level air pressure in Pascals (Pa).
         - 'lapse_rate' : Lapse rate in degrees Celsius per meter (°C/m).
         If not specified, sensible default values are used.
-        
+
     Returns
     -------
     fall_velocity : xr.DataArray
@@ -246,7 +246,7 @@ def get_hail_fall_velocity(diameter, model, ds_env=None, minimum_diameter=4):
     else:
         diameter = np.atleast_1d(diameter)
         diameter = xr.DataArray(diameter, dims=DIAMETER_DIMENSION, coords={DIAMETER_DIMENSION: diameter.copy()})
-    
+
     # Initialize ds_env if None
     # --> Ensure valid altitude and geolocation
     # - altitude requiredto correct for elevation (air_density)
@@ -255,20 +255,20 @@ def get_hail_fall_velocity(diameter, model, ds_env=None, minimum_diameter=4):
         ds_env = load_env_dataset()
         for coord in ["altitude", "latitude"]:
             ds_env = ensure_valid_geolocation(ds_env, coord=coord, errors="raise")
-            
+
     # Retrieve fall velocity
     func = get_hail_fall_velocity_model(model)
     with suppress_warnings():  # e.g. when diameter = 0
         fall_velocity = func(diameter)
-        
-    # Correct for altitude 
+
+    # Correct for altitude
     air_pressure = retrieve_air_pressure(ds_env)
     correction_factor = (101325 / air_pressure) ** 0.545
     fall_velocity = fall_velocity * correction_factor
-        
+
     # Set to NaN for diameter outside [5, ...)
     fall_velocity = fall_velocity.where(diameter > minimum_diameter)
-    
+
     # Ensure fall velocity is > 0 to avoid division by zero
     # - Some models, at small diameter, can return negative/zero fall velocity
     fall_velocity = fall_velocity.where(fall_velocity > 0)
@@ -278,5 +278,3 @@ def get_hail_fall_velocity(diameter, model, ds_env=None, minimum_diameter=4):
     fall_velocity.attrs["units"] = "m/s"
     fall_velocity.attrs["model"] = model
     return fall_velocity.squeeze()
-
- 

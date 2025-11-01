@@ -140,7 +140,7 @@ def get_fall_velocity_van_dijk_2002(diameter):
 
 ####---------------------------------------------------------------------------.
 #### Beard model
- 
+
 
 def get_raindrop_reynolds_number(diameter, temperature, air_density, water_density, g):
     """Compute raindrop Reynolds number.
@@ -174,7 +174,7 @@ def get_raindrop_reynolds_number(diameter, temperature, air_density, water_densi
     """
     from disdrodb.physics.atmosphere import get_air_dynamic_viscosity
     from disdrodb.physics.water import get_pure_water_surface_tension
-    
+
     # Define mask for small and large particles
     small_diam_mask = diameter < 1.07e-3  # < 1mm
 
@@ -270,7 +270,7 @@ def get_raindrop_beard1976_fall_velocity(diameter, temperature, air_density, wat
     """
     from disdrodb.physics.atmosphere import get_air_dynamic_viscosity
 
-    # Convert diameter to meter 
+    # Convert diameter to meter
     diameter = diameter / 1000
 
     # Compute air viscotiy and reynolds number
@@ -289,7 +289,7 @@ def get_raindrop_beard1976_fall_velocity(diameter, temperature, air_density, wat
 
 def retrieve_raindrop_beard_fall_velocity(
     diameter,
-    ds_env, 
+    ds_env,
 ):
     """
     Computes the terminal fall velocity for liquid raindrops using the Beard (1976) model.
@@ -304,34 +304,37 @@ def retrieve_raindrop_beard_fall_velocity(
         - 'latitude' :  Latitude in degrees.
         - 'temperature' : Temperature in degrees Kelvin (K).
         - 'relative_humidity' :  Relative humidity between 0 and 1.
-        - 'sea_level_air_pressure' : Standard atmospheric pressure at sea level in Pascals (Pa).  The default is 101_325 Pa.
+        - 'sea_level_air_pressure' : Standard atmospheric pressure at sea level in Pascals (Pa).
+        The default is 101_325 Pa.
         - 'air_pressure': Air pressure in Pascals (Pa). If None, air_pressure at altitude is inferred.
-        - 'lapse_rate' : Atmospheric lapse rate in degrees Celsius or Kelvin per meter (°C/m). The default is 0.0065 K/m.
-        - 'gas_constant_dry_air': Gas constant for dry air in J/(kg*K). The default is 287.04 is J/(kg*K).
-       
+        - 'lapse_rate' : Atmospheric lapse rate in degrees Celsius or Kelvin per meter (°C/m).
+        The default is 0.0065 K/m.
+        - 'gas_constant_dry_air': Gas constant for dry air in J/(kg*K).
+        The default is 287.04 is J/(kg*K).
+
     Returns
     -------
     fall_velocity : array-like
         Terminal fall velocity for liquid raindrops.
     """
     from disdrodb.physics.atmosphere import (
-        get_gravitational_acceleration,
         get_air_density,
         get_air_pressure_at_height,
+        get_gravitational_acceleration,
         get_vapor_actual_pressure,
     )
     from disdrodb.physics.water import get_water_density
-        
+
     # Retrieve relevant variables from ENV dataset
-    altitude=ds_env["altitude"]
-    latitude=ds_env["latitude"]
-    temperature=ds_env["temperature"]
-    relative_humidity=ds_env["relative_humidity"]
-    air_pressure=ds_env.get("air_pressure", None)
-    sea_level_air_pressure=ds_env.get("sea_level_air_pressure", 101_325)
-    gas_constant_dry_air=ds_env.get("gas_constant_dry_air", 287.04)
-    lapse_rate=ds_env.get("lapse_rate", 0.0065)
- 
+    altitude = ds_env["altitude"]
+    latitude = ds_env["latitude"]
+    temperature = ds_env["temperature"]
+    relative_humidity = ds_env["relative_humidity"]
+    air_pressure = ds_env.get("air_pressure", None)
+    sea_level_air_pressure = ds_env.get("sea_level_air_pressure", 101_325)
+    gas_constant_dry_air = ds_env.get("gas_constant_dry_air", 287.04)
+    lapse_rate = ds_env.get("lapse_rate", 0.0065)
+
     # Retrieve air pressure at altitude if not specified
     if air_pressure is None:
         air_pressure = get_air_pressure_at_height(
@@ -381,14 +384,14 @@ def retrieve_raindrop_beard_fall_velocity(
     #                                         water_density=water_density,
     #                                         g=g.
     #                                         fall_velocity=fall_velocity)
-    
+
     # Clip output
     fall_velocity = fall_velocity.clip(min=0, max=None)
     return fall_velocity
 
 
 #### --------------------------------------------------------------------------------------
-#### WRAPPERS  
+#### WRAPPERS
 RAIN_FALL_VELOCITY_MODELS = {
     "Atlas1973": get_fall_velocity_atlas_1973,
     "Beard1976": retrieve_raindrop_beard_fall_velocity,
@@ -511,7 +514,7 @@ def get_rain_fall_velocity(diameter, model, ds_env=None):
     return fall_velocity.squeeze()
 
 
-def get_rain_fall_velocity_from_ds(ds, ds_env=None, model="Beard1976"):
+def get_rain_fall_velocity_from_ds(ds, ds_env=None, model="Beard1976", diameter="diameter_bin_center"):
     """Compute the raindrop fall velocity.
 
     Parameters
@@ -561,6 +564,5 @@ def get_rain_fall_velocity_from_ds(ds, ds_env=None, model="Beard1976"):
         ds_env = load_env_dataset(ds)
 
     # Compute raindrop fall velocity
-    fall_velocity = get_rain_fall_velocity(diameter=ds["diameter_bin_center"], model=model, ds_env=ds_env)  # mn
-
+    fall_velocity = get_rain_fall_velocity(diameter=ds[diameter], model=model, ds_env=ds_env)  # mn
     return fall_velocity

@@ -5,7 +5,7 @@ archive_options:
   folder_partitioning: "year"
 product_options:
   fall_velocity_model: "Beard1976"
-  minimum_diameter: 0
+  minimum_diameter: 0.2019
   maximum_diameter: 10
   minimum_velocity: 0
   maximum_velocity: 12

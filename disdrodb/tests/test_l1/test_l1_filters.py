@@ -112,7 +112,8 @@ class TestDefineRainDropSpectrumMask:
         fall_velocity = xr.DataArray([3.0, 6.0, 12.0, 20.0], dims=[DIAMETER_DIMENSION])
         ds_mask = define_rain_spectrum_mask(
             ds["drop_number"],
-            fall_velocity,
+            fall_velocity_lower=fall_velocity,
+            fall_velocity_upper=fall_velocity,
             above_velocity_fraction=0.2,
             below_velocity_fraction=0.2,
         )
@@ -135,7 +136,8 @@ class TestDefineRainDropSpectrumMask:
         fall_velocity = xr.DataArray([3.0, 6.0, 12.0, 20.0], dims=[DIAMETER_DIMENSION])
         ds_mask = define_rain_spectrum_mask(
             ds["drop_number"],
-            fall_velocity,
+            fall_velocity_lower=fall_velocity,
+            fall_velocity_upper=fall_velocity,
             above_velocity_tolerance=1.0,
             below_velocity_tolerance=1.0,
         )
@@ -158,7 +160,8 @@ class TestDefineRainDropSpectrumMask:
         fall_velocity = xr.DataArray([3.0, 6.0, 12.0, 20.0], dims=[DIAMETER_DIMENSION])
         ds_mask = define_rain_spectrum_mask(
             ds["drop_number"],
-            fall_velocity,
+            fall_velocity_lower=fall_velocity,
+            fall_velocity_upper=fall_velocity,
         )
         assert isinstance(ds_mask, xr.DataArray)
         assert ds_mask.dtype == bool
@@ -173,7 +176,8 @@ class TestDefineRainDropSpectrumMask:
         with pytest.raises(ValueError):
             define_rain_spectrum_mask(
                 ds["drop_number"],
-                fall_velocity,
+                fall_velocity_lower=fall_velocity,
+                fall_velocity_upper=fall_velocity,
                 above_velocity_fraction=0.1,
                 above_velocity_tolerance=1.0,
             )
@@ -181,7 +185,8 @@ class TestDefineRainDropSpectrumMask:
         with pytest.raises(ValueError):
             define_rain_spectrum_mask(
                 ds["drop_number"],
-                fall_velocity,
+                fall_velocity_lower=fall_velocity,
+                fall_velocity_upper=fall_velocity,
                 below_velocity_fraction=0.1,
                 below_velocity_tolerance=1.0,
             )
@@ -192,7 +197,8 @@ class TestDefineRainDropSpectrumMask:
         fall_velocity = xr.DataArray([3.0, 6.0, 12.0, 20.0], dims=[DIAMETER_DIMENSION])
         ds_mask = define_rain_spectrum_mask(
             ds["drop_number"],
-            fall_velocity,
+            fall_velocity_lower=fall_velocity,
+            fall_velocity_upper=fall_velocity,
             above_velocity_fraction=0.1,
             below_velocity_fraction=0.1,
             maintain_smallest_drops=True,
@@ -224,7 +230,8 @@ class TestDefineRainDropSpectrumMask:
 
         ds_mask = define_rain_spectrum_mask(
             drop_number,
-            fall_velocity,
+            fall_velocity_lower=fall_velocity,
+            fall_velocity_upper=fall_velocity,
             above_velocity_fraction=0.2,
             below_velocity_fraction=0.2,
         )
@@ -243,7 +250,8 @@ class TestDefineRainDropSpectrumMask:
 
         ds_mask = define_rain_spectrum_mask(
             drop_number,
-            fall_velocity,
+            fall_velocity_lower=fall_velocity,
+            fall_velocity_upper=fall_velocity,
             above_velocity_fraction=0.2,
             below_velocity_fraction=0.2,
         )
@@ -263,7 +271,8 @@ class TestDefineRainDropSpectrumMask:
 
         ds_mask = define_rain_spectrum_mask(
             drop_number,
-            fall_velocity,
+            fall_velocity_lower=fall_velocity,
+            fall_velocity_upper=fall_velocity,
             above_velocity_fraction=0.2,
             below_velocity_fraction=0.2,
             maintain_smallest_drops=True,

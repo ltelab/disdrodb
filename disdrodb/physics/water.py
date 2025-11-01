@@ -128,4 +128,3 @@ def get_water_density(temperature, air_pressure, sea_level_air_pressure=101_325)
     delta_pressure = sea_level_air_pressure - air_pressure
     water_compressibility = get_pure_water_compressibility(temperature)
     return get_pure_water_density(temperature) * np.exp(-1 * water_compressibility * delta_pressure)
-

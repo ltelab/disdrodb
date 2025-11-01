@@ -143,13 +143,26 @@ def generate_l1(
     # -------------------------------------------------------------------------------------------
     # Compute fall velocity
     ds_l1["fall_velocity"] = get_rain_fall_velocity_from_ds(ds=ds_l1, ds_env=ds_env, model=fall_velocity_model)
+    fall_velocity_lower = get_rain_fall_velocity_from_ds(
+        ds=ds_l1,
+        ds_env=ds_env,
+        model=fall_velocity_model,
+        diameter="diameter_bin_lower",
+    )
+    fall_velocity_upper = get_rain_fall_velocity_from_ds(
+        ds=ds_l1,
+        ds_env=ds_env,
+        model=fall_velocity_model,
+        diameter="diameter_bin_upper",
+    )
 
     # -------------------------------------------------------------------------------------------
     # Define filtering mask according to fall velocity
     if has_velocity_dimension:
         mask = define_rain_spectrum_mask(
             drop_number=ds_l1["raw_drop_number"],
-            fall_velocity=ds_l1["fall_velocity"],
+            fall_velocity_lower=fall_velocity_lower,
+            fall_velocity_upper=fall_velocity_upper,
             above_velocity_fraction=above_velocity_fraction,
             above_velocity_tolerance=above_velocity_tolerance,
             below_velocity_fraction=below_velocity_fraction,

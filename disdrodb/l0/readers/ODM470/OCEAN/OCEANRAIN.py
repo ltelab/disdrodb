@@ -16,9 +16,11 @@
 # -----------------------------------------------------------------------------.
 """Reader for OCEANRAIN ODM470 data in netCDF format."""
 import numpy as np
+
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0b_nc_processing import open_raw_netcdf_file, standardize_raw_dataset
 from disdrodb.utils.warnings import suppress_warnings
+
 
 @is_documented_by(reader_generic_docstring)
 def reader(
@@ -34,8 +36,8 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Reset time encoding
-    ds["time"].encoding = {} 
-    
+    ds["time"].encoding = {}
+
     # Retrieve spectrum
     bins = "bin" + np.arange(1, 129).astype(str)
     raw_spectrum = ds[bins].to_array(dim="diameter_bin_center")

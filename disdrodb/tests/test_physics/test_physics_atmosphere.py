@@ -16,6 +16,7 @@
 # -----------------------------------------------------------------------------.
 """Testing atmospheric physics functions."""
 import pytest
+
 from disdrodb.physics.atmosphere import (
     get_air_density,
     get_air_dynamic_viscosity,
@@ -141,5 +142,3 @@ class TestAirProperties:
             vapor_pressure=1637,
         )
         assert pytest.approx(density, abs=0.01) == 1.20
-
- 
