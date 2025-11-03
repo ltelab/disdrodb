@@ -49,13 +49,13 @@ from disdrodb.l2.empirical_dsd import (
     get_std_volume_drop_diameter,
     get_total_number_concentration,
 )
-from disdrodb.tests.fake_datasets import create_template_dataset
+from disdrodb.tests.fake_datasets import create_template_l2e_dataset
 
 
 @pytest.fixture(scope="session")
 def template_dataset():
     """Read a template NetCDF file once for all tests."""
-    ds = create_template_dataset(with_velocity=True)
+    ds = create_template_l2e_dataset(with_velocity=True)
     return ds
 
 

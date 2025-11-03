@@ -42,6 +42,7 @@ from disdrodb.configs import (
     get_folder_partitioning,
     get_metadata_archive_dir,
 )
+from disdrodb.l1.classification import TEMPERATURE_VARIABLES
 from disdrodb.l1.processing import generate_l1
 from disdrodb.l1.resampling import resample_dataset
 from disdrodb.metadata.reader import read_station_metadata
@@ -149,7 +150,7 @@ def _generate_l1(
             filepaths,
             start_time=start_time,
             end_time=end_time,
-            variables=["raw_drop_number", "time_qc"],
+            variables=["raw_drop_number", "qc_time", *TEMPERATURE_VARIABLES],
             parallel=False,
             compute=True,
         )
@@ -313,7 +314,7 @@ def run_l1_station(
         return
 
     # -------------------------------------------------------------------------.
-    # Read station metadata and retrieve sensor name
+    # Read station metadata and sensor name
     metadata = read_station_metadata(
         metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
@@ -347,7 +348,6 @@ def run_l1_station(
 
         # Retrieve product options
         product_options = l1_processing_options.get_product_options(temporal_resolution)
-        product_options = product_options.get("product_options")
 
         # ------------------------------------------------------------------.
         # Create product directory

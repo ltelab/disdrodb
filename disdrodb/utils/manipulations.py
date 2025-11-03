@@ -20,8 +20,94 @@
 
 import numpy as np
 
-from disdrodb.constants import DIAMETER_DIMENSION
+from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.utils.xarray import unstack_datarray_dimension
+
+
+def filter_diameter_bins(ds, minimum_diameter=None, maximum_diameter=None):
+    """
+    Filter the dataset to include only diameter bins within specified bounds.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The dataset containing diameter bin data.
+    minimum_diameter : float, optional
+        The minimum diameter to be included, in millimeters.
+        Defaults to the minimum value in `ds["diameter_bin_lower"]`.
+    maximum_diameter : float, optional
+        The maximum diameter to be included, in millimeters.
+        Defaults to the maximum value in `ds["diameter_bin_upper"]`.
+
+    Returns
+    -------
+    xarray.Dataset
+        The filtered dataset containing only the specified diameter bins.
+    """
+    # Put data into memory
+    ds["diameter_bin_lower"] = ds["diameter_bin_lower"].compute()
+    ds["diameter_bin_upper"] = ds["diameter_bin_upper"].compute()
+
+    # Initialize default arguments
+    if minimum_diameter is None:
+        minimum_diameter = ds["diameter_bin_lower"].min().item()
+    if maximum_diameter is None:
+        maximum_diameter = ds["diameter_bin_upper"].max().item()
+
+    # Select bins which overlap the specified diameters
+    valid_indices = np.logical_and(
+        ds["diameter_bin_upper"] > minimum_diameter,
+        ds["diameter_bin_lower"] < maximum_diameter,
+    )
+    ds = ds.isel({DIAMETER_DIMENSION: valid_indices})
+
+    if ds.sizes[DIAMETER_DIMENSION] == 0:
+        msg = f"Filtering using {minimum_diameter=} removes all diameter bins."
+        raise ValueError(msg)
+    return ds
+
+
+def filter_velocity_bins(ds, minimum_velocity=None, maximum_velocity=None):
+    """
+    Filter the dataset to include only velocity bins within specified bounds.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The dataset containing velocity bin data.
+    minimum_velocity : float, optional
+        The minimum velocity to include in the filter, in meters per second.
+        Defaults to the minimum value in `ds["velocity_bin_lower"]`.
+    maximum_velocity : float, optional
+        The maximum velocity to include in the filter, in meters per second.
+        Defaults to the maximum value in `ds["velocity_bin_upper"]`.
+
+    Returns
+    -------
+    xarray.Dataset
+        The filtered dataset containing only the specified velocity bins.
+    """
+    # Put data into memory
+    ds["velocity_bin_lower"] = ds["velocity_bin_lower"].compute()
+    ds["velocity_bin_upper"] = ds["velocity_bin_upper"].compute()
+
+    # Initialize default arguments
+    if minimum_velocity is None:
+        minimum_velocity = ds["velocity_bin_lower"].min().item()
+    if maximum_velocity is None:
+        maximum_velocity = ds["velocity_bin_upper"].max().item()
+
+    # Select bins which overlap the specified velocities
+    valid_indices = np.logical_and(
+        ds["velocity_bin_upper"] > minimum_velocity,
+        ds["velocity_bin_lower"] < maximum_velocity,
+    )
+
+    ds = ds.isel({VELOCITY_DIMENSION: valid_indices})
+    if ds.sizes[VELOCITY_DIMENSION] == 0:
+        msg = f"Filtering using {minimum_velocity=} removes all velocity bins."
+        raise ValueError(msg)
+    return ds
 
 
 def get_diameter_bin_edges(ds):

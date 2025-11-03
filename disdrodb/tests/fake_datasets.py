@@ -22,18 +22,18 @@ def create_template_dataset(with_velocity=True):
     velocity_bin_upper = xr.DataArray(np.array([0.4, 0.6, 1.4]), dims=VELOCITY_DIMENSION)
 
     # Define variables
-    fall_velocity = xr.DataArray(np.array([[0.5, 1, 1.5, 2], [0.5, 1, 1.5, 2]]), dims=("time", DIAMETER_DIMENSION))
-    drop_number_concentration = xr.DataArray(
-        np.array([[0, 10000, 5000, 500], [0, 10000, 5000, 500]]),
-        dims=("time", "diameter_bin_center"),
-    )
     drop_number = xr.DataArray(np.ones((2, 3, 4)), dims=("time", VELOCITY_DIMENSION, DIAMETER_DIMENSION))
+
+    # L1 flags
+    qc_resampling = xr.DataArray(np.ones(2), dims=("time"))
+    qc_time = xr.DataArray(np.zeros(2), dims=("time"))
+
     # Create dataset
     ds = xr.Dataset(
         data_vars={
-            "fall_velocity": fall_velocity,
-            "drop_number_concentration": drop_number_concentration,
-            "drop_number": drop_number,
+            "raw_drop_number": drop_number,
+            "qc_resampling": qc_resampling,
+            "qc_time": qc_time,
         },
         coords={
             "time": time,
@@ -51,8 +51,6 @@ def create_template_dataset(with_velocity=True):
             "velocity_bin_upper": velocity_bin_upper,
         },
     )
-    # Compute N
-    ds["N"] = drop_number.sum(dim=(VELOCITY_DIMENSION, DIAMETER_DIMENSION))
 
     # Finalize attribute
     if not with_velocity:
@@ -66,13 +64,28 @@ def create_template_dataset(with_velocity=True):
 def create_template_l0c_dataset(with_velocity=True):
     """Create DISDRODB L0C basic dataset."""
     ds = create_template_dataset(with_velocity=with_velocity)
-    ds["time_qc"] = xr.zeros_like(ds["drop_number_concentration"].isel({DIAMETER_DIMENSION: 0}))
-    ds = ds.drop_vars(names=["fall_velocity", "drop_number_concentration"], errors="ignore")
-    ds = ds.rename({"drop_number": "raw_drop_number"})
     return ds
 
 
 def create_template_l2e_dataset(with_velocity=True):
     """Create DISDRODB L2E basic dataset."""
     ds = create_template_dataset(with_velocity=with_velocity)
-    return generate_l2e(ds)
+    ds = ds.drop_vars(names=["fall_velocity", "drop_number_concentration"], errors="ignore")
+    ds = generate_l2e(ds)
+
+    ds["fall_velocity"] = xr.DataArray(
+        np.array([[0.5, 1, 1.5, 2], [0.5, 1, 1.5, 2]]),
+        dims=("time", DIAMETER_DIMENSION),
+    )
+    ds["drop_number"] = xr.DataArray(np.ones((2, 3, 4)), dims=("time", VELOCITY_DIMENSION, DIAMETER_DIMENSION))
+    ds["drop_number_concentration"] = xr.DataArray(
+        np.array([[0, 10000, 5000, 500], [0, 10000, 5000, 500]]),
+        dims=("time", "diameter_bin_center"),
+    )
+    # Compute N
+    ds["N"] = ds["drop_number"].sum(dim=(VELOCITY_DIMENSION, DIAMETER_DIMENSION))
+
+    # Remove velocity dimension if asked
+    if not with_velocity:
+        ds = ds.sum(dim=VELOCITY_DIMENSION)
+    return ds

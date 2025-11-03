@@ -364,6 +364,7 @@ def open_netcdf_files(
     )
     # - Subset variables
     if variables is not None and preprocess is None:
+        variables = [var for var in variables if var in ds]
         ds = ds[variables]
     # - Subset time
     if start_time is not None or end_time is not None:

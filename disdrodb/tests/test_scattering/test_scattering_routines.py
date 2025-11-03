@@ -38,7 +38,7 @@ from disdrodb.scattering.routines import (
     precompute_scattering_tables,
     wavelength_to_frequency,
 )
-from disdrodb.tests.fake_datasets import create_template_dataset
+from disdrodb.tests.fake_datasets import create_template_l2e_dataset
 
 
 class TestRadarBands:
@@ -280,7 +280,7 @@ class TestGetRadarParameters:
 
     def test_empirical_nan_psd(self):
         """Test get_radar_parameters with an empirical PSD which is all NaN."""
-        ds = create_template_dataset(with_velocity=True)
+        ds = create_template_l2e_dataset(with_velocity=True)
         ds["drop_number_concentration"].data = np.ones(ds["drop_number_concentration"].data.shape) * np.nan
         ds_radar = get_radar_parameters(
             ds=ds,
@@ -305,7 +305,7 @@ class TestGetRadarParameters:
 
     def test_empirical_zeros_psd(self):
         """Test get_radar_parameters with an empirical PSD which is all zeros."""
-        ds = create_template_dataset(with_velocity=True)
+        ds = create_template_l2e_dataset(with_velocity=True)
         ds["drop_number_concentration"].data = np.zeros(ds["drop_number_concentration"].data.shape)
         ds_radar = get_radar_parameters(
             ds=ds,
@@ -330,7 +330,7 @@ class TestGetRadarParameters:
 
     def test_empirical_psd_dataset(self):
         """Test get_radar_parameters with an empirical PSD dataset."""
-        ds = create_template_dataset(with_velocity=True)
+        ds = create_template_l2e_dataset(with_velocity=True)
         ds_radar = get_radar_parameters(
             ds=ds,
             frequency=None,
@@ -349,7 +349,7 @@ class TestGetRadarParameters:
 
     def test_empirical_psd_dataset_dask_support(self):
         """Test that a Dataset with dask arrays returns lazy output and compute works."""
-        ds = create_template_dataset(with_velocity=True).chunk()
+        ds = create_template_l2e_dataset(with_velocity=True).chunk()
         ds_radar = get_radar_parameters(
             ds=ds,
             frequency="C",
@@ -386,7 +386,7 @@ class TestGetRadarParameters:
     )
     def test_empirical_psd_list_input_creates_dimension(self, param_name, values):
         """Check that list arguments add new dimensions in the output dataset."""
-        ds = create_template_dataset(with_velocity=True)
+        ds = create_template_l2e_dataset(with_velocity=True)
 
         # Define defaults
         radar_kwargs = {

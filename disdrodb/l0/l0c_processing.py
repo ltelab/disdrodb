@@ -466,10 +466,10 @@ def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=Tru
         #     qc_flag[-1] = 0
 
         # Add time quality flag variable
-        ds["time_qc"] = xr.DataArray(qc_flag, dims="time")
+        ds["qc_time"] = xr.DataArray(qc_flag, dims="time")
 
-        # Add CF attributes for time_qc
-        ds["time_qc"].attrs = {
+        # Add CF attributes for qc_time
+        ds["qc_time"].attrs = {
             "long_name": "time quality flag",
             "standard_name": "status_flag",
             "units": "1",

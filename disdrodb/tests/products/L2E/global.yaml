@@ -5,11 +5,24 @@ archive_options:
     freq: month
   folder_partitioning: ""
 product_options:
+  compute_spectra: False
+  compute_percentage_contribution: False
   minimum_ndrops: 1
   minimum_nbins: 1
   minimum_rain_rate: 0.01
-  compute_spectra: False
-  compute_percentage_contribution: False
+  fall_velocity_model: "Beard1976"
+  minimum_diameter: 0
+  maximum_diameter: 10
+  minimum_velocity: 0
+  maximum_velocity: 12
+  above_velocity_fraction: null
+  above_velocity_tolerance: 3
+  below_velocity_fraction: null
+  below_velocity_tolerance: 3
+  maintain_drops_smaller_than: 1
+  maintain_drops_slower_than: 2.5
+  maintain_smallest_drops: True
+  remove_splashing_drops: True
 radar_enabled: False
 radar_options:
   frequency: ["S", "C", "X", "Ku", "K", "Ka", "W"]

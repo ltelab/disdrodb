@@ -26,7 +26,6 @@ import xarray as xr
 
 from disdrodb.configs import get_scattering_table_dir
 from disdrodb.constants import DIAMETER_DIMENSION
-from disdrodb.l1.filters import filter_diameter_bins
 from disdrodb.psd.models import BinnedPSD, create_psd, get_required_parameters
 from disdrodb.scattering.axis_ratio import check_axis_ratio_model, get_axis_ratio_model
 from disdrodb.scattering.permittivity import (
@@ -35,7 +34,7 @@ from disdrodb.scattering.permittivity import (
     get_refractive_index,
 )
 from disdrodb.utils.logger import log_info
-from disdrodb.utils.manipulations import get_diameter_bin_edges
+from disdrodb.utils.manipulations import filter_diameter_bins, get_diameter_bin_edges
 from disdrodb.utils.warnings import suppress_warnings
 
 logger = logging.getLogger(__name__)

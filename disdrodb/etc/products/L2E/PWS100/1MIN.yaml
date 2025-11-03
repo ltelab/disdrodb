@@ -1,9 +1,3 @@
-temporal_resolutions: ["1MIN", "5MIN", "10MIN", "ROLL1MIN"]
-archive_options:
-  strategy: time_block
-  strategy_options:
-    freq: month
-  folder_partitioning: ""
 product_options:
   compute_spectra: False
   compute_percentage_contribution: False
@@ -11,7 +5,7 @@ product_options:
   minimum_nbins: 1
   minimum_rain_rate: 0.01
   fall_velocity_model: "Beard1976"
-  minimum_diameter: 0
+  minimum_diameter: 0.2
   maximum_diameter: 10
   minimum_velocity: 0
   maximum_velocity: 12
@@ -23,13 +17,3 @@ product_options:
   maintain_drops_slower_than: 2.5
   maintain_smallest_drops: True
   remove_splashing_drops: True
-radar_enabled: False
-radar_options:
-  frequency: ["S", "C", "X", "Ku", "K", "Ka", "W"]
-  num_points: 1024
-  diameter_max: 10
-  canting_angle_std: 7
-  axis_ratio_model: Thurai2007
-  permittivity_model: Turner2016
-  water_temperature: 10
-  elevation_angle: 0

@@ -8,28 +8,30 @@ from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.fall_velocity import get_hail_fall_velocity
 from disdrodb.fall_velocity.graupel import retrieve_graupel_heymsfield2014_fall_velocity
 from disdrodb.fall_velocity.rain import get_rain_fall_velocity
-from disdrodb.l1.filters import define_rain_spectrum_mask, filter_diameter_bins, filter_velocity_bins
 from disdrodb.l2.empirical_dsd import get_effective_sampling_area, get_rain_rate_from_drop_number
+from disdrodb.l2.processing import define_rain_spectrum_mask
+from disdrodb.utils.manipulations import filter_diameter_bins, filter_velocity_bins
 from disdrodb.utils.time import ensure_sample_interval_in_seconds
+
+# Define possible variable available and corresponding snow_temperature_limit
+DICT_TEMPERATURES = {
+    "air_temperature": 6,  # generic and PWS100
+    "air_temperature_min": 6,  # PWS100
+    "temperature_ambient": 6,  # LPM
+    "temperature_interior": 10,  # LPM
+    "sensor_temperature": 10,  # PARSIVEL and SWS250
+}
+TEMPERATURE_VARIABLES = list(DICT_TEMPERATURES)
 
 
 def get_temperature(ds):
     """Retrieve temperature variable from L0C product."""
-    # Define possible variable available and corresponding snow_temperature_limit
-    dict_variables = {
-        "air_temperature": 6,  # generic and PWS100
-        "air_temperature_min": 6,  # PWS100
-        "temperature_ambient": 6,  # LPM
-        "temperature_interior": 10,  # LPM
-        "sensor_temperature": 10,  # PARSIVEL and SWS250
-    }
-
     # Check temperature variable is available, otherwise return None
-    if not any(var in ds.data_vars for var in dict_variables):
+    if not any(var in ds.data_vars for var in DICT_TEMPERATURES):
         return None, None
 
     # Define temperature available
-    for var, thr in dict_variables.items():
+    for var, thr in DICT_TEMPERATURES.items():
         if var in ds:
             temperature = ds[var]
             snow_temperature_limit = thr
@@ -116,7 +118,7 @@ def define_qc_rain_strong_wind_mask(spectrum):
     return mask
 
 
-def qc_spikes_isolated_precip(hydrometeor_class, sample_interval):
+def qc_spikes_isolated_precip(hydrometeor_type, sample_interval):
     """
     Identify isolated precipitation spikes based on hydrometeor classification.
 
@@ -126,7 +128,7 @@ def qc_spikes_isolated_precip(hydrometeor_class, sample_interval):
     detections caused by instrument noise or transient misclassification.
 
     The algorithm:
-        1. Identifies potential precipitation timesteps where `hydrometeor_class >= 1`.
+        1. Identifies potential precipitation timesteps where `hydrometeor_type>= 1`.
         2. Computes time differences between consecutive potential precipitation samples.
         3. Flags a timestep as a spike when both the previous and next precipitation
            detections are separated by more than the configured time window.
@@ -134,9 +136,9 @@ def qc_spikes_isolated_precip(hydrometeor_class, sample_interval):
 
     Parameters
     ----------
-    hydrometeor_class : xr.DataArray
-        Hydrometeor classification array with a ``time`` coordinate.
-        Precipitation presence is defined where ``hydrometeor_class >= 1``.
+    hydrometeor_type: xr.DataArray
+        Hydrometeor type classification array with a ``time`` coordinate.
+        Precipitation presence is defined where ``hydrometeor_type>= 1``.
     sample_interval : float or int
         Nominal sampling interval of the dataset in **seconds**.
         If ``sample_interval >= 120`` (2 minutes), the QC test is skipped.
@@ -158,7 +160,7 @@ def qc_spikes_isolated_precip(hydrometeor_class, sample_interval):
       returns a zero-valued flag (QC not applied).
     """
     # Define potential precipitating timesteps
-    is_potential_precip = xr.where((hydrometeor_class >= 1), 1, 0)
+    is_potential_precip = xr.where((hydrometeor_type >= 1), 1, 0)
 
     # Initialize QC flag
     flag_spikes = xr.zeros_like(is_potential_precip, dtype=int)
@@ -286,7 +288,7 @@ def define_graupel_mask(spectrum, ds_env, minimum_diameter=0.5, maximum_diameter
     return mask
 
 
-def run_hydrometeor_classification_and_qc(
+def classify_raw_spectrum(
     ds,
     ds_env,
     sample_interval,
@@ -294,9 +296,8 @@ def run_hydrometeor_classification_and_qc(
     temperature=None,
     rain_temperature_lower_limit=-5,
     snow_temperature_upper_limit=5,
-    raindrop_fall_velocity_model="Beard1976",
 ):
-    """Run hydrometeor classification and QC."""
+    """Run precipitation and hydrometeor type classification."""
     # ------------------------------------------------------------------
     # Filter LPM to avoid being impacted by noise in first bins
     if sensor_name == "LPM":
@@ -323,18 +324,18 @@ def run_hydrometeor_classification_and_qc(
     B1 = (diameter_lower >= 0.0) & (diameter_upper <= 0.5)
     B2 = (diameter_upper > 0.5) & (diameter_upper <= 5.0)
     B3 = (diameter_upper > 5.0) & (diameter_upper <= 8.0)
-    # B4 = (diameter_upper > 8.0)
+    B4 = diameter_upper > 8.0
 
     # Define liquid masks
     # - Compute raindrop fall velocity for lower and upper diameter limits
     raindrop_fall_velocity_upper = get_rain_fall_velocity(
         diameter=ds["diameter_bin_upper"],
-        model=raindrop_fall_velocity_model,
+        model="Beard1976",
         ds_env=ds_env,
     )
     raindrop_fall_velocity_lower = get_rain_fall_velocity(
         diameter=ds["diameter_bin_lower"],
-        model=raindrop_fall_velocity_model,
+        model="Beard1976",
         ds_env=ds_env,
     )
     liquid_mask = define_rain_spectrum_mask(
@@ -345,8 +346,8 @@ def run_hydrometeor_classification_and_qc(
         above_velocity_tolerance=2,
         below_velocity_fraction=None,
         below_velocity_tolerance=3,
-        small_diameter_threshold=1,  # 1,   # 2
-        small_velocity_threshold=2.5,  # 2.5, # 3
+        maintain_drops_smaller_than=1,  # 1,   # 2
+        maintain_drops_slower_than=2.5,  # 2.5, # 3
         maintain_smallest_drops=False,
     )
 
@@ -355,11 +356,10 @@ def run_hydrometeor_classification_and_qc(
     rain_mask = liquid_mask & B3  # potentially mixed with small hail
 
     # Define graupel and hail mask
-    hail_mask = define_hail_mask(raw_spectrum, ds_env=ds_env, minimum_diameter=5)
     graupel_mask = define_graupel_mask(raw_spectrum, ds_env=ds_env, minimum_diameter=0.9, maximum_diameter=5.5)
-
-    small_hail_mask = hail_mask & (diameter_upper <= 8)
-    large_hail_mask = hail_mask & (diameter_upper > 8)
+    hail_mask = define_hail_mask(raw_spectrum, ds_env=ds_env, minimum_diameter=5)
+    small_hail_mask = hail_mask & B3
+    large_hail_mask = hail_mask & B4
 
     # Snow mask (contain graupel mask)
     velocity_upper = xr.ones_like(raw_spectrum.isel(time=0, missing_dims="ignore")) * raw_spectrum["velocity_bin_upper"]
@@ -451,7 +451,7 @@ def run_hydrometeor_classification_and_qc(
     n_wind_artefacts = raw_spectrum.where(strong_wind_mask).sum(dim=dims)
     n_margin_fallers = raw_spectrum.where(margin_fallers_mask).sum(dim=dims)
 
-    n_splash = raw_spectrum.where(splash_mask).sum(dim=dims)
+    n_splashing = raw_spectrum.where(splash_mask).sum(dim=dims)
 
     n_liquid = n_drizzle + n_drizzle_rain + n_rain
     # n_solid = n_snow
@@ -477,7 +477,7 @@ def run_hydrometeor_classification_and_qc(
     fraction_snow_tot = xr.where(n_particles == 0, 0, n_snow / n_particles)
     fraction_snow_grains_tot = xr.where(n_particles == 0, 0, n_snow_grains / n_particles)
 
-    fraction_splash = xr.where(n_particles == 0, 0, n_splash / n_particles)
+    fraction_splash = xr.where(n_particles == 0, 0, n_splashing / n_particles)
 
     # fraction_rain_graupel_tot = xr.where(n_particles == 0, 0,  (n_liquid + n_graupel) / n_particles)
 
@@ -609,7 +609,7 @@ def run_hydrometeor_classification_and_qc(
         label = xr.where(is_surely_snow & is_graupel, 7, label)
 
     # ------------------------------------------------------------------------.
-    # Define hydrometeor_class variable
+    # Define hydrometeor_typevariable
     # -2 No hydrometeor
     # -1 Undefined
     # 0 No precipitation
@@ -623,27 +623,27 @@ def run_hydrometeor_classification_and_qc(
     # 8 Graupel --> flag_graupel
     # 9 Hail --> flag_hail
 
-    hydrometeor_class = label.copy()
+    hydrometeor_type = label.copy()
     # No hydrometeor
-    hydrometeor_class = xr.where(label.isin([-2, -21]), -2, hydrometeor_class)
+    hydrometeor_type = xr.where(label.isin([-2, -21]), -2, hydrometeor_type)
     # Drizzle
-    hydrometeor_class = xr.where(hydrometeor_class.isin([1]), 1, hydrometeor_class)
+    hydrometeor_type = xr.where(hydrometeor_type.isin([1]), 1, hydrometeor_type)
     # Drizzle+Rain
-    hydrometeor_class = xr.where(hydrometeor_class.isin([2, 21, 22, 23, 24]), 2, hydrometeor_class)
+    hydrometeor_type = xr.where(hydrometeor_type.isin([2, 21, 22, 23, 24]), 2, hydrometeor_type)
     # Rain
-    hydrometeor_class = xr.where(hydrometeor_class.isin([3]), 3, hydrometeor_class)
+    hydrometeor_type = xr.where(hydrometeor_type.isin([3]), 3, hydrometeor_type)
     # Mixed
-    hydrometeor_class = xr.where(hydrometeor_class.isin([4]), 4, hydrometeor_class)
+    hydrometeor_type = xr.where(hydrometeor_type.isin([4]), 4, hydrometeor_type)
     # Snow
-    hydrometeor_class = xr.where(hydrometeor_class.isin([5, 51, 52]), 5, hydrometeor_class)
+    hydrometeor_type = xr.where(hydrometeor_type.isin([5, 51, 52]), 5, hydrometeor_type)
     # Snow grains
-    hydrometeor_class = xr.where(hydrometeor_class.isin([6]), 6, hydrometeor_class)
+    hydrometeor_type = xr.where(hydrometeor_type.isin([6]), 6, hydrometeor_type)
     # Ice Pellets
-    hydrometeor_class = xr.where(hydrometeor_class.isin([7]), 7, hydrometeor_class)
+    hydrometeor_type = xr.where(hydrometeor_type.isin([7]), 7, hydrometeor_type)
     # Graupel
-    hydrometeor_class = xr.where(hydrometeor_class.isin([8]), 8, hydrometeor_class)
+    hydrometeor_type = xr.where(hydrometeor_type.isin([8]), 8, hydrometeor_type)
     # Add CF-attributes
-    hydrometeor_class.attrs.update(
+    hydrometeor_type.attrs.update(
         {
             "long_name": "hydrometeor type classification",
             "standard_name": "hydrometeor_classification",
@@ -660,16 +660,17 @@ def run_hydrometeor_classification_and_qc(
     # ------------------------------------------------------------------------.
     #### Define precipitation type variable
     precipitation_type = xr.ones_like(ds["time"], dtype=float) * -1
-    precipitation_type = xr.where(hydrometeor_class.isin([1, 2, 3]), 0, precipitation_type)
-    precipitation_type = xr.where(hydrometeor_class.isin([5, 6, 7, 8]), 1, precipitation_type)
-    precipitation_type = xr.where(hydrometeor_class.isin([4]), 2, precipitation_type)
+    precipitation_type = xr.where(hydrometeor_type.isin([0]), 0, precipitation_type)
+    precipitation_type = xr.where(hydrometeor_type.isin([1, 2, 3]), 0, precipitation_type)
+    precipitation_type = xr.where(hydrometeor_type.isin([5, 6, 7, 8]), 1, precipitation_type)
+    precipitation_type = xr.where(hydrometeor_type.isin([4]), 2, precipitation_type)
     precipitation_type.attrs.update(
         {
             "long_name": "precipitation phase classification",
             "standard_name": "precipitation_phase",
             "units": "1",
-            "flag_values": [-1, 0, 1, 2],
-            "flag_meanings": "no_precipitation rainfall snowfall mixed_phase",
+            "flag_values": [-2, -1, 0, 1, 2],
+            "flag_meanings": "undefined no_precipitation rainfall snowfall mixed_phase",
         },
     )
 
@@ -678,7 +679,7 @@ def run_hydrometeor_classification_and_qc(
     # FUTURE: low_density, high_density ? (light/heavy?)
     flag_graupel = xr.ones_like(ds["time"], dtype=float) * 0
     flag_graupel = xr.where(
-        ((precipitation_type == 0) & (n_graupel_robust > 2) | (hydrometeor_class == 8)),
+        ((precipitation_type == 0) & (n_graupel_robust > 2) | (hydrometeor_type == 8)),
         1,
         flag_graupel,
     )
@@ -722,17 +723,9 @@ def run_hydrometeor_classification_and_qc(
             ),
         },
     )
-
-    # ------------------------------------------------------------------------.
-    #### Define n_particles_<hydro_class>
-    n_graupel_final = xr.where(flag_graupel == 1, n_graupel_robust, 0)
-    n_small_hail_final = xr.where(flag_hail == 1, n_small_hail, 0)
-    n_large_hail_final = xr.where(flag_hail == 2, n_large_hail, 0)
-    n_margin_fallers_final = xr.where(precipitation_type == 0, n_margin_fallers, 0)
-
     # ------------------------------------------------------------------------.
     #### Define WMO codes
-    # FUTURE: Use hydrometeor_class and flag_hail values [1,2]
+    # FUTURE: Use hydrometeor_typeand flag_hail values [1,2]
     # Require snowfall rate estimate
 
     # ------------------------------------------------------------------------
@@ -743,22 +736,16 @@ def run_hydrometeor_classification_and_qc(
 
     flag_splashing = xr.where((precipitation_type == 0) & (fraction_splash >= 0.1), 1, 0)
     flag_wind_artefacts = xr.where((precipitation_type == 0) & (n_wind_artefacts >= 1), 1, 0)
-    flag_noise = xr.where((hydrometeor_class == -2), 1, 0)
-    flag_spikes = qc_spikes_isolated_precip(hydrometeor_class, sample_interval=sample_interval)
+    flag_noise = xr.where((hydrometeor_type == -2), 1, 0)
+    flag_spikes = qc_spikes_isolated_precip(hydrometeor_type, sample_interval=sample_interval)
 
-    # ------------------------------------------------------------------------
-    #### Spectrum extraction
-    drop_spectrum = xr.where(precipitation_type.isin([0, 2]), raw_spectrum.where(liquid_mask, 0), 0)
-
-    # snow_spectrum = xr.where(precipitation_type == 1, raw_spectrum.where(snow_mask_full, 0), 0)
-    # graupel_spectrum =  xr.where(hydrometeor_class.isin([2,3,8]),
-    #                              raw_spectrum.where(graupel_mask_without_splash, 0),0)
-    # hail_spectrum =  xr.where(flag_hail.isin([2]), raw_spectrum.where(hail_mask, 0), 0) # 1
-
-    # drop_spectrum.disdrodb.plot_spectrum()
-    # snow_spectrum.disdrodb.plot_spectrum()
-    # graupel_spectrum.disdrodb.plot_spectrum()
-    # hail_spectrum.disdrodb.plot_spectrum()
+    # ------------------------------------------------------------------------.
+    #### Define n_particles_<hydro_class>
+    n_graupel_final = xr.where(flag_graupel == 1, n_graupel_robust, 0)
+    n_small_hail_final = xr.where(flag_hail == 1, n_small_hail, 0)
+    n_large_hail_final = xr.where(flag_hail == 2, n_large_hail, 0)
+    n_margin_fallers_final = xr.where(precipitation_type == 0, n_margin_fallers, 0)
+    n_splashing_final = xr.where(flag_splashing == 1, n_splashing, 0)
 
     # ------------------------------------------------------------------------.
     # Create HC and QC dataset
@@ -766,13 +753,20 @@ def run_hydrometeor_classification_and_qc(
 
     # ds_class["label"] = label
     ds_class["precipitation_type"] = precipitation_type
-    ds_class["hydrometeor_class"] = hydrometeor_class
+    ds_class["hydrometeor_type"] = hydrometeor_type
 
     ds_class["n_particles"] = n_particles
     ds_class["n_graupel"] = n_graupel_final
     ds_class["n_small_hail"] = n_small_hail_final
     ds_class["n_large_hail"] = n_large_hail_final
     ds_class["n_margin_fallers"] = n_margin_fallers_final
+    ds_class["n_splashing"] = n_splashing_final
+
+    # fraction_splash
+    # fraction_margin_fallers
+
+    # ds_class["mask_graupel"] = graupel_mask_without_splash
+    # ds_class["mask_splashing"] = mask_splashing
 
     ds_class["flag_hail"] = flag_hail
     ds_class["flag_graupel"] = flag_graupel
@@ -781,11 +775,4 @@ def run_hydrometeor_classification_and_qc(
     ds_class["flag_spikes"] = flag_spikes
     ds_class["flag_splashing"] = flag_splashing
     ds_class["flag_wind_artefacts"] = flag_wind_artefacts
-
-    ds_class["drop_spectrum"] = drop_spectrum
-
-    # ds_class["graupel_spectrum"] = graupel_spectrum
-    # ds_class["snow_spectrum"] = snow_spectrum
-    # ds_class["hail_spectrum"] = hail_spectrum
-
     return ds_class

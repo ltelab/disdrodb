@@ -170,6 +170,8 @@ def resample_dataset(ds, sample_interval, temporal_resolution):
     - The function updates the dataset attributes and the sample_interval coordinate.
 
     """
+    from disdrodb.l1.classification import TEMPERATURE_VARIABLES
+
     # --------------------------------------------------------------------------.
     # Ensure sample interval in seconds
     sample_interval = int(ensure_sample_interval_in_seconds(sample_interval))
@@ -255,8 +257,8 @@ def resample_dataset(ds, sample_interval, temporal_resolution):
         "Nremoved",
         "qc_resampling",
     ]
-    var_to_min = ["Dmin"]
-    var_to_max = ["Dmax", "time_qc"]
+    var_to_min = ["Dmin", *TEMPERATURE_VARIABLES]
+    var_to_max = ["Dmax", "qc_time"]
 
     # Retrieve available variables
     var_to_average = [var for var in var_to_average if var in ds]

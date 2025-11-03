@@ -55,8 +55,6 @@ The ``metadata_archive_dir`` path corresponds to the ``DISDRODB`` directory with
 The ``data_archive_dir`` path corresponds to ``DISDRODB`` directory of choice where
 all DISDRODB products will be saved.
 
-
-
 To facilitate the creation of the DISDRODB Configuration File, you can adapt and
 run in python the following code snippet.
 Note that on Windows paths must end with ``\DISDRODB``,

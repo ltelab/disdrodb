@@ -520,8 +520,8 @@ class TestRegularizeTimesteps:
         np.testing.assert_array_equal(ds_out["time"].to_numpy(), timesteps.to_numpy())
         np.testing.assert_array_equal(ds_out["data"].to_numpy(), arr)
         # QC flags all zero
-        assert "time_qc" in ds_out
-        assert np.all(ds_out["time_qc"].to_numpy() == 0)
+        assert "qc_time" in ds_out
+        assert np.all(ds_out["qc_time"].to_numpy() == 0)
 
     def test_unsorted_regular_dataset(self):
         """Unsorted regular timesteps is sorted by time and has zero QC flags."""
@@ -534,8 +534,8 @@ class TestRegularizeTimesteps:
         # Output times sorted ascending
         np.testing.assert_array_equal(ds_out["time"].to_numpy(), timesteps.to_numpy())
         # QC flags all zero
-        assert "time_qc" in ds_out
-        assert np.all(ds_out["time_qc"].to_numpy() == 0)
+        assert "qc_time" in ds_out
+        assert np.all(ds_out["qc_time"].to_numpy() == 0)
 
     def test_missing_timesteps_quality_flags(self):
         """Missing timesteps produce correct QC flags for prev/next missing."""
@@ -543,7 +543,7 @@ class TestRegularizeTimesteps:
         timesteps = np.array([base, base + pd.Timedelta(seconds=60)], dtype="datetime64[ns]")
         ds = xr.Dataset({"data": ("time", [0, 1])}, coords={"time": timesteps})
         ds_out = regularize_timesteps(ds, sample_interval=30)
-        qc = ds_out["time_qc"].to_numpy()
+        qc = ds_out["qc_time"].to_numpy()
         # First index missing next -> flag 2, second missing previous -> flag 1
         assert qc[0] == 2
         assert qc[1] == 1
@@ -559,7 +559,7 @@ class TestRegularizeTimesteps:
             coords={"time": times},
         )
         ds_out = regularize_timesteps(ds, sample_interval=30)
-        qc = ds_out["time_qc"].to_numpy()
+        qc = ds_out["qc_time"].to_numpy()
         np.testing.assert_allclose(qc, [2.0, 3.0, 3.0, 1.0])
 
     def test_constant_trailing_seconds_correction(self):
@@ -579,8 +579,8 @@ class TestRegularizeTimesteps:
         expected_timesteps = times.astype("datetime64[s]")
         np.testing.assert_array_equal(ds_out["time"].to_numpy(), expected_timesteps)
         # QC flags all zero
-        assert "time_qc" in ds_out
-        assert np.all(ds_out["time_qc"].to_numpy() == 0)
+        assert "qc_time" in ds_out
+        assert np.all(ds_out["qc_time"].to_numpy() == 0)
 
     def test_varying_trailing_seconds_correction(self):
         """Trailing seconds are adjusted and flag still kept to 0."""
@@ -596,8 +596,8 @@ class TestRegularizeTimesteps:
         expected_timesteps = base + np.array([0, 30, 60, 90, 120]).astype("timedelta64[s]")
         np.testing.assert_array_equal(ds_out["time"].to_numpy(), expected_timesteps)
         # QC flags all zero
-        assert "time_qc" in ds_out
-        assert np.all(ds_out["time_qc"].to_numpy() == 0)
+        assert "qc_time" in ds_out
+        assert np.all(ds_out["qc_time"].to_numpy() == 0)
 
     def test_single_duplicate_identified_and_dropped(self):
         """First occurrence of duplicate timesteps is dropped and flag correctly."""
@@ -620,7 +620,7 @@ class TestRegularizeTimesteps:
         # Values array has changed: 1 (first duplicate has been dropped)
         np.testing.assert_array_equal(ds_out["data"].to_numpy(), [0, 2, 3])
         # QC flags: only middle flagged as dropped duplicate (5)
-        np.testing.assert_array_equal(ds_out["time_qc"].to_numpy(), [0, 5, 0])
+        np.testing.assert_array_equal(ds_out["qc_time"].to_numpy(), [0, 5, 0])
 
     def test_multiple_duplicates_identified_and_droppped(self):
         """First occurrences of duplicates timesteps are dropped and flag correctly."""
@@ -645,7 +645,7 @@ class TestRegularizeTimesteps:
         # Values array has changed: 1 (first two duplicates have been dropped)
         np.testing.assert_array_equal(ds_out["data"].to_numpy(), [0, 3, 4])
         # QC flags: only middle flagged as dropped duplicate (5)
-        np.testing.assert_array_equal(ds_out["time_qc"].to_numpy(), [0, 5, 0])
+        np.testing.assert_array_equal(ds_out["qc_time"].to_numpy(), [0, 5, 0])
 
     def test_duplicate_moved_to_missing_previous(self):
         """Test duplicate timestep moved to previous missing timestep."""
@@ -667,7 +667,7 @@ class TestRegularizeTimesteps:
         # Values array has not changed
         np.testing.assert_array_equal(ds_out["data"].to_numpy(), [0, 1, 2, 3])
         # QC flags: timestep moved get flag 4
-        np.testing.assert_array_equal(ds_out["time_qc"].to_numpy(), [0, 4, 0, 0])  # OR [(2), 4, (1), 0]
+        np.testing.assert_array_equal(ds_out["qc_time"].to_numpy(), [0, 4, 0, 0])  # OR [(2), 4, (1), 0]
 
     def test_duplicate_moved_to_missing_next(self):
         """Test duplicate timestep moved to previous missing timestep."""
@@ -689,7 +689,7 @@ class TestRegularizeTimesteps:
         # Values array has not changed
         np.testing.assert_array_equal(ds_out["data"].to_numpy(), [0, 1, 2, 3])
         # QC flags: timestep moved get flag 4
-        np.testing.assert_array_equal(ds_out["time_qc"].to_numpy(), [0, 0, 4, 0])  # OR: [0, (2), 4, (1)]
+        np.testing.assert_array_equal(ds_out["qc_time"].to_numpy(), [0, 0, 4, 0])  # OR: [0, (2), 4, (1)]
 
     def test_triple_duplicate_moved_to_missing_previous_and_next(self):
         """Test 3 duplicated timestep moved to previous and next missing timesteps."""
@@ -713,7 +713,7 @@ class TestRegularizeTimesteps:
         # Values array has not changed
         np.testing.assert_array_equal(ds_out["data"].to_numpy(), [0, 1, 2, 3, 4])
         # QC flags: only middle flagged as dropped duplicate
-        np.testing.assert_array_equal(ds_out["time_qc"].to_numpy(), [0, 4, 0, 4, 0])  # OR [(2), 4, (4), 4, (1)]
+        np.testing.assert_array_equal(ds_out["qc_time"].to_numpy(), [0, 4, 0, 4, 0])  # OR [(2), 4, (4), 4, (1)]
 
 
 class TestGetProblematicTimestepIndices:

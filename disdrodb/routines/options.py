@@ -28,19 +28,78 @@ from disdrodb.utils.routines import is_possible_product
 from disdrodb.utils.time import ensure_timedelta_seconds, get_sampling_information
 from disdrodb.utils.yaml import read_yaml
 
+# global.yaml options: search in sensor directory if present, otherwise take the base one
+# sensor directory is not mandatory
+# if directory presents should be valid sensor name and with files inside !
+# product_options key in custom options must contain all keys? Ideally not ! Check for recursive update
+
+
+# ----------------------------------------------------------------------------------------
 # TODO: Test ensure recursive update for product_options key, do not replace just "product_options" dict !
-# get_product_options(product="L2E", temporal_resolution="10MIN")
+# get_product_options(product="L2E", temporal_resolution="10MIN") # add sensor_name
 # get_product_options(product="L2M", temporal_resolution="10MIN")
 # get_product_options(product="L1")
 # get_product_options(product="L1", temporal_resolution="1MIN")
 # get_product_options(product="L1", temporal_resolution="1MIN", sensor_name="PARSIVEL")
 
 # test temporal_resolutions are unique
-
+# ----------------------------------------------------------------------------------------
 # TODO: test return list
 # get_product_temporal_resolutions(product="L1")
 # get_product_temporal_resolutions(product="L2E")
 # get_product_temporal_resolutions(product="L2M")
+
+# ----------------------------------------------------------------------------------------
+# products_configs_dir = "/home/ghiggi/Projects/disdrodb/disdrodb/etc/products"
+# disdrodb.config.set({"products_configs_dir": products_configs_dir})
+# ----------------------------------------------------------------------------------------
+
+
+def get_product_options_directory(products_configs_dir, product, sensor_name=None):
+    """Retrieve path to the product options directory."""
+    if sensor_name is None:
+        return os.path.join(products_configs_dir, product)
+    return os.path.join(products_configs_dir, product, sensor_name)
+
+
+def get_product_global_options_path(products_configs_dir, product, sensor_name=None):
+    """Retrieve path to the product global options."""
+    product_options_dir = get_product_options_directory(
+        products_configs_dir=products_configs_dir,
+        product=product,
+        sensor_name=sensor_name,
+    )
+    product_global_options_path = os.path.join(product_options_dir, "global.yaml")
+    if os.path.exists(product_global_options_path):
+        return product_global_options_path
+
+    product_options_dir = get_product_options_directory(
+        products_configs_dir=products_configs_dir,
+        product=product,
+        sensor_name=None,
+    )
+    global_options_path = os.path.join(product_options_dir, "global.yaml")  # this must exists
+    return global_options_path
+
+
+def get_product_custom_options_path(products_configs_dir, product, temporal_resolution, sensor_name=None):
+    """Retrieve path to the product temporal resolution custom options."""
+    product_options_dir = get_product_options_directory(
+        products_configs_dir=products_configs_dir,
+        product=product,
+        sensor_name=sensor_name,
+    )
+    product_global_options_path = os.path.join(product_options_dir, f"{temporal_resolution}.yaml")
+    if os.path.exists(product_global_options_path):
+        return product_global_options_path
+
+    product_options_dir = get_product_options_directory(
+        products_configs_dir=products_configs_dir,
+        product=product,
+        sensor_name=None,
+    )
+    custom_options_path = os.path.join(product_options_dir, "{temporal_resolution}.yaml")  # this might not exists
+    return custom_options_path
 
 
 def get_product_options(product, temporal_resolution=None, sensor_name=None):
@@ -59,8 +118,15 @@ def get_product_options(product, temporal_resolution=None, sensor_name=None):
     # Check product
     check_product(product)
 
+    # Get product global options path
+    global_options_path = get_product_global_options_path(
+        products_configs_dir=products_configs_dir,
+        product=product,
+        sensor_name=sensor_name,
+    )
+
     # Retrieve global product options (when no temporal resolution !)
-    global_options = read_yaml(os.path.join(products_configs_dir, product, "global.yaml"))
+    global_options = read_yaml(global_options_path)
     if temporal_resolution is None:
         global_options = check_availability_radar_simulations(global_options)
         return global_options
@@ -72,7 +138,12 @@ def get_product_options(product, temporal_resolution=None, sensor_name=None):
     global_options.pop("temporal_resolutions", None)
 
     # Read custom options for specific temporal resolution
-    custom_options_path = os.path.join(products_configs_dir, product, f"{temporal_resolution}.yaml")
+    custom_options_path = get_product_custom_options_path(
+        products_configs_dir=products_configs_dir,
+        product=product,
+        sensor_name=sensor_name,
+        temporal_resolution=temporal_resolution,
+    )
     if not os.path.exists(custom_options_path):
         return global_options
     custom_options = read_yaml(custom_options_path)
@@ -98,10 +169,10 @@ def get_product_options(product, temporal_resolution=None, sensor_name=None):
     return options
 
 
-def get_product_temporal_resolutions(product):
+def get_product_temporal_resolutions(product, sensor_name=None):
     """Return DISDRODB products temporal resolutions."""
     # Check only L2E and L2M
-    return get_product_options(product)["temporal_resolutions"]
+    return get_product_options(product, sensor_name=sensor_name)["temporal_resolutions"]
 
 
 def get_model_options(product, model_name):
@@ -152,6 +223,19 @@ def _define_blocks_offsets(sample_interval, temporal_resolution):
     return block_starts_offset, block_ends_offset
 
 
+class L0CProcessingOptions:
+    """Define L0C product processing options."""
+
+    def __init__(self, sensor_name):
+        """Define DISDRODB L0C product processing options."""
+        product = "L0C"
+        options = get_product_options(product=product, sensor_name=sensor_name)["archive_options"]
+
+        self.product = product
+        self.folder_partitioning = options["folder_partitioning"]
+        self.product_frequency = options["product_frequency"]
+
+
 class L1ProcessingOptions:
     """Define L1 product processing options."""
 
@@ -162,7 +246,7 @@ class L1ProcessingOptions:
         # ---------------------------------------------------------------------.
         # Define temporal resolutions for which to retrieve processing options
         if temporal_resolutions is None:
-            temporal_resolutions = get_product_temporal_resolutions(product)
+            temporal_resolutions = get_product_temporal_resolutions(product, sensor_name=sensor_name)
         elif isinstance(temporal_resolutions, str):
             temporal_resolutions = [temporal_resolutions]
         _ = [check_temporal_resolution(temporal_resolution) for temporal_resolution in temporal_resolutions]
@@ -284,15 +368,15 @@ class L1ProcessingOptions:
         self.dict_folder_partitioning = dict_folder_partitioning
 
     def group_files_by_temporal_partitions(self, temporal_resolution):
-        """Return files partitions dictionary for a specific L2E product."""
+        """Return files partitions dictionary for a specific L1 product."""
         return self.dict_files_partitions[temporal_resolution]
 
-    def get_product_options(self, temporal_resolution):
-        """Return product options dictionary for a specific L2E product."""
-        return self.dict_product_options[temporal_resolution]
+    def get_product_options(self, temporal_resolution):  # noqa
+        """Return product options dictionary for a specific L1 product."""
+        return {}  # self.dict_product_options[temporal_resolution]
 
     def get_folder_partitioning(self, temporal_resolution):
-        """Return the folder partitioning for a specific L2E product."""
+        """Return the folder partitioning for a specific L1 product."""
         # to be used for logs and files !
         return self.dict_folder_partitioning[temporal_resolution]
 
@@ -300,7 +384,7 @@ class L1ProcessingOptions:
 class L2ProcessingOptions:
     """Define L2 products processing options."""
 
-    def __init__(self, product, filepaths, parallel, temporal_resolution):
+    def __init__(self, product, filepaths, parallel, temporal_resolution, sensor_name):
         """Define DISDRODB L2 products processing options."""
         import disdrodb
 
@@ -308,7 +392,7 @@ class L2ProcessingOptions:
         check_temporal_resolution(temporal_resolution)
 
         # Get product options
-        product_options = get_product_options(product, temporal_resolution=temporal_resolution)
+        product_options = get_product_options(product, temporal_resolution=temporal_resolution, sensor_name=sensor_name)
 
         # Extract processing options
         archive_options = product_options.pop("archive_options")

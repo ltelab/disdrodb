@@ -15,12 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Implement DISDRODB L2 processing."""
-
 import numpy as np
 import xarray as xr
 
-from disdrodb.constants import DIAMETER_DIMENSION
-from disdrodb.fall_velocity import get_rain_fall_velocity
+from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
+from disdrodb.fall_velocity import get_rain_fall_velocity, get_rain_fall_velocity_from_ds
 from disdrodb.l1_env.routines import load_env_dataset
 from disdrodb.l2.empirical_dsd import (
     BINS_METRICS,
@@ -30,12 +29,14 @@ from disdrodb.l2.empirical_dsd import (
     get_drop_number_concentration,
     get_effective_sampling_area,
     get_kinetic_energy_variables_from_drop_number,
+    get_min_max_diameter,
     get_rain_accumulation,
     get_rain_rate_from_drop_number,
 )
 from disdrodb.psd import create_psd, estimate_model_parameters
 from disdrodb.psd.fitting import compute_gof_stats
 from disdrodb.utils.decorators import check_pytmatrix_availability
+from disdrodb.utils.manipulations import filter_diameter_bins, filter_velocity_bins
 from disdrodb.utils.time import ensure_sample_interval_in_seconds
 from disdrodb.utils.writer import finalize_product
 
@@ -109,11 +110,182 @@ def define_velocity_array(ds):
 
 
 ####--------------------------------------------------------------------------
+#### Extract drop spectrum
+
+
+def retrieve_drop_spectrum(
+    ds,
+    ds_env,
+    above_velocity_fraction=None,
+    above_velocity_tolerance=None,
+    below_velocity_fraction=None,
+    below_velocity_tolerance=None,
+    maintain_drops_smaller_than=1,
+    maintain_drops_slower_than=2.5,
+    maintain_smallest_drops=False,
+    remove_splashing_drops=True,
+    fall_velocity_model="Beard1976",
+):
+    """Retrieve the drop spectrum from the DISDRODB L1 product."""
+    from disdrodb.fall_velocity.rain import get_rain_fall_velocity
+
+    # Retrieve spectrum
+    raw_spectrum = ds["raw_drop_number"].copy()
+
+    # Retrieve coordinates
+    diameter_upper = raw_spectrum["diameter_bin_upper"]
+    diameter_lower = raw_spectrum["diameter_bin_lower"]
+    velocity_upper = raw_spectrum["velocity_bin_upper"]
+
+    # Retrieve rainfall mask
+    raindrop_fall_velocity_upper = get_rain_fall_velocity(
+        diameter=diameter_upper,
+        model=fall_velocity_model,
+        ds_env=ds_env,
+    )
+    raindrop_fall_velocity_lower = get_rain_fall_velocity(
+        diameter=diameter_lower,
+        model=fall_velocity_model,
+        ds_env=ds_env,
+    )
+    rain_mask = define_rain_spectrum_mask(
+        drop_number=raw_spectrum,
+        fall_velocity_lower=raindrop_fall_velocity_lower,
+        fall_velocity_upper=raindrop_fall_velocity_upper,
+        above_velocity_fraction=above_velocity_fraction,
+        above_velocity_tolerance=above_velocity_tolerance,
+        below_velocity_fraction=below_velocity_fraction,
+        below_velocity_tolerance=below_velocity_tolerance,
+        maintain_drops_smaller_than=maintain_drops_smaller_than,
+        maintain_drops_slower_than=maintain_drops_slower_than,
+        maintain_smallest_drops=maintain_smallest_drops,
+    )
+
+    # Set to 0 spectrum not classified as liquid or mixed
+    if "precipitation_type" in ds:
+        raw_spectrum = xr.where(ds["precipitation_type"].isin([0, 2]), raw_spectrum, 0)
+
+    # Retrieve drop spectrum
+    # - Liquid + Mixed
+    drop_spectrum = raw_spectrum.where(rain_mask, 0)
+
+    # Optionally mask area affected by splashing
+    if remove_splashing_drops and "flag_splashing" in ds:
+        flag_splashing = ds["flag_splashing"]
+        splash_mask = (diameter_lower >= 0.0) & (diameter_upper <= 6) & (velocity_upper <= 0.6)
+
+        drop_spectrum = xr.where(flag_splashing == 1, drop_spectrum.where(~splash_mask, 0), drop_spectrum)
+    return drop_spectrum
+
+
+def define_rain_spectrum_mask(
+    drop_number,
+    fall_velocity_lower,
+    fall_velocity_upper,
+    above_velocity_fraction=None,
+    above_velocity_tolerance=None,
+    below_velocity_fraction=None,
+    below_velocity_tolerance=None,
+    maintain_drops_smaller_than=1,  # 1,   # 2
+    maintain_drops_slower_than=2.5,  # 2.5, # 3
+    maintain_smallest_drops=False,
+):
+    """Define a mask for the drop spectrum based on fall velocity thresholds.
+
+    Parameters
+    ----------
+    drop_number : xarray.DataArray
+        Array of drop counts per diameter and velocity bins.
+    fall_velocity_lower : array-like
+        The expected terminal fall velocities lower bound for rain drops of given size interval.
+    fall_velocity_upper : array-like
+         The expected terminal fall velocities upper bound for rain drops of given size interval.
+    above_velocity_fraction : float, optional
+        Fraction of terminal fall velocity above which rain drops are considered too fast.
+        Either specify ``above_velocity_fraction`` or ``above_velocity_tolerance``.
+    above_velocity_tolerance : float, optional
+        Absolute tolerance above which rain drops terminal fall velocities are considered too fast.
+        Either specify ``above_velocity_fraction`` or ``above_velocity_tolerance``.
+    below_velocity_fraction : float, optional
+        Fraction of terminal fall velocity below which rain drops are considered too slow.
+        Either specify ``below_velocity_fraction`` or ``below_velocity_tolerance``.
+    below_velocity_tolerance : float, optional
+        Absolute tolerance below which rain drops terminal fall velocities are considered too slow.
+         Either specify ``below_velocity_fraction`` or ``below_velocity_tolerance``.
+    maintain_smallest : bool, optional
+        If True, ensures that the small rain drops in the spectrum are retained in the mask.
+        The smallest rain drops are characterized by ``maintain_drops_smaller_than``
+        and ``maintain_drops_slower_than`` arguments.
+        Defaults to False.
+    maintain_drops_smaller_than : float, optional
+        The diameter threshold to use for keeping the smallest rain drop.
+        Defaults to 1 mm.
+    maintain_drops_slower_than : float, optional
+        The fall velocity threshold to use for keeping the smallest rain drops.
+        Defaults to 2.5 m/s.
+
+    Returns
+    -------
+    xarray.DataArray
+        A boolean mask array indicating valid bins according to the specified criteria.
+
+    """
+    # Ensure it creates a 2D mask if the fall_velocity does not vary over time
+    if "time" in drop_number.dims and "time" not in fall_velocity_lower.dims:
+        drop_number = drop_number.isel(time=0)
+
+    # Check arguments
+    if above_velocity_fraction is not None and above_velocity_tolerance is not None:
+        raise ValueError("Either specify 'above_velocity_fraction' or 'above_velocity_tolerance'.")
+    if below_velocity_fraction is not None and below_velocity_tolerance is not None:
+        raise ValueError("Either specify 'below_velocity_fraction' or 'below_velocity_tolerance'.")
+
+    # Define above/below velocity thresholds
+    if above_velocity_fraction is not None:
+        above_fall_velocity = fall_velocity_upper * (1 + above_velocity_fraction)
+    elif above_velocity_tolerance is not None:
+        above_fall_velocity = fall_velocity_upper + above_velocity_tolerance
+    else:
+        above_fall_velocity = np.inf
+
+    if below_velocity_fraction is not None:
+        below_fall_velocity = fall_velocity_lower * (1 - below_velocity_fraction)
+    elif below_velocity_tolerance is not None:
+        below_fall_velocity = fall_velocity_lower - below_velocity_tolerance
+    else:
+        below_fall_velocity = 0
+
+    # Define velocity 2D array
+    velocity_lower = xr.ones_like(drop_number) * drop_number["velocity_bin_lower"]
+    velocity_upper = xr.ones_like(drop_number) * drop_number["velocity_bin_upper"]
+
+    # Define mask
+    mask = np.logical_and(
+        velocity_upper > below_fall_velocity,
+        velocity_lower < above_fall_velocity,
+    )
+
+    # Maintant smallest drops
+    if maintain_smallest_drops:
+        mask_smallest = np.logical_and(
+            drop_number["diameter_bin_upper"] <= maintain_drops_smaller_than,
+            drop_number["velocity_bin_upper"] <= maintain_drops_slower_than,
+        )
+        mask = np.logical_or(mask, mask_smallest)
+
+    return mask
+
+
+####--------------------------------------------------------------------------
 #### Timesteps filtering functions
 
 
 def select_timesteps_with_drops(ds, minimum_ndrops=0):
     """Select timesteps with at least the specified number of drops."""
+    # If not a unique time dimension, skip subsetting
+    if ds["N"].dims != ("time",):
+        return ds
+    # Otherwise subset time dimension
     valid_timesteps = ds["N"].to_numpy() >= minimum_ndrops
     if not valid_timesteps.any().item():
         raise ValueError(f"No timesteps with N >= {minimum_ndrops}.")
@@ -124,6 +296,10 @@ def select_timesteps_with_drops(ds, minimum_ndrops=0):
 
 def select_timesteps_with_minimum_nbins(ds, minimum_nbins):
     """Select timesteps with at least the specified number of diameter bins with drops."""
+    # If not a unique time dimension, skip subsetting
+    if ds["Nbins"].dims != ("time",):
+        return ds
+    # Otherwise subset time dimension
     if minimum_nbins == 0:
         return ds
     valid_timesteps = ds["Nbins"].to_numpy() >= minimum_nbins
@@ -167,7 +343,7 @@ def check_l2e_input_dataset(ds):
     from disdrodb.scattering import RADAR_OPTIONS
 
     # Check minimum required variables, coordinates and dimensions are presents
-    required_variables = ["drop_number", "fall_velocity"]
+    required_variables = ["raw_drop_number"]
     required_coords = [
         "diameter_bin_center",
         "diameter_bin_width",
@@ -194,9 +370,24 @@ def generate_l2e(
     ds_env=None,
     compute_spectra=False,
     compute_percentage_contribution=False,
+    # Filtering options
     minimum_ndrops=1,
     minimum_nbins=1,
     minimum_rain_rate=0.01,
+    minimum_diameter=0,
+    maximum_diameter=10,
+    minimum_velocity=0,
+    maximum_velocity=12,
+    # Spectrum filtering options
+    fall_velocity_model="Beard1976",
+    above_velocity_fraction=0.5,
+    above_velocity_tolerance=None,
+    below_velocity_fraction=0.5,
+    below_velocity_tolerance=None,
+    maintain_drops_smaller_than=1,  # 2
+    maintain_drops_slower_than=2.5,  # 3
+    maintain_smallest_drops=True,
+    remove_splashing_drops=True,
 ):
     """Generate the DISDRODB L2E dataset from the DISDRODB L1 dataset.
 
@@ -205,15 +396,40 @@ def generate_l2e(
     ds : xarray.Dataset
         DISDRODB L1 dataset.
         Alternatively, a xarray dataset with at least:
-
-            - variables: drop_number, fall_velocity
+            - variables: raw_drop_number
             - dimension: DIAMETER_DIMENSION
             - coordinates: diameter_bin_center, diameter_bin_width, sample_interval
             - attributes: sensor_name
-
     ds_env : xarray.Dataset, optional
         Environmental dataset used for fall velocity and water density estimates.
         If None, a default environment dataset will be loaded.
+    fall_velocity_model : str, optional
+        Model name to estimate drop fall velocity.
+        The default method is ``"Beard1976"``.
+    minimum_diameter : float, optional
+        Minimum diameter for filtering. The default value is 0 mm.
+    maximum_diameter : float, optional
+        Maximum diameter for filtering. The default value is 10 mm.
+    minimum_velocity : float, optional
+        Minimum velocity for filtering. The default value is 0 m/s.
+    maximum_velocity : float, optional
+        Maximum velocity for filtering. The default value is 12 m/s.
+    above_velocity_fraction : float, optional
+        Fraction of drops above velocity threshold. The default value is 0.5.
+    above_velocity_tolerance : float or None, optional
+        Tolerance for above velocity filtering. The default value is ``None``.
+    below_velocity_fraction : float, optional
+        Fraction of drops below velocity threshold. The default value is 0.5.
+    below_velocity_tolerance : float or None, optional
+        Tolerance for below velocity filtering. The default value is ``None``.
+    maintain_drops_smaller_than : float, optional
+        Threshold for small diameter drops. The default value is 1.
+    maintain_drops_slower_than : float, optional
+        Threshold for small velocity drops. The default value is 2.5.
+    maintain_smallest_drops : bool, optional
+        Whether to maintain the smallest drops. The default value is ``True``.
+    remove_splashing_drops: bool, optional
+        Whether to mask splashing drops. The default value is ``True``.
 
     Returns
     -------
@@ -222,6 +438,65 @@ def generate_l2e(
     """
     # Check and prepapre input dataset
     ds = check_l2e_input_dataset(ds)
+
+    # Select only dry or rainy timesteps
+    # - With class 4 I include mixed phase too
+    if "precipitation_type" in ds:
+        ds = ds.isel(time=ds["precipitation_type"].isin([-1, 0, 4]), drop=True)
+
+    # Determine if the velocity dimension is available
+    has_velocity_dimension = VELOCITY_DIMENSION in ds.dims
+
+    # - Filter diameter bins
+    ds = filter_diameter_bins(ds=ds, minimum_diameter=minimum_diameter, maximum_diameter=maximum_diameter)
+    # - Filter velocity bins
+    if has_velocity_dimension:
+        ds = filter_velocity_bins(ds=ds, minimum_velocity=minimum_velocity, maximum_velocity=maximum_velocity)
+
+    # -------------------------------------------------------------------------------------------
+    # Compute fall velocity
+    ds["fall_velocity"] = get_rain_fall_velocity_from_ds(ds=ds, ds_env=ds_env, model=fall_velocity_model)
+
+    # -------------------------------------------------------
+    # Retrieve filtered spectrum and drop counts (summing over velocity dimension if present)
+    if has_velocity_dimension:
+        drop_number = retrieve_drop_spectrum(
+            ds=ds,
+            ds_env=ds_env,
+            above_velocity_fraction=above_velocity_fraction,
+            above_velocity_tolerance=above_velocity_tolerance,
+            below_velocity_fraction=below_velocity_fraction,
+            below_velocity_tolerance=below_velocity_tolerance,
+            maintain_drops_smaller_than=maintain_drops_smaller_than,
+            maintain_drops_slower_than=maintain_drops_slower_than,
+            maintain_smallest_drops=maintain_smallest_drops,
+            remove_splashing_drops=remove_splashing_drops,
+            fall_velocity_model=fall_velocity_model,
+        )
+        drop_counts = drop_number.sum(dim=VELOCITY_DIMENSION)  # 1D (diameter)
+        drop_counts_raw = ds["raw_drop_number"].sum(dim=VELOCITY_DIMENSION)  # 1D (diameter)
+    else:
+        drop_number = ds["raw_drop_number"]  # no filtering applied
+        drop_counts = ds["raw_drop_number"]  # 1D (diameter)
+        drop_counts_raw = ds["raw_drop_number"]
+
+    ds["drop_number"] = drop_number
+    ds["drop_counts"] = drop_counts
+
+    # -------------------------------------------------------
+    # Compute drop statistics
+    # - Compute minimum and max drop diameter observed
+    min_drop_diameter, max_drop_diameter = get_min_max_diameter(drop_counts)
+
+    # - Add rain drop statistics
+    ds["Dmin"] = min_drop_diameter
+    ds["Dmax"] = max_drop_diameter
+    ds["N"] = drop_counts.sum(dim=DIAMETER_DIMENSION)
+    ds["Nraw"] = drop_counts_raw.sum(dim=DIAMETER_DIMENSION)
+    ds["Nremoved"] = ds["Nraw"] - ds["N"]
+
+    # - Add bins statistics
+    ds = add_bins_metrics(ds)
 
     # -------------------------------------------------------
     # Initialize L2E dataset
@@ -234,9 +509,6 @@ def generate_l2e(
     #### Preprocessing
     # Select timesteps with at least the specified number of drops
     ds = select_timesteps_with_drops(ds, minimum_ndrops=minimum_ndrops)
-
-    # Add bins metrics to resampled data if missing
-    ds = add_bins_metrics(ds)
 
     # Remove timesteps with not enough bins with drops
     ds = select_timesteps_with_minimum_nbins(ds, minimum_nbins=minimum_nbins)
@@ -263,17 +535,30 @@ def generate_l2e(
 
     # Copy relevant L1 variables to L2 product
     variables = [
+        # L1 inputs
+        "sample_interval",
+        "fall_velocity",
         "raw_drop_number",  # 2D V x D
         "drop_number",  # 2D V x D
+        # Drop statistics
         "drop_counts",  # 1D D
-        "sample_interval",
         "N",
         "Nremoved",
+        "Nraw",
         "Dmin",
         "Dmax",
-        "fall_velocity",
+        # L0C QC
+        "qc_time",
+        # L1 flags and variables
         "qc_resampling",
-        "time_qc",
+        "hydrometeor_type",
+        "n_margin_fallers",
+        "n_splashing",
+        "flag_graupel",
+        "flag_hail",
+        "flag_spikes",
+        "flag_splashing",
+        "flag_wind_artefacts",
     ]
 
     variables = [var for var in variables if var in ds]

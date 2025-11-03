@@ -4,16 +4,3 @@ archive_options:
   strategy_options:
     freq: day
   folder_partitioning: "year"
-product_options:
-  fall_velocity_model: "Beard1976"
-  minimum_diameter: 0
-  maximum_diameter: 10
-  minimum_velocity: 0
-  maximum_velocity: 12
-  above_velocity_fraction: 0.5
-  above_velocity_tolerance: null
-  below_velocity_fraction: 0.5
-  below_velocity_tolerance: null
-  small_diameter_threshold: 1
-  small_velocity_threshold: 2.5
-  maintain_smallest_drops: True

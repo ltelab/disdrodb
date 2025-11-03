@@ -1,0 +1,3 @@
+archive_options:
+  product_frequency: day
+  folder_partitioning: "year"

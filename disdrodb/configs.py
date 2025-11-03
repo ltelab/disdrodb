@@ -194,7 +194,11 @@ def get_scattering_table_dir(scattering_table_dir=None):
     if scattering_table_dir is None:
         scattering_table_dir = disdrodb.config.get("scattering_table_dir", None)
     if scattering_table_dir is None:
-        raise ValueError("The directory where to save DISDRODB T-Matrix scattering tables is not specified.")
+        msg = (
+            "The directory where to save DISDRODB T-Matrix scattering look-up tables is not specified. "
+            + "Please specify it using disdrodb.define_configs(scattering_table_dir=<path>)"
+        )
+        raise ValueError(msg)
     scattering_table_dir = check_scattering_table_dir(scattering_table_dir)  # ensure Path converted to str
     return scattering_table_dir
 
