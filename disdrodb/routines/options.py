@@ -29,8 +29,21 @@ from disdrodb.utils.time import ensure_timedelta_seconds, get_sampling_informati
 from disdrodb.utils.yaml import read_yaml
 
 # global.yaml options: search in sensor directory if present, otherwise take the base one
-# sensor directory is not mandatory
-# if directory presents should be valid sensor name and with files inside !
+
+
+#### Check product options structure (products_configs_dir) 
+# products_configs_dir : check exists
+# Check presence of L0C, L1, L2E and L2M directories 
+# If inside product directory (L0C-L2E) there is another directory must correspond to a sensor_name 
+# --> available_sensor_names(), otherwise raise error
+# --> Presence of sensor directory is not mandatory
+# If sensor directory is specified, there must be yaml file inside, otherwise raise error
+# Check there is a global.yaml file inside each product directory 
+# Check there is the MODEL directory in L2M directory and there are YAML files inside. 
+
+
+# Check global product options YAML files 
+
 # product_options key in custom options must contain all keys? Ideally not ! Check for recursive update
 
 
@@ -196,6 +209,7 @@ def validate_product_configuration(products_configs_dir):
     # TODO: Implement validation of DISDRODB products configuration files with pydantic
     # TODO: Raise warning if L1 temporal resolutions does not includes all temporal resolutions of L2 products.
     # TODO: Raise warning if L2E temporal resolutions does not includes all temporal resolutions of L2M products.
+   
     # if stategy_event, check neighbor_time_interval >= sample_interval !
     # if temporal_resolution_to_seconds(neighbor_time_interval) < temporal_resolution_to_seconds(sample_interval):
     #     msg = "'neighbor_time_interval' must be at least equal to the dataset sample interval ({sample_interval})"
