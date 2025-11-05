@@ -18,7 +18,7 @@
 
 import xarray as xr
 
-from disdrodb.constants import VELOCITY_DIMENSION
+from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l1.classification import classify_raw_spectrum, get_temperature
 from disdrodb.l1.resampling import add_sample_interval
 from disdrodb.l1_env.routines import load_env_dataset
@@ -113,8 +113,8 @@ def generate_l1(
     # --> Specialized QC for RD-80 or ODM-470 not yet implemented
     else:
         # TODO: if OCEAN-RAIN: add precipitation type
-        #
-        #
+
+        ds_l1["n_particles"] = ds_l1["raw_drop_number"].sum(dim=DIAMETER_DIMENSION)
         pass
 
     #### ----------------------------------------------------------------------.

@@ -75,15 +75,26 @@ def check_radar_band(radar_band):
     return radar_band
 
 
+def _is_valid_numeric_frequency(frequency):
+    numeric_value = float(frequency)
+    if numeric_value <= 0:
+        raise ValueError(f"Frequency must be positive, got {numeric_value}")
+    return numeric_value
+
+
 def _check_frequency(frequency):
     """Check the validity of the specified frequency."""
     if isinstance(frequency, str):
-        frequency = check_radar_band(frequency)
-        frequency = frequency_dict[frequency]
-        return frequency
-    if not isinstance(frequency, (int, float)):
-        raise TypeError(f"Frequency {frequency} must be a string or a number.")
-    return frequency
+        try:
+            frequency = float(frequency)
+
+        except ValueError:
+            # Not numeric, assume radar band name
+            frequency = check_radar_band(frequency)
+            frequency = frequency_dict[frequency]
+    if isinstance(frequency, (int, float)):
+        return _is_valid_numeric_frequency(frequency)
+    raise TypeError(f"Frequency {frequency} must be a string or a number.")
 
 
 def ensure_numerical_frequency(frequency):

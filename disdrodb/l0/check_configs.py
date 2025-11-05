@@ -22,7 +22,7 @@ import os
 from typing import Optional, Union
 
 import numpy as np
-from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from disdrodb.api.configs import available_sensor_names, get_sensor_configs_dir, read_config_file
 from disdrodb.l0.standards import (
@@ -36,6 +36,7 @@ from disdrodb.l0.standards import (
     get_velocity_bin_width,
 )
 from disdrodb.utils.directories import list_files
+from disdrodb.utils.pydantic import CustomBaseModel
 
 CONFIG_FILES_LIST = [
     "bins_diameter.yml",
@@ -104,28 +105,24 @@ def check_variable_consistency(sensor_name: str) -> None:
             raise ValueError(msg)
 
 
-class SchemaValidationException(Exception):
-    """Exception raised when schema validation fails."""
-
-
-def _schema_error(object_to_validate: Union[str, list], schema: BaseModel, message) -> bool:
+def _schema_error(object_to_validate: Union[str, list], schema: CustomBaseModel, message) -> bool:
     """Function that validate the schema of a given object with a given schema.
 
     Parameters
     ----------
     object_to_validate : Union[str,list]
         Object to validate.
-    schema : BaseModel
+    schema : CustomBaseModel
         Base model.
 
     """
     try:
         schema(**object_to_validate)
-    except ValidationError as e:
-        raise SchemaValidationException(f"Schema validation failed. {message} {e}")
+    except ValueError as e:
+        raise ValueError(f"{message} {e!s}") from None
 
 
-class L0BEncodingSchema(BaseModel):
+class L0BEncodingSchema(CustomBaseModel):
     """Pydantic model for DISDRODB netCDF encodings."""
 
     contiguous: bool
@@ -136,6 +133,8 @@ class L0BEncodingSchema(BaseModel):
     fletcher32: bool
     FillValue: Optional[Union[int, float]] = Field(default=None, alias="_FillValue")
     chunksizes: Optional[Union[int, list[int]]]
+    add_offset: Optional[float] = None
+    scale_factor: Optional[float] = None
 
     # if contiguous=False, chunksizes specified, otherwise should be not !
     @model_validator(mode="before")
@@ -200,6 +199,18 @@ class L0BEncodingSchema(BaseModel):
 
         return values
 
+    @model_validator(mode="after")
+    def remove_offset_and_scale_if_not_int(cls, values):
+        """Ensure add_offset and scale_factor only apply to integer/uint dtypes."""
+        integer_types = ["int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"]
+
+        if values.dtype not in integer_types:
+            # drop those keys to keep model clean
+            values.add_offset = None
+            values.scale_factor = None
+
+        return values
+
 
 def check_l0b_encoding(sensor_name: str) -> None:
     """Check ``l0b_encodings.yml`` file based on the schema defined in the class ``L0BEncodingSchema``.
@@ -216,7 +227,7 @@ def check_l0b_encoding(sensor_name: str) -> None:
         _schema_error(
             object_to_validate=value,
             schema=L0BEncodingSchema,
-            message=f"Sensore name : {sensor_name}. Key : {key}.",
+            message=f"Invalid {sensor_name} L0B Encoding YAML file '{key}' settings.",
         )
 
 
@@ -243,7 +254,7 @@ def check_l0a_encoding(sensor_name: str) -> None:
             raise TypeError(f"Expecting a string for {key} in l0a_encodings.yml for sensor {sensor_name}.")
 
 
-class RawDataFormatSchema(BaseModel):
+class RawDataFormatSchema(CustomBaseModel):
     """Pydantic model for the DISDRODB RAW Data Format YAML files."""
 
     n_digits: Optional[int]
@@ -282,7 +293,7 @@ def check_raw_data_format(sensor_name: str) -> None:
         _schema_error(
             object_to_validate=value,
             schema=RawDataFormatSchema,
-            message=f"Sensore name : {sensor_name}. Key : {key}.",
+            message=f"Invalid {sensor_name} RawDataFormat YAML file '{key}' settings.",
         )
 
 

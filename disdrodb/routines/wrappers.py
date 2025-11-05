@@ -22,6 +22,75 @@ from typing import Optional
 from disdrodb.api.search import available_stations, get_required_product
 from disdrodb.utils.cli import execute_cmd
 
+
+def validate_processing_flags_and_get_required_product(**processing_flags):
+    """Validate processing flags and determine the required input product.
+
+    Validates that the processing chain is logically consistent and returns
+    the product needed as input for the earliest requested processing step.
+
+    The processing chain must be contiguous - you cannot skip intermediate levels.
+    For example: l1_processing=True, l2e_processing=False, l2m_processing=True is invalid.
+
+    Raises
+    ------
+    ValueError
+        If no processing levels are enabled or if the processing chain has gaps.
+
+    Returns
+    -------
+    str
+        The required input product for the processing chain.
+    """
+    # Define processing chain order and their required inputs
+    PROCESSING_CHAIN = [
+        ("l0a_processing", "L0A"),
+        ("l0b_processing", "L0B"),
+        ("l0c_processing", "L0C"),
+        ("l1_processing", "L1"),
+        ("l2e_processing", "L2E"),
+        ("l2m_processing", "L2M"),
+    ]
+
+    # Filter only the processing flags we care about and get enabled levels
+    enabled_levels = []
+    for level, product in PROCESSING_CHAIN:
+        if processing_flags.get(level, False):
+            enabled_levels.append((level, product))
+
+    # Check if at least one processing level is enabled
+    if not enabled_levels:
+        raise ValueError("At least one processing level must be enabled.")
+
+    # Get indices of enabled levels in the original chain
+    enabled_indices = []
+    for level, _ in enabled_levels:
+        for i, (chain_level, _) in enumerate(PROCESSING_CHAIN):
+            if level == chain_level:
+                enabled_indices.append(i)
+                break
+
+    # Check for gaps: all indices between first and last enabled should be present
+    first_idx = min(enabled_indices)
+    last_idx = max(enabled_indices)
+
+    expected_indices = set(range(first_idx, last_idx + 1))
+    actual_indices = set(enabled_indices)
+
+    missing_indices = expected_indices - actual_indices
+    if missing_indices:
+        missing_levels = [PROCESSING_CHAIN[i][0] for i in missing_indices]
+        enabled_level_names = [level for level, _ in enabled_levels]
+        raise ValueError(
+            f"Processing chain has gaps. Enabled levels: {enabled_level_names}. "
+            f"Missing intermediate levels: {missing_levels}. "
+            f"All levels between the first and last enabled level must be enabled.",
+        )
+
+    # Return the required input product for the earliest enabled level
+    return get_required_product(enabled_levels[0][1])
+
+
 ####--------------------------------------------------------------------------.
 #### Run DISDRODB Station Processing
 
@@ -99,6 +168,13 @@ def run_l0_station(
         If ``None``, it uses the ``data_archive_dir`` path specified
         in the DISDRODB active configuration.
     """
+    # ---------------------------------------------------------------------.
+    # Validate processing flags
+    _ = validate_processing_flags_and_get_required_product(
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        l0c_processing=l0c_processing,
+    )
     # ---------------------------------------------------------------------.
     t_i = time.time()
     print(f"L0 processing of station {station_name} has started.")
@@ -1075,13 +1151,12 @@ def run_l0(
         If ``None``, it uses the ``metadata_archive_dir`` path specified
         in the DISDRODB active configuration.
     """
-    # Define starting product
-    if l0c_processing:
-        required_product = get_required_product("L0C")
-    if l0b_processing:
-        required_product = get_required_product("L0B")
-    if l0a_processing:
-        required_product = get_required_product("L0A")
+    # Determine required product based on the lowest level processing requested
+    required_product = validate_processing_flags_and_get_required_product(
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        l0c_processing=l0c_processing,
+    )
 
     # Get list of available stations
     list_info = available_stations(
@@ -1438,6 +1513,354 @@ def run_l2m(
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station ended.")
 
 
+####--------------------------------------------------------------------------.
+#### Full Processing Wrappers
+def run_station(
+    data_source,
+    campaign_name,
+    station_name,
+    # L0 archive options
+    l0a_processing: bool = True,
+    l0b_processing: bool = True,
+    l0c_processing: bool = True,
+    remove_l0a: bool = False,
+    remove_l0b: bool = False,
+    # Higher level processing options
+    l1_processing: bool = True,
+    l2e_processing: bool = True,
+    l2m_processing: bool = True,
+    # Processing options
+    force: bool = False,
+    verbose: bool = False,
+    debugging_mode: bool = False,
+    parallel: bool = True,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
+):
+    """Run the complete processing chain of a specific DISDRODB station from the terminal.
+
+    Parameters
+    ----------
+    data_source : str
+        Institution name (when campaign data spans more than 1 country),
+        or country (when all campaigns (or sensor networks) are inside a given country).
+        Must be UPPER CASE.
+    campaign_name : str
+        Campaign name. Must be UPPER CASE.
+    station_name : str
+        Station name
+    l0a_processing : bool
+        Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
+        The default value is ``True``.
+    l0b_processing : bool
+        Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
+        The default value is ``True``.
+    l0c_processing : bool
+        Whether to launch processing to generate L0C netCDF4 file(s) from L0B data.
+        The default value is ``True``.
+    remove_l0a : bool
+        Whether to keep the L0A files after having generated the L0B netCDF products.
+        The default value is ``False``.
+    remove_l0b : bool
+        Whether to remove the L0B files after having produced L0C netCDF files.
+        The default is False.
+    l1_processing : bool
+        Whether to launch processing to generate L1 netCDF4 file(s) from L0C data.
+        The default value is ``True``.
+    l2e_processing : bool
+        Whether to launch processing to generate L2E netCDF4 file(s) from L1 data.
+        The default value is ``True``.
+    l2m_processing : bool
+        Whether to launch processing to generate L2M netCDF4 file(s) from L1 data.
+        The default value is ``True``.
+    force : bool
+        If ``True``, overwrite existing data into destination directories.
+        If ``False``, raise an error if there are already data into destination directories.
+        The default value is ``False``.
+    verbose : bool
+        Whether to print detailed processing information into terminal.
+        The default value is ``True``.
+    parallel : bool
+        If ``True``, the files are processed simultaneously in multiple processes.
+        Each process will use a single thread to avoid issues with the HDF/netCDF library.
+        By default, the number of process is defined with ``os.cpu_count()``.
+        If ``False``, the files are processed sequentially in a single process.
+        If ``False``, multi-threading is automatically exploited to speed up I/0 tasks.
+    debugging_mode : bool
+        If ``True``, it reduces the amount of data to process.
+        For L0A, it processes just the first 3 raw data files for each station.
+        For L0B, it processes 100 rows sampled from 3 L0A files for each station.
+        The default value is ``False``.
+    data_archive_dir : str (optional)
+        The directory path where the DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    metadata_archive_dir : str (optional)
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB-METADATA/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    """
+    # ---------------------------------------------------------------------.
+    # Validate processing flags
+    _ = validate_processing_flags_and_get_required_product(
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        l0c_processing=l0c_processing,
+        l1_processing=l1_processing,
+        l2e_processing=l2e_processing,
+        l2m_processing=l2m_processing,
+    )
+
+    # ---------------------------------------------------------------------.
+    t_i = time.time()
+    print(f"Complete processing of station {station_name} has started.")
+
+    # ------------------------------------------------------------------.
+    # L0 processing (L0A, L0B, L0C)
+    if l0a_processing or l0b_processing or l0c_processing:
+        run_l0_station(
+            # DISDRODB root directories
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
+            # Station arguments
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            # L0 archive options
+            l0a_processing=l0a_processing,
+            l0b_processing=l0b_processing,
+            l0c_processing=l0c_processing,
+            remove_l0a=remove_l0a,
+            remove_l0b=remove_l0b,
+            # Processing options
+            force=force,
+            verbose=verbose,
+            debugging_mode=debugging_mode,
+            parallel=parallel,
+        )
+
+    # ------------------------------------------------------------------.
+    # L1 processing
+    if l1_processing:
+        run_l1_station(
+            # DISDRODB root directories
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
+            # Station arguments
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            # Processing options
+            force=force,
+            verbose=verbose,
+            debugging_mode=debugging_mode,
+            parallel=parallel,
+        )
+
+    # ------------------------------------------------------------------.
+    # L2E processing
+    if l2e_processing:
+        run_l2e_station(
+            # DISDRODB root directories
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
+            # Station arguments
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            # Processing options
+            force=force,
+            verbose=verbose,
+            debugging_mode=debugging_mode,
+            parallel=parallel,
+        )
+
+    # ------------------------------------------------------------------.
+    # L2M processing
+    if l2m_processing:
+        run_l2m_station(
+            # DISDRODB root directories
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
+            # Station arguments
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            # Processing options
+            force=force,
+            verbose=verbose,
+            debugging_mode=debugging_mode,
+            parallel=parallel,
+        )
+
+    # -------------------------------------------------------------------------.
+    # End of complete processing for station
+    timedelta_str = str(datetime.timedelta(seconds=round(time.time() - t_i)))
+    print(f"Complete processing of station {station_name} completed in {timedelta_str}")
+
+
+def run(
+    data_sources=None,
+    campaign_names=None,
+    station_names=None,
+    # L0 archive options
+    l0a_processing: bool = True,
+    l0b_processing: bool = True,
+    l0c_processing: bool = True,
+    remove_l0a: bool = False,
+    remove_l0b: bool = False,
+    # Higher level processing options
+    l1_processing: bool = True,
+    l2e_processing: bool = True,
+    l2m_processing: bool = True,
+    # Processing options
+    force: bool = False,
+    verbose: bool = False,
+    debugging_mode: bool = False,
+    parallel: bool = True,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
+):
+    """Run the complete processing chain of DISDRODB stations.
+
+    This function allows to launch the complete processing of many DISDRODB stations with a single command.
+    From the list of all available DISDRODB stations, it runs the processing of the
+    stations matching the provided data_sources, campaign_names and station_names.
+
+    Parameters
+    ----------
+    data_sources : list
+        Name of data source(s) to process.
+        The name(s) must be UPPER CASE.
+        If campaign_names and station are not specified, process all stations.
+        The default value is ``None``.
+    campaign_names : list
+        Name of the campaign(s) to process.
+        The name(s) must be UPPER CASE.
+        The default value is ``None``.
+    station_names : list
+        Station names to process.
+        The default value is ``None``.
+    l0a_processing : bool
+        Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
+        The default value is ``True``.
+    l0b_processing : bool
+        Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
+        The default value is ``True``.
+    l0c_processing : bool
+        Whether to launch processing to generate L0C netCDF4 file(s) from L0B data.
+        The default value is ``True``.
+    remove_l0a : bool
+        Whether to keep the L0A files after having generated the L0B netCDF products.
+        The default value is ``False``.
+    remove_l0b : bool
+        Whether to remove the L0B files after having produced L0C netCDF files.
+        The default value is ``False``.
+    l1_processing : bool
+        Whether to launch processing to generate L1 netCDF4 file(s) from L0C data.
+        The default value is ``True``.
+    l2e_processing : bool
+        Whether to launch processing to generate L2E netCDF4 file(s) from L1 data.
+        The default value is ``True``.
+    l2m_processing : bool
+        Whether to launch processing to generate L2M netCDF4 file(s) from L1 data.
+        The default value is ``True``.
+    force : bool
+        If ``True``, overwrite existing data into destination directories.
+        If ``False``, raise an error if there are already data into destination directories.
+        The default value is ``False``.
+    verbose : bool
+        Whether to print detailed processing information into terminal.
+        The default value is ``False``.
+    parallel : bool
+        If ``True``, the files are processed simultaneously in multiple processes.
+        Each process will use a single thread to avoid issues with the HDF/netCDF library.
+        By default, the number of process is defined with ``os.cpu_count()``.
+        If ``False``, the files are processed sequentially in a single process.
+        If ``False``, multi-threading is automatically exploited to speed up I/0 tasks.
+    debugging_mode : bool
+        If ``True``, it reduces the amount of data to process.
+        For L0A, it processes just the first 3 raw data files.
+        For L0B, it processes 100 rows sampled from 3 L0A files.
+        The default value is ``False``.
+    data_archive_dir : str (optional)
+        The directory path where the DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    metadata_archive_dir : str (optional)
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB-METADATA/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    """
+    # Determine required product based on the lowest level processing requested
+    required_product = validate_processing_flags_and_get_required_product(
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        l0c_processing=l0c_processing,
+        l1_processing=l1_processing,
+        l2e_processing=l2e_processing,
+        l2m_processing=l2m_processing,
+    )
+
+    # Get list of available stations
+    list_info = available_stations(
+        # DISDRODB root directories
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
+        # Stations arguments
+        data_sources=data_sources,
+        campaign_names=campaign_names,
+        station_names=station_names,
+        # Search options
+        product=required_product,
+        raise_error_if_empty=True,
+    )
+
+    # Print message
+    n_stations = len(list_info)
+    print(f"Complete processing of {n_stations} stations started.")
+
+    # Loop over stations
+    for data_source, campaign_name, station_name in list_info:
+        print(f"Complete processing of {data_source} {campaign_name} {station_name} station started.")
+        # Run processing
+        run_station(
+            # DISDRODB root directories
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
+            # Station arguments
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            # L0 archive options
+            l0a_processing=l0a_processing,
+            l0b_processing=l0b_processing,
+            l0c_processing=l0c_processing,
+            remove_l0a=remove_l0a,
+            remove_l0b=remove_l0b,
+            # Higher level processing options
+            l1_processing=l1_processing,
+            l2e_processing=l2e_processing,
+            l2m_processing=l2m_processing,
+            # Process options
+            force=force,
+            verbose=verbose,
+            debugging_mode=debugging_mode,
+            parallel=parallel,
+        )
+        print(f"Complete processing of {data_source} {campaign_name} {station_name} station ended.")
+
+    print(f"Complete processing of {n_stations} stations completed.")
+
+
+####--------------------------------------------------------------------------.
+#### Summary Wrappers
 def create_summary(
     data_sources=None,
     campaign_names=None,
@@ -1508,6 +1931,3 @@ def create_summary(
             temporal_resolution=temporal_resolution,
         )
     print("Creation of station summaries has terminated.")
-
-
-####--------------------------------------------------------------------------.

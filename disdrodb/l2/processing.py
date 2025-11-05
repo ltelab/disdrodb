@@ -378,7 +378,7 @@ def generate_l2e(
     maximum_diameter=10,
     minimum_velocity=0,
     maximum_velocity=12,
-    keep_only_rain=False, # TODO Whether to use HC precipitation type to keep only rain/mixed phase timesteps 
+    keep_only_rain=False,  # TODO Whether to use HC precipitation type to keep only rain/mixed phase timesteps
     # Spectrum filtering options
     fall_velocity_model="Beard1976",
     above_velocity_fraction=0.5,

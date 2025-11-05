@@ -770,7 +770,7 @@ def run_l2m_station(
             # -----------------------------------------------------------------.
             # Retrieve product-model options
             product_options = copy.deepcopy(global_product_options)
-            model_options = get_model_options(product="L2M", model_name=model_name)
+            model_options = get_model_options(model_name=model_name)
             product_options["product_options"].update(model_options)
 
             psd_model = model_options["psd_model"]

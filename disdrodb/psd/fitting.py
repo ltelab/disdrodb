@@ -1992,6 +1992,7 @@ ATTRS_PARAMS_DICT = {
     },
 }
 
+PSD_MODELS = list(ATTRS_PARAMS_DICT)
 
 MOM_METHODS_DICT = {
     "GammaPSD": {

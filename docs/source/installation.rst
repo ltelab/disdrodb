@@ -228,6 +228,7 @@ The instructions below describe how to install the LTE-maintained fork of pyTMat
 3. Enter the newly cloned ``pytmatrix-lte`` directory and install the package in editable mode:
 
 .. code-block:: bash
+
    cd pytmatrix-lte
    pip install -e .
 

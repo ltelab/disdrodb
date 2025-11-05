@@ -17,7 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for GID LPM sensors not measuring wind."""
-import os 
+import os
+
 import numpy as np
 import pandas as pd
 
@@ -52,6 +53,9 @@ def reader(
 
     # - Number of rows to be skipped at the beginning of the file
     reader_kwargs["skiprows"] = None
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "latin"
 
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
@@ -188,9 +192,9 @@ def reader(
     filename = os.path.basename(filepath)
     file_date_str = filename[0:8]
     idx_bad_date = df["sensor_date"] != pd.to_datetime(file_date_str, format="%Y%m%d").strftime("%d.%m.%y")
-    
+
     # If all rows have bad sensor_date, use the one of the file name
-    if idx_bad_date.all(): 
+    if idx_bad_date.all():
         # -  Infer and define "time" column
         start_time_str = filename[0:10]
         start_time = pd.to_datetime(start_time_str, format="%Y%m%d%H")
@@ -210,16 +214,16 @@ def reader(
         # - Keep rows where time increment is between 00 and 59 minutes
         valid_rows = dt <= np.timedelta64(3540, "s")
         df = df[valid_rows]
-        
+
     # If only some rows have bad sensor date, just drop such bad rows
-    else: 
+    else:
         if idx_bad_date.any():
             # Remove rows with bad dates
             bad_dates = df[idx_bad_date]["sensor_date"].unique().tolist()
             df = df[~idx_bad_date]
-            msg = f"{filepath} contain rows with the following unxpected sensor_date values {bad_dates}"
-            log_warning(msg=msg , logger=logger)
-     
+            msg = f"{filepath} contain rows with the following unexpected sensor_date values {bad_dates}"
+            log_warning(msg=msg, logger=logger)
+
         # Define datetime "time" column
         df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
         df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y-%H:%M:%S", errors="coerce")

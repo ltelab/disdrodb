@@ -18,7 +18,6 @@
 # -----------------------------------------------------------------------------.
 """Check DISDRODB L0 configuration files."""
 import pytest
-from pydantic import ValidationError
 
 from disdrodb.api.configs import available_sensor_names
 from disdrodb.l0.check_configs import (
@@ -154,7 +153,7 @@ class TestL0BEncodingSchema:
             "_FillValue": None,
             "chunksizes": None,  # Missing chunksizes for non-contiguous
         }
-        with pytest.raises(ValidationError, match="'chunksizes' must be defined if 'contiguous' is False"):
+        with pytest.raises(ValueError, match="'chunksizes' must be defined if 'contiguous' is False"):
             L0BEncodingSchema(**config)
 
     def test_check_chunksizes_and_zlib_empty_chunksizes(self):
@@ -169,7 +168,7 @@ class TestL0BEncodingSchema:
             "_FillValue": None,
             "chunksizes": [],  # Empty chunksizes for non-contiguous
         }
-        with pytest.raises(ValidationError, match="'chunksizes' must be defined if 'contiguous' is False"):
+        with pytest.raises(ValueError, match="'chunksizes' must be defined if 'contiguous' is False"):
             L0BEncodingSchema(**config)
 
     def test_check_contiguous_and_zlib_conflict(self):
@@ -184,7 +183,7 @@ class TestL0BEncodingSchema:
             "_FillValue": None,
             "chunksizes": None,
         }
-        with pytest.raises(ValidationError, match="'zlib' must be set to False if 'contiguous' is True"):
+        with pytest.raises(ValueError, match="'zlib' must be set to False if 'contiguous' is True"):
             L0BEncodingSchema(**config)
 
     def test_check_contiguous_and_fletcher32_conflict(self):
@@ -199,7 +198,7 @@ class TestL0BEncodingSchema:
             "_FillValue": None,
             "chunksizes": None,
         }
-        with pytest.raises(ValidationError, match="'fletcher32' must be set to False if 'contiguous' is True"):
+        with pytest.raises(ValueError, match="'fletcher32' must be set to False if 'contiguous' is True"):
             L0BEncodingSchema(**config)
 
     def test_check_integer_fillvalue_missing(self):
@@ -214,7 +213,7 @@ class TestL0BEncodingSchema:
             "_FillValue": None,  # Missing _FillValue for integer type
             "chunksizes": [100],
         }
-        with pytest.raises(ValidationError, match="'_FillValue' must be specified for integer dtype 'int32'"):
+        with pytest.raises(ValueError, match="'_FillValue' must be specified for integer dtype 'int32'"):
             L0BEncodingSchema(**config)
 
     def test_check_integer_fillvalue_wrong_value(self):
@@ -230,7 +229,7 @@ class TestL0BEncodingSchema:
             "chunksizes": [100],
         }
         with pytest.raises(
-            ValidationError,
+            ValueError,
             match="should be set to the maximum allowed value",
         ):
             L0BEncodingSchema(**config)
@@ -294,7 +293,7 @@ class TestL0BEncodingSchema:
             "chunksizes": None,
         }
         # The first validation error encountered will be raised
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError, match="'_FillValue' must be specified for integer dtype 'int16'"):
             L0BEncodingSchema(**config)
 
     def test_single_integer_chunksize(self):

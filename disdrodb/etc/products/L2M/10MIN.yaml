@@ -1,7 +1,8 @@
 archive_options:
   strategy: event
   strategy_options:
-    min_drops: 5
+    variable: "N"
+    detection_threshold: 5
     neighbor_min_size: 2
     neighbor_time_interval: "5MIN"
     event_max_time_gap: "6H"

@@ -1,3 +1,5 @@
 archive_options:
-  product_frequency: day
+  strategy: time_block
+  strategy_options:
+    freq: month
   folder_partitioning: "year"

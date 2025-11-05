@@ -250,16 +250,19 @@ def get_default_products_configs_dir():
     return products_configs_dir
 
 
-def get_products_configs_dir():
+def get_products_configs_dir(products_configs_dir=None):
     """Return the DISDRODB products configuration directory."""
     import disdrodb
 
-    if os.environ.get("PYTEST_CURRENT_TEST"):
+    if products_configs_dir is not None:
+        return str(products_configs_dir)
+
+    if os.environ.get("PYTEST_CURRENT_TEST") and not os.environ.get("DISDRODB_VALIDATION_FLAG"):
         products_configs_dir = os.path.join(disdrodb.package_dir, "tests", "products")
     else:
         products_configs_dir = disdrodb.config.get("products_configs_dir", None)
-        if products_configs_dir is None:
-            products_configs_dir = get_default_products_configs_dir()
+        if products_configs_dir is None:  # not specified by user
+            products_configs_dir = get_default_products_configs_dir()  # take disdrodb defaults
     return products_configs_dir
 
 

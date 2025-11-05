@@ -52,50 +52,64 @@ def disdrodb_run_l0a(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-    """
-    Run the L0A processing of DISDRODB stations.
+    """Run the L0A processing of DISDRODB stations.
 
-    This function allows to launch the processing of many DISDRODB stations with a single command.
-    From the list of all available DISDRODB stations, it runs the processing
-    of the stations matching the provided data_sources, campaign_names and station_names.
+    This function launches the L0A processing for many DISDRODB stations with a single command.
+    From the list of all available DISDRODB stations, it runs the L0A conversion
+    for the stations matching the provided ``data_sources``, ``campaign_names`` and
+    ``station_names`` filters.
 
-    Parameters
-    ----------
-    data_sources : str
-        Name of data source(s) to process.
-        The name(s) must be UPPER CASE.
-        If campaign_names and station are not specified, process all stations.
-        To specify multiple data sources, write i.e.: --data_sources 'NASA EPFL NCAR'
-    campaign_names : str
-        Name of the campaign(s) to process.
-        The name(s) must be UPPER CASE.
-        To specify multiple campaigns, write i.e.: --campaign_names 'IPEX IMPACTS'
-    station_names : str
-        Station names.
-        To specify multiple stations, write i.e.: --station_names 'station1 station2'
-    force : bool
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories.
-        The default is False.
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is False.
-    parallel : bool
-        If True, the files are processed simultaneously in multiple processes.
-        Each process will use a single thread.
-        By default, the number of process is defined with os.cpu_count().
-        However, you can customize it by typing: DASK_NUM_WORKERS=4 disdrodb_run_l0a
-        If False, the files are processed sequentially in a single process.
-        If False, multi-threading is automatically exploited to speed up I/0 tasks.
-    debugging_mode : bool
-        If True, it reduces the amount of data to process.
-        It processes just the first 3 raw data files for each station.
-        The default is False.
-    data_archive_dir : str
-        DISDRODB Data Archive directory
-        Format: <...>/DISDRODB
-        If not specified, uses path specified in the DISDRODB active configuration.
-    """
+    \b
+    Processing Level - L0A:
+        L0A converts raw instrument files to the DISDRODB standardized Apache Parquet format.
+        This is the first step in the processing chain (L0A → L0B → L0C → L1 → L2E → L2M).
+
+    \b
+    Station Selection:
+        If no station filters are specified, processes ALL available stations.
+        Use ``data_sources``, ``campaign_names``, and ``station_names`` to filter stations.
+        Filters work together to narrow down the selection (AND logic).
+
+    \b
+    Performance Options:
+        --parallel: Uses multiple processes for faster processing (default: True).
+        If --parallel is enabled, each process will use a single thread to avoid issues
+        with the HDF/netCDF libraries (where applicable).
+
+        --debugging_mode: Processes only a small subset of data for quick testing (default: False).
+        --force: Overwrites existing output files (default: False).
+
+        The ``DASK_NUM_WORKERS`` environment variable controls the number of worker
+        processes used when ``--parallel`` is enabled. A sensible default is set
+        automatically when a cluster is initialized.
+
+    \b
+    Examples:
+        # Process all stations L0A conversion
+        disdrodb_run_l0a
+
+        # Process specific data sources with debugging mode
+        disdrodb_run_l0a --data_sources 'NASA EPFL' --debugging_mode
+
+        # Process specific stations with custom number of workers
+        DASK_NUM_WORKERS=8 disdrodb_run_l0a --data_sources 'NASA' --station_names 'apu01'
+
+        # Force overwrite existing files, verbose output
+        disdrodb_run_l0a --data_sources 'EPFL' --force --verbose
+
+    \b
+    Data Management:
+        L0A is an input step for downstream processing. Deleting L0A files should
+        only be done if you can re-run conversion from raw data when needed.
+
+    \b
+    Important Notes:
+        - Data source names must be UPPER CASE.
+        - Campaign names must be UPPER CASE.
+        - To specify multiple values, use space-separated strings in quotes.
+        - Use ``--debugging_mode`` for initial testing with reduced data volumes.
+
+    """  # noqa: D301
     from disdrodb.routines import run_l0a
 
     # Parse data_sources, campaign_names and station arguments

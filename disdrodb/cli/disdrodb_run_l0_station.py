@@ -115,6 +115,7 @@ def disdrodb_run_l0_station(
     from disdrodb.routines import run_l0_station
 
     data_archive_dir = parse_archive_dir(data_archive_dir)
+    metadata_archive_dir = parse_archive_dir(metadata_archive_dir)
 
     run_l0_station(
         # DISDRODB root directories

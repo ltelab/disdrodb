@@ -75,7 +75,7 @@ class TestGenerateL1:
         ds_l1 = generate_l1(ds)
         assert "dummy" in ds_l1.attrs
         assert ds_l1.attrs["sensor_name"] == "PARSIVEL2"
-    
+
     def test_idempotent_l2e_generation(self):
         """Regenerating L1 with L1 dataset should produce identical results."""
         ds = create_template_l0c_dataset(with_velocity=True)

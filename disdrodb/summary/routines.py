@@ -223,6 +223,11 @@ def create_table_rain_summary(df, temporal_resolution):
     table["n_minutes_Dmax_>7"] = np.sum(df["Dmax"] > 7).item() * accumulation_interval_minutes
     table["n_minutes_Dmax_>8"] = np.sum(df["Dmax"] > 8).item() * accumulation_interval_minutes
     table["n_minutes_Dmax_>9"] = np.sum(df["Dmax"] > 9).item() * accumulation_interval_minutes
+
+    # Convert all minutes columns to integer
+    for key in table:
+        if "minutes" in key:
+            table[key] = int(table[key])
     return table
 
 
@@ -371,9 +376,22 @@ def create_table_events_summary(df, temporal_resolution):
 
     df_events = pd.DataFrame.from_records(events_stats)
 
-    # Round float columns to nearest integer, leave ints unchanged
-    float_cols = df_events.select_dtypes(include=["float"]).columns
-    df_events[float_cols] = df_events[float_cols].astype(float).round(decimals=2)
+    # Round and cast columns
+    # - Round to 3 decimals
+    df_events["P_total"] = df_events["P_total"].round(decimals=3)
+
+    lwc_columns = [c for c in df_events.columns if "W" in c]
+    df_events[lwc_columns] = df_events[lwc_columns].round(decimals=3)
+
+    # - Cast to integer
+    df_events["duration"] = df_events["duration"].astype(int)
+    minutes_columns = [c for c in df_events.columns if "minutes" in c]
+    df_events[minutes_columns] = df_events[minutes_columns].astype(int)
+
+    # - Round to 2 decimals
+    for var in ["Dmax", "Dm", "sigma_m", "R", "Z"]:
+        names = [c for c in df_events.columns if var in c]
+        df_events[names] = df_events[names].round(decimals=2)
     return df_events
 
 
@@ -3909,7 +3927,47 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             table_events_summary.to_csv(table_events_summary_csv_filepath)
             # - Save table as pdf
             if is_latex_engine_available():
+                # Sorted by time
                 table_events_summary_pdf_filename = table_events_summary_csv_filename.replace(".csv", ".pdf")
+                table_events_summary_pdf_filepath = os.path.join(summary_dir_path, table_events_summary_pdf_filename)
+                save_table_to_pdf(
+                    df=prepare_latex_table_events_summary(table_events_summary),
+                    filepath=table_events_summary_pdf_filepath,
+                    index=True,
+                    caption="Events Summary",
+                    orientation="landscape",
+                )
+
+                # Sorted by maximum rain intensity
+                table_events_summary = table_events_summary.sort_values(by="max_R", ascending=False)
+                table_events_summary = table_events_summary.reset_index(drop=True)
+                table_events_summary_pdf_filename = define_filename(
+                    prefix="Events_Summary_Sorted_By_Rmax",
+                    extension="pdf",
+                    data_source=data_source,
+                    campaign_name=campaign_name,
+                    station_name=station_name,
+                    temporal_resolution=temporal_resolution,
+                )
+                table_events_summary_pdf_filepath = os.path.join(summary_dir_path, table_events_summary_pdf_filename)
+                save_table_to_pdf(
+                    df=prepare_latex_table_events_summary(table_events_summary),
+                    filepath=table_events_summary_pdf_filepath,
+                    index=True,
+                    caption="Events Summary",
+                    orientation="landscape",
+                )
+                # Sorted by Ptotal
+                table_events_summary = table_events_summary.sort_values(by="P_total", ascending=False)
+                table_events_summary = table_events_summary.reset_index(drop=True)
+                table_events_summary_pdf_filename = define_filename(
+                    prefix="Events_Summary_Sorted_By_Ptot",
+                    extension="pdf",
+                    data_source=data_source,
+                    campaign_name=campaign_name,
+                    station_name=station_name,
+                    temporal_resolution=temporal_resolution,
+                )
                 table_events_summary_pdf_filepath = os.path.join(summary_dir_path, table_events_summary_pdf_filename)
                 save_table_to_pdf(
                     df=prepare_latex_table_events_summary(table_events_summary),
