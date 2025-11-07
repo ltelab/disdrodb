@@ -507,7 +507,7 @@ def classify_raw_spectrum(
     label = xr.ones_like(ds["time"], dtype=float) * -1  # [mm]
 
     # No precipitation
-    label = xr.where(n_particles == 0, 1, label)
+    label = xr.where(n_particles == 0, 0, label)
 
     # Graupel only
     cond = (fraction_graupel_only_tot > 0.7) & (n_snow_large < 1)

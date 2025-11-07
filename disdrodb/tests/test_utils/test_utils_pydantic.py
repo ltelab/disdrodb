@@ -16,7 +16,8 @@
 # -----------------------------------------------------------------------------.
 """Test pydantic custom validation model."""
 import pytest
-from pydantic import BaseModel, ValidationError, Field, model_validator
+from pydantic import BaseModel, Field, ValidationError, model_validator
+
 from disdrodb.utils.pydantic import CustomBaseModel, format_validation_error
 
 
@@ -33,17 +34,17 @@ class ExampleModel(BaseModel):
 class CustomExampleModel(CustomBaseModel):
     name: str
     age: int = Field(..., ge=0)
-         
+
 
 class RootModel(CustomBaseModel):
     """Model that raises a root-level error."""
+
     value: int
 
     @model_validator(mode="before")
     def check_values(cls, values):
         # Always trigger a model-level validation error for testing
         raise ValueError("Invalid input value")
-
 
 
 class TestFormatValidationError:
@@ -55,10 +56,7 @@ class TestFormatValidationError:
             ExampleModel(name=123, age=10, nested={"value": 5})  # name should be str
         formatted = format_validation_error(exc_info.value)
         assert "Field 'name'" in formatted
-        assert (
-            "Input should be a valid string" in formatted
-            or "str type expected" in formatted
-        )
+        assert "Input should be a valid string" in formatted or "str type expected" in formatted
         assert "got" in formatted
 
     def test_missing_field_error(self):
@@ -93,7 +91,7 @@ class TestFormatValidationError:
         """Should just convert non-ValidationError input to string."""
         msg = format_validation_error(ValueError("something went wrong"))
         assert msg == "something went wrong"
-    
+
     def test_integration_in_custom_base_model(self):
         """Test CustomBaseModel."""
         with pytest.raises(ValueError) as exc_info:

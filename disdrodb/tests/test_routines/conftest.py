@@ -16,39 +16,40 @@
 # -----------------------------------------------------------------------------.
 """Fixtures for testing validation of DISDRODB product options."""
 import os
-import pytest 
+
+import pytest
 
 
 @pytest.fixture
 def enable_config_validation():
     """
     Fixture that sets DISDRODB_VALIDATION_FLAG to enable config-based validation.
-    
+
     This allows get_products_configs_dir() to use the configured products_configs_dir
     instead of the default test directory during pytest execution.
     """
     # Set the validation flag
     os.environ["DISDRODB_VALIDATION_FLAG"] = "1"
-    
+
     yield
-    
+
     # Clean up - remove the flag
     if "DISDRODB_VALIDATION_FLAG" in os.environ:
         del os.environ["DISDRODB_VALIDATION_FLAG"]
-        
-        
+
+
 @pytest.fixture
-def tmp_products_configs_dir(tmp_path, enable_config_validation):
+def tmp_products_configs_dir(tmp_path, enable_config_validation):  # noqa: ARG001
     """Fixture to set up temporary products configuration directory."""
-    import disdrodb 
-    
+    import disdrodb
+
     # Store original config
     original_config = disdrodb.config.get("products_configs_dir", None)
-    
+
     # Set temporary config
     disdrodb.config.set({"products_configs_dir": str(tmp_path)})
-    
+
     yield tmp_path
-    
+
     # Restore original config
     disdrodb.config.set({"products_configs_dir": original_config})

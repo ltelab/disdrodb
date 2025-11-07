@@ -14,14 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""pydantic utilities"""
+"""Definition of pydantic validation custom class."""
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 
 def format_validation_error(validation_error: Exception) -> str:
-    """
-    Format a Pydantic ValidationError for better readability.
-    """
+    """Format a Pydantic ValidationError for better readability."""
     if not isinstance(validation_error, ValidationError):
         return str(validation_error)
 
@@ -29,7 +27,7 @@ def format_validation_error(validation_error: Exception) -> str:
         """Safely truncate long inputs."""
         text = repr(value)
         if len(text) > max_len:
-            return text[:max_len - 5] + " ...]"
+            return text[: max_len - 5] + " ...]"
         return text
 
     model_name_attr = getattr(validation_error, "title", None)
@@ -41,12 +39,12 @@ def format_validation_error(validation_error: Exception) -> str:
         path = ".".join(str(loc) for loc in err["loc"]) or "<model root>"
         msg = err["msg"]
         err_type = err["type"]
-        
+
         # Handles both "Value error, ..." and "Value error: ..."
         if msg.lower().startswith("value error"):
             msg = msg.split(",", 1)[-1] if "," in msg else msg.split(":", 1)[-1]
             msg = msg.strip()
-                
+
         # Model-level (root) errors (raise in after or before)
         if path == "<model root>":
             formatted = f"  • {msg}"
@@ -60,17 +58,18 @@ def format_validation_error(validation_error: Exception) -> str:
         formatted_errors.append(formatted)
 
     return "\n".join(formatted_errors)
-                     
+
 
 class CustomBaseModel(BaseModel):
-    """Custom pydantic base model.
-    
+    """Custom pydantic BaseModel.
+
     Forbid extra keys.
     Hide URLs in error message.
     Simplify error message.
     """
-    model_config = ConfigDict(extra="forbid", hide_error_urls=True) 
-    
+
+    model_config = ConfigDict(extra="forbid", hide_error_urls=True)
+
     # Override the standard ValidationError print behavior
     def __init__(self, **data):
         try:

@@ -15,24 +15,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB product options validation."""
-import pytest
-import numpy as np
 import copy
-import disdrodb
 import os
+
+import numpy as np
+import pytest
+
+import disdrodb
 from disdrodb import package_dir
 from disdrodb.routines.options_validation import (
     ArchiveOptions,
     ArchiveOptionsTimeBlock,
     EventStrategyOptions,
-    L0CProductGlobalConfig,
-    L1ProductConfig,
-    L1ProductGlobalConfig,
-    L2EProductConfig,
-    L2EProductGlobalConfig,
     L2EProductOptions,
     L2MModelConfig,
-    L2MProductConfig,
     L2MProductGlobalConfig,
     L2MProductOptions,
     RadarOptions,
@@ -42,25 +38,25 @@ from disdrodb.routines.options_validation import (
     _validate_sensor_subdirectories,
     validate_all_product_yaml_files,
     validate_l2m_model_configs,
-    validate_products_configurations,
     validate_product_configuration_structure,
+    validate_products_configurations,
     validate_temporal_resolution_consistency,
 )
-from disdrodb.utils.yaml import write_yaml
 from disdrodb.tests.test_routines.options_defaults import (
-    ARCHIVE_OPTIONS_TIME_BLOCK,
     ARCHIVE_OPTIONS_EVENT,
-    RADAR_OPTIONS, 
-    L2E_PRODUCT_OPTIONS, 
-    L2M_PRODUCT_OPTIONS, 
-    L0C_GLOBAL_YAML, 
-    L1_GLOBAL_YAML, 
-    L2E_GLOBAL_YAML, 
-    L2M_GLOBAL_YAML, 
-    GAMMA_ML_CONFIG, 
-    GAMMA_GS_CONFIG, 
+    ARCHIVE_OPTIONS_TIME_BLOCK,
+    GAMMA_GS_CONFIG,
+    GAMMA_ML_CONFIG,
+    L0C_GLOBAL_YAML,
+    L1_GLOBAL_YAML,
+    L2E_GLOBAL_YAML,
+    L2E_PRODUCT_OPTIONS,
+    L2M_GLOBAL_YAML,
+    L2M_PRODUCT_OPTIONS,
     LOGNORMAL_ML_CONFIG,
+    RADAR_OPTIONS,
 )
+from disdrodb.utils.yaml import write_yaml
 
 
 class TestTimeBlockStrategyOptions:
@@ -70,10 +66,10 @@ class TestTimeBlockStrategyOptions:
         """Test valid frequency validation."""
         options = TimeBlockStrategyOptions(freq="day")
         assert options.freq == "day"
-        
+
         options = TimeBlockStrategyOptions(freq="month")
         assert options.freq == "month"
-        
+
         options = TimeBlockStrategyOptions(freq="year")
         assert options.freq == "year"
 
@@ -97,7 +93,7 @@ class TestEventStrategyOptions:
         """Test that negative values are rejected."""
         data = copy.deepcopy(ARCHIVE_OPTIONS_EVENT["strategy_options"])
         data["detection_threshold"] = -1
-        
+
         with pytest.raises(ValueError):
             EventStrategyOptions(**data)
 
@@ -105,7 +101,7 @@ class TestEventStrategyOptions:
         """Test invalid time interval validation."""
         data = copy.deepcopy(ARCHIVE_OPTIONS_EVENT["strategy_options"])
         data["neighbor_time_interval"] = "INVALID"
-        
+
         with pytest.raises(ValueError):
             EventStrategyOptions(**data)
 
@@ -119,7 +115,7 @@ class TestArchiveOptionsTimeBlock:
         options = ArchiveOptionsTimeBlock(**data)
         assert options.strategy == "time_block"
         assert options.strategy_options.freq == "day"
-    
+
     def test_invalid_folder_partitioning(self):
         """Test invalid folder partitioning."""
         data = copy.deepcopy(ARCHIVE_OPTIONS_TIME_BLOCK)
@@ -132,14 +128,14 @@ class TestArchiveOptionsTimeBlock:
         data = copy.deepcopy(ARCHIVE_OPTIONS_EVENT)
         with pytest.raises(ValueError):
             ArchiveOptionsTimeBlock(**data)
-    
+
     def test_extra_key_raise_error(self):
         """Test valid time block archive options."""
         data = copy.deepcopy(ARCHIVE_OPTIONS_TIME_BLOCK)
         data["extra_key"] = "dummy"
         with pytest.raises(ValueError):
             ArchiveOptionsTimeBlock(**data)
-        
+
 
 class TestArchiveOptions:
     """Test ArchiveOptions validation."""
@@ -157,7 +153,7 @@ class TestArchiveOptions:
         options = ArchiveOptions(**data)
         assert options.strategy == "event"
         assert isinstance(options.strategy_options, EventStrategyOptions)
-        
+
     def test_strategy_options_mixed_up(self):
         """Test raise error if strategy options do not correspond to specified strategy."""
         data = copy.deepcopy(ARCHIVE_OPTIONS_EVENT)
@@ -210,7 +206,7 @@ class TestL2EProductOptions:
         """Test diameter range validation."""
         data = copy.deepcopy(L2E_PRODUCT_OPTIONS)
         data["minimum_diameter"] = 0.2
-        data["maximum_diameter"] = 0.1 # Less than minimum_diameter
+        data["maximum_diameter"] = 0.1  # Less than minimum_diameter
         with pytest.raises(ValueError, match="maximum_diameter must be greater than minimum_diameter"):
             L2EProductOptions(**data)
 
@@ -218,7 +214,7 @@ class TestL2EProductOptions:
         """Test velocity range validation."""
         data = copy.deepcopy(L2E_PRODUCT_OPTIONS)
         data["minimum_velocity"] = 0.5
-        data["maximum_velocity"] = 0.1 # Less than minimum_velocity
+        data["maximum_velocity"] = 0.1  # Less than minimum_velocity
         with pytest.raises(ValueError, match="maximum_velocity must be greater than minimum_velocity"):
             L2EProductOptions(**data)
 
@@ -232,7 +228,7 @@ class TestL2EProductOptions:
 
 class TestL2MProductOptions:
     """Test L2MProductOptions validation."""
-    
+
     def test_valid_l2m_options(self):
         """Test valid L2M product options."""
         data = copy.deepcopy(L2M_PRODUCT_OPTIONS)
@@ -244,7 +240,7 @@ class TestL2MProductOptions:
         """Test diameter range validation."""
         data = copy.deepcopy(L2M_PRODUCT_OPTIONS)
         data["diameter_min"] = 0.2
-        data["diameter_max"] = 0.1 # Less than minimum_diameter
+        data["diameter_max"] = 0.1  # Less than minimum_diameter
         with pytest.raises(ValueError, match="diameter_max must be greater than diameter_min"):
             L2MProductOptions(**data)
 
@@ -272,7 +268,7 @@ class TestL2MModelConfig:
         """Test invalid PSD model."""
         data = copy.deepcopy(GAMMA_ML_CONFIG)
         data["psd_model"] = "INVALID"
-        
+
         with pytest.raises(ValueError, match="Invalid psd_model"):
             L2MModelConfig(**data)
 
@@ -280,44 +276,48 @@ class TestL2MModelConfig:
         """Test invalid optimization kwargs."""
         data = copy.deepcopy(GAMMA_ML_CONFIG)
         data["optimization_kwargs"]["probability_method"] = "INVALID"
-        
+
         with pytest.raises(ValueError):
             L2MModelConfig(**data)
-            
- 
+
+
 ####-------------------------------------------------------------------------.
 class TestTemporalResolutionsValidationMixin:
     """Test TemporalResolutionsValidationMixin."""
 
     def test_valid_temporal_resolutions(self):
         """Test valid temporal resolutions validation."""
+
         class TestModel(TemporalResolutionsValidationMixin):
-            pass 
-               
+            pass
+
         result = TestModel.validate_temporal_resolutions(["1MIN", "5MIN"])
         assert result == ["1MIN", "5MIN"]
 
     def test_empty_temporal_resolutions(self):
         """Test empty temporal resolutions list."""
+
         class TestModel(TemporalResolutionsValidationMixin):
-            pass 
-        
+            pass
+
         with pytest.raises(ValueError, match="temporal_resolutions cannot be empty"):
             TestModel.validate_temporal_resolutions([])
 
     def test_duplicate_temporal_resolutions(self):
         """Test duplicate temporal resolutions."""
+
         class TestModel(TemporalResolutionsValidationMixin):
-            pass 
-        
+            pass
+
         with pytest.raises(ValueError, match="temporal_resolutions contains duplicates"):
             TestModel.validate_temporal_resolutions(["1MIN", "5MIN", "1MIN"])
 
     def test_invalid_temporal_resolution(self):
         """Test invalid temporal resolution."""
+
         class TestModel(TemporalResolutionsValidationMixin):
-            pass 
-        
+            pass
+
         with pytest.raises(ValueError):
             TestModel.validate_temporal_resolutions(["INVALID"])
 
@@ -338,7 +338,7 @@ class TestValidateProductConfigurationStructure:
         # L1 missing
         (tmp_path / "L2E").mkdir()
         (tmp_path / "L2M").mkdir()
-        
+
         with pytest.raises(FileNotFoundError, match="Required product directory not found"):
             validate_product_configuration_structure(str(tmp_path))
 
@@ -350,12 +350,12 @@ class TestValidateProductConfigurationStructure:
             product_dir.mkdir()
             if product != "L1":  # Skip L1 to test missing global.yaml
                 write_yaml({"test": "config"}, product_dir / "global.yaml")
-        
+
         # Create L2M/MODELS directory
         models_dir = tmp_path / "L2M" / "MODELS"
         models_dir.mkdir()
         write_yaml({"psd_model": "GammaPSD"}, models_dir / "model.yaml")
-        
+
         with pytest.raises(FileNotFoundError, match="Required global.yaml file not found"):
             validate_product_configuration_structure(str(tmp_path))
 
@@ -364,12 +364,12 @@ class TestValidateProductConfigurationStructure:
         product_dir = tmp_path / "L1"
         product_dir.mkdir()
         write_yaml({"test": "config"}, product_dir / "global.yaml")
-        
+
         # Create invalid sensor directory
         invalid_sensor_dir = product_dir / "INVALID_SENSOR"
         invalid_sensor_dir.mkdir()
         write_yaml({"test": "config"}, invalid_sensor_dir / "config.yaml")
-        
+
         with pytest.raises(ValueError, match="Invalid sensor directory 'INVALID_SENSOR'"):
             _validate_sensor_subdirectories(product_dir, ["PARSIVEL2"], "L1")
 
@@ -377,12 +377,12 @@ class TestValidateProductConfigurationStructure:
         """Test validation when sensor directory has no YAML files."""
         product_dir = tmp_path / "L1"
         product_dir.mkdir()
-        
+
         # Create valid sensor directory but no YAML files
         sensor_dir = product_dir / "PARSIVEL2"
         sensor_dir.mkdir()
         (sensor_dir / "readme.txt").write_text("not yaml")
-        
+
         with pytest.raises(FileNotFoundError, match="No YAML files found in sensor directory"):
             _validate_sensor_subdirectories(product_dir, ["PARSIVEL2"], "L1")
 
@@ -390,7 +390,7 @@ class TestValidateProductConfigurationStructure:
         """Test L2M structure validation with missing MODELS directory."""
         l2m_dir = tmp_path / "L2M"
         l2m_dir.mkdir()
-        
+
         with pytest.raises(FileNotFoundError, match="Required MODELS directory not found"):
             _validate_l2m_structure(l2m_dir)
 
@@ -400,26 +400,26 @@ class TestValidateProductConfigurationStructure:
         models_dir = l2m_dir / "MODELS"
         models_dir.mkdir(parents=True)
         (models_dir / "readme.txt").write_text("not yaml")
-        
+
         with pytest.raises(FileNotFoundError, match="No YAML model configuration files found"):
             _validate_l2m_structure(l2m_dir)
 
 
-####-------------------------------------------------------------------------. 
+####-------------------------------------------------------------------------.
 
 
 class TestL2MProductConfig:
     """Test L2M product configuration.
-    
+
     Here we use the disdrodb test products configs,
     which includes the GAMMA_ML model.""
     """
 
     def test_l2m_product_config_valid(self):
-        """Test valid L2M product configuration."""       
+        """Test valid L2M product configuration."""
         data = copy.deepcopy(L2M_GLOBAL_YAML)
         data["models"] = ["GAMMA_ML"]
-        
+
         config = L2MProductGlobalConfig(**data)
         assert config.models == ["GAMMA_ML"]
 
@@ -427,15 +427,15 @@ class TestL2MProductConfig:
         """Test L2M config with missing model files."""
         data = copy.deepcopy(L2M_GLOBAL_YAML)
         data["models"] = ["NONEXISTENT"]
-             
+
         with pytest.raises(ValueError, match="L2M model configuration files not found"):
             L2MProductGlobalConfig(**data)
-    
+
     def test_l2m_product_config_duplicate_models(self):
-        """Test L2M config with duplicated model names."""        
+        """Test L2M config with duplicated model names."""
         data = copy.deepcopy(L2M_GLOBAL_YAML)
         data["models"] = ["GAMMA_ML", "GAMMA_ML"]
-             
+
         with pytest.raises(ValueError, match="'models' list contains duplicates"):
             L2MProductGlobalConfig(**data)
 
@@ -443,17 +443,17 @@ class TestL2MProductConfig:
         """Test L2M config with empty models list."""
         data = copy.deepcopy(L2M_GLOBAL_YAML)
         data["models"] = []
-        
+
         with pytest.raises(ValueError, match="'models' list cannot be empty"):
             L2MProductGlobalConfig(**data)
 
 
 class TestValidateModelConfigs:
- 
+
     def test_models_validation_with_valid_configuration(self, tmp_products_configs_dir):
         """Test successful L2M model config validation."""
         create_minimal_product_configs(tmp_products_configs_dir)
-        
+
         # Should not raise any exceptions
         validate_l2m_model_configs(tmp_products_configs_dir)
 
@@ -464,17 +464,17 @@ class TestValidateModelConfigs:
         l2m_dir.mkdir()
         models_dir = l2m_dir / "MODELS"
         models_dir.mkdir()
-        
+
         invalid_config = {
             "psd_model": "INVALID_MODEL",  # Invalid model
             "optimization": "ML",
-            "optimization_kwargs": {}
+            "optimization_kwargs": {},
         }
         write_yaml(invalid_config, models_dir / "INVALID_MODEL.yaml")
-        
+
         with pytest.raises(ValueError, match="L2M model configuration validation failed"):
             validate_l2m_model_configs(tmp_products_configs_dir)
- 
+
 
 class TestTemporalResolutionConsistency:
     """Test temporal resolution consistency validation."""
@@ -483,14 +483,14 @@ class TestTemporalResolutionConsistency:
         """Test temporal resolution consistency validation print warnings."""
         create_minimal_product_configs(tmp_path)
         create_sensor_specific_configs(tmp_path)
-        
+
         # This should print WARNINGS due to mismatched temporal resolutions
         validate_temporal_resolution_consistency(tmp_path)
         captured = capsys.readouterr()
         assert "WARNING" in captured.out
 
 
-####-------------------------------------------------------------------------. 
+####-------------------------------------------------------------------------.
 
 
 def create_minimal_product_configs(config_dir):
@@ -500,26 +500,26 @@ def create_minimal_product_configs(config_dir):
         "L0C": L0C_GLOBAL_YAML,
         "L1": L1_GLOBAL_YAML,
         "L2E": L2E_GLOBAL_YAML,
-        "L2M": L2M_GLOBAL_YAML
+        "L2M": L2M_GLOBAL_YAML,
     }
-    
+
     # Write product level global YAML files
     for product, yaml_config in yaml_configs.items():
         product_dir = config_dir / product
         product_dir.mkdir(parents=True, exist_ok=True)
         write_yaml(yaml_config, product_dir / "global.yaml")
-    
+
     # Create L2M Models using predefined configurations
     models_dir = config_dir / "L2M" / "MODELS"
     models_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Create a simplified set of models for minimal config
     minimal_model_configs = {
         "GAMMA_ML": GAMMA_ML_CONFIG,
         "GAMMA_GS": GAMMA_GS_CONFIG,
         "LOGNORMAL_ML": LOGNORMAL_ML_CONFIG,
     }
-    
+
     for model_name, model_config in minimal_model_configs.items():
         write_yaml(model_config, models_dir / f"{model_name}.yaml")
 
@@ -529,109 +529,106 @@ def create_sensor_specific_configs(config_dir):
     # Create L1 PARSIVEL 2 directory
     l1_parsivel_dir = config_dir / "L1" / "PARSIVEL2"
     l1_parsivel_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Create L2E PARSIVEL 2 directory
     l2e_parsivel_dir = config_dir / "L2E" / "PARSIVEL2"
     l2e_parsivel_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Create L2E PARSIVEL 2 directory
     l2m_parsivel_dir = config_dir / "L2M" / "PARSIVEL2"
     l2m_parsivel_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Create L1 sensor-level global YAML file
     l1_parsivel_config = copy.deepcopy(L1_GLOBAL_YAML)
     l1_parsivel_config["temporal_resolutions"] = ["1MIN", "2MIN"]
     l1_parsivel_config["archive_options"] = {
         "strategy": "time_block",
         "strategy_options": {"freq": "year"},
-        "folder_partitioning": "year/month/day"
+        "folder_partitioning": "year/month/day",
     }
     write_yaml(l1_parsivel_config, l1_parsivel_dir / "global.yaml")
-    
+
     # Create L1 sensor-level temporal YAML file
     l1_1min_config = {
         "archive_options": {
             "strategy": "time_block",
             "strategy_options": {"freq": "month"},
-            "folder_partitioning": "year/month/day"
-        }
+            "folder_partitioning": "year/month/day",
+        },
     }
     write_yaml(l1_1min_config, l1_parsivel_dir / "1MIN.yaml")
-    
+
     # Create L2E sensor-level global YAML file
     l2e_parsivel_config = copy.deepcopy(L2E_GLOBAL_YAML)
     l2e_parsivel_config["radar_enabled"] = True  # Enable radar for this sensor
     write_yaml(l2e_parsivel_config, l2e_parsivel_dir / "global.yaml")
-    
+
     # Create L2M sensor-level global YAML file
     l2m_parsivel_config = copy.deepcopy(L2M_GLOBAL_YAML)
     l2m_parsivel_config["temporal_resolutions"] = ["1MIN", "2MIN", "30MIN"]
     write_yaml(l2m_parsivel_config, l2m_parsivel_dir / "global.yaml")
-    
-    
+
+
 class TestValidateAllProductsYAMLfiles:
-    
+
     def test_sensor_level_configuration_override_global(self, tmp_products_configs_dir):
         """Test that sensor_level configuration override product-level configuration."""
         create_minimal_product_configs(tmp_products_configs_dir)
         create_sensor_specific_configs(tmp_products_configs_dir)
-        
+
         # Test that validation passes with hierarchical configs
         validate_all_product_yaml_files(tmp_products_configs_dir)
-
 
     def test_raise_error_with_corrupted_yaml(self, tmp_products_configs_dir):
         """Test raise error with corrupted YAML file."""
         # Create minimal structure
         l1_dir = tmp_products_configs_dir / "L1"
         l1_dir.mkdir(parents=True)
-        
+
         # Write invalid YAML
         (l1_dir / "global.yaml").write_text("invalid: yaml: syntax: [")
-        
-        with pytest.raises(Exception): # ScannerError
+
+        with pytest.raises(Exception):  # ScannerError  # noqa: B017
             validate_all_product_yaml_files(tmp_products_configs_dir)
-    
+
     def test_raise_error_invalid_global_config(self, tmp_products_configs_dir):
         """Test raise error with invalid product-level global YAML file."""
-
         create_minimal_product_configs(tmp_products_configs_dir)
         create_sensor_specific_configs(tmp_products_configs_dir)
-        
+
         # Create invalid YAML file
         l1_dir = tmp_products_configs_dir / "L1"
         l1_dir.mkdir(parents=True, exist_ok=True)
         (l1_dir / "global.yaml").write_text("invalid: dummy")
-                
+
         with pytest.raises(ValueError):
             validate_all_product_yaml_files(tmp_products_configs_dir)
-        
+
     def test_raise_error_invalid_sensor_level_global_config(self, tmp_products_configs_dir):
         """Test raise error with invalid sensor-level global YAML file."""
-
         create_minimal_product_configs(tmp_products_configs_dir)
         create_sensor_specific_configs(tmp_products_configs_dir)
-        
+
         # Create invalid YAML file
         l1_dir = tmp_products_configs_dir / "L1" / "LPM"
         l1_dir.mkdir(parents=True, exist_ok=True)
         (l1_dir / "global.yaml").write_text("invalid: dummy")
-                
+
         with pytest.raises(ValueError):
             validate_all_product_yaml_files(tmp_products_configs_dir)
-    
+
     def test_raise_error_sensor_level_temporal_config(self, tmp_products_configs_dir):
         """Test raise error with invalid sensor-level temporal global YAML file."""
         create_minimal_product_configs(tmp_products_configs_dir)
         create_sensor_specific_configs(tmp_products_configs_dir)
-        
+
         # Create invalid YAML file
-        l1_dir = tmp_products_configs_dir / "L1" / "LPM" 
+        l1_dir = tmp_products_configs_dir / "L1" / "LPM"
         l1_dir.mkdir(parents=True, exist_ok=True)
         (l1_dir / "1MIN.yaml").write_text("invalid: dummy")
-        with pytest.raises(ValueError):        
-            validate_all_product_yaml_files(tmp_products_configs_dir) 
-     
+        with pytest.raises(ValueError):
+            validate_all_product_yaml_files(tmp_products_configs_dir)
+
 
 ####--------------------------------------------------------------------------------------------------
 
@@ -648,5 +645,3 @@ def test_validate_disdrodb_tests_products_configurations(enable_config_validatio
     products_configs_dir = os.path.join(package_dir, "tests", "products")
     with disdrodb.config.set({"products_configs_dir": products_configs_dir}):
         validate_products_configurations(products_configs_dir)
-         
-    

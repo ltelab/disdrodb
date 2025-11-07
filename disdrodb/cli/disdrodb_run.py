@@ -37,7 +37,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_stations_options
 @click_l0_archive_options
 @click.option(
-     "-l1",
+    "-l1",
     "--l1_processing",
     type=bool,
     show_default=True,

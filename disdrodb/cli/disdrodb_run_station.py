@@ -31,6 +31,7 @@ from disdrodb.utils.cli import (
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
+
 # -------------------------------------------------------------------------.
 # Click Command Line Interface decorator
 @click.command()
@@ -38,7 +39,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_processing_options
 @click_l0_archive_options
 @click.option(
-     "-l1",
+    "-l1",
     "--l1_processing",
     type=bool,
     show_default=True,
@@ -87,10 +88,10 @@ def disdrodb_run_station(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-   """Run the complete processing of a specific DISDRODB station.
+    """Run the complete processing of a specific DISDRODB station.
 
-    This function processes a single station through the complete DISDRODB processing 
-    chain, from raw data ingestion to final derived products. All processing levels 
+    This function processes a single station through the complete DISDRODB processing
+    chain, from raw data ingestion to final derived products. All processing levels
     are executed in sequence for the specified station.
 
     \b
@@ -99,7 +100,7 @@ def disdrodb_run_station(
         L0B: L0A data converted to DISDRODB standardized netCDF4 format
         L0C: Apply time QC and consolidate L0B data into (by default daily) netCDF files
         L1:  Temporally resample L0C data to standard intervals (1-60 minutes), apply QC algorithms
-             and determine precipitation phase and hydrometeors types
+                and determine precipitation phase and hydrometeors types
         L2E: Compute empirical integral DSD variables (e.g., rain rate, liquid water content)
         L2M: Fit parametric DSD models and compute model-based integral DSD variables
 
@@ -152,7 +153,7 @@ def disdrodb_run_station(
         - Processing validates chain consistency and will raise errors for gaps
         - Station-specific processing may require significant time for large datasets
         - Use --debugging_mode for initial testing with reduced data volumes
-    """ # noqa: D301
+    """  # noqa: D301
     from disdrodb.routines import run_station
 
     data_archive_dir = parse_archive_dir(data_archive_dir)

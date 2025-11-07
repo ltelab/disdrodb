@@ -16,6 +16,7 @@
 # -----------------------------------------------------------------------------.
 """Script to check the validity of the DISDRODB products configuration files."""
 import sys
+
 import click
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
@@ -25,13 +26,15 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 
 @click.command()
-@click.option("--products_configs_dir",
-              type=str, 
-              show_default=True, default=None, 
-              help="Directory with DISDRODB products configurations files")
+@click.option(
+    "--products_configs_dir",
+    type=str,
+    show_default=True,
+    default=None,
+    help="Directory with DISDRODB products configurations files",
+)
 def disdrodb_validate_products_configurations(products_configs_dir):
     """Validate the DISDRODB products configuration files."""
     from disdrodb.routines.options_validation import validate_products_configurations
-    
+
     validate_products_configurations(products_configs_dir)
-     

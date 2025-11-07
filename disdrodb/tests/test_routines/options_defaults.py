@@ -1,9 +1,8 @@
-
 # Base configuration components
 ARCHIVE_OPTIONS_TIME_BLOCK = {
     "strategy": "time_block",
     "strategy_options": {"freq": "day"},
-    "folder_partitioning": "year"
+    "folder_partitioning": "year",
 }
 
 ARCHIVE_OPTIONS_EVENT = {
@@ -15,9 +14,9 @@ ARCHIVE_OPTIONS_EVENT = {
         "neighbor_time_interval": "1MIN",
         "event_max_time_gap": "5MIN",
         "event_min_duration": "10MIN",
-        "event_min_size": 20
+        "event_min_size": 20,
     },
-    "folder_partitioning": "year/month"
+    "folder_partitioning": "year/month",
 }
 
 RADAR_OPTIONS = {
@@ -28,7 +27,7 @@ RADAR_OPTIONS = {
     "axis_ratio_model": "Thurai2007",
     "permittivity_model": "Turner2016",
     "water_temperature": 10,
-    "elevation_angle": 0
+    "elevation_angle": 0,
 }
 
 L2E_PRODUCT_OPTIONS = {
@@ -49,7 +48,7 @@ L2E_PRODUCT_OPTIONS = {
     "maintain_drops_smaller_than": 1,
     "maintain_drops_slower_than": 2.5,
     "maintain_smallest_drops": True,
-    "remove_splashing_drops": True
+    "remove_splashing_drops": True,
 }
 
 L2M_PRODUCT_OPTIONS = {
@@ -60,17 +59,17 @@ L2M_PRODUCT_OPTIONS = {
     "gof_metrics": True,
     "minimum_ndrops": 1,
     "minimum_nbins": 5,
-    "minimum_rain_rate": 0.01
+    "minimum_rain_rate": 0.01,
 }
 
 # Complete product configurations
 L0C_GLOBAL_YAML = {
-    "archive_options": ARCHIVE_OPTIONS_TIME_BLOCK
+    "archive_options": ARCHIVE_OPTIONS_TIME_BLOCK,
 }
 
 L1_GLOBAL_YAML = {
     "temporal_resolutions": ["1MIN", "5MIN", "10MIN", "ROLL1MIN"],
-    "archive_options": ARCHIVE_OPTIONS_TIME_BLOCK
+    "archive_options": ARCHIVE_OPTIONS_TIME_BLOCK,
 }
 
 L2E_GLOBAL_YAML = {
@@ -78,11 +77,11 @@ L2E_GLOBAL_YAML = {
     "archive_options": {
         "strategy": "time_block",
         "strategy_options": {"freq": "month"},
-        "folder_partitioning": ""
+        "folder_partitioning": "",
     },
     "product_options": L2E_PRODUCT_OPTIONS,
     "radar_enabled": False,
-    "radar_options": RADAR_OPTIONS
+    "radar_options": RADAR_OPTIONS,
 }
 
 L2M_GLOBAL_YAML = {
@@ -95,11 +94,11 @@ L2M_GLOBAL_YAML = {
     "archive_options": {
         "strategy": "time_block",
         "strategy_options": {"freq": "month"},
-        "folder_partitioning": ""
+        "folder_partitioning": "",
     },
     "product_options": L2M_PRODUCT_OPTIONS,
     "radar_enabled": False,
-    "radar_options": RADAR_OPTIONS
+    "radar_options": RADAR_OPTIONS,
 }
 
 # L2M Model configurations
@@ -111,8 +110,8 @@ GAMMA_ML_CONFIG = {
         "probability_method": "cdf",
         "likelihood": "multinomial",
         "truncated_likelihood": True,
-        "optimizer": "Nelder-Mead"
-    }
+        "optimizer": "Nelder-Mead",
+    },
 }
 
 GAMMA_GS_CONFIG = {
@@ -121,18 +120,18 @@ GAMMA_GS_CONFIG = {
     "optimization_kwargs": {
         "target": "ND",
         "transformation": "identity",
-        "error_order": 1
-    }
+        "error_order": 1,
+    },
 }
 
 LOGNORMAL_ML_CONFIG = {
-     "psd_model": "LognormalPSD",
-     "optimization": "ML",
-     "optimization_kwargs": {
-         "init_method": None,
-         "probability_method": "cdf",
-         "likelihood": "multinomial",
-         "truncated_likelihood": True,
-         "optimizer": "Nelder-Mead"
-    }
+    "psd_model": "LognormalPSD",
+    "optimization": "ML",
+    "optimization_kwargs": {
+        "init_method": None,
+        "probability_method": "cdf",
+        "likelihood": "multinomial",
+        "truncated_likelihood": True,
+        "optimizer": "Nelder-Mead",
+    },
 }
