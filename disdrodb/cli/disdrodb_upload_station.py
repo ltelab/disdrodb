@@ -51,35 +51,44 @@ def disdrodb_upload_station(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-    """
-    Upload data from a single DISDRODB station on a remote repository.
+    """Upload raw data from a single DISDRODB station to the DISDRODB Decentralized Data Archive.
 
-    This function also automatically update the disdrodb_data url in the metadata file.
+    Currently, only upload to the Zenodo data repository is implemented.
 
-    Parameters
-    ----------
-    data_source : str
-        The name of the institution (for campaigns spanning multiple countries) or
-        the name of the country (for campaigns or sensor networks within a single country).
-        Must be provided in UPPER CASE.
-    campaign_name : str
-        The name of the campaign. Must be provided in UPPER CASE.
-    station_name : str
-        The name of the station.
-    data_archive_dir : str (optional)
-        The directory path where the DISDRODB Data Archive is located.
-        The directory path must end with ``<...>/DISDRODB``.
-        If ``None``, it uses the ``data_archive_dir`` path specified
-        in the DISDRODB active configuration.
-    platform: str, optional
-        Name of the remote data storage platform.
-        The default platform is ``"sandbox.zenodo"`` (for testing purposes).
-        Switch to ``"zenodo"`` for final data dissemination.
-    force: bool, optional
-        If ``True``, upload the data and overwrite the ``disdrodb_data_url``.
-        The default value is ``force=False``.
+    The station metadata file is automatically updated with the remote data URL.
 
-    """
+    PLEASE UPLOAD JUST YOUR DATA !
+
+
+    \b
+    Upload Behavior:
+        By default, upload is skipped if data already exists on a remote location.
+        Use '--force True' to upload even if data already exists remotely.
+        Warning: Forcing upload will overwrite the existing disdrodb_data_url in metadata.
+
+    \b
+    Upload Options:
+        --platform: Remote platform name (default: 'sandbox.zenodo' for testing)
+            Use 'zenodo' for final data dissemination
+        --force: Upload even if data already exists remotely (default: False)
+
+    \b
+    Archive Directories:
+        --data_archive_dir: Custom path to DISDRODB data archive
+        --metadata_archive_dir: Custom path to DISDRODB metadata archive
+        If not specified, paths from the active DISDRODB configuration are used
+
+    \b
+    Examples:
+        # Upload a station to sandbox for testing
+        disdrodb_upload_station DATA_SOURCE CAMPAIGN_NAME STATION_NAME
+
+        # Upload a station to production Zenodo
+        disdrodb_upload_station DATA_SOURCE CAMPAIGN_NAME STATION_NAME --platform zenodo
+
+        # Force upload and update metadata URL
+        disdrodb_upload_station DATA_SOURCE CAMPAIGN_NAME STATION_NAME --force True
+    """  # noqa: D301
     from disdrodb.data_transfer.upload_data import upload_station
 
     data_archive_dir = parse_archive_dir(data_archive_dir)

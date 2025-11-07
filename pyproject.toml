@@ -76,12 +76,12 @@ disdrodb_initialize_station="disdrodb.cli.disdrodb_initialize_station:disdrodb_i
 disdrodb_data_archive_directory="disdrodb.cli.disdrodb_data_archive_directory:disdrodb_data_archive_directory"
 disdrodb_metadata_archive_directory="disdrodb.cli.disdrodb_metadata_archive_directory:disdrodb_metadata_archive_directory"
 
-# Products options
-disdrodb_check_products_options="disdrodb.cli.disdrodb_check_products_options:disdrodb_check_products_options"
-
 # Metadata archive
 disdrodb_download_metadata_archive="disdrodb.cli.disdrodb_download_metadata_archive:disdrodb_download_metadata_archive"
 disdrodb_check_metadata_archive="disdrodb.cli.disdrodb_check_metadata_archive:disdrodb_check_metadata_archive"
+
+# Products options
+disdrodb_check_products_options="disdrodb.cli.disdrodb_check_products_options:disdrodb_check_products_options"
 
 # Open directories
 disdrodb_open_metadata_archive="disdrodb.cli.disdrodb_open_metadata_archive:disdrodb_open_metadata_archive"
