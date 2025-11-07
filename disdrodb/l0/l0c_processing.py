@@ -340,6 +340,20 @@ def get_problematic_timestep_indices(timesteps, sample_interval):
     return idx_previous_missing, idx_next_missing, idx_isolated_missing
 
 
+def nearest_expected_times(times, expected_times):
+    """Return index of nearest expected time."""
+    # both must be sorted ascending
+    idx = np.searchsorted(expected_times, times)
+    idx = np.clip(idx, 1, len(expected_times) - 1)
+
+    # Compare distance to the previous vs next expected time
+    prev = expected_times[idx - 1]
+    next_ = expected_times[idx]
+    choose_next = (times - prev) > (next_ - times)
+    nearest = np.where(choose_next, next_, prev)
+    return nearest
+
+
 def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=True, logger=None, verbose=True):
     """Ensure timesteps match with the sample_interval.
 
@@ -364,13 +378,16 @@ def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=Tru
     times = times.to_numpy(dtype="M8[s]")
     expected_times = expected_times.to_numpy(dtype="M8[s]")
 
-    # Map original times to the nearest expected times
-    # Calculate the difference between original times and expected times
-    time_deltas = np.abs(times - expected_times[:, None]).astype(int)
+    # Vectorized mapping of observed times → nearest expected times
+    adjusted_times = nearest_expected_times(times, expected_times)
 
-    # Find the index of the closest expected time for each original time
-    nearest_indices = np.argmin(time_deltas, axis=0)
-    adjusted_times = expected_times[nearest_indices]
+    # Map original times to the nearest expected times
+    # # Calculate the difference between original times and expected times
+    # time_deltas = np.abs(times - expected_times[:, None]).astype(int)
+
+    # # Find the index of the closest expected time for each original time
+    # nearest_indices = np.argmin(time_deltas, axis=0)
+    # adjusted_times = expected_times[nearest_indices]
 
     # Check for duplicates in adjusted times
     unique_times, counts = np.unique(adjusted_times, return_counts=True)

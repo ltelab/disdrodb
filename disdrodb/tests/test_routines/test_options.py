@@ -22,11 +22,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 from click.testing import CliRunner
+
+import disdrodb
 from disdrodb.cli.disdrodb_check_products_options import (
     disdrodb_check_products_options,
 )
-
-import disdrodb
 from disdrodb.constants import ARCHIVE_VERSION
 from disdrodb.routines.options import (
     L0CProcessingOptions,

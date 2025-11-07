@@ -246,6 +246,7 @@ def resample_dataset(ds, sample_interval, temporal_resolution):
 
     # Retrieve variables to average/sum
     # - ATTENTION: it will not resample non-dimensional time coordinates of the dataset !
+    # - precip_flag used for OceanRain ODM470 data
     var_to_average = ["fall_velocity"]
     var_to_cumulate = [
         "raw_drop_number",
@@ -258,7 +259,7 @@ def resample_dataset(ds, sample_interval, temporal_resolution):
         "qc_resampling",
     ]
     var_to_min = ["Dmin", *TEMPERATURE_VARIABLES]
-    var_to_max = ["Dmax", "qc_time"]
+    var_to_max = ["Dmax", "qc_time", "precip_flag"]
 
     # Retrieve available variables
     var_to_average = [var for var in var_to_average if var in ds]

@@ -23,13 +23,34 @@ reference_voltage:
   fletcher32: false
   contiguous: false
   chunksizes: 43200
-relative_wind_speed:
-  dtype: float32
+weather_code_synop_4677:
+  dtype: uint8
   zlib: true
   complevel: 3
   shuffle: true
   fletcher32: false
   contiguous: false
+  chunksizes: 5000
+  _FillValue: 43200
+relative_wind_speed:
+  dtype: uint16
+  scale_factor: 0.1
+  add_offset: -99.9
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  _FillValue: 65535
+  chunksizes: 43200
+relative_wind_direction:
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  _FillValue: 65535
   chunksizes: 43200
 raw_drop_number:
   dtype: uint16

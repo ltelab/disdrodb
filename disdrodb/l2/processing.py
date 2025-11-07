@@ -575,6 +575,7 @@ def generate_l2e(
     # -------------------------------------------------------------------------------------------
     # Define velocity array with dimension 'velocity_method'
     velocity = define_velocity_array(ds)
+    velocity = velocity.fillna(0)
 
     # Compute drop number concentration (Nt) [#/m3/mm]
     drop_number_concentration = get_drop_number_concentration(

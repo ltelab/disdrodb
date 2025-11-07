@@ -12,6 +12,7 @@ from disdrodb.l2.empirical_dsd import get_effective_sampling_area, get_rain_rate
 from disdrodb.l2.processing import define_rain_spectrum_mask
 from disdrodb.utils.manipulations import filter_diameter_bins, filter_velocity_bins
 from disdrodb.utils.time import ensure_sample_interval_in_seconds
+from disdrodb.utils.xarray import xr_remap_numeric_array
 
 # Define possible variable available and corresponding snow_temperature_limit
 DICT_TEMPERATURES = {
@@ -776,3 +777,28 @@ def classify_raw_spectrum(
     ds_class["flag_splashing"] = flag_splashing
     ds_class["flag_wind_artefacts"] = flag_wind_artefacts
     return ds_class
+
+
+####--------------------------------------------------------------
+#### Other utilities
+def map_precip_flag_to_precipitation_type(precip_flag):
+    """Map OCEANRAIN precip_flag to DISDRODB precipitation_type."""
+    mapping_dict = {
+        0: 0,  # rain → rainfall
+        1: 1,  # snow → snowfall
+        2: 2,  # mixed_phase → mixed
+        3: -1,  # true_zero_value → no_precipitation
+        4: -2,  # inoperative → undefined
+        5: -2,  # harbor_time_no_data → undefined
+    }
+    precipitation_type = xr_remap_numeric_array(precip_flag, mapping_dict)
+    precipitation_type.attrs.update(
+        {
+            "long_name": "precipitation phase classification",
+            "standard_name": "precipitation_phase",
+            "units": "1",
+            "flag_values": [-2, -1, 0, 1, 2],
+            "flag_meanings": "undefined no_precipitation rainfall snowfall mixed_phase",
+        },
+    )
+    return precipitation_type

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test Xarray utility."""
-
+import dask.array
 import numpy as np
 import pytest
 import xarray as xr
@@ -24,6 +24,7 @@ from xarray.core import dtypes
 from disdrodb.utils.xarray import (
     define_dataarray_fill_value,
     define_fill_value_dictionary,
+    remap_numeric_array,
     remove_diameter_coordinates,
     remove_velocity_coordinates,
     unstack_datarray_dimension,
@@ -285,3 +286,112 @@ class TestRemoveDiameterAndVelocityCoordinates:
         result = remove_velocity_coordinates(ds)
         for c in ["velocity_bin_center", "velocity_bin_width", "velocity_bin_lower", "velocity_bin_upper"]:
             assert c not in result.coords
+
+
+class TestRemapNumericArray:
+    """Comprehensive tests for remap_numeric_array."""
+
+    # -------------------- NumPy tests -------------------- #
+
+    def test_numpy_basic_remap(self):
+        """Verify basic NumPy remapping with dictionary keys and NaN fill for missing values."""
+        arr = np.array([1, 2, 3, 4])
+        remap = {1: 10, 2: 20, 3: 30}
+        result = remap_numeric_array(arr, remap)
+        expected = np.array([10, 20, 30, np.nan])
+        np.testing.assert_array_equal(result, expected)
+
+    def test_numpy_with_fill_value(self):
+        """Check NumPy remapping with a custom fill_value for unmapped elements."""
+        arr = np.array([1, 5, 3])
+        remap = {1: 100, 3: 300}
+        result = remap_numeric_array(arr, remap, fill_value=-1)
+        expected = np.array([100, -1, 300])
+        np.testing.assert_array_equal(result, expected)
+
+    def test_numpy_no_remap_hits(self):
+        """Ensure NumPy arrays with no matching keys are filled entirely with NaN."""
+        arr = np.array([7, 8, 9])
+        remap = {1: 10, 2: 20}
+        result = remap_numeric_array(arr, remap)
+        expected = np.array([np.nan, np.nan, np.nan])
+        np.testing.assert_array_equal(result, expected)
+
+    def test_numpy_empty_array(self):
+        """Confirm that an empty NumPy array returns an empty array."""
+        arr = np.array([])
+        remap = {1: 10}
+        result = remap_numeric_array(arr, remap)
+        expected = np.array([])
+        np.testing.assert_array_equal(result, expected)
+
+    def test_numpy_with_nan_values(self):
+        """Verify correct handling of NaN and unmapped elements in NumPy arrays."""
+        arr = np.array([1, np.nan, 3, 30, 99])
+        remap = {1: 10, 3: 30}
+        result = remap_numeric_array(arr, remap)
+        expected = np.array([10, np.nan, 30, np.nan, np.nan])
+        np.testing.assert_array_equal(result, expected)
+
+    def test_numpy_mixed_type_remap(self):
+        """Test NumPy remapping where target values are floats."""
+        arr = np.array([1, 2])
+        remap = {1: 10.5, 2: 20.2}
+        result = remap_numeric_array(arr, remap)
+        expected = np.array([10.5, 20.2])
+        np.testing.assert_array_equal(result, expected)
+
+    def test_numpy_inverted_remap(self):
+        """Validate NumPy remapping with inverted key-value mapping."""
+        arr = np.array([1, 2])
+        remap = {1: 2, 2: 1}
+        result = remap_numeric_array(arr, remap)
+        expected = np.array([2, 1])
+        np.testing.assert_array_equal(result, expected)
+
+    # -------------------- Dask tests -------------------- #
+
+    def test_dask_basic_remap(self):
+        """Verify basic Dask remapping produces correct computed output."""
+        arr = dask.array.from_array(np.array([1, 2, 3, 4]), chunks=2)
+        remap = {1: 10, 2: 20, 3: 30}
+        result = remap_numeric_array(arr, remap)
+        computed = result.compute()
+        expected = np.array([10, 20, 30, np.nan])
+        np.testing.assert_array_equal(computed, expected)
+
+    def test_dask_with_fill_value(self):
+        """Check Dask remapping with a custom fill_value for missing keys."""
+        arr = dask.array.from_array(np.array([1, 5, 3]), chunks=2)
+        remap = {1: 100, 3: 300}
+        result = remap_numeric_array(arr, remap, fill_value=-1)
+        computed = result.compute()
+        expected = np.array([100, -1, 300])
+        np.testing.assert_array_equal(computed, expected)
+
+    def test_dask_with_nan_values(self):
+        """Ensure Dask arrays handle NaN and unmapped values properly."""
+        arr = dask.array.from_array(np.array([1, np.nan, 3, 99]), chunks=2)
+        remap = {1: 10, 3: 30}
+        result = remap_numeric_array(arr, remap)
+        computed = result.compute()
+        expected = np.array([10, np.nan, 30, np.nan])
+        np.testing.assert_array_equal(computed, expected)
+
+    def test_dask_dtype_preserved(self):
+        """Confirm that Dask dtype remains consistent after remapping."""
+        arr = dask.array.from_array(np.array([1, 2, 3], dtype=int), chunks=1)
+        remap = {1: 100, 2: 200, 3: 300}
+        result = remap_numeric_array(arr, remap)
+        assert str(result.dtype).startswith("int") or str(result.dtype).startswith("float")
+
+    # -------------------- Xarray tests -------------------- #
+
+    def test_xarray_basic_remap(self):
+        """Verify Xarray DataArray remapping preserves structure and applies correctly."""
+        da = xr.DataArray(np.array([1, 2, 3, 4]), dims="x")
+        remap = {1: 10, 2: 20, 3: 30}
+        result = remap_numeric_array(da, remap)
+        assert isinstance(result, xr.DataArray)
+        expected = np.array([10, 20, 30, np.nan])
+        np.testing.assert_array_equal(result.data, expected)

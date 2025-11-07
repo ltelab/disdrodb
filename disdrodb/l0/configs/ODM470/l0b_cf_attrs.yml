@@ -10,6 +10,14 @@ relative_wind_speed:
   description: Relative wind speed
   long_name: Relative wind speed
   units: "m s-1"
+relative_wind_direction:
+  description: Relative wind direction
+  long_name: Relative wind direction
+  units: "degrees"
+weather_code_synop_4677:
+  description: SYNOP weather code according to table 4677 of Parsivel documentation
+  long_name: Weather code SYNOP 4677
+  units: ""
 precip_flag:
   description: Precipitation classification
   long_name: Precipitation flag

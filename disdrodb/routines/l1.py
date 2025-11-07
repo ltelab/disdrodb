@@ -146,11 +146,13 @@ def _generate_l1(
     ):
         """Define L1 product processing."""
         # Open the L0C netCDF files
+        # - precip_flag used for OceanRain ODM470 data only
+        # - Missing variables in dataset are simply not selected
         ds = open_netcdf_files(
             filepaths,
             start_time=start_time,
             end_time=end_time,
-            variables=["raw_drop_number", "qc_time", *TEMPERATURE_VARIABLES],
+            variables=["raw_drop_number", "qc_time", "precip_flag", *TEMPERATURE_VARIABLES],
             parallel=False,
             compute=True,
         )

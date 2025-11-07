@@ -310,15 +310,19 @@ def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sam
     # Ensure velocity is 2D (diameter, velocity)
     velocity = xr.ones_like(drop_number) * velocity
 
+    # Create a safe ratio: drop_number / velocity, but 0 where velocity is 0 or NaN
+    safe_ratio = drop_number / velocity
+    safe_ratio = safe_ratio.where((velocity != 0) & (~np.isnan(velocity)), 0)
+
     # Compute drop number concentration
     # - For disdrometer with velocity bins
     if VELOCITY_DIMENSION in drop_number.dims:
-        drop_number_concentration = (drop_number / velocity).sum(dim=VELOCITY_DIMENSION, skipna=False) / (
+        drop_number_concentration = safe_ratio.sum(dim=VELOCITY_DIMENSION, skipna=False) / (
             sampling_area * diameter_bin_width * sample_interval
         )
     # - For impact disdrometers
     else:
-        drop_number_concentration = (drop_number / velocity) / (sampling_area * diameter_bin_width * sample_interval)
+        drop_number_concentration = safe_ratio / (sampling_area * diameter_bin_width * sample_interval)
     return drop_number_concentration
 
 
@@ -1738,6 +1742,10 @@ def compute_integral_parameters(
         - KED: Kinetic Energy per unit rainfall Depth [J·m⁻²·mm⁻¹].
         - KEF: Kinetic Energy Flux [J·m⁻²·h⁻¹].
     """
+    # Ensure velocity does not contain NaN
+    # --> e.g. when D > 10 mm --> Replace to 0
+    velocity = velocity.fillna(0)
+
     # Initialize dataset
     ds = xr.Dataset()
 
@@ -1875,6 +1883,10 @@ def compute_spectrum_parameters(
         - W_spectrum : Mass spectrum [g/m3/mm]
         - Z_spectrum : Reflectivity spectrum [dBZ of mm6/m3/mm]
     """
+    # Ensure velocity does not contain NaN
+    # --> e.g. when D > 10 mm --> Replace to 0
+    velocity = velocity.fillna(0)
+
     # Initialize dataset
     ds = xr.Dataset()
     ds["KE_spectrum"] = get_kinetic_energy_spectrum(

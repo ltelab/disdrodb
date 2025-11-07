@@ -14,7 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Reader for OCEANRAIN ODM470 data in netCDF format."""
+"""Reader for OceanRAIN ODM470 R and W files in netCDF format."""
+import os
+
 import numpy as np
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -28,36 +30,82 @@ def reader(
     logger=None,
 ):
     """Reader."""
+    import xarray as xr
+
     ##------------------------------------------------------------------------.
-    #### Open the netCDF
+    #### Open the OceanRAIN-R netCDF
     with suppress_warnings():
-        ds = open_raw_netcdf_file(filepath=filepath, logger=logger)
+        ds_r = open_raw_netcdf_file(filepath=filepath, logger=logger)
 
     ##------------------------------------------------------------------------.
-    #### Adapt the dataframe to adhere to DISDRODB L0 standards
+    #### Adapt the dataset to adhere to DISDRODB L0 standards
     # Reset time encoding
-    ds["time"].encoding = {}
+    ds_r["time"].encoding = {}
 
-    # Retrieve spectrum
+    # Retrieve raw spectrum
     bins = "bin" + np.arange(1, 129).astype(str)
-    raw_spectrum = ds[bins].to_array(dim="diameter_bin_center")
-    ds["raw_spectrum"] = raw_spectrum.transpose("time", ...)
-    ds = ds.drop_vars(bins)
+    raw_spectrum = ds_r[bins].to_array(dim="diameter_bin_center")
+    ds_r["raw_spectrum"] = raw_spectrum.transpose("time", ...)
+    ds_r = ds_r.drop_vars(bins)
 
     # Define dictionary mapping dataset variables to select and rename
     dict_names = {
         ### Dimensions
         "diameter_bin_center": "diameter_bin_center",
-        ### Variables
-        "reference_voltage": "reference_voltage",
-        "relative_wind_speed": "relative_wind_speed",
-        "ODM470_precipitation_rate_R": "precipitation_rate",
-        "precip_flag": "precip_flag",
         "raw_spectrum": "raw_drop_number",
     }
 
     # Rename dataset variables and columns and infill missing variables
-    ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="ODM470")
+    ds_r = standardize_raw_dataset(ds=ds_r, dict_names=dict_names, sensor_name="ODM470")
+
+    # Drop duplicate times from da before reindexing
+    _, index = np.unique(ds_r["time"], return_index=True)
+    ds_r = ds_r.isel(time=index)
+
+    # Retrieve path to OCEANRAIN-W file
+    w_filepath = filepath.replace("OceanRAIN-R", "OceanRAIN-W")
+    if not os.path.exists(w_filepath):
+        raise ValueError("OceanRAIN-W product not available. Please download that too.")
+
+    # Open OCEANRAIN-W file
+    ds_w = open_raw_netcdf_file(filepath=w_filepath, logger=logger)
+
+    # Remove bad encodings
+    ds_w["reference_voltage"].encoding = {}
+    ds_w["relative_wind_speed"].encoding = {}
+    # ds_w["relative_wind_speed_ODM470"].encoding = {}
+
+    # Select variable of interest
+    dict_names = {
+        "air_temperature": "air_temperature",
+        "relative_humidity": "relative_humidity",
+        # 'air_pressure': "air_pressure",
+        # 'dew_point_temperature': "dew_point_temperature",
+        # "relative_wind_speed_ODM470": "relative_wind_speed",
+        "relative_wind_speed": "relative_wind_speed",
+        "relative_wind_direction": "relative_wind_direction",
+        "true_wind_speed": "wind_speed",
+        "true_wind_direction": "wind_direction",
+        "reference_voltage": "reference_voltage",
+        "ODM470_precipitation_rate_R": "precipitation_rate",
+        "precip_flag": "precip_flag",
+        # 'ww_present_weather_code': "weather_code_synop_4677", # 99 in many datasets
+    }
+    ds_w = standardize_raw_dataset(ds=ds_w, dict_names=dict_names, sensor_name="ODM470")
+
+    # Set to NaN wind speed values < 0 (e.g. -5.1)
+    ds_w["relative_wind_speed"] = ds_w["relative_wind_speed"].where(ds_w["relative_wind_speed"] >= 0)
+    ds_w["wind_speed"] = ds_w["wind_speed"].where(ds_w["wind_speed"] >= 0)
+
+    # Drop duplicate times from OCEAN-RAIN W
+    _, index = np.unique(ds_w["time"], return_index=True)
+    ds_w = ds_w.isel(time=index)
+
+    # Reindex raw drop number to match OCEAN-RAIN W
+    ds_w["raw_drop_number"] = ds_r["raw_drop_number"].reindex(time=ds_w["time"])
+
+    # Set raw_drop_number to 0 where precip_flag is 3 (true zero value)
+    ds_w["raw_drop_number"] = xr.where(ds_w["precip_flag"] == 3, 0, ds_w["raw_drop_number"])
 
     # Return the dataset adhering to DISDRODB L0B standards
-    return ds
+    return ds_w

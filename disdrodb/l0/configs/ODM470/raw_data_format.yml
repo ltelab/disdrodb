@@ -28,6 +28,16 @@ relative_wind_speed:
     - 100
   nan_flags: null
   field_number: "3"
+relative_wind_direction:
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 3
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 360
+  nan_flags: null
+  field_number: "4"
 precip_flag:
   n_digits: 1
   n_characters: 1
@@ -37,7 +47,17 @@ precip_flag:
     - 0.0
     - 5
   nan_flags: null
-  field_number: "4"
+  field_number: "5"
+weather_code_synop_4677:
+  n_digits: 2
+  n_characters: 2
+  n_decimals: 0
+  n_naturals: 2
+  data_range:
+    - 0
+    - 90
+  nan_flags: null
+  field_number: "6"
 raw_drop_number:
   n_digits: 1317
   n_characters: 1756
