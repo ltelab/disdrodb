@@ -36,14 +36,30 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 def disdrodb_open_metadata_archive(
     metadata_archive_dir: Optional[str] = None,
 ):
-    """Open the DISDRODB Metadata Archive.
+    """Open the DISDRODB Metadata Archive directory in the system file explorer.
 
-    Parameters
-    ----------
-    metadata_archive_dir : str, optional
-        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the path specified in the DISDRODB active configuration will be used.
-    """
+    Opens the metadata archive directory using the system's default file manager,
+    allowing you to browse station metadata files and YAML configurations.
+
+    \b
+    Archive Directory:
+        --metadata_archive_dir: Custom path to DISDRODB metadata archive
+        If not specified, the path from the active DISDRODB configuration is used
+
+    \b
+    Examples:
+        # Open the metadata archive from active configuration
+        disdrodb_open_metadata_archive
+
+        # Open a custom metadata archive directory
+        disdrodb_open_metadata_archive --metadata_archive_dir /path/to/DISDRODB-METADATA/DISDRODB
+
+    \b
+    Important Notes:
+        - Opens the directory in your system's default file manager
+        - The metadata archive contains station YAML files and issue reports
+        - Useful for manual inspection and verification of station metadata
+    """  # noqa: D301
     from disdrodb.api.io import open_metadata_archive
 
     metadata_archive_dir = parse_archive_dir(metadata_archive_dir)

@@ -41,24 +41,38 @@ def disdrodb_open_metadata_directory(
     station_name: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-    """Open the DISDRODB Data Archive logs directory of a station.
+    """Open the DISDRODB Metadata Archive directory of a station in the system file explorer.
 
-    Parameters
-    ----------
-    data_source : str
-        The name of the institution (for campaigns spanning multiple countries) or
-        the name of the country (for campaigns or sensor networks within a single country).
-        Must be provided in UPPER CASE.
-    campaign_name : str
-        The name of the campaign. Must be provided in UPPER CASE.
-    station_name : str
-        The name of the station.
-    metadata_archive_dir : str, optional
-        The directory path where the DISDRODB Metadata Archive is located.
-        The directory path must end with ``<...>/DISDRODB``.
-        If ``None``, it uses the ``metadata_archive_dir`` path specified
-        in the DISDRODB active configuration.
-    """
+    The command allows to easily browse stations metadata YAML files.
+
+    \b
+    Station Specification:
+        Requires data_source and campaign_name (UPPER CASE required).
+        station_name is optional.
+
+    \b
+    Archive Directory:
+        --metadata_archive_dir: Custom path to DISDRODB Metadata Archive
+        If not specified, the path from the active DISDRODB configuration is used
+
+    \b
+    Examples:
+        # Open metadata directory for a specific station
+        disdrodb_open_metadata_directory EPFL HYMEX_LTE_SOP2 10
+
+        # Open metadata directory for a specific station
+        disdrodb_open_metadata_directory NASA IFLOODS
+
+        # Open with custom metadata archive directory
+        disdrodb_open_metadata_directory EPFL HYMEX_LTE_SOP2 --metadata_archive_dir /path/to/DISDRODB-METADATA/DISDRODB
+
+    \b
+    Important Notes:
+        - Data source and campaign names must be in UPPER CASE
+        - Opens the directory in your system's default file manager
+        - Useful for manual inspection and editing of station metadata YAML files
+        - If station_name is omitted, opens the campaign-level metadata directory
+    """  # noqa: D301
     from disdrodb.api.io import open_metadata_directory
 
     metadata_archive_dir = parse_archive_dir(metadata_archive_dir)

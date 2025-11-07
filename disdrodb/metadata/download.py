@@ -23,6 +23,8 @@ import shutil
 import urllib.request
 import zipfile
 
+from disdrodb.utils.directories import remove_file_or_directories
+
 
 def download_metadata_archive(directory_path, force=False):
     """Download the DISDRODB Metadata Archive to the specified directory.
@@ -64,7 +66,7 @@ def download_metadata_archive(directory_path, force=False):
     # Handle existing target directory
     if os.path.exists(target_dir):
         if force:
-            shutil.rmtree(target_dir)
+            remove_file_or_directories(target_dir)
         else:
             raise FileExistsError(
                 f"A DISDRODB Metadata Archive already exists at '{target_dir}'. Use force=True to update it.",

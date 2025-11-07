@@ -112,14 +112,13 @@ def disdrodb_run_station(
     \b
     Performance Options:
         --parallel: Uses multiple processes for faster processing (default: True)
-        If --parallel is enabled, each process will use a single thread to avoid issues
-        with the HDF/netCDF library.
-
+        If parallel processing is enabled, each process will use a single thread
+        to avoid issues with the HDF/netCDF library.
+        The DASK_NUM_WORKERS environment variable controls the number of processes
+        to use.A sensible default is automatically set by the software.
         --debugging_mode: Processes only a subset of data for testing
         --force: Overwrites existing output files (default: False)
 
-        DASK_NUM_WORKERS environment variable controls the number of processes
-        to use when --parallel is enabled. A sensible default is automatically set.
 
     \b
     Examples:
@@ -127,16 +126,16 @@ def disdrodb_run_station(
         disdrodb_run_station EPFL HYMEX_LTE_SOP2 10
 
         # Process station, skip L0A processing (start from existing L0B data)
-        disdrodb_run_station NASA IFLOODS apu01 -l0a_processing False
+        disdrodb_run_station NASA IFLOODS apu01 --l0a_processing False
 
         # Process station with debugging mode and custom workers
-        DASK_NUM_WORKERS=4 disdrodb_run_station NETHERLANDS DELFT PAR001_Cabauw --debugging_mode
+        DASK_NUM_WORKERS=4 disdrodb_run_station NETHERLANDS DELFT PAR001_Cabauw --debugging_mode True
 
         # Process station, skip final L2M level
-        disdrodb_run_station FRANCE ENPC_CARNOT Carnot_Pars1 -l2m_processing False
+        disdrodb_run_station FRANCE ENPC_CARNOT Carnot_Pars1 --l2m_processing False
 
         # Force overwrite existing files with verbose output
-        disdrodb_run_station EPFL HYMEX_2012 10 --force --verbose
+        disdrodb_run_station EPFL HYMEX_2012 10 --force True --verbose True
 
     \b
     Data Management:

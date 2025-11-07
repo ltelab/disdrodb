@@ -43,24 +43,43 @@ def disdrodb_open_product_directory(
     station_name: str,
     data_archive_dir: Optional[str] = None,
 ):
-    """Open the DISDRODB Data Archive logs directory of a station.
+    """Open the DISDRODB Data Archive station product directory in the system file explorer.
 
-    Parameters
-    ----------
-    product : str
-        DISDRODB product.
-    data_source : str
-        The name of the institution (for campaigns spanning multiple countries) or
-        the name of the country (for campaigns or sensor networks within a single country).
-        Must be provided in UPPER CASE.
-    campaign_name : str
-        The name of the campaign. Must be provided in UPPER CASE.
-    station_name : str
-        The name of the station.
-    data_archive_dir : str, optional
-        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the path specified in the DISDRODB active configuration will be used.
-    """
+    Opens the data archive directory for a specific product level (RAW, L0A, L0B, etc.)
+    of a station using the system's default file manager, allowing you to browse
+    the data files.
+
+    \b
+    Station Specification:
+        Requires exact specification of product, data_source, campaign_name, and station_name.
+        All parameters must be provided and are case-sensitive (UPPER CASE required).
+
+    \b
+    Product Levels:
+        Valid products: RAW, L0A, L0B, L0C, L1, L2E, L2M
+        Specify the product level you want to browse
+
+    \b
+    Archive Directory:
+        --data_archive_dir: Custom path to DISDRODB data archive
+        If not specified, the path from the active DISDRODB configuration is used
+
+    \b
+    Examples:
+        # Open Raw data directory for a station
+        disdrodb_open_product_directory RAW EPFL HYMEX_LTE_SOP2 10
+
+        # Open L0B product directory
+        disdrodb_open_product_directory L0B NASA IFLOODS apu01
+
+        # Open L2M directory with custom archive path
+        disdrodb_open_product_directory L2M EPFL HYMEX_LTE_SOP2 10 --data_archive_dir /path/to/DISDRODB
+
+    \b
+    Important Notes:
+        - Product name must be valid: RAW, L0A, L0B, L0C, L1, L2E, or L2M
+        - Data source, campaign, and station names must be in UPPER CASE
+    """  # noqa: D301
     from disdrodb.api.io import open_product_directory
 
     data_archive_dir = parse_archive_dir(data_archive_dir)

@@ -53,13 +53,13 @@ def disdrodb_run_l2m_station(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-    """Run the L2M processing processing of a specific DISDRODB station.
+    """Run the DISDRODB L2M processing chain for a specific DISDRODB station.
 
-    This function processes a single station to produce L2M products from existing L2E data.
-    L2E products must be available before running L2M.
+    It produces L2M files from existing DISDRODB L2E data of the specified station.
+    DISDRODB L2E files must be available before launching the DISDRODB L2M processing.
 
-    The L2M chain fits parametric DSD models to the empirical DSDs and computes model-based integral DSD variables
-    (e.g., rain rate and liquid water content).
+    The DISDRODB L2M processing chain fits parametric DSD models to the
+    empirical DSDs and computes model-based integral DSD variables.
 
     \b
     Station Specification:
@@ -69,14 +69,12 @@ def disdrodb_run_l2m_station(
     \b
     Performance Options:
         --parallel: Uses multiple processes for faster processing (default: True)
-        If --parallel is enabled, each process will use a single thread to avoid issues
-        with the HDF/netCDF library.
-
+        If parallel processing is enabled, each process will use a single thread
+        to avoid issues with the HDF/netCDF library.
+        The DASK_NUM_WORKERS environment variable controls the number of processes
+        to use.A sensible default is automatically set by the software.
         --debugging_mode: Processes only a subset of data for testing
         --force: Overwrites existing output files (default: False)
-
-        DASK_NUM_WORKERS environment variable controls the number of processes
-        to use when --parallel is enabled. A sensible default is automatically set.
 
     \b
     Examples:
@@ -84,16 +82,15 @@ def disdrodb_run_l2m_station(
         disdrodb_run_l2m_station EPFL HYMEX_LTE_SOP2 10
 
         # Force overwrite existing files with verbose output
-        disdrodb_run_l2m_station EPFL HYMEX_2012 10 --force --verbose
+        disdrodb_run_l2m_station EPFL HYMEX_LTE_SOP2 10 --force True --verbose True
 
         # Process station with debugging mode and custom workers
-        DASK_NUM_WORKERS=4 disdrodb_run_station NETHERLANDS DELFT PAR001_Cabauw --debugging_mode
+        DASK_NUM_WORKERS=4 disdrodb_run_l2m_station NETHERLANDS DELFT PAR001_Cabauw --debugging_mode True
 
     \b
     Important Notes:
         - Data source, campaign, and station names must be UPPER CASE
         - All three station identifiers are required (no wildcards or filtering)
-        - You can skip early or late processing levels, but not intermediate ones
     """  # noqa: D301
     from disdrodb.routines.l2 import run_l2m_station
     from disdrodb.utils.dask import close_dask_cluster, initialize_dask_cluster

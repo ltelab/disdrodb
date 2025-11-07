@@ -45,29 +45,50 @@ def disdrodb_download_archive(
     metadata_archive_dir: Optional[str] = None,
     force: bool = False,
 ):
-    """Download DISDRODB stations with the ``disdrodb_data_url`` in the metadata.
+    """Download raw data for multiple DISDRODB stations from the DISDRODB Decentralized Data Archive.
 
-    Parameters
-    ----------
-    data_sources : str or list of str, optional
-        Data source name (eg : EPFL).
-        If not provided (``None``), all data sources will be downloaded.
-        The default value is ``data_source=None``.
-    campaign_names : str or list of str, optional
-        Campaign name (eg :  EPFL_ROOF_2012).
-        If not provided (``None``), all campaigns will be downloaded.
-        The default value is ``campaign_name=None``.
-    station_names : str or list of str, optional
-        Station name.
-        If not provided (``None``), all stations will be downloaded.
-        The default value is ``station_name=None``.
-    force : bool, optional
-        If ``True``, overwrite the already existing raw data file.
-        The default value is ``False``.
-    data_archive_dir : str (optional)
-        DISDRODB Data Archive directory. Format: ``<...>/DISDRODB``.
-        If ``None`` (the default), the disdrodb config variable ``data_archive_dir`` is used.
-    """
+    It downloads station raw data files and stores them in the local DISDRODB Data Archive.
+    The data are organized by data_source, campaign_name, and station_name.
+
+    \b
+    Station Selection:
+        If no station filters are specified, downloads ALL stations.
+        Use data_sources, campaign_names, and station_names to filter stations.
+        Filters work together to narrow down the selection (AND logic).
+        Only stations with a ``disdrodb_data_url`` in their metadata will be downloaded.
+
+    \b
+    Download Behavior:
+        For webserver/FTP-hosted data:
+            - Incremental downloads: Fetch only new files when they become available
+            - Existing files on disk are skipped unless '--force True' is used
+
+        For repository-hosted data (e.g., Zenodo):
+            - Use '--force True' to download new versions when available
+            - Without '--force True', download is skipped if data already exists locally
+
+    \b
+    Download Options:
+        --force: Removes existing raw data files and forces complete re-download (default: False)
+        Warning: All existing station data will be deleted before re-downloading
+
+    \b
+    Archive Directories:
+        --data_archive_dir: Custom path to DISDRODB data archive
+        --metadata_archive_dir: Custom path to DISDRODB metadata archive
+        If not specified, paths from the active DISDRODB configuration are used
+
+    \b
+    Examples:
+        # Download all stations with available download URLs
+        disdrodb_download_archive
+
+        # Download all stations from specific data sources
+        disdrodb_download_archive --data_sources 'EPFL NASA'
+
+        # Download specific campaigns and force re-download
+        disdrodb_download_archive --campaign_names 'HYMEX_LTE_SOP2 IFLOODS' --force True
+    """  # noqa: D301
     from disdrodb.data_transfer.download_data import download_archive
 
     data_archive_dir = parse_archive_dir(data_archive_dir)

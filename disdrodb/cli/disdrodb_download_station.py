@@ -47,29 +47,61 @@ def disdrodb_download_station(
     metadata_archive_dir: Optional[str] = None,
     force: bool = False,
 ):
-    """
-    Download data of a single DISDRODB station from the DISDRODB remote repository.
+    """Download raw data of a single station from the DISDRODB Decentralized Data Archive.
 
-    Parameters
-    ----------
-    data_source : str
-        The name of the institution (for campaigns spanning multiple countries) or
-        the name of the country (for campaigns or sensor networks within a single country).
-        Must be provided in UPPER CASE.
-    campaign_name : str
-        The name of the campaign. Must be provided in UPPER CASE.
-    station_name : str
-        The name of the station.
-    data_archive_dir : str, optional
-        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the path specified in the DISDRODB active configuration will be used.
-    force: bool, optional
-        If ``True``, overwrite the already existing raw data file.
-        The default value is ``False``.
-    data_archive_dir : str (optional)
-        DISDRODB Data Archive directory. Format: ``<...>/DISDRODB``.
-        If ``None`` (the default), the disdrodb config variable ``data_archive_dir`` is used.
-    """
+    It downloads station raw data files and stores them in the local DISDRODB Data Archive.
+    The data are organized by data_source, campaign_name, and station_name.
+
+    For stations data hosted on FTP/webservers, recursive calls of
+    this command allows to fetch and download just the new data when becomes available.
+
+    For stations data hosted on data repository such as Zenodo in ZIP archives,
+    if a new version becomes available, you must set force=True to download the new version.
+
+    \b
+    Station Specification:
+        Requires exact specification of data_source, campaign_name, and station_name.
+        All three parameters must be provided and are case-sensitive (UPPER CASE required).
+
+    \b
+    Download Behavior:
+        For webserver/FTP-hosted data:
+            - Incremental downloads: Fetch only new files when they become available
+            - Existing files on disk are skipped unless --force is used
+
+        For repository-hosted data (e.g., Zenodo):
+            - Use --force to download new versions when available
+            - Without --force, download is skipped if data already exists locally
+
+    \b
+    Download Options:
+        --force: Removes existing raw data files and forces complete re-download (default: False)
+        WARNING: All existing station data will be deleted before re-downloading.
+
+    \b
+    Archive Directories:
+        --data_archive_dir: Custom path to DISDRODB data archive
+        --metadata_archive_dir: Custom path to DISDRODB metadata archive
+        If not specified, paths from the active DISDRODB configuration are used
+
+    \b
+    Examples:
+        # Download data for a single station
+        disdrodb_download_station EPFL HYMEX_LTE_SOP2 10
+
+        # Force re-download of existing data
+        disdrodb_download_station EPFL HYMEX_LTE_SOP2 10 --force True
+
+        # Download with custom archive directory
+        disdrodb_download_station NASA IFLOODS apu01 --data_archive_dir /path/to/DISDRODB
+
+    \b
+    Important Notes:
+        - Data source, campaign, and station names must be UPPER CASE
+        - All three station identifiers are required (no wildcards)
+        - Downloaded files are placed in <data_archive_dir>/Raw/<data_source>/<campaign_name>/<station_name>/
+        - Use --force with caution as it will remove data on disk before starting to re-download them.
+    """  # noqa: D301
     from disdrodb.data_transfer.download_data import download_station
 
     data_archive_dir = parse_archive_dir(data_archive_dir)

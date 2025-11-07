@@ -52,50 +52,54 @@ def disdrodb_run_l2m(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-    """
-    Run the L2M processing of DISDRODB stations.
+    """Run the DISDRODB L2M processing chain for many/all DISDRODB stations.
 
-    This function allows to launch the processing of many DISDRODB stations with a single command.
-    From the list of all available DISDRODB stations, it runs the processing
-    of the stations matching the provided data_sources, campaign_names and station_names.
+    It produces DISDRODB L2M files from existing DISDRODB L2E data of the specified stations.
+    DISDRODB L2E files must be available before launching the DISDRODB L2M processing.
 
-    Parameters
-    ----------
-    data_sources : str
-        Name of data source(s) to process.
-        The name(s) must be UPPER CASE.
-        If campaign_names and station are not specified, process all stations.
-        To specify multiple data sources, write i.e.: --data_sources 'NASA EPFL NCAR'
-    campaign_names : str
-        Name of the campaign(s) to process.
-        The name(s) must be UPPER CASE.
-        To specify multiple campaigns, write i.e.: --campaign_names 'IPEX IMPACTS'
-    station_names : str
-        Station names.
-        To specify multiple stations, write i.e.: --station_names 'station1 station2'
-    force : bool
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories.
-        The default is False.
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is False.
-    parallel : bool
-        If True, the files are processed simultaneously in multiple processes.
-        Each process will use a single thread.
-        By default, the number of process is defined with os.cpu_count().
-        However, you can customize it by typing: DASK_NUM_WORKERS=4 disdrodb_run_l0a
-        If False, the files are processed sequentially in a single process.
-        If False, multi-threading is automatically exploited to speed up I/0 tasks.
-    debugging_mode : bool
-        If True, it reduces the amount of data to process.
-        It processes just the first 3 raw data files for each station.
-        The default is False.
-    data_archive_dir : str
-        DISDRODB Data Archive directory
-        Format: <...>/DISDRODB
-        If not specified, uses path specified in the DISDRODB active configuration.
-    """
+    The  DISDRODB L2M processing chain fits parametric DSD models
+    to the empirical DSDs and computes model-based integral DSD variables.
+
+    \b
+    Station Selection:
+        If no station filters are specified, processes ALL available stations.
+        Use data_sources, campaign_names, and station_names to filter stations.
+        Filters work together to narrow down the selection (AND logic).
+
+    \b
+    Performance Options:
+        --parallel: Uses multiple processes for faster processing (default: True)
+        If parallel processing is enabled, each process will use a single thread
+        to avoid issues with the HDF/netCDF library.
+        The DASK_NUM_WORKERS environment variable controls the number of processes
+        to use.A sensible default is automatically set by the software.
+        --debugging_mode: Processes only a subset of data for testing
+        --force: Overwrites existing output files (default: False)
+
+    \b
+    Examples:
+        # Process all stations
+        disdrodb_run_l2m
+
+        # Process a specific data source and force overwrite existing files
+        disdrodb_run_l2m --data_sources EPFL --force True --verbose True
+
+        # Process specific data sources
+        disdrodb_run_l2m --data_sources 'USA EPFL'
+
+        # Process specific campaigns in debugging mode
+        disdrodb_run_l2m --campaign_names 'DELFT IMPACTS' --debugging_mode True
+
+        # Process specific stations with custom number of workers
+        DASK_NUM_WORKERS=8 disdrodb_run_l2m --data_sources NASA --station_names 'apu01 apu02'
+
+    \b
+    Important Notes:
+        - Data source names must be UPPER CASE
+        - Campaign names must be UPPER CASE
+        - To specify multiple values, use space-separated strings in quotes
+        - Use --debugging_mode for initial testing with reduced data volumes
+    """  # noqa: D301
     from disdrodb.routines import run_l2m
 
     # Parse data_sources, campaign_names and station arguments

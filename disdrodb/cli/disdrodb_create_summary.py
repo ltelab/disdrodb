@@ -59,27 +59,53 @@ def disdrodb_create_summary(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-    r"""Create summary figures and tables for a specific set of DISDRODB stations.
+    """Create summary figures and tables for DISDRODB stations.
 
-    Parameters \n
-    ---------- \n
-    data_sources : str
-        Name of data source(s) to process.
-        The name(s) must be UPPER CASE.
-        If campaign_names and station are not specified, process all stations.
-        To specify multiple data sources, write i.e.: --data_sources 'NASA EPFL NCAR'
-    campaign_names : str
-        Name of the campaign(s) for which to create stations summaries.
-        The name(s) must be UPPER CASE.
-        To specify multiple campaigns, write i.e.: --campaign_names 'IPEX IMPACTS'
-    station_names : str
-        Station names.
-        To specify multiple stations, write i.e.: --station_names 'station1 station2'
-    data_archive_dir : str \n
-        DISDRODB Data Archive directory \n
-        Format: <...>/DISDRODB \n
-        If not specified, uses path specified in the DISDRODB active configuration. \n
-    """
+    Generates summary visualizations and statistics from DISDRODB L2E data products.
+    The DISDRODB L2E files must be available.
+
+    \b
+    Station Selection:
+        If no station filters are specified, creates summaries for ALL available stations.
+        Use data_sources, campaign_names, and station_names to filter stations.
+        Filters work together to narrow down the selection (AND logic).
+
+    \b
+    Processing Options:
+        --parallel: Reads files in parallel for faster processing (default: False)
+        --temporal_resolution: Temporal resolution of L2E product to use (default: 1MIN)
+        Valid temporal resolutions depend on available L2E products.
+
+    \b
+    Archive Directories:
+        --data_archive_dir: Custom path to DISDRODB data archive
+        --metadata_archive_dir: Custom path to DISDRODB metadata archive
+        If not specified, paths from the active DISDRODB configuration are used
+
+    \b
+    Examples:
+        # Create summaries for all stations
+        disdrodb_create_summary
+
+        # Create summaries for specific data sources
+        disdrodb_create_summary --data_sources 'EPFL NASA'
+
+        # Create summaries for specific campaigns
+        disdrodb_create_summary --campaign_names 'HYMEX_LTE_SOP2 IFLOODS'
+
+        # Create summaries for specific stations with custom temporal resolution
+        disdrodb_create_summary --station_names 'apu01 apu02' --temporal_resolution 5MIN
+
+        # Create summaries with custom archive directory
+        disdrodb_create_summary --data_sources EPFL --data_archive_dir /path/to/DISDRODB
+
+    \b
+    Important Notes:
+        - Data source names must be in UPPER CASE
+        - Campaign names must be in UPPER CASE
+        - To specify multiple values, use space-separated strings in quotes
+        - Requires L2E data products to be available for the selected stations
+    """  # noqa: D301
     from disdrodb.routines import create_summary
     from disdrodb.utils.dask import close_dask_cluster, initialize_dask_cluster
 

@@ -33,7 +33,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
     default=None,
     help="Directory with DISDRODB products configurations files",
 )
-def disdrodb_validate_products_configurations(products_configs_dir):
+def disdrodb_check_products_options(products_configs_dir):
     """Validate the DISDRODB products configuration files."""
     from disdrodb.routines.options_validation import validate_products_configurations
 

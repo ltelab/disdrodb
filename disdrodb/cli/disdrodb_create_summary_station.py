@@ -55,23 +55,44 @@ def disdrodb_create_summary_station(
     # DISDRODB root directories
     data_archive_dir: Optional[str] = None,
 ):
-    r"""Create summary figures and tables for a specific DISDRODB station.
+    """Create summary figures and tables for a specific DISDRODB station.
 
-    Parameters \n
-    ---------- \n
-    data_source : str \n
-        Institution name (when campaign data spans more than 1 country),
-        or country (when all campaigns (or sensor networks) are inside a given country).\n
-        Must be UPPER CASE.\n
-    campaign_name : str \n
-        Campaign name. Must be UPPER CASE.\n
-    station_name : str \n
-        Station name \n
-    data_archive_dir : str \n
-        DISDRODB Data Archive directory \n
-        Format: <...>/DISDRODB \n
-        If not specified, uses path specified in the DISDRODB active configuration. \n
-    """
+    Generates summary visualizations and statistics using the DISDRODB L2E product
+    of the specified station.
+
+    \b
+    Station Specification:
+        Requires exact specification of data_source, campaign_name, and station_name.
+        All three parameters must be provided and are case-sensitive (UPPER CASE required).
+
+    \b
+    Processing Options:
+        --parallel: Reads files in parallel for faster processing (default: False)
+        --temporal_resolution: Temporal resolution of L2E product to use (default: 1MIN)
+        Valid temporal resolutions depend on available L2E products
+
+    \b
+    Archive Directory:
+        --data_archive_dir: Custom path to DISDRODB data archive
+        If not specified, the path from the active DISDRODB configuration is used
+
+    \b
+    Examples:
+        # Create summary for a specific station
+        disdrodb_create_summary_station EPFL HYMEX_LTE_SOP2 10
+
+        # Create summary with custom temporal resolution
+        disdrodb_create_summary_station EPFL HYMEX_LTE_SOP2 10 --temporal_resolution 5MIN
+
+        # Create summary with custom archive directory
+        disdrodb_create_summary_station NASA IFLOODS apu01 --data_archive_dir /path/to/DISDRODB
+
+    \b
+    Important Notes:
+        - Data source, campaign, and station names must be in UPPER CASE
+        - All three station identifiers are required (no wildcards)
+        - Requires L2E data products to be available for the specified station
+    """  # noqa: D301
     from disdrodb.summary.routines import create_station_summary
     from disdrodb.utils.dask import close_dask_cluster, initialize_dask_cluster
 

@@ -19,7 +19,6 @@
 """Routines to list and open DISDRODB products."""
 import datetime
 import os
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -41,7 +40,7 @@ from disdrodb.api.path import (
 )
 from disdrodb.l0.l0_reader import define_readers_directory
 from disdrodb.utils.dict import extract_product_kwargs
-from disdrodb.utils.directories import list_files
+from disdrodb.utils.directories import list_files, remove_file_or_directories
 from disdrodb.utils.logger import (
     log_info,
 )
@@ -510,7 +509,7 @@ def remove_product(
         **product_kwargs,
     )
     log_info(logger=logger, msg="Removal of {product} files started.", verbose=verbose)
-    shutil.rmtree(data_dir)
+    remove_file_or_directories(data_dir)
     log_info(logger=logger, msg="Removal of {product} files ended.", verbose=verbose)
 
 

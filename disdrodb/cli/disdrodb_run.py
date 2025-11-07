@@ -112,14 +112,12 @@ def disdrodb_run(
     \b
     Performance Options:
         --parallel: Uses multiple processes for faster processing (default: True)
-        If --parallel is enabled, each process will use a single thread to avoid issues
-        with the HDF/netCDF library.
-
+        If parallel processing is enabled, each process will use a single thread
+        to avoid issues with the HDF/netCDF library.
+        The DASK_NUM_WORKERS environment variable controls the number of processes
+        to use.A sensible default is automatically set by the software.
         --debugging_mode: Processes only a subset of data for testing
         --force: Overwrites existing output files (default: False)
-
-        DASK_NUM_WORKERS environment variable controls the number of processes
-        to use when --parallel is enabled. A sensible default is automatically set.
 
     \b
     Examples:
@@ -127,16 +125,16 @@ def disdrodb_run(
         disdrodb_run
 
         # Process specific data sources, skip L0A and L2M
-        disdrodb_run --data_sources 'USA EPFL' --l0a_processing False --l2m_processing -- False
+        disdrodb_run --data_sources 'USA EPFL' --l0a_processing False --l2m_processing False
 
         # Process specific campaigns with debugging mode
-        disdrodb_run --campaign_names 'IPEX IMPACTS' --debugging_mode
+        disdrodb_run --campaign_names 'DELFT IMPACTS' --debugging_mode True
 
         # Process specific stations with custom number of workers
-        DASK_NUM_WORKERS=8 disdrodb_run --data_sources 'NASA' --station_names 'apu01'
+        DASK_NUM_WORKERS=8 disdrodb_run --data_sources 'NASA' --station_names 'apu01 apu02'
 
         # Force overwrite existing files, verbose output
-        disdrodb_run --data_sources 'EPFL' --force --verbose
+        disdrodb_run --data_sources 'EPFL' --force True --verbose True
 
     \b
     Data Management:

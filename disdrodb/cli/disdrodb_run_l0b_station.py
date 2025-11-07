@@ -56,41 +56,42 @@ def disdrodb_run_l0b_station(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-    """Run the L0B processing of a specific DISDRODB station from the terminal.
+    """Run the DISDRODB L0B processing  chain for a specific DISDRODB station.
 
-    Parameters
-    ----------
-    data_source : str
-        Institution name (when campaign data spans more than 1 country),
-        or country (when all campaigns (or sensor networks) are inside a given country).
-        Must be UPPER CASE.
-    campaign_name : str
-        Campaign name. Must be UPPER CASE.
-    station_name : str
-        Station name
-    force : bool
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories.
-        The default is False.
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is True.
-    parallel : bool
-        If True, the files are processed simultaneously in multiple processes.
-        Each process will use a single thread to avoid issues with the HDF/netCDF library.
-        By default, the number of process is defined with os.cpu_count().
-        However, you can customize it by typing: DASK_NUM_WORKERS=4 disdrodb_run_l0b_station
-        If False, the files are processed sequentially in a single process.
-        If False, multi-threading is automatically exploited to speed up I/0 tasks.
-    debugging_mode : bool
-        If True, it reduces the amount of data to process.
-        It processes 100 rows sampled from 3 L0A files.
-        The default is False.
-    data_archive_dir : str
-        DISDRODB Data Archive directory
-        Format: <...>/DISDRODB
-        If not specified, uses path specified in the DISDRODB active configuration.
-    """
+    It produces a DISDRODB L0B netCDF file for each DISDRODB L0A Apache Parquet file
+    of the specified station.
+
+    \b
+    Station Specification:
+        Requires exact specification of data_source, campaign_name, and station_name.
+        All three parameters must be provided and are case-sensitive (UPPER CASE required).
+
+    \b
+    Performance Options:
+        --parallel: Uses multiple processes for faster processing (default: True)
+        If parallel processing is enabled, each process will use a single thread
+        to avoid issues with the HDF/netCDF library.
+        The DASK_NUM_WORKERS environment variable controls the number of processes
+        to use.A sensible default is automatically set by the software.
+        --debugging_mode: Processes only a subset of data for testing
+        --force: Overwrites existing output files (default: False)
+
+    \b
+    Examples:
+        # Process a single station with full processing chain
+        disdrodb_run_l0b_station EPFL HYMEX_LTE_SOP2 10
+
+        # Force overwrite existing files with verbose output
+        disdrodb_run_l0b_station EPFL HYMEX_LTE_SOP2 10 --force True --verbose True
+
+        # Process station with debugging mode and custom workers
+        DASK_NUM_WORKERS=4 disdrodb_run_l0b_station NETHERLANDS DELFT PAR001_Cabauw --debugging_mode True
+
+    \b
+    Important Notes:
+        - Data source, campaign, and station names must be UPPER CASE
+        - All three station identifiers are required (no wildcards or filtering)
+    """  # noqa: D301
     from disdrodb.routines.l0 import run_l0b_station
     from disdrodb.utils.dask import close_dask_cluster, initialize_dask_cluster
 

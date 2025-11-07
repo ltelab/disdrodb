@@ -52,63 +52,51 @@ def disdrodb_run_l0a(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-    """Run the L0A processing of DISDRODB stations.
+    """Run the DISDRODB L0A processing chain for many/all DISDRODB stations.
 
-    This function launches the L0A processing for many DISDRODB stations with a single command.
-    From the list of all available DISDRODB stations, it runs the L0A conversion
-    for the stations matching the provided ``data_sources``, ``campaign_names`` and
-    ``station_names`` filters.
-
-    \b
-    Processing Level - L0A:
-        L0A converts raw instrument files to the DISDRODB standardized Apache Parquet format.
-        This is the first step in the processing chain (L0A → L0B → L0C → L1 → L2E → L2M).
+    It produces a DISDRODB L0A Apache Parquet file for each raw data file of
+    the specified stations, unless the raw data are already in netCDF format.
+    In this latter case, the raw data are directly converted to DISDRODB L0B files.
 
     \b
     Station Selection:
         If no station filters are specified, processes ALL available stations.
-        Use ``data_sources``, ``campaign_names``, and ``station_names`` to filter stations.
+        Use data_sources, campaign_names, and station_names to filter stations.
         Filters work together to narrow down the selection (AND logic).
 
     \b
     Performance Options:
-        --parallel: Uses multiple processes for faster processing (default: True).
-        If --parallel is enabled, each process will use a single thread to avoid issues
-        with the HDF/netCDF libraries (where applicable).
-
-        --debugging_mode: Processes only a small subset of data for quick testing (default: False).
-        --force: Overwrites existing output files (default: False).
-
-        The ``DASK_NUM_WORKERS`` environment variable controls the number of worker
-        processes used when ``--parallel`` is enabled. A sensible default is set
-        automatically when a cluster is initialized.
+        --parallel: Uses multiple processes for faster processing (default: True)
+        If parallel processing is enabled, each process will use a single thread
+        to avoid issues with the HDF/netCDF library.
+        The DASK_NUM_WORKERS environment variable controls the number of processes
+        to use.A sensible default is automatically set by the software.
+        --debugging_mode: Processes only a subset of data for testing
+        --force: Overwrites existing output files (default: False)
 
     \b
     Examples:
-        # Process all stations L0A conversion
+        # Process all stations
         disdrodb_run_l0a
 
-        # Process specific data sources with debugging mode
-        disdrodb_run_l0a --data_sources 'NASA EPFL' --debugging_mode
+        # Process a specific data source and force overwrite existing files
+        disdrodb_run_l0a --data_sources EPFL --force True --verbose True
+
+        # Process specific data sources
+        disdrodb_run_l0a --data_sources 'USA EPFL'
+
+        # Process specific campaigns in debugging mode
+        disdrodb_run_l0a --campaign_names 'DELFT IMPACTS' --debugging_mode True
 
         # Process specific stations with custom number of workers
-        DASK_NUM_WORKERS=8 disdrodb_run_l0a --data_sources 'NASA' --station_names 'apu01'
-
-        # Force overwrite existing files, verbose output
-        disdrodb_run_l0a --data_sources 'EPFL' --force --verbose
-
-    \b
-    Data Management:
-        L0A is an input step for downstream processing. Deleting L0A files should
-        only be done if you can re-run conversion from raw data when needed.
+        DASK_NUM_WORKERS=8 disdrodb_run_l0a --data_sources NASA --station_names 'apu01 apu02'
 
     \b
     Important Notes:
-        - Data source names must be UPPER CASE.
-        - Campaign names must be UPPER CASE.
-        - To specify multiple values, use space-separated strings in quotes.
-        - Use ``--debugging_mode`` for initial testing with reduced data volumes.
-
+        - Data source names must be UPPER CASE
+        - Campaign names must be UPPER CASE
+        - To specify multiple values, use space-separated strings in quotes
+        - Use --debugging_mode for initial testing with reduced data volumes
     """  # noqa: D301
     from disdrodb.routines import run_l0a
 

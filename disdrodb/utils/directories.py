@@ -212,7 +212,7 @@ def is_empty_directory(path, skip_hidden=True):
     return len(paths) == 0
 
 
-def _remove_file_or_directories(path, logger=None):
+def remove_file_or_directories(path, logger=None):
     """Return the file/directory or subdirectories tree of ``path``.
 
     Use this function with caution.
@@ -259,7 +259,7 @@ def remove_if_exists(path: str, force: bool = False, logger=None) -> None:
 
     # If force=True, remove the file/directory or subdirectories and files !
     try:
-        _remove_file_or_directories(path, logger=logger)
+        remove_file_or_directories(path, logger=logger)
     except Exception as e:
         msg = f"Can not delete file(s) at {path}. The error is: {e}"
         raise ValueError(msg)

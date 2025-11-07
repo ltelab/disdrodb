@@ -633,7 +633,7 @@ class TestRemoveIfExists:
         create_directory(tmp_directory)
 
         mocker.patch(
-            "disdrodb.utils.directories._remove_file_or_directories",
+            "disdrodb.utils.directories.remove_file_or_directories",
             side_effect=Exception("Unexpected error"),
         )
         with pytest.raises(ValueError):

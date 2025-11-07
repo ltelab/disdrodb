@@ -34,7 +34,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
     help="Whether to raise error of finish the check",
 )
 def disdrodb_check_metadata_archive(metadata_archive_dir=None, raise_error=True):
-    """Run the DISDRODB Metadata Archive Checks."""
+    """Validate the DISDRODB Metadata Archive."""
     from disdrodb.metadata.checks import check_metadata_archive
 
     metadata_archive_dir = parse_archive_dir(metadata_archive_dir)

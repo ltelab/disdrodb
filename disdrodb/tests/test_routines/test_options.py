@@ -22,11 +22,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 from click.testing import CliRunner
+from disdrodb.cli.disdrodb_check_products_options import (
+    disdrodb_check_products_options,
+)
 
 import disdrodb
-from disdrodb.cli.disdrodb_validate_products_configurations import (
-    disdrodb_validate_products_configurations,
-)
 from disdrodb.constants import ARCHIVE_VERSION
 from disdrodb.routines.options import (
     L0CProcessingOptions,
@@ -666,11 +666,11 @@ class TestL2ProcessingOptions:
         }
 
 
-def test_cli_disdrodb_validate_products_configurations():
-    """Test the disdrodb_validate_products_configurations command prints 'successfully'."""
+def test_cli_disdrodb_check_products_options():
+    """Test the disdrodb_check_products_options command prints 'successfully'."""
     # Run CLI
     runner = CliRunner()
-    result = runner.invoke(disdrodb_validate_products_configurations)
+    result = runner.invoke(disdrodb_check_products_options)
 
     # Make sure command ran successfully
     assert result.exit_code == 0, result.output
