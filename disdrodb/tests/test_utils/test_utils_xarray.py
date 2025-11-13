@@ -29,6 +29,7 @@ from disdrodb.utils.xarray import (
     remove_velocity_coordinates,
     unstack_datarray_dimension,
     xr_get_last_valid_idx,
+    xr_remap_numeric_array,
 )
 
 
@@ -391,7 +392,7 @@ class TestRemapNumericArray:
         """Verify Xarray DataArray remapping preserves structure and applies correctly."""
         da = xr.DataArray(np.array([1, 2, 3, 4]), dims="x")
         remap = {1: 10, 2: 20, 3: 30}
-        result = remap_numeric_array(da, remap)
+        result = xr_remap_numeric_array(da, remap)
         assert isinstance(result, xr.DataArray)
         expected = np.array([10, 20, 30, np.nan])
         np.testing.assert_array_equal(result.data, expected)

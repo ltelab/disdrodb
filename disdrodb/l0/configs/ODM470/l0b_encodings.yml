@@ -31,7 +31,7 @@ weather_code_synop_4677:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 43200
+  _FillValue: 255
 relative_wind_speed:
   dtype: uint16
   scale_factor: 0.1

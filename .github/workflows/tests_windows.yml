@@ -1,5 +1,10 @@
 name: Tests Windows
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 1 * *'  # Run at 00:00 UTC on the 1st day of every month
 
 jobs:
   tests:

@@ -1676,8 +1676,7 @@ def get_kinetic_energy_variables_from_drop_number(
     KEF = TKE / sample_interval * 3600
 
     # Compute Kinetic Energy per Rainfall Depth [J/m2/mm]
-    KED = KEF / R
-    KED = xr.where(R == 0, 0, KED)  # Ensure KED is 0 when R (and thus drop number is 0)
+    KED = xr.where(R == 0, 0, KEF / R)  # Ensure KED is 0 when R (and thus drop number is 0)
 
     # Create dataset
     dict_vars = {
