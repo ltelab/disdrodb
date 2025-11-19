@@ -21,6 +21,7 @@ import xarray as xr
 from disdrodb.constants import DIAMETER_DIMENSION
 from disdrodb.l0.l0b_processing import ensure_valid_geolocation
 from disdrodb.l1_env.routines import load_env_dataset
+from disdrodb.physics.wrappers import retrieve_air_density
 from disdrodb.utils.warnings import suppress_warnings
 
 
@@ -198,7 +199,6 @@ def get_raindrop_reynolds_number(diameter, temperature, air_density, water_densi
     property_number = pure_water_surface_tension**3 * air_density**2 / (air_viscosity**4 * delta_density * g)
 
     # Compute Reynolds_number_for small particles (diameter < 0.00107) (1 mm)
-    # --> First 9 bins of Parsivel ...
     b = [-3.18657, 0.992696, -0.00153193, -0.000987059, -0.000578878, 0.0000855176, -0.00000327815]
     x = np.log(davis_number)
     y = b[0] + sum(b * x**i for i, b in enumerate(b[1:], start=1))
@@ -208,7 +208,6 @@ def get_raindrop_reynolds_number(diameter, temperature, air_density, water_densi
     b = [-5.00015, 5.23778, -2.04914, 0.475294, -0.0542819, 0.00238449]
     log_property_number = np.log(property_number) / 6
     x = np.log(bond_number) + log_property_number
-    y = b[0]
     y = b[0] + sum(b * x**i for i, b in enumerate(b[1:], start=1))
     reynolds_number_large = np.exp(log_property_number + y)
 
@@ -485,24 +484,31 @@ def get_rain_fall_velocity(diameter, model, ds_env=None):
         diameter = np.atleast_1d(diameter)
         diameter = xr.DataArray(diameter, dims=DIAMETER_DIMENSION, coords={DIAMETER_DIMENSION: diameter.copy()})
 
-    # Initialize ds_env if None and method == "Beard1976"
-    if model == "Beard1976":
-        if ds_env is None:
-            ds_env = load_env_dataset()
+    # Initialize ds_env
+    if ds_env is None:
+        ds_env = load_env_dataset()
 
-        # Ensure valid altitude and geolocation
-        # - altitude required by Beard
-        # - latitude required for gravity
-        for coord in ["altitude", "latitude"]:
-            ds_env = ensure_valid_geolocation(ds_env, coord=coord, errors="raise")
+    # Ensure valid altitude and geolocation
+    # - altitude required by Beard
+    # - latitude required for gravity
+    for coord in ["altitude", "latitude"]:
+        ds_env = ensure_valid_geolocation(ds_env, coord=coord, errors="raise")
 
     # Retrieve fall velocity
     func = get_rain_fall_velocity_model(model)
     with suppress_warnings():  # e.g. when diameter = 0 for Beard1976
         fall_velocity = func(diameter, ds_env=ds_env) if model == "Beard1976" else func(diameter)
 
+    # Correct for altitude
+    if model != "Beard1976":
+        air_density_height = retrieve_air_density(ds_env)
+        air_density_sea_surface = 1.225  # kg/m3 (International Standard Atmosphere air density at sea level)
+        correction_factor = (air_density_sea_surface / air_density_height) ** (diameter * 0.025 + 0.375)
+        fall_velocity = fall_velocity * correction_factor
+
     # Set to NaN for diameter outside [0, 10)
     fall_velocity = fall_velocity.where(diameter < 10).where(diameter > 0)
+
     # Ensure fall velocity is > 0 to avoid division by zero
     # - Some models, at small diameter, can return negative/zero fall velocity
     fall_velocity = fall_velocity.where(fall_velocity > 0)
