@@ -73,7 +73,7 @@ class TestGetAxisRatio:
         # Reference outputs precomputed at diameter=2.0 mm
         ("Thurai2005", 2.0, 0.93150),
         ("Thurai2007", 2.0, 0.9295128),
-        ("Battaglia2010", 2.0, 0.92499),
+        ("Parsivel", 2.0, 0.92499),
         ("Brandes2002", 2.0, 0.93797),
         ("Pruppacher1970", 2.0, 0.906),
         ("Beard1987", 2.0, 0.92759279),
