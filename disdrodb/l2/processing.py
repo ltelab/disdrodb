@@ -41,6 +41,24 @@ from disdrodb.utils.time import ensure_sample_interval_in_seconds
 from disdrodb.utils.writer import finalize_product
 
 
+def _define_diameter_array(diameters_bounds):
+    diameters_bin_lower = diameters_bounds[:-1]
+    diameters_bin_upper = diameters_bounds[1:]
+    diameters_bin_width = diameters_bin_upper - diameters_bin_lower
+    diameters_bin_center = diameters_bin_lower + diameters_bin_width / 2
+    da = xr.DataArray(
+        diameters_bin_center,
+        dims="diameter_bin_center",
+        coords={
+            "diameter_bin_width": ("diameter_bin_center", diameters_bin_width),
+            "diameter_bin_lower": ("diameter_bin_center", diameters_bin_lower),
+            "diameter_bin_upper": ("diameter_bin_center", diameters_bin_upper),
+            "diameter_bin_center": ("diameter_bin_center", diameters_bin_center),
+        },
+    )
+    return da
+
+
 def define_diameter_array(diameter_min=0, diameter_max=10, diameter_spacing=0.05):
     """
     Define an array of diameters and their corresponding bin properties.
@@ -62,21 +80,7 @@ def define_diameter_array(diameter_min=0, diameter_max=10, diameter_spacing=0.05
 
     """
     diameters_bounds = np.arange(diameter_min, diameter_max + diameter_spacing / 2, step=diameter_spacing)
-    diameters_bin_lower = diameters_bounds[:-1]
-    diameters_bin_upper = diameters_bounds[1:]
-    diameters_bin_width = diameters_bin_upper - diameters_bin_lower
-    diameters_bin_center = diameters_bin_lower + diameters_bin_width / 2
-    da = xr.DataArray(
-        diameters_bin_center,
-        dims="diameter_bin_center",
-        coords={
-            "diameter_bin_width": ("diameter_bin_center", diameters_bin_width),
-            "diameter_bin_lower": ("diameter_bin_center", diameters_bin_lower),
-            "diameter_bin_upper": ("diameter_bin_center", diameters_bin_upper),
-            "diameter_bin_center": ("diameter_bin_center", diameters_bin_center),
-        },
-    )
-    return da
+    return _define_diameter_array(diameters_bounds)
 
 
 def define_velocity_array(ds):
@@ -552,6 +556,7 @@ def generate_l2e(
         "qc_time",
         # L1 flags and variables
         "qc_resampling",
+        "precipitation_type",
         "hydrometeor_type",
         "n_margin_fallers",
         "n_splashing",

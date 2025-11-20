@@ -147,17 +147,16 @@ class TestGSOptimization:
             optimization_kwargs=optimization_kwargs,
         )
 
-        # Test error is close to zero
+        # Test relative error is close to zero
         D = ds["diameter_bin_center"].to_numpy()
         dD = ds["diameter_bin_width"].to_numpy()
         ND_obs = ds["drop_number_concentration"].to_numpy()
         ND_pred = create_psd(psd_model=ds_params.attrs["disdrodb_psd_model"], parameters=ds_params)(D).to_numpy()
-        error = _compute_target_variable_error(target, ND_obs, ND_pred, D, dD, V)
-
+        error = _compute_target_variable_error(target, ND_obs, ND_pred, D, dD, V, relative=True)
         np.testing.assert_allclose(
             error,
             0,
-            atol=0.1,
+            atol=0.01,
             err_msg=f"GS fitting of {psd_model} using {target=} causes inaccurate {target} reproduction.",
         )
 

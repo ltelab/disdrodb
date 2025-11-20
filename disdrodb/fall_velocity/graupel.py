@@ -48,7 +48,7 @@ def get_graupel_density(diameter):
     Graupel and Hail Terminal Velocities: Does a Supercritical Reynolds Number Apply?
     J. Atmos. Sci., 71, 3392-3403, https://doi.org/10.1175/JAS-D-14-0034.1.
     """
-    graupel_density = 0.18 * (diameter * 0.1) ** 0.33 / 1000 * 100**3
+    graupel_density = 0.18 * (diameter * 0.1) ** 0.33 * 1000
     return graupel_density
 
 

@@ -35,7 +35,7 @@ def test_get_default_environment_dataset_values():
     assert np.isclose(ds["gas_constant_dry_air"].item(), 287.04)
     assert np.isclose(ds["lapse_rate"].item(), 0.0065)
     assert np.isclose(ds["relative_humidity"].item(), 0.95)
-    assert np.isclose(ds["temperature"].item(), 293.15)  # 20°C in K
+    assert np.isclose(ds["temperature"].item(), 288.15)  # 15°C
     assert np.isclose(ds["water_density"].item(), 1000)
 
 

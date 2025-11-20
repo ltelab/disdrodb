@@ -1056,14 +1056,26 @@ def _compute_z(ND, D, dD):
     return Z
 
 
-def _compute_target_variable_error(target, ND_obs, ND_preds, D, dD, V):
+def _compute_target_variable_error(target, ND_obs, ND_preds, D, dD, V, relative=False, eps=1e-12):
+    # Compute observed and predicted target variables
     if target == "Z":
-        errors = np.abs(_compute_z(ND_obs, D, dD) - _compute_z(ND_preds, D, dD))
+        obs = _compute_z(ND_obs, D, dD)
+        pred = _compute_z(ND_preds, D, dD)
     elif target == "R":
-        errors = np.abs(_compute_rain_rate(ND_obs, D, dD, V) - _compute_rain_rate(ND_preds, D, dD, V))
-    else:  # if target == "LWC":
-        errors = np.abs(_compute_lwc(ND_obs, D, dD) - _compute_lwc(ND_preds, D, dD))
-    return errors
+        obs = _compute_rain_rate(ND_obs, D, dD, V)
+        pred = _compute_rain_rate(ND_preds, D, dD, V)
+    else:  # "LWC"
+        obs = _compute_lwc(ND_obs, D, dD)
+        pred = _compute_lwc(ND_preds, D, dD)
+
+    # Absolute error
+    abs_error = np.abs(obs - pred)
+
+    # Return relative error if requested
+    if relative:
+        return abs_error / (np.abs(obs) + eps)
+
+    return abs_error
 
 
 def _compute_cost_function(ND_obs, ND_preds, D, dD, V, target, transformation, error_order):
