@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Routines to download data from the DISDRODB Decentralized Data Archive."""
-
 import logging
 import os
 import shutil
@@ -241,7 +240,7 @@ def check_consistent_station_name(metadata_filepath, station_name):
 
 
 def download_station_data(metadata_filepath: str, data_archive_dir: str, force: bool = False, verbose=True) -> None:
-    """Download and unzip the station data .
+    """Download and unzip the station data.
 
     Parameters
     ----------
@@ -284,7 +283,8 @@ def download_station_data(metadata_filepath: str, data_archive_dir: str, force: 
 
     # Download files
     # - Option 1: Download ZIP file containing all station raw data
-    if disdrodb_data_url.startswith("https://zenodo.org/") or disdrodb_data_url.startswith("https://cloudnet.fmi.fi/"):
+    zip_repos = ["https://zenodo.org/", "https://cloudnet.fmi.fi/", "https://data.dtu.dk/"]
+    if any(disdrodb_data_url.startswith(repo) for repo in zip_repos):
         download_zip_file(url=disdrodb_data_url, dst_dir=station_dir)
 
     # - Option 2: Recursive download from a web server via HTTP or HTTPS.
