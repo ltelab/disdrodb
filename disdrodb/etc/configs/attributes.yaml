@@ -283,8 +283,12 @@ RHOHV:
     reflectivity
   long_name: Copolarized Correlation Coefficient
   units: ""
-LDR:
-  description: Linear depolarization ratio
+LDRH:
+  description: Linear depolarization ratio at horizontal polarization
+  long_name: Linear Depolarization Ratio
+  units: dB
+LDRV:
+  description: Linear depolarization ratio at vertical polarization
   long_name: Linear Depolarization Ratio
   units: dB
 KDP:

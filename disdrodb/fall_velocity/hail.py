@@ -105,7 +105,7 @@ def get_fall_velocity_knight_1983_high_density(diameter):
     return fall_velocity
 
 
-def get_fall_velocity_heymsfield_2014b(diameter):
+def get_fall_velocity_heymsfield_2014(diameter):
     """Get hail fall velocity from Heymsfield et al., 2014.
 
     Use the Heymsfield et al., 2014 parameterization.
@@ -138,7 +138,6 @@ def get_fall_velocity_heymsfield_2018(diameter):
     diameter : array-like or float
         Particle maximum diameter in millimeters [mm].
 
-
     Returns
     -------
     fall_velocity : array-like or float
@@ -149,8 +148,16 @@ def get_fall_velocity_heymsfield_2018(diameter):
     Heymsfield, A., M. Szakáll, A. Jost, I. Giammanco, and R. Wright, 2018.
     A Comprehensive Observational Study of Graupel and Hail Terminal Velocity, Mass Flux, and Kinetic Energy.
     J. Atmos. Sci., 75, 3861-3885, https://doi.org/10.1175/JAS-D-18-0035.1.
+
+    Heymsfield, A., M. Szakáll, A. Jost, I. Giammanco, R. Wright, and J. Brimelow, 2020.
+    CORRIGENDUM.
+    J. Atmos. Sci., 77, 405-412, https://doi.org/10.1175/JAS-D-19-0185.1.
     """
-    fall_velocity = 6.1 * (0.1 * diameter) ** 0.72  # eq 7 and 15
+    # Original incorrect formula from Heymsfield et al., 2018
+    # fall_velocity = 6.1 * (0.1 * diameter) ** 0.72  # eq 7 and 15
+
+    # Corrected formula from Heymsfield et al., 2020 (Corrigendum)
+    fall_velocity = 8.39 * (0.1 * diameter) ** 0.67
     return fall_velocity
 
 
@@ -168,7 +175,7 @@ HAIL_FALL_VELOCITY_MODELS = {
     "Laurie1960": get_fall_velocity_laurie_1960,
     "Knight1983LD": get_fall_velocity_knight_1983_low_density,
     "Knight1983HD": get_fall_velocity_knight_1983_high_density,
-    "Heymsfield2014": get_fall_velocity_heymsfield_2014b,
+    "Heymsfield2014": get_fall_velocity_heymsfield_2014,
     "Heymsfield2018": get_fall_velocity_heymsfield_2018,
     "Fehlmann2020": get_fall_velocity_fehlmann_2020,
 }

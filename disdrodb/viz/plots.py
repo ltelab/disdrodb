@@ -53,8 +53,9 @@ def plot_nd(ds, var="drop_number_concentration", cmap=None, norm=None):
 
     # Check only time and diameter dimensions are specified
     if "time" not in ds.dims:
+        drop_number_concentration = ds[var].isel(velocity_method=0, missing_dims="ignore")
         ax = _single_plot_nd_distribution(
-            drop_number_concentration=ds[var],
+            drop_number_concentration=drop_number_concentration,
             diameter=ds["diameter_bin_center"],
             diameter_bin_width=ds["diameter_bin_width"],
         )

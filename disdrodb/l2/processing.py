@@ -28,6 +28,7 @@ from disdrodb.l2.empirical_dsd import (
     compute_spectrum_parameters,
     get_drop_number_concentration,
     get_effective_sampling_area,
+    get_effective_sampling_interval,
     get_kinetic_energy_variables_from_drop_number,
     get_min_max_diameter,
     get_rain_accumulation,
@@ -36,51 +37,12 @@ from disdrodb.l2.empirical_dsd import (
 from disdrodb.psd import create_psd, estimate_model_parameters
 from disdrodb.psd.fitting import compute_gof_stats
 from disdrodb.utils.decorators import check_pytmatrix_availability
-from disdrodb.utils.manipulations import filter_diameter_bins, filter_velocity_bins
-from disdrodb.utils.time import ensure_sample_interval_in_seconds
+from disdrodb.utils.manipulations import (
+    define_diameter_array,
+    filter_diameter_bins,
+    filter_velocity_bins,
+)
 from disdrodb.utils.writer import finalize_product
-
-
-def _define_diameter_array(diameters_bounds):
-    diameters_bin_lower = diameters_bounds[:-1]
-    diameters_bin_upper = diameters_bounds[1:]
-    diameters_bin_width = diameters_bin_upper - diameters_bin_lower
-    diameters_bin_center = diameters_bin_lower + diameters_bin_width / 2
-    da = xr.DataArray(
-        diameters_bin_center,
-        dims="diameter_bin_center",
-        coords={
-            "diameter_bin_width": ("diameter_bin_center", diameters_bin_width),
-            "diameter_bin_lower": ("diameter_bin_center", diameters_bin_lower),
-            "diameter_bin_upper": ("diameter_bin_center", diameters_bin_upper),
-            "diameter_bin_center": ("diameter_bin_center", diameters_bin_center),
-        },
-    )
-    return da
-
-
-def define_diameter_array(diameter_min=0, diameter_max=10, diameter_spacing=0.05):
-    """
-    Define an array of diameters and their corresponding bin properties.
-
-    Parameters
-    ----------
-    diameter_min : float, optional
-        The minimum diameter value. The default value is 0 mm.
-    diameter_max : float, optional
-        The maximum diameter value. The default value is 10 mm.
-    diameter_spacing : float, optional
-        The spacing between diameter values. The default value is 0.05 mm.
-
-    Returns
-    -------
-    xr.DataArray
-        A DataArray containing the center of each diameter bin, with coordinates for
-        the bin width, lower bound, upper bound, and center.
-
-    """
-    diameters_bounds = np.arange(diameter_min, diameter_max + diameter_spacing / 2, step=diameter_spacing)
-    return _define_diameter_array(diameters_bounds)
 
 
 def define_velocity_array(ds):
@@ -104,7 +66,7 @@ def define_velocity_array(ds):
     if "velocity_bin_center" in ds.dims:
         velocity = xr.Dataset(
             {
-                "fall_velocity": xr.ones_like(drop_number) * ds["fall_velocity"],
+                "theoretical_velocity": xr.ones_like(drop_number) * ds["fall_velocity"],
                 "measured_velocity": xr.ones_like(drop_number) * ds["velocity_bin_center"],
             },
         ).to_array(dim="velocity_method")
@@ -533,9 +495,11 @@ def generate_l2e(
     diameter = ds["diameter_bin_center"] / 1000  # m
     diameter_bin_width = ds["diameter_bin_width"]  # mm
     drop_number = ds["drop_number"]
-    sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"])  # s
 
-    # Compute sampling area [m2]
+    # Retrieve effective sampling interval [s]
+    sample_interval = get_effective_sampling_interval(ds, sensor_name=sensor_name)  # s
+
+    # Retrieve effective sampling area [m2]
     sampling_area = get_effective_sampling_area(sensor_name=sensor_name, diameter=diameter)  # m2
 
     # Copy relevant L1 variables to L2 product
@@ -690,7 +654,7 @@ def check_l2m_input_dataset(ds):
     if "drop_number_concentration" not in ds:
         if "drop_number" in ds:
             check_l2e_input_dataset(ds)
-            sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"])
+            sample_interval = get_effective_sampling_interval(ds, sensor_name=ds.attrs["sensor_name"])
             sampling_area = get_effective_sampling_area(
                 sensor_name=ds.attrs["sensor_name"],
                 diameter=ds["diameter_bin_center"] / 1000,
@@ -795,7 +759,7 @@ def generate_l2m(
 
     # Retrieve measurement interval
     # - If dataset is opened with decode_timedelta=False, sample_interval is already in seconds !
-    sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"])
+    sample_interval = get_effective_sampling_interval(ds, sensor_name=ds.attrs["sensor_name"])
 
     # Select timesteps with at least the specified number of drops
     ds = select_timesteps_with_drops(ds, minimum_ndrops=minimum_ndrops)

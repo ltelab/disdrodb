@@ -327,7 +327,7 @@ class TestGenerateL2Empirical:
             "M4",
             "M5",
             "M6",
-            "W",
+            "LWC",
             "Z",
             "Dmode",
             "Dm",

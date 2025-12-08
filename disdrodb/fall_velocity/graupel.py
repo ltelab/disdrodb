@@ -198,8 +198,16 @@ def get_fall_velocity_heymsfield_2018(diameter):
     Heymsfield, A., M. Szakáll, A. Jost, I. Giammanco, and R. Wright, 2018.
     A Comprehensive Observational Study of Graupel and Hail Terminal Velocity, Mass Flux, and Kinetic Energy.
     J. Atmos. Sci., 75, 3861-3885, https://doi.org/10.1175/JAS-D-18-0035.1.
+
+    Heymsfield, A., M. Szakáll, A. Jost, I. Giammanco, R. Wright, and J. Brimelow, 2020.
+    CORRIGENDUM.
+    J. Atmos. Sci., 77, 405-412, https://doi.org/10.1175/JAS-D-19-0185.1.
     """
-    fall_velocity = 6.35 * (0.1 * diameter) ** 0.87  # 0.87 in Table 3. 0.97 in Eq 8
+    # Original incorrect formula from Heymsfield et al., 2018
+    # fall_velocity = 6.35 * (0.1 * diameter) ** 0.87  # 0.87 in Table 3. 0.97 in Eq 8
+
+    # Corrected formula from Heymsfield et al., 2020 (Corrigendum)
+    fall_velocity = 7.59 * (0.1 * diameter) ** 0.89
     return fall_velocity
 
 

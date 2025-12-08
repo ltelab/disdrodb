@@ -17,11 +17,54 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Include functions helping for DISDRODB product manipulations."""
-
 import numpy as np
+import xarray as xr
 
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.utils.xarray import unstack_datarray_dimension
+
+
+def define_diameter_datarray(bounds):
+    """Define diameter DataArray."""
+    diameters_bin_lower = bounds[:-1]
+    diameters_bin_upper = bounds[1:]
+    diameters_bin_width = diameters_bin_upper - diameters_bin_lower
+    diameters_bin_center = diameters_bin_lower + diameters_bin_width / 2
+    da = xr.DataArray(
+        diameters_bin_center,
+        dims="diameter_bin_center",
+        coords={
+            "diameter_bin_width": ("diameter_bin_center", diameters_bin_width),
+            "diameter_bin_lower": ("diameter_bin_center", diameters_bin_lower),
+            "diameter_bin_upper": ("diameter_bin_center", diameters_bin_upper),
+            "diameter_bin_center": ("diameter_bin_center", diameters_bin_center),
+        },
+    )
+    return da
+
+
+def define_diameter_array(diameter_min=0, diameter_max=10, diameter_spacing=0.05):
+    """
+    Define an array of diameters and their corresponding bin properties.
+
+    Parameters
+    ----------
+    diameter_min : float, optional
+        The minimum diameter value. The default value is 0 mm.
+    diameter_max : float, optional
+        The maximum diameter value. The default value is 10 mm.
+    diameter_spacing : float, optional
+        The spacing between diameter values. The default value is 0.05 mm.
+
+    Returns
+    -------
+    xr.DataArray
+        A DataArray containing the center of each diameter bin, with coordinates for
+        the bin width, lower bound, upper bound, and center.
+
+    """
+    diameters_bounds = np.arange(diameter_min, diameter_max + diameter_spacing / 2, step=diameter_spacing)
+    return define_diameter_datarray(diameters_bounds)
 
 
 def filter_diameter_bins(ds, minimum_diameter=None, maximum_diameter=None):

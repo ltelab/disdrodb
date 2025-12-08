@@ -505,10 +505,13 @@ def compute_radar_variables(scatterer):
         radar_vars["ZDR"] = 10 * np.log10(radar.Zdr(scatterer))  # dB
         radar_vars["ZDR"] = np.where(np.isfinite(radar_vars["ZDR"]), radar_vars["ZDR"], np.nan)
 
-        radar_vars["LDR"] = 10 * np.log10(radar.ldr(scatterer))  # dBZ
-        radar_vars["LDR"] = np.where(np.isfinite(radar_vars["LDR"]), radar_vars["LDR"], np.nan)
+        radar_vars["LDRH"] = 10 * np.log10(radar.ldr(scatterer), hpol=True)  # dBZ
+        radar_vars["LDRH"] = np.where(np.isfinite(radar_vars["LDRH"]), radar_vars["LDRH"], np.nan)
 
-        radar_vars["RHOHV"] = radar.rho_hv(scatterer)  # deg/km
+        radar_vars["LDRV"] = 10 * np.log10(radar.ldr(scatterer), hpol=False)  # dBZ
+        radar_vars["LDRV"] = np.where(np.isfinite(radar_vars["LDRV"]), radar_vars["LDRV"], np.nan)
+
+        radar_vars["RHOHV"] = radar.rho_hv(scatterer)  # [-]
         radar_vars["DELTAHV"] = radar.delta_hv(scatterer) * 180.0 / np.pi  # [deg]
 
         # Set forward scattering for attenuation and phase calculations

@@ -373,7 +373,14 @@ DELTAHV:
   shuffle: true
   fletcher32: false
   contiguous: false
-LDR:
+LDRH:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+LDRV:
   dtype: float32
   zlib: true
   complevel: 3

@@ -25,6 +25,7 @@ import xarray as xr
 
 from disdrodb.api.checks import check_sensor_name
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
+from disdrodb.utils.time import ensure_sample_interval_in_seconds
 from disdrodb.utils.xarray import (
     remove_diameter_coordinates,
     remove_velocity_coordinates,
@@ -208,8 +209,26 @@ def add_bins_metrics(ds):
     return ds
 
 
-####-------------------------------------------------------------------------------------------------------------------.
-#### DSD Spectrum, Concentration, Moments
+####------------------------------------------------------------------------------------------.
+#### Sampling area and measurement interval
+def get_sampling_area(sensor_name):
+    """Return the sampling area in m2 of the disdrometer."""
+    check_sensor_name(sensor_name)
+    area_dict = {
+        "PARSIVEL": 0.0054,  # 54 cm2
+        "PARSIVEL2": 0.0054,  # 54 cm2
+        "LPM": 0.0045,  # 45 cm2
+        "LPM_V0": 0.0045,  # 45 cm2
+        "ODM470": 0.00264,  # 26.4 cm2
+        "PWS100": 0.004,  # 40 cm2
+        "RD80": 0.005,  # 50 cm2
+        "SWS250": 0.006504,  # 65.04 cm2  (Ricardo Reinoso Rondinel, personal communication)
+    }
+    # SWS250
+    # - Table 29 of the manual that the sample volume is 400cm3, path length?
+    # - Distance between the end of the hood heaters is 291 mm.
+    # - Adding a factor of 1.5 for better representation of the Tx-Rx distance: L= 436 mm.
+    return area_dict[sensor_name]
 
 
 def get_effective_sampling_area(sensor_name, diameter):
@@ -227,29 +246,22 @@ def get_effective_sampling_area(sensor_name, diameter):
         B = 30 / 1000  # Width of the Parsivel beam in m (30mm)
         sampling_area = L * (B - diameter / 2)  # d_eq
         return sampling_area
-    if sensor_name in ["LPM", "LPM_V0"]:
-        # Calculate sampling area for each diameter bin (S_i)
-        # L = 228 / 1000  # Length of the beam in m (228 mm)
-        # B = 20 / 1000  # Width of the beam in m (20 mm)
-        # sampling_area = L * (B - diameter / 2)
-        sampling_area = 0.0045  # m2
-        return sampling_area
-    if sensor_name == "ODM470":
-        sampling_area = 0.00264  # 26.4 cm2
-        return sampling_area
+    return get_sampling_area(sensor_name)
+
+
+def get_effective_sampling_interval(ds, sensor_name):
+    """Return the effective sample interval in seconds of the disdrometer."""
+    sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"])  # s
+    # Adapt sample interval for sensor duty cycle
     if sensor_name == "PWS100":
-        sampling_area = 0.004  # m2
-        return sampling_area
-    if sensor_name == "RD80":
-        sampling_area = 0.005  # m2
-        return sampling_area
-    if sensor_name == "SWS250":
-        # Table 29 of the manual that the sample volume is 400cm3, path length?
-        # Distance between the end of the hood heaters is 291 mm.
-        # Adding a factor of 1.5 for better representation of the Tx-Rx distance: L= 436 mm.
-        sampling_area = 0.0091  # m2 #  0.006504 m2 maybe?
-        return sampling_area
-    raise NotImplementedError(f"Effective sampling area for {sensor_name} must yet to be specified in the software.")
+        # PWS100 has a duty cycle of 9s on, 1s off
+        # - 9 seconds out of 10 are used for counting drops, 1 second is used to process data
+        sample_interval = sample_interval * (9 / 10)
+    return sample_interval
+
+
+####-------------------------------------------------------------------------------------------------------------------.
+#### DSD Spectrum, Concentration, Moments
 
 
 def get_bin_dimensions(xr_obj):
@@ -1774,15 +1786,15 @@ def compute_integral_parameters(
             moment=moment,
         )
 
-    # Compute Liquid Water Content (LWC) (W) [g/m3]
-    # ds["W"] = get_liquid_water_content(
+    # Compute Liquid Water Content (LWC) [g/m3]
+    # ds["LWC"] = get_liquid_water_content(
     #     drop_number_concentration=drop_number_concentration,
     #     diameter=diameter,
     #     diameter_bin_width=diameter_bin_width,
     #     water_density=water_density,
     # )
 
-    ds["W"] = get_liquid_water_content_from_moments(moment_3=ds["M3"], water_density=water_density)
+    ds["LWC"] = get_liquid_water_content_from_moments(moment_3=ds["M3"], water_density=water_density)
 
     # Compute reflectivity in dBZ
     ds["Z"] = get_equivalent_reflectivity_factor(

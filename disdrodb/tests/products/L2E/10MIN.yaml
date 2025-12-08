@@ -1,7 +1,7 @@
 archive_options:
   strategy: event
   strategy_options:
-    variable: "N" # in future "n_particles"
+    variable: "n_particles"
     detection_threshold: 5
     neighbor_min_size: 2
     neighbor_time_interval: "10MIN"

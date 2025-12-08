@@ -1937,7 +1937,7 @@ class TestKineticEnergyVariables:
         velocity = xr.Dataset(
             {
                 "measured_velocity": xr.ones_like(ds["drop_number"]) * ds["velocity_bin_center"],
-                "fall_velocity": xr.ones_like(ds["drop_number"]) * ds["fall_velocity"],
+                "theoretical_velocity": xr.ones_like(ds["drop_number"]) * ds["fall_velocity"],
             },
         ).to_array(dim="velocity_method")
 
