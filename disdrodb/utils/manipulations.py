@@ -43,6 +43,25 @@ def define_diameter_datarray(bounds):
     return da
 
 
+def define_velocity_datarray(bounds):
+    """Define velocity DataArray."""
+    velocitys_bin_lower = bounds[:-1]
+    velocitys_bin_upper = bounds[1:]
+    velocitys_bin_width = velocitys_bin_upper - velocitys_bin_lower
+    velocitys_bin_center = velocitys_bin_lower + velocitys_bin_width / 2
+    da = xr.DataArray(
+        velocitys_bin_center,
+        dims="velocity_bin_center",
+        coords={
+            "velocity_bin_width": ("velocity_bin_center", velocitys_bin_width),
+            "velocity_bin_lower": ("velocity_bin_center", velocitys_bin_lower),
+            "velocity_bin_upper": ("velocity_bin_center", velocitys_bin_upper),
+            "velocity_bin_center": ("velocity_bin_center", velocitys_bin_center),
+        },
+    )
+    return da
+
+
 def define_diameter_array(diameter_min=0, diameter_max=10, diameter_spacing=0.05):
     """
     Define an array of diameters and their corresponding bin properties.
@@ -65,6 +84,30 @@ def define_diameter_array(diameter_min=0, diameter_max=10, diameter_spacing=0.05
     """
     diameters_bounds = np.arange(diameter_min, diameter_max + diameter_spacing / 2, step=diameter_spacing)
     return define_diameter_datarray(diameters_bounds)
+
+
+def define_velocity_array(velocity_min=0, velocity_max=10, velocity_spacing=0.05):
+    """
+    Define an array of velocities and their corresponding bin properties.
+
+    Parameters
+    ----------
+    velocity_min : float, optional
+        The minimum velocity value. The default value is 0 mm.
+    velocity_max : float, optional
+        The maximum velocity value. The default value is 10 mm.
+    velocity_spacing : float, optional
+        The spacing between velocity values. The default value is 0.05 mm.
+
+    Returns
+    -------
+    xr.DataArray
+        A DataArray containing the center of each velocity bin, with coordinates for
+        the bin width, lower bound, upper bound, and center.
+
+    """
+    velocitys_bounds = np.arange(velocity_min, velocity_max + velocity_spacing / 2, step=velocity_spacing)
+    return define_velocity_datarray(velocitys_bounds)
 
 
 def filter_diameter_bins(ds, minimum_diameter=None, maximum_diameter=None):

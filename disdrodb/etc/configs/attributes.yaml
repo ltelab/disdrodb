@@ -73,11 +73,17 @@ n_particles:
   units: "1"
   description: "Total count of hydrometeor particles."
   valid_min: 0
-n_graupel:
-  long_name: "number of graupel particles"
+n_low_density_graupel:
+  long_name: "number of low-density graupel particles"
   standard_name: "number_of_graupel_particles"
   units: "1"
-  description: "Count of graupel particles."
+  description: "Count of low-density (<400 kg/m3) graupel particles."
+  valid_min: 0
+n_high_density_graupel:
+  long_name: "number of high-density graupel particles"
+  standard_name: "number_of_graupel_particles"
+  units: "1"
+  description: "Count of high-density (>400 kg/m3) graupel particles."
   valid_min: 0
 n_small_hail:
   long_name: "number of small hail particles"

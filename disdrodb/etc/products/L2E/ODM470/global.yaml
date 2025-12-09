@@ -15,6 +15,7 @@ product_options:
   maximum_diameter: 10
   minimum_velocity: 0
   maximum_velocity: 12
+  keep_mixed_precipitation: False
   above_velocity_fraction: null
   above_velocity_tolerance: 3
   below_velocity_fraction: null

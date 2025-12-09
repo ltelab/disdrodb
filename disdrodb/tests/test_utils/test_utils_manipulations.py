@@ -25,6 +25,10 @@ from disdrodb.tests.fake_datasets import create_template_l2e_dataset
 from disdrodb.utils.manipulations import (
     convert_from_decibel,
     convert_to_decibel,
+    define_diameter_array,
+    define_diameter_datarray,
+    define_velocity_array,
+    define_velocity_datarray,
     filter_diameter_bins,
     filter_velocity_bins,
     get_diameter_bin_edges,
@@ -32,6 +36,71 @@ from disdrodb.utils.manipulations import (
     resample_drop_number_concentration,
     unstack_radar_variables,
 )
+
+
+def test_define_diameter_datarray_basic():
+    """Test define_diameter_datarrayrray creation."""
+    bounds = np.array([0, 1, 2])
+    da = define_diameter_datarray(bounds)
+
+    expected_centers = np.array([0.5, 1.5])
+    expected_widths = np.array([1, 1])
+
+    assert isinstance(da, xr.DataArray)
+    assert da.dims == ("diameter_bin_center",)
+    np.testing.assert_array_equal(da.values, expected_centers)
+    np.testing.assert_array_equal(da.coords["diameter_bin_width"], expected_widths)
+    np.testing.assert_array_equal(da.coords["diameter_bin_lower"], bounds[:-1])
+    np.testing.assert_array_equal(da.coords["diameter_bin_upper"], bounds[1:])
+
+
+def test_define_velocity_datarray():
+    """Test define_velocity_datarray creation."""
+    bounds = np.array([0, 2, 4])
+    da = define_velocity_datarray(bounds)
+
+    expected_centers = np.array([1, 3])
+    expected_widths = np.array([2, 2])
+
+    assert isinstance(da, xr.DataArray)
+    assert da.dims == ("velocity_bin_center",)
+
+    np.testing.assert_array_equal(da.values, expected_centers)
+    np.testing.assert_array_equal(da.coords["velocity_bin_width"], expected_widths)
+    np.testing.assert_array_equal(da.coords["velocity_bin_lower"], bounds[:-1])
+    np.testing.assert_array_equal(da.coords["velocity_bin_upper"], bounds[1:])
+
+
+class TestDefineDiameterArray:
+    def test_define_diameter_array_defaults(self):
+        """Test diameter array with default arguments."""
+        da = define_diameter_array()
+
+        # Expected number of bins: (10 - 0) / 0.05 = 200
+        assert len(da) == 200
+        assert np.isclose(da.values[0], 0.025)  # center of first bin
+        assert np.isclose(da.values[-1], 9.975)  # center of last bin
+
+    def test_define_diameter_array_custom(self):
+        """Test diameter array with custom spacing."""
+        da = define_diameter_array(0, 2, 1)
+        expected_centers = np.array([0.5, 1.5])
+        np.testing.assert_array_equal(da.values, expected_centers)
+
+
+class TestDefineVelocityArray:
+    def test_define_velocity_array_defaults(self):
+        """Test velocity array with default arguments."""
+        da = define_velocity_array()
+        assert len(da) == 200
+        assert np.isclose(da.values[0], 0.025)
+        assert np.isclose(da.values[-1], 9.975)
+
+    def test_define_velocity_array_custom(self):
+        """Test velocity array with custom spacing."""
+        da = define_velocity_array(0, 4, 2)
+        expected_centers = np.array([1, 3])
+        np.testing.assert_array_equal(da.values, expected_centers)
 
 
 def create_test_dataset():

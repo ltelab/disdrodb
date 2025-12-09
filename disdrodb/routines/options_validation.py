@@ -371,6 +371,7 @@ class L2EProductOptions(CustomBaseModel):
     maximum_diameter: float = Field(..., gt=0, description="Maximum diameter threshold")
     minimum_velocity: float = Field(..., ge=0, description="Minimum velocity threshold")
     maximum_velocity: float = Field(..., gt=0, description="Maximum velocity threshold")
+    keep_mixed_precipitation: bool = Field(..., description="Whether to keep mixed precipitation")
     above_velocity_fraction: Union[float, None] = Field(..., ge=0, le=1, description="Above velocity fraction")
     above_velocity_tolerance: float = Field(..., ge=0, description="Above velocity tolerance")
     below_velocity_fraction: Union[float, None] = Field(..., ge=0, le=1, description="Below velocity fraction")

@@ -344,7 +344,7 @@ def generate_l2e(
     maximum_diameter=10,
     minimum_velocity=0,
     maximum_velocity=12,
-    keep_only_rain=False,  # TODO Whether to use HC precipitation type to keep only rain/mixed phase timesteps
+    keep_mixed_precipitation=False,
     # Spectrum filtering options
     fall_velocity_model="Beard1976",
     above_velocity_fraction=0.5,
@@ -406,10 +406,12 @@ def generate_l2e(
     # Check and prepapre input dataset
     ds = check_l2e_input_dataset(ds)
 
-    # Select only dry or rainy timesteps
-    # - With class 4 I include mixed phase too
-    if keep_only_rain and "precipitation_type" in ds:
-        ds = ds.isel(time=ds["precipitation_type"].isin([-1, 0, 4]), drop=True)
+    # Select only dry and rainy timesteps
+    if "precipitation_type" in ds:
+        if keep_mixed_precipitation:  # class 4
+            ds = ds.isel(time=ds["precipitation_type"].isin([-1, 0, 4]), drop=True)
+        else:
+            ds = ds.isel(time=ds["precipitation_type"].isin([-1, 0]), drop=True)
 
     # Determine if the velocity dimension is available
     has_velocity_dimension = VELOCITY_DIMENSION in ds.dims

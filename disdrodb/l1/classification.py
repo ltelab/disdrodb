@@ -92,14 +92,20 @@ def define_qc_temperature(temperature, sample_interval, threshold_minutes=360):
     return qc_flag
 
 
-def define_qc_margin_fallers(spectrum, fall_velocity, above_velocity_fraction=0.6):
+def define_qc_margin_fallers(spectrum, fall_velocity_upper, above_velocity_fraction=None, above_velocity_tolerance=2):
     """Define QC mask for margin fallers and splashing."""
-    above_fall_velocity = fall_velocity * (1 + above_velocity_fraction)
+    if above_velocity_fraction is not None:
+        above_fall_velocity = fall_velocity_upper * (1 + above_velocity_fraction)
+    elif above_velocity_tolerance is not None:
+        above_fall_velocity = fall_velocity_upper + above_velocity_tolerance
+    else:
+        above_fall_velocity = np.inf
 
-    diameter_upper = xr.ones_like(spectrum.isel(time=0, missing_dims="ignore")) * spectrum["diameter_bin_upper"]
+    # Define mask
     velocity_lower = xr.ones_like(spectrum.isel(time=0, missing_dims="ignore")) * spectrum["velocity_bin_lower"]
+    diameter_upper = xr.ones_like(spectrum.isel(time=0, missing_dims="ignore")) * spectrum["diameter_bin_upper"]
 
-    mask = np.logical_and(diameter_upper <= 5, velocity_lower > above_fall_velocity)
+    mask = np.logical_and(diameter_upper <= 5, velocity_lower >= above_fall_velocity)
     return mask
 
 
@@ -251,17 +257,24 @@ def define_hail_mask(spectrum, ds_env, minimum_diameter=5):
     return mask
 
 
-def define_graupel_mask(spectrum, ds_env, minimum_diameter=0.5, maximum_diameter=5):
+def define_graupel_mask(
+    spectrum,
+    ds_env,
+    minimum_diameter=0.5,
+    maximum_diameter=5,
+    minimum_density=50,
+    maximum_density=600,
+):
     """Define graupel mask."""
     # Define velocity limits
     fall_velocity_lower = retrieve_graupel_heymsfield2014_fall_velocity(
         diameter=spectrum["diameter_bin_lower"],
-        graupel_density=50,
+        graupel_density=minimum_density,
         ds_env=ds_env,
     )
     fall_velocity_upper = retrieve_graupel_heymsfield2014_fall_velocity(
         diameter=spectrum["diameter_bin_upper"],
-        graupel_density=600,
+        graupel_density=maximum_density,
         ds_env=ds_env,
     )
     # fall_velocity_upper = get_graupel_fall_velocity(
@@ -356,25 +369,62 @@ def classify_raw_spectrum(
     drizzle_rain_mask = liquid_mask & B2
     rain_mask = liquid_mask & B3  # potentially mixed with small hail
 
-    # Define graupel and hail mask
-    graupel_mask = define_graupel_mask(raw_spectrum, ds_env=ds_env, minimum_diameter=0.9, maximum_diameter=5.5)
-    hail_mask = define_hail_mask(raw_spectrum, ds_env=ds_env, minimum_diameter=5)
-    small_hail_mask = hail_mask & B3
-    large_hail_mask = hail_mask & B4
+    # Define graupel masks
+    graupel_mask = define_graupel_mask(
+        raw_spectrum,
+        ds_env=ds_env,
+        minimum_diameter=0.9,
+        maximum_diameter=5.5,
+        minimum_density=50,
+        maximum_density=900,
+    )
+    graupel_mask = np.logical_and(graupel_mask, ~liquid_mask)
+    graupel_hd_mask = define_graupel_mask(
+        raw_spectrum,
+        ds_env=ds_env,
+        minimum_diameter=0.9,
+        maximum_diameter=5.5,
+        minimum_density=400,
+        maximum_density=900,
+    )
+    graupel_hd_mask = np.logical_and(graupel_hd_mask, graupel_mask)
+    graupel_ld_mask = np.logical_and(graupel_mask, ~graupel_hd_mask)
 
-    # Snow mask (contain graupel mask)
+    # graupel_mask.plot.pcolormesh(x="diameter_bin_center")
+    # liquid_mask.plot.pcolormesh(x="diameter_bin_center")
+    # graupel_hd_mask.plot.pcolormesh(x="diameter_bin_center")
+    # graupel_ld_mask.plot.pcolormesh(x="diameter_bin_center")
+
+    # Define hail mask
+    hail_mask = define_hail_mask(raw_spectrum, ds_env=ds_env, minimum_diameter=5)
+    hail_mask = np.logical_and(hail_mask, ~graupel_mask)
+
+    small_hail_mask = hail_mask & B3  # [5,8]
+    large_hail_mask = hail_mask & B4  # > 8
+
+    # Define snow masks
     velocity_upper = xr.ones_like(raw_spectrum.isel(time=0, missing_dims="ignore")) * raw_spectrum["velocity_bin_upper"]
     snow_mask_full = velocity_upper <= 6.5
+
+    # - Without rain and hail
     snow_mask = np.logical_and(snow_mask_full, ~liquid_mask)
-    snow_mask = np.logical_and(snow_mask_full, ~hail_mask)
+    snow_mask = np.logical_and(snow_mask, ~hail_mask)
     snow_mask = np.logical_and(snow_mask, diameter_lower >= 1)
 
-    # Define snow mask
+    # - Without rain, hail and graupel
     # snow_small_mask = snow_mask & (diameter_upper <= 5.0)
     snow_large_mask = snow_mask & (diameter_upper > 5.0)
 
     # Define snow grain mask
     snow_grains_mask = (velocity_upper <= 2.5) & (diameter_upper <= 2.2)  # ice crystals & prisms (0.1 < D < 1 or 2 mm)
+
+    # ---------------------------------------------------------------------
+    # Check mask cover all space without leaving empty bins
+    # FUTURE: CHECK IF THERE ARE CASES WHERE EMPTY BINS STILL OCCURS
+
+    # from functools import reduce
+    # sum_mask = reduce(np.logical_or, [hail_mask, liquid_mask, graupel_mask])
+    # sum_mask.plot.pcolormesh(x="diameter_bin_center")
 
     # ---------------------------------------------------------------------
     # Estimate rain rate using particles with D <=5  (D > 5 can be contaminated by noise or hail)
@@ -392,9 +442,12 @@ def classify_raw_spectrum(
         diameter=diameter,
         sample_interval=sample_interval,
     )
-
+    # ---------------------------------------------------------------------
     # Estimate gross snowfall rate
-    # FUTURE: required to define weather codes
+    # FUTURE:
+    # - Compute over snow mask area with and without rainy area
+    # - Use Lempio lump parametrization
+    # - Required to define weather codes
 
     # ---------------------------------------------------------------------
     # Define wind artefacts mask (Friedrich et al., 2013)
@@ -403,8 +456,9 @@ def classify_raw_spectrum(
     # Define margin fallers mask
     margin_fallers_mask = define_qc_margin_fallers(
         spectrum_template,
-        fall_velocity=raindrop_fall_velocity_upper,
-        above_velocity_fraction=0.6,
+        fall_velocity_upper=raindrop_fall_velocity_upper,
+        # above_velocity_fraction=0.6,
+        above_velocity_tolerance=2,
     )
 
     # Define splash mask
@@ -414,7 +468,8 @@ def classify_raw_spectrum(
     # Define liquid, snow, and graupel mask (robust to splash)
     liquid_mask_without_splash = liquid_mask & ~splash_mask
     snow_mask_without_splash = snow_mask & ~splash_mask
-    graupel_mask_without_splash = graupel_mask & ~splash_mask
+    # graupel_mask_without_splash = graupel_mask & ~splash_mask
+    graupel_ld_mask_without_splash = graupel_ld_mask & ~splash_mask
 
     # ---------------------------------------------------------------------
     #### Compute statistics
@@ -425,38 +480,56 @@ def classify_raw_spectrum(
     # n_particles_3 = raw_spectrum.where(B3).sum(dim=dims)
     # n_particles_4 = raw_spectrum.where(B4).sum(dim=dims)
 
+    ## ----
+    # Rain
     n_drizzle = raw_spectrum.where(drizzle_mask).sum(dim=dims)
     n_drizzle_rain = raw_spectrum.where(drizzle_rain_mask).sum(dim=dims)
     n_rain = raw_spectrum.where(rain_mask).sum(dim=dims)
+    n_liquid = n_drizzle + n_drizzle_rain + n_rain
+    n_liquid_robust = raw_spectrum.where(liquid_mask_without_splash).sum(dim=dims)
 
+    ## ----
+    # Hail
     # n_hail = raw_spectrum.where(hail_mask).sum(dim=dims)
     n_small_hail = raw_spectrum.where(small_hail_mask).sum(dim=dims)
     n_large_hail = raw_spectrum.where(large_hail_mask).sum(dim=dims)
 
+    ## ----
+    # Graupel
     n_graupel = raw_spectrum.where(graupel_mask).sum(dim=dims)
-    n_graupel_robust = raw_spectrum.where(graupel_mask_without_splash).sum(dim=dims)
-    # n_graupel_bins = (raw_spectrum.where(graupel_mask_without_splash) > 0).sum(dim=dims)
+    # n_graupel_robust = raw_spectrum.where(graupel_mask_without_splash).sum(dim=dims)
+    n_graupel_ld = raw_spectrum.where(graupel_ld_mask_without_splash).sum(dim=dims)
+    n_graupel_hd = raw_spectrum.where(graupel_hd_mask).sum(dim=dims)
 
+    ## ----
+    # Snow
     n_snow = raw_spectrum.where(snow_mask).sum(dim=dims)
-    n_snow_bins = (raw_spectrum.where(snow_mask_without_splash) > 0).sum(dim=dims)
+    n_snow_robust = raw_spectrum.where(snow_mask_without_splash).sum(dim=dims)
 
     # n_snow_small = raw_spectrum.where(snow_small_mask).sum(dim=dims)
     n_snow_large = raw_spectrum.where(snow_large_mask).sum(dim=dims)
-    # n_snow_large_bins = (raw_spectrum.where(snow_large_mask) > 0).sum(dim=dims)
-
     n_snow_grains = raw_spectrum.where(snow_grains_mask).sum(dim=dims)
 
-    n_liquid_robust = raw_spectrum.where(liquid_mask_without_splash).sum(dim=dims)
-    n_snow_robust = raw_spectrum.where(snow_mask_without_splash).sum(dim=dims)
-
+    ## ----
+    # Auxiliary
     n_wind_artefacts = raw_spectrum.where(strong_wind_mask).sum(dim=dims)
     n_margin_fallers = raw_spectrum.where(margin_fallers_mask).sum(dim=dims)
-
     n_splashing = raw_spectrum.where(splash_mask).sum(dim=dims)
 
-    n_liquid = n_drizzle + n_drizzle_rain + n_rain
-    # n_solid = n_snow
+    ## ----
+    # Bins statistics
+    # n_bins = (raw_spectrum.where((~splash_mask) > 0)).sum(dim=dims)
+    n_liquid_bins = (raw_spectrum.where(liquid_mask_without_splash) > 0).sum(dim=dims)
+    n_snow_bins = (raw_spectrum.where(snow_mask_without_splash) > 0).sum(dim=dims)  # without rainy area
+    # n_snow_large_bins = (raw_spectrum.where(snow_large_mask) > 0).sum(dim=dims) # only > 5 mm
+    # n_graupel_bins = (raw_spectrum.where(graupel_mask_without_splash) > 0).sum(dim=dims)
 
+    # Bins fractions
+    fraction_rain_bins = xr.where(n_particles == 0, 0, n_liquid_bins / (n_liquid_bins + n_snow_bins))
+    # fraction_snow_bins = xr.where(n_particles == 0, 0, n_snow_bins / (n_liquid_bins + n_snow_bins))
+
+    ## ----
+    # Particles fractions
     # fraction_drizzle_rel = xr.where(n_particles_1 == 0, 0, n_drizzle / n_particles_1)
     fraction_drizzle_tot = xr.where(n_particles == 0, 0, n_drizzle / n_particles)
 
@@ -531,19 +604,44 @@ def classify_raw_spectrum(
     cond = fraction_snow_tot > 0.6  # TODO: extend to use snow_mask_full
     label = xr.where(cond & (label == -1), 5, label)
 
+    # ---------------------------------
+    # Rain (R > 3 mm/hr) with some graupel
+    cond = (fraction_rain_bins >= 0.75) & (rainfall_rate > 3)
+    label = xr.where(cond & (label == -1), 31, label)  # mixed
+
+    # ---------------------------------
+    #  (label == -1).sum()
+    # (cond & (label == -1)).sum()
+
+    # ---------------------------------
     # Mixed
-    # - When R > 1 mm/hr and no splash - solid_liquid_ratio > XXX
-    # --> n_snow_bins threshold
-    cond = (solid_liquid_ratio >= 0.05) & (rainfall_rate > 1) & (n_snow_bins > 6) & (fraction_splash < 0.1)
+    # --> FUTURE: Better clarified the meaning
+    # --> FUTURE: R computed with particles only above 3 m/s would help disentagle snow from mixed !
+    # --> When R > 1 mm/hr and no splash - solid_liquid_ratio > XXX
+    n_snow_bins_thr = 6
+    fraction_splash_thr = 0.1
+    solid_liquid_ratio_thr = 0.05
+    cond = (
+        (solid_liquid_ratio >= solid_liquid_ratio_thr)
+        & (rainfall_rate > 1)
+        & (n_snow_bins > n_snow_bins_thr)
+        & (fraction_splash < fraction_splash_thr)
+    )
     label = xr.where(cond & (label == -1), 4, label)  # mixed
 
-    cond = (solid_liquid_ratio >= 0.05) & (rainfall_rate > 1) & (n_snow_bins <= 6) & (fraction_splash < 0.1)
+    cond = (
+        (solid_liquid_ratio >= solid_liquid_ratio_thr)
+        & (rainfall_rate > 1)
+        & (n_snow_bins <= n_snow_bins_thr)
+        & (fraction_splash < fraction_splash_thr)
+    )
     label = xr.where(cond & (label == -1), 21, label)  # Set as rain !
 
     # - When R > 1 mm/hr and no splash - solid_liquid_ratio < XXX
-    cond = (solid_liquid_ratio < 0.05) & (rainfall_rate > 1) & (fraction_splash < 0.1)
+    cond = (solid_liquid_ratio < solid_liquid_ratio_thr) & (rainfall_rate > 1) & (fraction_splash < fraction_splash_thr)
     label = xr.where(cond & (label == -1), 21, label)  # Set as rain !
 
+    # ---------------------------------
     # Non-hydrometeors class
     cond = (fraction_splash >= 0.5) & (rainfall_rate < 1.5)
     label = xr.where(cond & (label == -1), -2, label)
@@ -551,17 +649,20 @@ def classify_raw_spectrum(
     cond = (fraction_splash >= 0.4) & (fraction_splash <= 0.5) & (rainfall_rate <= 0.2)
     label = xr.where(cond & (label == -1), -2, label)
 
+    # ---------------------------------
     # - When R > 1mm/hr, with splash
     cond = (rainfall_rate > 1) & (fraction_splash >= 0.1) & (solid_liquid_ratio >= 0.2)
     label = xr.where(cond & (label == -1), 41, label)  # mixed
 
     cond = (rainfall_rate > 1) & (fraction_splash >= 0.1) & (solid_liquid_ratio < 0.2)
-    label = xr.where(cond & (label == -1), 23, label)
+    label = xr.where(cond & (label == -1), 23, label)  # rainfall
 
+    # ---------------------------------
     # - Noisy Rain (solid_liquid_ratio < 0.03)
     cond = (solid_liquid_ratio <= 0.05) & (n_snow_robust <= 2)
     label = xr.where(cond & (label == -1), 22, label)  # Set noisy rain
 
+    # ---------------------------------
     # Ice Crystals
     cond = fraction_snow_grains_tot >= 0.95
     label = xr.where(cond & (label == -1), 6, label)
@@ -632,7 +733,7 @@ def classify_raw_spectrum(
     # Drizzle+Rain
     hydrometeor_type = xr.where(hydrometeor_type.isin([2, 21, 22, 23, 24]), 2, hydrometeor_type)
     # Rain
-    hydrometeor_type = xr.where(hydrometeor_type.isin([3]), 3, hydrometeor_type)
+    hydrometeor_type = xr.where(hydrometeor_type.isin([3, 31]), 3, hydrometeor_type)
     # Mixed
     hydrometeor_type = xr.where(hydrometeor_type.isin([4]), 4, hydrometeor_type)
     # Snow
@@ -677,11 +778,15 @@ def classify_raw_spectrum(
 
     # ------------------------------------------------------------------------.
     #### Define flag graupel
-    # FUTURE: low_density, high_density ? (light/heavy?)
     flag_graupel = xr.ones_like(ds["time"], dtype=float) * 0
     flag_graupel = xr.where(
-        ((precipitation_type == 0) & (n_graupel_robust > 2) | (hydrometeor_type == 8)),
+        (((precipitation_type == 0) & (n_graupel_ld > 2)) | ((hydrometeor_type == 8) & (n_graupel_ld > 0))),
         1,
+        flag_graupel,
+    )
+    flag_graupel = xr.where(
+        (((precipitation_type == 0) & (n_graupel_hd > 2)) | ((hydrometeor_type == 8) & (n_graupel_hd > 0))),
+        2,
         flag_graupel,
     )
     flag_graupel.attrs.update(
@@ -689,21 +794,20 @@ def classify_raw_spectrum(
             "long_name": "graupel occurrence flag",
             "standard_name": "graupel_flag",
             "units": "1",
-            "flag_values": [0, 1],
-            "flag_meanings": "no_graupel graupel_detected",
+            "flag_values": [0, 1, 2],
+            "flag_meanings": "no_graupel low_density_graupel high_density_graupel",
             "description": (
                 "Flag indicating the presence of graupel. "
-                "Set to 1 when hydrometeor classification indicates graupel (class=8) "
-                "or when rainfall-type precipitation includes graupel-sized particles."
+                "The flag is set when hydrometeor classification identifies graupel (class=8) or "
+                "rainfall with graupel particles. "
+                "Low-density graupel (value = 1) corresponds to density < 400 kg/m3 "
+                "while high-density graupel corresponds to density > 400 kg/m3."
             ),
         },
     )
 
     # ------------------------------------------------------------------------.
     #### Define flag hail
-    # [0: none, 1: small, 2: large]
-    # large_hail (>= 8 mm)
-
     # FUTURE:
     # - Small hail: check if attached to rain body or not
     # - Check how much is detached
@@ -742,7 +846,9 @@ def classify_raw_spectrum(
 
     # ------------------------------------------------------------------------.
     #### Define n_particles_<hydro_class>
-    n_graupel_final = xr.where(flag_graupel == 1, n_graupel_robust, 0)
+    n_graupel_ld_final = xr.where(flag_graupel == 1, n_graupel_ld, 0)
+    n_graupel_hd_final = xr.where(flag_graupel == 2, n_graupel_hd, 0)
+
     n_small_hail_final = xr.where(flag_hail == 1, n_small_hail, 0)
     n_large_hail_final = xr.where(flag_hail == 2, n_large_hail, 0)
     n_margin_fallers_final = xr.where(precipitation_type == 0, n_margin_fallers, 0)
@@ -757,7 +863,10 @@ def classify_raw_spectrum(
     ds_class["hydrometeor_type"] = hydrometeor_type
 
     ds_class["n_particles"] = n_particles
-    ds_class["n_graupel"] = n_graupel_final
+
+    ds_class["n_low_density_graupel"] = n_graupel_ld_final
+    ds_class["n_high_density_graupel"] = n_graupel_hd_final
+
     ds_class["n_small_hail"] = n_small_hail_final
     ds_class["n_large_hail"] = n_large_hail_final
     ds_class["n_margin_fallers"] = n_margin_fallers_final
