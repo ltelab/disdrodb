@@ -1037,7 +1037,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
     axes[1, 0].set_ylim(nw_lim)
 
     #### - LWC
-    im_lwc = ds_Dm_Nw_stats["W_median"].plot.pcolormesh(
+    im_lwc = ds_Dm_Nw_stats["LWC_median"].plot.pcolormesh(
         x="Dm",
         y="Nw",
         cmap=cmap_lwc,
@@ -1162,7 +1162,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
     axes[3, 0].set_ylim(r_lim)
 
     #### - LWC
-    im_lwc = ds_Dm_R_stats["W_median"].plot.pcolormesh(
+    im_lwc = ds_Dm_R_stats["LWC_median"].plot.pcolormesh(
         x="Dm",
         y="R",
         cmap=cmap_lwc,
@@ -1229,7 +1229,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
         axes[4, 0].set_ylim(nt_lim)
 
         #### - LWC
-        ds_Dm_Nt_stats["W_median"].plot.pcolormesh(
+        ds_Dm_Nt_stats["LWC_median"].plot.pcolormesh(
             x="Dm",
             y="Nt",
             cmap=cmap_lwc,

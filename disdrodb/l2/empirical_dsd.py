@@ -1891,7 +1891,7 @@ def compute_spectrum_parameters(
         Dataset containing the following spectrum:
         - KE_spectrum : Kinetic Energy spectrum [J/m2/mm]
         - R_spectrum : Rain Rate spectrum [mm/h/mm]
-        - W_spectrum : Mass spectrum [g/m3/mm]
+        - LWC_spectrum : Mass spectrum [g/m3/mm]
         - Z_spectrum : Reflectivity spectrum [dBZ of mm6/m3/mm]
     """
     # Ensure velocity does not contain NaN
@@ -1908,7 +1908,7 @@ def compute_spectrum_parameters(
         water_density=water_density,
     )
     ds["R_spectrum"] = get_rain_rate_spectrum(drop_number_concentration, velocity=velocity, diameter=diameter)
-    ds["W_spectrum"] = get_liquid_water_spectrum(
+    ds["LWC_spectrum"] = get_liquid_water_spectrum(
         drop_number_concentration,
         diameter=diameter,
         water_density=water_density,
