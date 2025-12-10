@@ -486,6 +486,11 @@ def compute_radar_variables(scatterer):
 
     To speed up computations, this function should input a scatterer object with
     a preinitialized scattering table.
+
+    Note
+    ----
+    If this function is modified to compute additional radar variables, the global
+    variable RADAR_VARIABLES must be updated accordingly !
     """
     from pytmatrix import radar
 
@@ -505,10 +510,10 @@ def compute_radar_variables(scatterer):
         radar_vars["ZDR"] = 10 * np.log10(radar.Zdr(scatterer))  # dB
         radar_vars["ZDR"] = np.where(np.isfinite(radar_vars["ZDR"]), radar_vars["ZDR"], np.nan)
 
-        radar_vars["LDRH"] = 10 * np.log10(radar.ldr(scatterer), hpol=True)  # dBZ
+        radar_vars["LDRH"] = 10 * np.log10(radar.ldr(scatterer, h_pol=True))  # dBZ
         radar_vars["LDRH"] = np.where(np.isfinite(radar_vars["LDRH"]), radar_vars["LDRH"], np.nan)
 
-        radar_vars["LDRV"] = 10 * np.log10(radar.ldr(scatterer), hpol=False)  # dBZ
+        radar_vars["LDRV"] = 10 * np.log10(radar.ldr(scatterer, h_pol=False))  # dBZ
         radar_vars["LDRV"] = np.where(np.isfinite(radar_vars["LDRV"]), radar_vars["LDRV"], np.nan)
 
         radar_vars["RHOHV"] = radar.rho_hv(scatterer)  # [-]
@@ -525,7 +530,7 @@ def compute_radar_variables(scatterer):
 
 # Radar variables computed by DISDRODB
 # - Must reflect dictionary order output of compute_radar_variables
-RADAR_VARIABLES = ["DBZH", "DBZV", "ZDR", "LDR", "RHOHV", "DELTAHV", "KDP", "AH", "AV", "ADP"]
+RADAR_VARIABLES = ["DBZH", "DBZV", "ZDR", "LDRH", "LDRV", "RHOHV", "DELTAHV", "KDP", "AH", "AV", "ADP"]
 
 
 def _try_compute_radar_variables(scatterer):
