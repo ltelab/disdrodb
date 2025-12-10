@@ -41,6 +41,7 @@ L2E_PRODUCT_OPTIONS = {
     "maximum_diameter": 10,
     "minimum_velocity": 0,
     "maximum_velocity": 12,
+    "keep_mixed_precipitation": True,
     "above_velocity_fraction": None,
     "above_velocity_tolerance": 3,
     "below_velocity_fraction": None,
