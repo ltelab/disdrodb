@@ -18,7 +18,7 @@
 
 import xarray as xr
 
-from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
+from disdrodb.constants import DIAMETER_DIMENSION, METEOROLOGICAL_VARIABLES, VELOCITY_DIMENSION
 from disdrodb.l1.classification import (
     classify_raw_spectrum,
     get_temperature,
@@ -84,7 +84,7 @@ def generate_l1(
     ds_l1 = add_sample_interval(ds_l1, sample_interval=sample_interval)
 
     # Add optional variables to L1 dataset
-    optional_variables = ["qc_time", "qc_resampling"]
+    optional_variables = ["qc_time", "qc_resampling", *METEOROLOGICAL_VARIABLES]
     for var in optional_variables:
         if var in ds:
             ds_l1[var] = ds[var]

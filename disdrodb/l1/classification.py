@@ -896,7 +896,7 @@ def map_precip_flag_to_precipitation_type(precip_flag):
         0: 0,  # rain → rainfall
         1: 1,  # snow → snowfall
         2: 2,  # mixed_phase → mixed
-        3: -1,  # true_zero_value → no_precipitation
+        -1: -1,  # true_zero_value → no_precipitation
         4: -2,  # inoperative → undefined
         5: -2,  # harbor_time_no_data → undefined
     }

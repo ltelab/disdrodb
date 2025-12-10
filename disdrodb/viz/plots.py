@@ -45,41 +45,58 @@ def _single_plot_nd_distribution(drop_number_concentration, diameter, diameter_b
     return ax
 
 
-def plot_nd(ds, var="drop_number_concentration", cmap=None, norm=None):
+def _check_has_diameter_dims(da):
+    if DIAMETER_DIMENSION not in da.dims:
+        raise ValueError(f"The DataArray must have dimension '{DIAMETER_DIMENSION}'.")
+    if "diameter_bin_width" not in da.coords:
+        raise ValueError("The DataArray must have coordinate 'diameter_bin_width'.")
+    return da
+
+
+def _get_nd_variable(xr_obj, variable):
+    if not isinstance(xr_obj, (xr.Dataset, xr.DataArray)):
+        raise TypeError("Expecting xarray object as input.")
+    if VELOCITY_DIMENSION in xr_obj.dims:
+        raise ValueError("N(D) must no have the velocity dimension.")
+    if isinstance(xr_obj, xr.Dataset):
+        if variable not in xr_obj:
+            raise ValueError(f"The dataset do not include {variable=}.")
+        xr_obj = xr_obj[variable]
+    xr_obj = _check_has_diameter_dims(xr_obj)
+    return xr_obj
+
+
+def plot_nd(xr_obj, variable="drop_number_concentration", cmap=None, norm=None):
     """Plot drop number concentration N(D) timeseries."""
-    # Check inputs
-    if var not in ds:
-        raise ValueError(f"{var} is not a xarray Dataset variable!")
+    da_nd = _get_nd_variable(xr_obj, variable=variable)
 
     # Check only time and diameter dimensions are specified
-    if "time" not in ds.dims:
-        drop_number_concentration = ds[var].isel(velocity_method=0, missing_dims="ignore")
+    if "time" not in da_nd.dims:
         ax = _single_plot_nd_distribution(
-            drop_number_concentration=drop_number_concentration,
-            diameter=ds["diameter_bin_center"],
-            diameter_bin_width=ds["diameter_bin_width"],
+            drop_number_concentration=da_nd.isel(velocity_method=0, missing_dims="ignore"),
+            diameter=xr_obj["diameter_bin_center"],
+            diameter_bin_width=xr_obj["diameter_bin_width"],
         )
         return ax
 
-    # Select N(D)
-    ds_var = ds[[var]].compute()
-
     # Regularize input
-    ds_var = ds_var.disdrodb.regularize()
+    da_nd = da_nd.compute()
+    da_nd = da_nd.disdrodb.regularize()
 
     # Set 0 values to np.nan
-    ds_var = ds_var.where(ds_var[var] > 0)
+    da_nd = da_nd.where(da_nd > 0)
 
     # Define cmap an norm
     if cmap is None:
         cmap = plt.get_cmap("Spectral_r").copy()
 
-    vmin = ds_var[var].min().item()
+    vmin = da_nd.min().item()
     norm = LogNorm(vmin, None) if norm is None else norm
 
     # Plot N(D)
-    p = ds_var[var].plot.pcolormesh(x="time", norm=norm, cmap=cmap)
-    p.axes.set_title("Drop number concentration (N(D))")
+    cbar_kwargs = {"label": "N(D) [m-3 mm-1]"}
+    p = da_nd.plot.pcolormesh(x="time", norm=norm, cmap=cmap, extend="max", cbar_kwargs=cbar_kwargs)
+    p.axes.set_title("Drop number concentration N(D)")
     p.axes.set_ylabel("Drop diameter (mm)")
     return p
 

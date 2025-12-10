@@ -42,6 +42,7 @@ from disdrodb.configs import (
     get_folder_partitioning,
     get_metadata_archive_dir,
 )
+from disdrodb.constants import METEOROLOGICAL_VARIABLES
 from disdrodb.l1.classification import TEMPERATURE_VARIABLES
 from disdrodb.l1.processing import generate_l1
 from disdrodb.l1.resampling import resample_dataset
@@ -148,11 +149,12 @@ def _generate_l1(
         # Open the L0C netCDF files
         # - precip_flag used for OceanRain ODM470 data only
         # - Missing variables in dataset are simply not selected
+        variables = ["raw_drop_number", "qc_time", "precip_flag", *TEMPERATURE_VARIABLES, *METEOROLOGICAL_VARIABLES]
         ds = open_netcdf_files(
             filepaths,
             start_time=start_time,
             end_time=end_time,
-            variables=["raw_drop_number", "qc_time", "precip_flag", *TEMPERATURE_VARIABLES],
+            variables=variables,
             parallel=False,
             compute=True,
         )

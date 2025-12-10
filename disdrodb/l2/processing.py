@@ -18,7 +18,7 @@
 import numpy as np
 import xarray as xr
 
-from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
+from disdrodb.constants import DIAMETER_DIMENSION, METEOROLOGICAL_VARIABLES, VELOCITY_DIMENSION
 from disdrodb.fall_velocity import get_rain_fall_velocity, get_rain_fall_velocity_from_ds
 from disdrodb.l1_env.routines import load_env_dataset
 from disdrodb.l2.empirical_dsd import (
@@ -531,6 +531,7 @@ def generate_l2e(
         "flag_spikes",
         "flag_splashing",
         "flag_wind_artefacts",
+        *METEOROLOGICAL_VARIABLES,
     ]
 
     variables = [var for var in variables if var in ds]
@@ -834,9 +835,15 @@ def generate_l2m(
 
     # Add empirical drop_number_concentration and fall velocity
     # - To reuse output dataset to create another L2M dataset or to compute other GOF metrics
-    ds_params["drop_number_concentration"] = ds["drop_number_concentration"]
-    ds_params["fall_velocity"] = ds["fall_velocity"]
-    ds_params["N"] = ds["N"]
+    # Copy relevant L1 variables to L2 product
+    variables = [
+        "drop_number_concentration",
+        "fall_velocity",
+        "N",
+        *METEOROLOGICAL_VARIABLES,
+    ]
+    variables = [var for var in variables if var in ds]
+    ds_params.update(ds[variables])
     ds_params.update(ds[BINS_METRICS])
 
     #### ----------------------------------------------------------------------------.

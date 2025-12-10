@@ -41,6 +41,8 @@ COORDINATES = [
     "time",
     "sample_interval",
 ]
+METEOROLOGICAL_VARIABLES = ["air_temperature", "relative_humidity", "wind_speed", "wind_direction"]
+
 OPTICAL_SENSORS = ["PARSIVEL", "PARSIVEL2", "LPM", "LPM_V0", "PWS100", "SWS250", "ODM470"]
 IMPACT_SENSORS = ["RD80"]
 

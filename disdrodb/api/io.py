@@ -337,8 +337,11 @@ def open_netcdf_files(
     import xarray as xr
 
     # Ensure variables is a list
-    if variables is not None and isinstance(variables, str):
-        variables = [variables]
+    if variables is not None:
+        if isinstance(variables, str):
+            variables = [variables]
+        variables = np.unique(variables).tolist()
+
     # Define preprocessing function for parallel opening
     preprocess = (lambda ds: ds[variables]) if parallel and variables is not None else None
 

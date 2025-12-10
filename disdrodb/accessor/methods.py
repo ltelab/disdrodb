@@ -102,6 +102,12 @@ class DISDRODB_Base_Accessor:
 
         return plot_spectrum(self._obj, **kwargs)
 
+    def plot_nd(self, **kwargs):
+        """Plot drop number concentration N(D) timeseries."""
+        from disdrodb.viz.plots import plot_nd
+
+        return plot_nd(self._obj, **kwargs)
+
 
 @xr.register_dataset_accessor("disdrodb")
 class DISDRODB_Dataset_Accessor(DISDRODB_Base_Accessor):
@@ -121,12 +127,6 @@ class DISDRODB_Dataset_Accessor(DISDRODB_Base_Accessor):
             temporal_resolution=temporal_resolution,
         )
         return ds
-
-    def plot_nd(self, **kwargs):
-        """Plot drop number concentration N(D) timeseries."""
-        from disdrodb.viz.plots import plot_nd
-
-        return plot_nd(self._obj, **kwargs)
 
     def plot_raw_and_filtered_spectra(self, **kwargs):
         """Plot the raw and filtered spectra."""

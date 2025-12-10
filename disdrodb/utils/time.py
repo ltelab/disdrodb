@@ -238,7 +238,7 @@ def regularize_dataset(
     start_time=None,
     end_time=None,
 ):
-    """Regularize a dataset across time dimension with uniform resolution.
+    """Regularize a xarray object across time dimension with uniform resolution.
 
     Parameters
     ----------

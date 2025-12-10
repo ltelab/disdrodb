@@ -478,3 +478,40 @@ KLDiv:
   shuffle: true
   fletcher32: false
   contiguous: false
+air_temperature:
+  dtype: uint16
+  scale_factor: 0.1
+  add_offset: -99.9
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  _FillValue: 65535
+relative_humidity:
+  dtype: uint16
+  scale_factor: 0.01
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  _FillValue: 65535
+wind_speed:
+  dtype: uint16
+  scale_factor: 0.1
+  add_offset: -99.9
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  _FillValue: 65535
+wind_direction:
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  _FillValue: 65535

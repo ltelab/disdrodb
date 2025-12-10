@@ -44,7 +44,7 @@ precip_flag:
   n_decimals: 0
   n_naturals: 0
   data_range:
-    - 0.0
+    - -1
     - 5
   nan_flags: null
   field_number: "5"

@@ -7,14 +7,14 @@ precipitation_rate:
   contiguous: false
   chunksizes: 43200
 precip_flag:
-  dtype: uint8
+  dtype: int8
   zlib: true
   complevel: 3
   shuffle: true
   fletcher32: false
   contiguous: false
   chunksizes: 43200
-  _FillValue: 255
+  _FillValue: 127
 reference_voltage:
   dtype: float32
   zlib: true
