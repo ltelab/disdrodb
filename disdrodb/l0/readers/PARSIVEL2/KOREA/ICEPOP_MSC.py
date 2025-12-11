@@ -121,6 +121,8 @@ def reader(
         "21": "sensor_date",
         # "22": "station_name",
         # "23": "station_number",
+        "34": "rain_kinetic_energy",
+        "35": "snowfall_rate",
         "90": "raw_drop_concentration",
         "91": "raw_drop_average_velocity",
         "93": "raw_drop_number",
