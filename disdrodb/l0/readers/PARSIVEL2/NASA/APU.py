@@ -54,6 +54,8 @@ def reader(
     # - Skip first row as columns names
     reader_kwargs["header"] = None
     reader_kwargs["skiprows"] = 0
+    # - Define encoding
+    reader_kwargs["encoding"] = "latin-1"
     # - Skip file with encoding errors
     reader_kwargs["encoding_errors"] = "ignore"
     # - Avoid first column to become df index !!!
