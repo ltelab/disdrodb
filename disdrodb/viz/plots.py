@@ -56,12 +56,12 @@ def _check_has_diameter_dims(da):
 def _get_nd_variable(xr_obj, variable):
     if not isinstance(xr_obj, (xr.Dataset, xr.DataArray)):
         raise TypeError("Expecting xarray object as input.")
-    if VELOCITY_DIMENSION in xr_obj.dims:
-        raise ValueError("N(D) must no have the velocity dimension.")
     if isinstance(xr_obj, xr.Dataset):
         if variable not in xr_obj:
             raise ValueError(f"The dataset do not include {variable=}.")
         xr_obj = xr_obj[variable]
+    if VELOCITY_DIMENSION in xr_obj.dims:
+        raise ValueError("N(D) must no have the velocity dimension.")
     xr_obj = _check_has_diameter_dims(xr_obj)
     return xr_obj
 
