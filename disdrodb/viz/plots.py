@@ -17,6 +17,7 @@
 """DISDRODB Plotting Tools."""
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import psutil
 import xarray as xr
 from matplotlib.colors import LogNorm, Normalize
@@ -24,6 +25,7 @@ from matplotlib.gridspec import GridSpec
 
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l2.empirical_dsd import get_drop_average_velocity
+from disdrodb.utils.time import ensure_sample_interval_in_seconds, regularize_dataset
 
 ####-------------------------------------------------------------------------------------------------------
 #### N(D) visualizations
@@ -99,6 +101,148 @@ def plot_nd(xr_obj, variable="drop_number_concentration", cmap=None, norm=None):
     p.axes.set_title("Drop number concentration N(D)")
     p.axes.set_ylabel("Drop diameter (mm)")
     return p
+
+
+def plot_nd_quicklook(
+    ds,
+    cmap=None,
+    norm=None,
+    ylim=(0.3, 5),
+    r_lim=(0.1, 50),
+    r_scale="log",
+    add_r=True,
+    hours_per_slice=5,
+    max_rows=6,
+    verbose=True,
+):
+    """Display multi-rows quicklook of N(D)."""
+    # Colormap & normalization
+    if cmap is None:
+        cmap = plt.get_cmap("Spectral_r").copy()
+        cmap.set_under("none")
+    if norm is None:
+        norm = LogNorm(vmin=1, vmax=10_000)
+
+    # Axis limits
+    ylim = (0, 5)
+
+    # ---------------------------
+    # Align start time to 3-hour boundary
+    # ---------------------------
+    time = ds["time"].to_index()
+
+    t_start = time[0]
+    t_end = time[-1]
+
+    # floor to closest earlier 3-hour synoptic time (00, 03, 06, ...)
+    aligned_start = t_start.floor(f"{hours_per_slice}h")
+
+    # Create 3-hour bins
+    time_bins = pd.date_range(
+        start=aligned_start,
+        end=t_end,
+        freq=f"{hours_per_slice}h",
+    )
+
+    n_total_slices = len(time_bins) - 1
+    n_slices = min(n_total_slices, max_rows)
+
+    # Print info on event quicklook
+    if verbose:
+        print("=== N(D) Event Quicklook ===")
+        print(f"Dataset time span : {t_start} → {t_end}")
+        print(f"Slice length      : {hours_per_slice} h")
+        print(f"Plotted slices    : {n_slices}/{n_total_slices}")
+        if n_total_slices > max_rows:
+            last_plotted_end = time_bins[max_rows]
+            print(f"Unplotted period  : {last_plotted_end} → {t_end}")
+
+    # Regularize dataset to match bin start_time and end_time
+    sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"].to_numpy()).item()
+    ds = regularize_dataset(ds, freq=f"{sample_interval}s", start_time=time_bins[0], end_time=time_bins[-1])
+
+    # Define figure
+    fig, axes = plt.subplots(
+        nrows=n_slices,
+        ncols=1,
+        figsize=(14, 2.8 * n_slices),
+        sharex=False,
+        constrained_layout=True,
+    )
+
+    if n_slices == 1:
+        axes = [axes]
+
+    # Plot each slice
+    for i in range(n_slices):
+        # Extract dataset slice
+        t0 = time_bins[i]
+        t1 = time_bins[i + 1]
+        ds_slice = ds.sel(time=slice(t0, t1))
+        da_nd = ds_slice["drop_number_concentration"]
+
+        # Define plot ax
+        ax = axes[i]
+
+        # Plot N(D)
+        p = da_nd.plot.pcolormesh(
+            ax=ax,
+            x="time",
+            y="diameter_bin_center",
+            norm=norm,
+            cmap=cmap,
+            shading="auto",
+            add_colorbar=False,
+        )
+
+        # Overlay Dm
+        ds_slice["Dm"].plot(
+            ax=ax,
+            x="time",
+            color="black",
+            linestyle="--",
+            linewidth=1.2,
+            label="Dm",
+        )
+
+        # Add rain rate on secondary axis
+        if add_r:
+            ax_r = ax.twinx()
+            ds_slice["R"].plot(
+                ax=ax_r,
+                x="time",
+                color="tab:blue",
+                linewidth=1.2,
+                label="R",
+            )
+            ax_r.set_ylim(r_lim)
+            ax_r.set_yscale(r_scale)
+            ax_r.set_ylabel("Rain rate [mm h$^{-1}$]", color="tab:blue")
+            ax_r.tick_params(axis="y", labelcolor="tab:blue")
+
+        # Add axis labels and title
+        ax.set_xlabel("")
+        ax.set_ylabel("Diameter [mm]")
+        ax.set_title(f"{t0:%H:%M} – {t1:%H:%M} UTC")
+
+        if i == 0:
+            ax.legend(loc="upper right")
+
+        ax.set_ylim(*ylim)
+
+    axes[-1].set_xlabel("Time (UTC)")
+    # ---------------------------
+    # Shared colorbar
+    # ---------------------------
+    cbar = fig.colorbar(
+        p,
+        ax=axes,
+        orientation="horizontal",
+        pad=0.02,
+        fraction=0.03,
+        extend="max",
+    )
+    cbar.set_label("N(D) [#/m³ mm⁻¹]")
 
 
 ####-------------------------------------------------------------------------------------------------------

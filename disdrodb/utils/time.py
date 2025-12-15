@@ -274,6 +274,7 @@ def regularize_dataset(
         start_time = start
     if end_time is None:
         end_time = end
+    xr_obj = xr_obj.sel({time_dim: slice(start_time, end_time)})
 
     # Define new time index
     new_time_index = pd.date_range(
