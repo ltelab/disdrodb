@@ -105,15 +105,23 @@ def plot_nd(xr_obj, variable="drop_number_concentration", cmap=None, norm=None):
 
 def plot_nd_quicklook(
     ds,
-    cmap=None,
-    norm=None,
-    ylim=(0.3, 5),
-    r_lim=(0.1, 50),
-    r_scale="log",
-    add_r=True,
+    # Plot layout
     hours_per_slice=5,
     max_rows=6,
+    aligned=True,
     verbose=True,
+    # Spectrum options
+    variable="drop_number_concentration",
+    cbar_label="N(D) [# m⁻³ mm⁻¹]",
+    cmap=None,
+    norm=None,
+    d_lim=(0.3, 5),
+    # R options
+    add_r=True,
+    r_lim=(0.1, 50),
+    r_scale="log",
+    r_color="tab:blue",
+    r_linewidth=1.2,
 ):
     """Display multi-rows quicklook of N(D)."""
     # Colormap & normalization
@@ -123,26 +131,29 @@ def plot_nd_quicklook(
     if norm is None:
         norm = LogNorm(vmin=1, vmax=10_000)
 
-    # Axis limits
-    ylim = (0, 5)
-
     # ---------------------------
-    # Align start time to 3-hour boundary
-    # ---------------------------
+    # Define temporal slices
+    # - Align to closest <hours_per_slice> time
+    # - For hours_per_slice=3 --> 00, 03, 06, ...
     time = ds["time"].to_index()
-
     t_start = time[0]
     t_end = time[-1]
-
-    # floor to closest earlier 3-hour synoptic time (00, 03, 06, ...)
-    aligned_start = t_start.floor(f"{hours_per_slice}h")
-
-    # Create 3-hour bins
-    time_bins = pd.date_range(
-        start=aligned_start,
-        end=t_end,
-        freq=f"{hours_per_slice}h",
-    )
+    if aligned:
+        aligned_start = t_start.floor(f"{hours_per_slice}h")
+        aligned_end = t_end.ceil(f"{hours_per_slice}h")
+        # Create time bins
+        time_bins = pd.date_range(
+            start=aligned_start,
+            end=aligned_end,
+            freq=f"{hours_per_slice}h",
+        )
+    else:
+        # Create time bins
+        time_bins = pd.date_range(
+            start=t_start,
+            end=t_end + pd.Timedelta(f"{hours_per_slice}h"),
+            freq=f"{hours_per_slice}h",
+        )
 
     n_total_slices = len(time_bins) - 1
     n_slices = min(n_total_slices, max_rows)
@@ -155,7 +166,7 @@ def plot_nd_quicklook(
         print(f"Plotted slices    : {n_slices}/{n_total_slices}")
         if n_total_slices > max_rows:
             last_plotted_end = time_bins[max_rows]
-            print(f"Unplotted period  : {last_plotted_end} → {t_end}")
+            print(f"Unplotted period  : {last_plotted_end} → {aligned_end}")
 
     # Regularize dataset to match bin start_time and end_time
     sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"].to_numpy()).item()
@@ -179,7 +190,7 @@ def plot_nd_quicklook(
         t0 = time_bins[i]
         t1 = time_bins[i + 1]
         ds_slice = ds.sel(time=slice(t0, t1))
-        da_nd = ds_slice["drop_number_concentration"]
+        da_nd = ds_slice[variable]
 
         # Define plot ax
         ax = axes[i]
@@ -205,30 +216,31 @@ def plot_nd_quicklook(
             label="Dm",
         )
 
+        # Add axis labels and title
+        ax.set_xlabel("")
+        ax.set_ylabel("Diameter [mm]")
+        ax.set_title(f"{t0:%H:%M} - {t1:%H:%M} UTC")
+
+        if i == 0:
+            ax.legend(loc="upper right")
+
         # Add rain rate on secondary axis
         if add_r:
             ax_r = ax.twinx()
             ds_slice["R"].plot(
                 ax=ax_r,
                 x="time",
-                color="tab:blue",
-                linewidth=1.2,
+                color=r_color,
+                linewidth=r_linewidth,
                 label="R",
             )
             ax_r.set_ylim(r_lim)
             ax_r.set_yscale(r_scale)
             ax_r.set_ylabel("Rain rate [mm h$^{-1}$]", color="tab:blue")
             ax_r.tick_params(axis="y", labelcolor="tab:blue")
+            ax_r.set_title("")
 
-        # Add axis labels and title
-        ax.set_xlabel("")
-        ax.set_ylabel("Diameter [mm]")
-        ax.set_title(f"{t0:%H:%M} – {t1:%H:%M} UTC")
-
-        if i == 0:
-            ax.legend(loc="upper right")
-
-        ax.set_ylim(*ylim)
+        ax.set_ylim(*d_lim)
 
     axes[-1].set_xlabel("Time (UTC)")
     # ---------------------------
@@ -242,7 +254,7 @@ def plot_nd_quicklook(
         fraction=0.03,
         extend="max",
     )
-    cbar.set_label("N(D) [#/m³ mm⁻¹]")
+    cbar.set_label(cbar_label)
 
 
 ####-------------------------------------------------------------------------------------------------------
@@ -752,7 +764,7 @@ def compute_dense_lines(
     if len(other_dims) == 1:
         arr = da.transpose(*other_dims, x_dim).to_numpy()
     else:
-        arr = da.stack({"sample": other_dims}).transpose("sample", x_dim).to_numpy()
+        arr = da.stack({"sample": other_dims}).transpose("sample", x_dim).to_numpy()  # noqa PD013
 
     # Define y bins center
     y_center = (y_bins[0:-1] + y_bins[1:]) / 2
