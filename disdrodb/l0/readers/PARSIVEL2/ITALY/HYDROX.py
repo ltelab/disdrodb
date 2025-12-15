@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -120,6 +120,7 @@ def read_old_format(filepath, logger):
 
     # Replace ending 999; with 0;
     df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"999;$", "0", regex=True)
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"256;$", "0;", regex=True)
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df
@@ -220,8 +221,9 @@ def read_new_format(filepath, logger):
     # Example: ',,1,,' --> '0,0,1,0,'
     df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d);", "0;", regex=True)
 
-    # Replace ending 999; with 0;
-    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"999;$", "0", regex=True)
+    # Replace ending with 999; or 256; with 0;
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"999;$", "0;", regex=True)
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"256;$", "0;", regex=True)
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df
