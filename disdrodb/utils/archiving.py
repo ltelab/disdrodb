@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -111,17 +111,18 @@ def generate_time_blocks(
 def identify_events(
     filepaths,
     parallel=False,
-    min_drops=5,
+    variable="N",
+    detection_threshold=5,
     neighbor_min_size=2,
     neighbor_time_interval="5MIN",
     event_max_time_gap="6H",
     event_min_duration="5MIN",
     event_min_size=3,
 ):
-    """Return a list of rainy events.
+    """Return a list of precipitating events.
 
-    Rainy timesteps are defined when N > min_drops.
-    Any rainy isolated timesteps (based on neighborhood criteria) is removed.
+    Precipitating events are defined when 'variable' > detection_threshold.
+    Any isolated timesteps with precipitation (based on neighborhood criteria) is removed.
     Then, consecutive rainy timesteps are grouped into the same event if the time gap between them does not
     exceed `event_max_time_gap`. Finally, events that do not meet minimum size or duration
     requirements are filtered out.
@@ -130,6 +131,11 @@ def identify_events(
     ----------
     filepaths: list
         List of L1C file paths.
+    variable : str
+        Name of the variable to use to apply the event detection.
+        The default is "N".
+    detection_threshold : int
+        Minimum value of 'variable' to consider an event timestep.
     parallel: bool
         Whether to load the files in parallel.
         Set parallel=True only in a multiprocessing environment.
@@ -163,11 +169,11 @@ def identify_events(
         - "n_timesteps": int, number of valid timesteps in the event
     """
     # Open datasets in parallel
-    ds = open_netcdf_files(filepaths, variables=["time", "N"], parallel=parallel, compute=True)
+    ds = open_netcdf_files(filepaths, variables=["time", variable], parallel=parallel, compute=True)
     # Sort dataset by time
     ds = ensure_sorted_by_time(ds)
     # Define candidate timesteps to group into events
-    idx_valid = ds["N"].to_numpy() > min_drops
+    idx_valid = ds[variable].to_numpy() > detection_threshold
     timesteps = ds["time"].to_numpy()[idx_valid]
     if "sample_interval" in ds:
         sample_interval = ds["sample_interval"].compute().item()
@@ -263,8 +269,9 @@ def define_temporal_partitions(filepaths, strategy, parallel, strategy_options):
         See identify_time_partitions for more information.
 
         If ``strategy == 'event'``, supported options are:
-
-        - ``min_drops`` : int
+        - ``variable`` : str
+          Name of the variable to use to apply the event detection.
+        - ``detection_threshold`` : int
           Minimum number of drops to consider a timestep.
         - ``neighbor_min_size`` : int
           Minimum cluster size for merging neighboring events.

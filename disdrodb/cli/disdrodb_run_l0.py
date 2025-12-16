@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -59,69 +59,60 @@ def disdrodb_run_l0(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-    """
-    Run the L0 processing of DISDRODB stations.
+    """Run the DISDRODB L0 processing chain for many/all DISDRODB stations.
 
-    This function allows to launch the processing of many DISDRODB stations with a single command.
-    From the list of all available DISDRODB stations, it runs the processing of the
-    stations matching the provided data_sources, campaign_names and station_names.
+    It produces the DISDRODB L0A, L0B and L0C product files out of the raw data
+    of the specified station.
 
-    Parameters
-    ----------
-    data_archive_dir : str
-        DISDRODB Data Archive directory
-        Format: <...>/DISDRODB
-    data_sources : str
-        Name of data source(s) to process.
-        The name(s) must be UPPER CASE.
-        If campaign_names and station are not specified, process all stations.
-        To specify multiple data sources, write i.e.: --data_sources 'NASA EPFL NCAR'
-    campaign_names : str
-        Name of the campaign(s) to process.
-        The name(s) must be UPPER CASE.
-        To specify multiple campaigns, write i.e.: --campaign_names 'IPEX IMPACTS'
-    station_names : str
-        Station names.
-        To specify multiple stations, write i.e.: --station_names 'station1 station2'
-    l0a_processing : bool
-        Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
-        The default is True.
-    l0b_processing : bool
-        Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
-        The default is True.
-    l0c_processing : bool
-        Whether to launch processing to generate L0C netCDF4 file(s) from L0C data.
-        The default is True.
-    remove_l0a : bool
-        Whether to keep the L0A files after having generated the L0B netCDF products.
-        The default is False.
-    remove_l0b : bool
-         Whether to remove the L0B files after having produced L0C netCDF files.
-        The default is False.
-    force : bool
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories.
-        The default is False.
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is True.
-    parallel : bool
-        If True, the files are processed simultaneously in multiple processes.
-        Each process will use a single thread to avoid issues with the HDF/netCDF library.
-        By default, the number of process is defined with os.cpu_count().
-        However, you can customize it by typing i.e. DASK_NUM_WORKERS=4 disdrodb_run_l0
-        If False, the files are processed sequentially in a single process.
-        If False, multi-threading is automatically exploited to speed up I/0 tasks.
-    debugging_mode : bool
-        If True, it reduces the amount of data to process.
-        For L0A, it processes just the first 3 raw data files.
-        For L0B, it processes 100 rows sampled from 3 L0A files.
-        The default is False.
-    data_archive_dir : str
-        DISDRODB Data Archive directory
-        Format: <...>/DISDRODB
-        If not specified, uses path specified in the DISDRODB active configuration.
-    """
+    \b
+    Station Selection:
+        If no station filters are specified, processes ALL available stations.
+        Use data_sources, campaign_names, and station_names to filter stations.
+        Filters work together to narrow down the selection (AND logic).
+
+    \b
+    Performance Options:
+        --parallel: Uses multiple processes for faster processing (default: True)
+        If parallel processing is enabled, each process will use a single thread
+        to avoid issues with the HDF/netCDF library.
+        The DASK_NUM_WORKERS environment variable controls the number of processes
+        to use.A sensible default is automatically set by the software.
+        --debugging_mode: Processes only a subset of data for testing
+        --force: Overwrites existing output files (default: False)
+
+    \b
+    Data Management:
+        --remove_l0a: Delete L0A files after L0B processing (saves disk space)
+        --remove_l0b: Delete L0B files after L0C processing (saves disk space)
+        Use with caution - removed files cannot be recovered without reprocessing
+
+    \b
+    Examples:
+        # Process all stations
+        disdrodb_run_l0
+
+        # Process a specific data source and force overwrite existing files
+        disdrodb_run_l0 --data_sources EPFL --force True --verbose True
+
+        # Process specific data sources
+        disdrodb_run_l0 --data_sources 'USA EPFL'
+
+        # Process specific campaigns in debugging mode
+        disdrodb_run_l0 --campaign_names 'DELFT IMPACTS' --debugging_mode True
+
+        # Process specific stations with custom number of workers
+        DASK_NUM_WORKERS=8 disdrodb_run_l0 --data_sources NASA --station_names 'apu01 apu02'
+
+        # Skip L0A processing (start from existing L0B data)
+        disdrodb_run_l0 --data_sources EPFL --l0a_processing False
+
+    \b
+    Important Notes:
+        - Data source names must be UPPER CASE
+        - Campaign names must be UPPER CASE
+        - To specify multiple values, use space-separated strings in quotes
+        - Use --debugging_mode for initial testing with reduced data volumes
+    """  # noqa: D301
     from disdrodb.routines import run_l0
 
     # Parse data_sources, campaign_names and station arguments

@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,38 +49,50 @@ def disdrodb_upload_archive(
     platform: Optional[str] = None,
     force: bool = False,
 ):
-    """Find all stations containing local data and upload them to a remote repository.
+    """Upload raw data for multiple DISDRODB stations to the DISDRODB Decentralized Data Archive.
 
-    Parameters
-    ----------
-    platform: str, optional
-        Name of the remote platform.
-        The default platform is ``"sandbox.zenodo"`` (for testing purposes).
-        Switch to ``"zenodo"`` for final data dissemination.
-    force: bool, optional
-        If ``True``, upload even if data already exists on another remote location.
-        The default value is ``force=False``.
-    data_archive_dir : str (optional)
-        The directory path where the DISDRODB Data Archive is located.
-        The directory path must end with ``<...>/DISDRODB``.
-        If ``None``, it uses the ``data_archive_dir`` path specified
-        in the DISDRODB active configuration.
+    Currently, only upload to the Zenodo data repository is implemented.
+    The station metadata files are automatically updated with the remote data URL.
 
-    Other Parameters
-    ----------------
-    data_sources: str or list of str, optional
-        Data source name (eg: EPFL).
-        If not provided (``None``), all data sources will be uploaded.
-        The default value is ``data_source=None``.
-    campaign_names: str or list of str, optional
-        Campaign name (eg:  EPFL_ROOF_2012).
-        If not provided (``None``), all campaigns will be uploaded.
-        The default value is ``campaign_name=None``.
-    station_names: str or list of str, optional
-        Station name.
-        If not provided (``None``), all stations will be uploaded.
-        The default value is ``station_name=None``.
-    """
+    PLEASE UPLOAD JUST YOUR DATA !
+
+    \b
+    Station Selection:
+        If no station filters are specified, uploads ALL stations with local data.
+        Use data_sources, campaign_names, and station_names to filter stations.
+        Filters work together to narrow down the selection (AND logic).
+        Only stations with local raw data files will be uploaded.
+
+    \b
+    Upload Behavior:
+        By default, upload is skipped if data already exists on a remote location.
+        Use '--force True' to upload even if data already exists remotely.
+        Warning: Forcing upload may create duplicate versions on the remote platform.
+
+    \b
+    Upload Options:
+        --platform: Remote platform name (default: 'sandbox.zenodo' for testing)
+        Use 'zenodo' for final data dissemination.
+        --force: Upload even if data already exists remotely (default: False)
+
+    \b
+    Archive Directories:
+        --data_archive_dir: Custom path to DISDRODB data archive
+        --metadata_archive_dir: Custom path to DISDRODB metadata archive
+        If not specified, paths from the active DISDRODB configuration are used
+
+    \b
+    Examples:
+
+        # Upload a specific data sources to Zenodo Sandbox
+        disdrodb_upload_archive --data_sources 'YOUR_DATA_SOURCE' --platform sandbox.zenodo
+
+        # Upload a specific data sources to Zenodo and force upload
+        disdrodb_upload_archive --data_sources 'YOUR_DATA_SOURCE' --platform zenodo --force True
+
+        # Upload specific campaigns to Zenodo
+        disdrodb_upload_archive --campaign_names 'HYMEX_LTE_SOP2 IFLOODS' --platform zenodo
+    """  # noqa: D301
     from disdrodb.data_transfer.upload_data import upload_archive
 
     data_archive_dir = parse_archive_dir(data_archive_dir)

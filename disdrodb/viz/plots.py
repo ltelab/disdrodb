@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 """DISDRODB Plotting Tools."""
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import psutil
 import xarray as xr
 from matplotlib.colors import LogNorm, Normalize
@@ -24,6 +25,7 @@ from matplotlib.gridspec import GridSpec
 
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l2.empirical_dsd import get_drop_average_velocity
+from disdrodb.utils.time import ensure_sample_interval_in_seconds, regularize_dataset
 
 ####-------------------------------------------------------------------------------------------------------
 #### N(D) visualizations
@@ -45,42 +47,214 @@ def _single_plot_nd_distribution(drop_number_concentration, diameter, diameter_b
     return ax
 
 
-def plot_nd(ds, var="drop_number_concentration", cmap=None, norm=None):
+def _check_has_diameter_dims(da):
+    if DIAMETER_DIMENSION not in da.dims:
+        raise ValueError(f"The DataArray must have dimension '{DIAMETER_DIMENSION}'.")
+    if "diameter_bin_width" not in da.coords:
+        raise ValueError("The DataArray must have coordinate 'diameter_bin_width'.")
+    return da
+
+
+def _get_nd_variable(xr_obj, variable):
+    if not isinstance(xr_obj, (xr.Dataset, xr.DataArray)):
+        raise TypeError("Expecting xarray object as input.")
+    if isinstance(xr_obj, xr.Dataset):
+        if variable not in xr_obj:
+            raise ValueError(f"The dataset do not include {variable=}.")
+        xr_obj = xr_obj[variable]
+    if VELOCITY_DIMENSION in xr_obj.dims:
+        raise ValueError("N(D) must no have the velocity dimension.")
+    xr_obj = _check_has_diameter_dims(xr_obj)
+    return xr_obj
+
+
+def plot_nd(xr_obj, variable="drop_number_concentration", cmap=None, norm=None):
     """Plot drop number concentration N(D) timeseries."""
-    # Check inputs
-    if var not in ds:
-        raise ValueError(f"{var} is not a xarray Dataset variable!")
+    da_nd = _get_nd_variable(xr_obj, variable=variable)
 
     # Check only time and diameter dimensions are specified
-    if "time" not in ds.dims:
+    if "time" not in da_nd.dims:
         ax = _single_plot_nd_distribution(
-            drop_number_concentration=ds[var],
-            diameter=ds["diameter_bin_center"],
-            diameter_bin_width=ds["diameter_bin_width"],
+            drop_number_concentration=da_nd.isel(velocity_method=0, missing_dims="ignore"),
+            diameter=xr_obj["diameter_bin_center"],
+            diameter_bin_width=xr_obj["diameter_bin_width"],
         )
         return ax
 
-    # Select N(D)
-    ds_var = ds[[var]].compute()
-
     # Regularize input
-    ds_var = ds_var.disdrodb.regularize()
+    da_nd = da_nd.compute()
+    da_nd = da_nd.disdrodb.regularize()
 
     # Set 0 values to np.nan
-    ds_var = ds_var.where(ds_var[var] > 0)
+    da_nd = da_nd.where(da_nd > 0)
 
     # Define cmap an norm
     if cmap is None:
         cmap = plt.get_cmap("Spectral_r").copy()
 
-    vmin = ds_var[var].min().item()
+    vmin = da_nd.min().item()
     norm = LogNorm(vmin, None) if norm is None else norm
 
     # Plot N(D)
-    p = ds_var[var].plot.pcolormesh(x="time", norm=norm, cmap=cmap)
-    p.axes.set_title("Drop number concentration (N(D))")
+    cbar_kwargs = {"label": "N(D) [m-3 mm-1]"}
+    p = da_nd.plot.pcolormesh(x="time", norm=norm, cmap=cmap, extend="max", cbar_kwargs=cbar_kwargs)
+    p.axes.set_title("Drop number concentration N(D)")
     p.axes.set_ylabel("Drop diameter (mm)")
     return p
+
+
+def plot_nd_quicklook(
+    ds,
+    # Plot layout
+    hours_per_slice=5,
+    max_rows=6,
+    aligned=True,
+    verbose=True,
+    # Spectrum options
+    variable="drop_number_concentration",
+    cbar_label="N(D) [# m⁻³ mm⁻¹]",
+    cmap=None,
+    norm=None,
+    d_lim=(0.3, 5),
+    # R options
+    add_r=True,
+    r_lim=(0.1, 50),
+    r_scale="log",
+    r_color="tab:blue",
+    r_linewidth=1.2,
+):
+    """Display multi-rows quicklook of N(D)."""
+    # Colormap & normalization
+    if cmap is None:
+        cmap = plt.get_cmap("Spectral_r").copy()
+        cmap.set_under("none")
+    if norm is None:
+        norm = LogNorm(vmin=1, vmax=10_000)
+
+    # ---------------------------
+    # Define temporal slices
+    # - Align to closest <hours_per_slice> time
+    # - For hours_per_slice=3 --> 00, 03, 06, ...
+    time = ds["time"].to_index()
+    t_start = time[0]
+    t_end = time[-1]
+    if aligned:
+        aligned_start = t_start.floor(f"{hours_per_slice}h")
+        aligned_end = t_end.ceil(f"{hours_per_slice}h")
+        # Create time bins
+        time_bins = pd.date_range(
+            start=aligned_start,
+            end=aligned_end,
+            freq=f"{hours_per_slice}h",
+        )
+    else:
+        # Create time bins
+        time_bins = pd.date_range(
+            start=t_start,
+            end=t_end + pd.Timedelta(f"{hours_per_slice}h"),
+            freq=f"{hours_per_slice}h",
+        )
+
+    n_total_slices = len(time_bins) - 1
+    n_slices = min(n_total_slices, max_rows)
+
+    # Print info on event quicklook
+    if verbose:
+        print("=== N(D) Event Quicklook ===")
+        print(f"Dataset time span : {t_start} → {t_end}")
+        print(f"Slice length      : {hours_per_slice} h")
+        print(f"Plotted slices    : {n_slices}/{n_total_slices}")
+        if n_total_slices > max_rows:
+            last_plotted_end = time_bins[max_rows]
+            print(f"Unplotted period  : {last_plotted_end} → {aligned_end}")
+
+    # Regularize dataset to match bin start_time and end_time
+    sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"].to_numpy()).item()
+    ds = regularize_dataset(ds, freq=f"{sample_interval}s", start_time=time_bins[0], end_time=time_bins[-1])
+
+    # Define figure
+    fig, axes = plt.subplots(
+        nrows=n_slices,
+        ncols=1,
+        figsize=(14, 2.8 * n_slices),
+        sharex=False,
+        constrained_layout=True,
+    )
+
+    if n_slices == 1:
+        axes = [axes]
+
+    # Plot each slice
+    for i in range(n_slices):
+        # Extract dataset slice
+        t0 = time_bins[i]
+        t1 = time_bins[i + 1]
+        ds_slice = ds.sel(time=slice(t0, t1))
+        da_nd = ds_slice[variable]
+
+        # Define plot ax
+        ax = axes[i]
+
+        # Plot N(D)
+        p = da_nd.plot.pcolormesh(
+            ax=ax,
+            x="time",
+            y="diameter_bin_center",
+            norm=norm,
+            cmap=cmap,
+            shading="auto",
+            add_colorbar=False,
+        )
+
+        # Overlay Dm
+        ds_slice["Dm"].plot(
+            ax=ax,
+            x="time",
+            color="black",
+            linestyle="--",
+            linewidth=1.2,
+            label="Dm",
+        )
+
+        # Add axis labels and title
+        ax.set_xlabel("")
+        ax.set_ylabel("Diameter [mm]")
+        ax.set_title(f"{t0:%H:%M} - {t1:%H:%M} UTC")
+
+        if i == 0:
+            ax.legend(loc="upper right")
+
+        # Add rain rate on secondary axis
+        if add_r:
+            ax_r = ax.twinx()
+            ds_slice["R"].plot(
+                ax=ax_r,
+                x="time",
+                color=r_color,
+                linewidth=r_linewidth,
+                label="R",
+            )
+            ax_r.set_ylim(r_lim)
+            ax_r.set_yscale(r_scale)
+            ax_r.set_ylabel("Rain rate [mm h$^{-1}$]", color="tab:blue")
+            ax_r.tick_params(axis="y", labelcolor="tab:blue")
+            ax_r.set_title("")
+
+        ax.set_ylim(*d_lim)
+
+    axes[-1].set_xlabel("Time (UTC)")
+    # ---------------------------
+    # Shared colorbar
+    # ---------------------------
+    cbar = fig.colorbar(
+        p,
+        ax=axes,
+        orientation="horizontal",
+        pad=0.02,
+        fraction=0.03,
+        extend="max",
+    )
+    cbar.set_label(cbar_label)
 
 
 ####-------------------------------------------------------------------------------------------------------
@@ -590,7 +764,7 @@ def compute_dense_lines(
     if len(other_dims) == 1:
         arr = da.transpose(*other_dims, x_dim).to_numpy()
     else:
-        arr = da.stack({"sample": other_dims}).transpose("sample", x_dim).to_numpy()
+        arr = da.stack({"sample": other_dims}).transpose("sample", x_dim).to_numpy()  # noqa PD013
 
     # Define y bins center
     y_center = (y_bins[0:-1] + y_bins[1:]) / 2

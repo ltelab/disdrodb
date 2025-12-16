@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ import pytest
 import xarray as xr
 
 from disdrodb.constants import DIAMETER_DIMENSION
-from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity_from_ds
+from disdrodb.fall_velocity import get_rain_fall_velocity_from_ds
 from disdrodb.psd.fitting import (
     _compute_target_variable_error,
     available_mom_methods,
@@ -135,7 +135,7 @@ class TestGSOptimization:
         }
         ds, psd = _simulate_dataset(psd_model, parameters)
         if target == "R":
-            ds["fall_velocity"] = get_raindrop_fall_velocity_from_ds(ds)
+            ds["fall_velocity"] = get_rain_fall_velocity_from_ds(ds)
             V = ds["fall_velocity"].to_numpy()
         else:
             V = None
@@ -147,17 +147,16 @@ class TestGSOptimization:
             optimization_kwargs=optimization_kwargs,
         )
 
-        # Test error is close to zero
+        # Test relative error is close to zero
         D = ds["diameter_bin_center"].to_numpy()
         dD = ds["diameter_bin_width"].to_numpy()
         ND_obs = ds["drop_number_concentration"].to_numpy()
         ND_pred = create_psd(psd_model=ds_params.attrs["disdrodb_psd_model"], parameters=ds_params)(D).to_numpy()
-        error = _compute_target_variable_error(target, ND_obs, ND_pred, D, dD, V)
-
+        error = _compute_target_variable_error(target, ND_obs, ND_pred, D, dD, V, relative=True)
         np.testing.assert_allclose(
             error,
             0,
-            atol=0.1,
+            atol=0.01,
             err_msg=f"GS fitting of {psd_model} using {target=} causes inaccurate {target} reproduction.",
         )
 

@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +17,6 @@
 """Routines to list and open DISDRODB products."""
 import datetime
 import os
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -41,7 +38,7 @@ from disdrodb.api.path import (
 )
 from disdrodb.l0.l0_reader import define_readers_directory
 from disdrodb.utils.dict import extract_product_kwargs
-from disdrodb.utils.directories import list_files
+from disdrodb.utils.directories import list_files, remove_file_or_directories
 from disdrodb.utils.logger import (
     log_info,
 )
@@ -338,8 +335,11 @@ def open_netcdf_files(
     import xarray as xr
 
     # Ensure variables is a list
-    if variables is not None and isinstance(variables, str):
-        variables = [variables]
+    if variables is not None:
+        if isinstance(variables, str):
+            variables = [variables]
+        variables = np.unique(variables).tolist()
+
     # Define preprocessing function for parallel opening
     preprocess = (lambda ds: ds[variables]) if parallel and variables is not None else None
 
@@ -364,6 +364,7 @@ def open_netcdf_files(
     )
     # - Subset variables
     if variables is not None and preprocess is None:
+        variables = [var for var in variables if var in ds]
         ds = ds[variables]
     # - Subset time
     if start_time is not None or end_time is not None:
@@ -509,7 +510,7 @@ def remove_product(
         **product_kwargs,
     )
     log_info(logger=logger, msg="Removal of {product} files started.", verbose=verbose)
-    shutil.rmtree(data_dir)
+    remove_file_or_directories(data_dir)
     log_info(logger=logger, msg="Removal of {product} files ended.", verbose=verbose)
 
 

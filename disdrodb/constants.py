@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,7 +41,9 @@ COORDINATES = [
     "time",
     "sample_interval",
 ]
-OPTICAL_SENSORS = ["PARSIVEL", "PARSIVEL2", "LPM", "LPM_V0", "PWS100", "SWS250"]
+METEOROLOGICAL_VARIABLES = ["air_temperature", "relative_humidity", "wind_speed", "wind_direction"]
+
+OPTICAL_SENSORS = ["PARSIVEL", "PARSIVEL2", "LPM", "LPM_V0", "PWS100", "SWS250", "ODM470"]
 IMPACT_SENSORS = ["RD80"]
 
 PRODUCTS = ["RAW", "L0A", "L0B", "L0C", "L1", "L2E", "L2M"]

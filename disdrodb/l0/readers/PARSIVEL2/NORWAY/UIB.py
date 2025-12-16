@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -80,8 +80,16 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Remove corrupted rows
+    # Raise error if empty file
+    if len(df) == 0:
+        raise ValueError(f"{filepath} is empty.")
+
+    # Select only rows with expected number of delimiters
     df = df[df["TO_PARSE"].str.count(";") == 1101]
+
+    # Check there are still valid rows
+    if len(df) == 0:
+        raise ValueError(f"No valid rows in {filepath}.")
 
     # Split into columns
     df = df["TO_PARSE"].str.split(";", expand=True, n=13)

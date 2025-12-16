@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -95,8 +93,11 @@ def update_disdrodb_attrs(ds, product: str):
     # ----------------------------------------------
     # Add time_coverage_start and time_coverage_end
     if "time" in ds.dims:
+        encoding = ds["time"].encoding
         ds["time"] = ds["time"].dt.floor("s")  # ensure no sub-second values
         ds["time"] = ds["time"].astype("datetime64[s]")
+        ds["time"].encoding = encoding  # otherwise time encoding get lost !
+
         attrs["time_coverage_start"] = str(ds["time"].data[0])
         attrs["time_coverage_end"] = str(ds["time"].data[-1])
 

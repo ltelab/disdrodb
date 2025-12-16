@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ import xarray as xr
 
 from disdrodb.configs import get_scattering_table_dir
 from disdrodb.constants import DIAMETER_DIMENSION
-from disdrodb.l1.filters import filter_diameter_bins
 from disdrodb.psd.models import BinnedPSD, create_psd, get_required_parameters
 from disdrodb.scattering.axis_ratio import check_axis_ratio_model, get_axis_ratio_model
 from disdrodb.scattering.permittivity import (
@@ -35,7 +34,7 @@ from disdrodb.scattering.permittivity import (
     get_refractive_index,
 )
 from disdrodb.utils.logger import log_info
-from disdrodb.utils.manipulations import get_diameter_bin_edges
+from disdrodb.utils.manipulations import filter_diameter_bins, get_diameter_bin_edges
 from disdrodb.utils.warnings import suppress_warnings
 
 logger = logging.getLogger(__name__)
@@ -76,15 +75,26 @@ def check_radar_band(radar_band):
     return radar_band
 
 
+def _is_valid_numeric_frequency(frequency):
+    numeric_value = float(frequency)
+    if numeric_value <= 0:
+        raise ValueError(f"Frequency must be positive, got {numeric_value}")
+    return numeric_value
+
+
 def _check_frequency(frequency):
     """Check the validity of the specified frequency."""
     if isinstance(frequency, str):
-        frequency = check_radar_band(frequency)
-        frequency = frequency_dict[frequency]
-        return frequency
-    if not isinstance(frequency, (int, float)):
-        raise TypeError(f"Frequency {frequency} must be a string or a number.")
-    return frequency
+        try:
+            frequency = float(frequency)
+
+        except ValueError:
+            # Not numeric, assume radar band name
+            frequency = check_radar_band(frequency)
+            frequency = frequency_dict[frequency]
+    if isinstance(frequency, (int, float)):
+        return _is_valid_numeric_frequency(frequency)
+    raise TypeError(f"Frequency {frequency} must be a string or a number.")
 
 
 def ensure_numerical_frequency(frequency):
@@ -476,6 +486,11 @@ def compute_radar_variables(scatterer):
 
     To speed up computations, this function should input a scatterer object with
     a preinitialized scattering table.
+
+    Note
+    ----
+    If this function is modified to compute additional radar variables, the global
+    variable RADAR_VARIABLES must be updated accordingly !
     """
     from pytmatrix import radar
 
@@ -495,10 +510,13 @@ def compute_radar_variables(scatterer):
         radar_vars["ZDR"] = 10 * np.log10(radar.Zdr(scatterer))  # dB
         radar_vars["ZDR"] = np.where(np.isfinite(radar_vars["ZDR"]), radar_vars["ZDR"], np.nan)
 
-        radar_vars["LDR"] = 10 * np.log10(radar.ldr(scatterer))  # dBZ
-        radar_vars["LDR"] = np.where(np.isfinite(radar_vars["LDR"]), radar_vars["LDR"], np.nan)
+        radar_vars["LDRH"] = 10 * np.log10(radar.ldr(scatterer, h_pol=True))  # dBZ
+        radar_vars["LDRH"] = np.where(np.isfinite(radar_vars["LDRH"]), radar_vars["LDRH"], np.nan)
 
-        radar_vars["RHOHV"] = radar.rho_hv(scatterer)  # deg/km
+        radar_vars["LDRV"] = 10 * np.log10(radar.ldr(scatterer, h_pol=False))  # dBZ
+        radar_vars["LDRV"] = np.where(np.isfinite(radar_vars["LDRV"]), radar_vars["LDRV"], np.nan)
+
+        radar_vars["RHOHV"] = radar.rho_hv(scatterer)  # [-]
         radar_vars["DELTAHV"] = radar.delta_hv(scatterer) * 180.0 / np.pi  # [deg]
 
         # Set forward scattering for attenuation and phase calculations
@@ -512,7 +530,7 @@ def compute_radar_variables(scatterer):
 
 # Radar variables computed by DISDRODB
 # - Must reflect dictionary order output of compute_radar_variables
-RADAR_VARIABLES = ["DBZH", "DBZV", "ZDR", "LDR", "RHOHV", "DELTAHV", "KDP", "AH", "AV", "ADP"]
+RADAR_VARIABLES = ["DBZH", "DBZV", "ZDR", "LDRH", "LDRV", "RHOHV", "DELTAHV", "KDP", "AH", "AV", "ADP"]
 
 
 def _try_compute_radar_variables(scatterer):

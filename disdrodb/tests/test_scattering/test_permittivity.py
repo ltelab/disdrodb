@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -101,7 +99,7 @@ class TestGetRefractiveIndex:
         # Reference outputs (computed once from current implementation at T=20°C, f=5.6 GHz)
         ("Liebe1991", 20.0, 5.6, 8.624863 + 1.29096j),
         ("Liebe1991single", 20.0, 5.6, 8.626885 + 1.28699831j),
-        ("Ellison2005", 20.0, 5.6, 8.627059 + 1.298061j),
+        ("Ellison2007", 20.0, 5.6, 8.627059 + 1.298061j),
         ("Turner2016", 20.0, 5.6, 8.6217850 + 1.303982j),
     ],
 )

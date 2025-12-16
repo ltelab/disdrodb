@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +21,6 @@
 
 import logging
 import os
-import shutil
 
 from disdrodb.api.checks import (
     check_campaign_name,
@@ -46,6 +43,7 @@ from disdrodb.api.path import (
 from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
 from disdrodb.utils.directories import (
     create_directory,
+    remove_file_or_directories,
     remove_if_exists,
 )
 
@@ -59,7 +57,7 @@ def ensure_empty_data_dir(data_dir, force):
     """Remove the content of the data_dir directory."""
     # If force=True, remove all the directory content
     if force:
-        shutil.rmtree(data_dir)
+        remove_file_or_directories(data_dir)
         # Recreate the directory
         create_directory(data_dir)
     else:
@@ -258,7 +256,7 @@ def create_logs_directory(
 
     # Ensure empty log directory
     if os.path.isdir(logs_dir):
-        shutil.rmtree(logs_dir)
+        remove_file_or_directories(logs_dir)
 
     # Create logs directory
     os.makedirs(logs_dir, exist_ok=True)

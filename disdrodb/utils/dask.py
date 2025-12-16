@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -71,6 +69,7 @@ def initialize_dask_cluster(minimum_memory=None):
     os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
     # Retrieve the number of processes to run
+    # --> If DASK_NUM_WORKERS is not set, use all CPUs minus 2
     available_workers = os.cpu_count() - 2  # if not set, all CPUs minus 2
     num_workers = dask.config.get("num_workers", available_workers)
 

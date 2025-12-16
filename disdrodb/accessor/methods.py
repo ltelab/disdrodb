@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ class DISDRODB_Base_Accessor:
         from disdrodb.api.checks import check_time
 
         if "time" in self._obj.coords:
-            start_time = self._obj["time"].to_numpy()[0]
+            start_time = self._obj["time"].to_numpy().min()
         else:
             raise ValueError("Time coordinate not found")
         return check_time(start_time)
@@ -43,7 +43,7 @@ class DISDRODB_Base_Accessor:
         from disdrodb.api.checks import check_time
 
         if "time" in self._obj.coords:
-            end_time = self._obj["time"].to_numpy()[-1]
+            end_time = self._obj["time"].to_numpy().max()
         else:
             raise ValueError("Time coordinate not found")
         return check_time(end_time)
@@ -102,6 +102,12 @@ class DISDRODB_Base_Accessor:
 
         return plot_spectrum(self._obj, **kwargs)
 
+    def plot_nd(self, **kwargs):
+        """Plot drop number concentration N(D) timeseries."""
+        from disdrodb.viz.plots import plot_nd
+
+        return plot_nd(self._obj, **kwargs)
+
 
 @xr.register_dataset_accessor("disdrodb")
 class DISDRODB_Dataset_Accessor(DISDRODB_Base_Accessor):
@@ -121,12 +127,6 @@ class DISDRODB_Dataset_Accessor(DISDRODB_Base_Accessor):
             temporal_resolution=temporal_resolution,
         )
         return ds
-
-    def plot_nd(self, **kwargs):
-        """Plot drop number concentration N(D) timeseries."""
-        from disdrodb.viz.plots import plot_nd
-
-        return plot_nd(self._obj, **kwargs)
 
     def plot_raw_and_filtered_spectra(self, **kwargs):
         """Plot the raw and filtered spectra."""

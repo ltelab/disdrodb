@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,22 +39,35 @@ def disdrodb_open_logs_directory(
     station_name: Optional[str] = None,
     data_archive_dir: Optional[str] = None,
 ):
-    """Open the DISDRODB Data Archive logs directory of a station.
+    """Open the DISDRODB Data Archive station logs directory in the system file explorer.
 
-    Parameters
-    ----------
-    data_source : str
-        The name of the institution (for campaigns spanning multiple countries) or
-        the name of the country (for campaigns or sensor networks within a single country).
-        Must be provided in UPPER CASE.
-    campaign_name : str
-        The name of the campaign. Must be provided in UPPER CASE.
-    station_name : str
-        The name of the station.
-    data_archive_dir : str, optional
-        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the path specified in the DISDRODB active configuration will be used.
-    """
+    It allows to easily browse processing logs and error reports.
+
+    \b
+    Station Specification:
+        Requires data_source and campaign_name (UPPER CASE required).
+        station_name is optional.
+
+    \b
+    Archive Directory:
+        --data_archive_dir: Custom path to DISDRODB data archive
+        If not specified, the path from the active DISDRODB configuration is used
+
+    \b
+    Examples:
+        # Open logs directory for a specific station
+        disdrodb_open_logs_directory EPFL HYMEX_LTE_SOP2 10
+
+        # Open logs directory for an entire campaign
+        disdrodb_open_logs_directory NASA IFLOODS
+
+        # Open with custom data archive directory
+        disdrodb_open_logs_directory EPFL HYMEX_LTE_SOP2 10 --data_archive_dir /path/to/DISDRODB
+
+    \b
+    Important Notes:
+        - Data source and campaign names must be in UPPER CASE
+    """  # noqa: D301
     from disdrodb.api.io import open_logs_directory
 
     data_archive_dir = parse_archive_dir(data_archive_dir)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,6 +54,8 @@ def reader(
     # - Skip first row as columns names
     reader_kwargs["header"] = None
     reader_kwargs["skiprows"] = 0
+    # - Define encoding
+    reader_kwargs["encoding"] = "latin-1"
     # - Skip file with encoding errors
     reader_kwargs["encoding_errors"] = "ignore"
     # - Avoid first column to become df index !!!

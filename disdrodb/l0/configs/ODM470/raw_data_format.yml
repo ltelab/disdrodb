@@ -1,0 +1,111 @@
+precipitation_rate:
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 3
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 999.999
+  nan_flags: null
+  field_number: "1"
+reference_voltage:
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 3
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 5.5
+  nan_flags: null
+  field_number: "2"
+relative_wind_speed:
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 3
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 100
+  nan_flags: null
+  field_number: "3"
+relative_wind_direction:
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 3
+  n_naturals: 3
+  data_range:
+    - 0.0
+    - 360
+  nan_flags: null
+  field_number: "4"
+precip_flag:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 0
+  n_naturals: 0
+  data_range:
+    - -1
+    - 5
+  nan_flags: null
+  field_number: "5"
+weather_code_synop_4677:
+  n_digits: 2
+  n_characters: 2
+  n_decimals: 0
+  n_naturals: 2
+  data_range:
+    - 0
+    - 90
+  nan_flags: null
+  field_number: "6"
+raw_drop_number:
+  n_digits: 1317
+  n_characters: 1756
+  n_decimals: 1317
+  n_naturals: 0
+  data_range: null
+  nan_flags: null
+  dimension_order:
+    - diameter_bin_center
+  n_values: 128
+  field_number: "81"
+air_temperature:
+  n_digits: 4
+  n_characters: 5
+  n_decimals: 1
+  n_naturals: 2
+  data_range:
+    - -40
+    - 70
+  nan_flags: 99999
+  field_number: "521"
+relative_humidity:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 0
+  n_naturals: 5
+  data_range:
+    - 0
+    - 99999
+  nan_flags: 99999
+  field_number: "522"
+wind_speed:
+  n_digits: 3
+  n_characters: 4
+  n_decimals: 1
+  n_naturals: 2
+  data_range:
+    - 0
+    - 60
+  nan_flags: null
+  field_number: "523"
+wind_direction:
+  n_digits: 3
+  n_characters: 3
+  n_decimals: 0
+  n_naturals: 3
+  data_range:
+    - 0
+    - 360
+  nan_flags: 999
+  field_number: "524"

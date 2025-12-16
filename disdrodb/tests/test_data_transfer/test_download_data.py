@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -82,12 +82,12 @@ class TestComputeCutDirs:
 class TestBuildWebserverWgetCommand:
     """Test build_webserver_wget_command."""
 
-    def test_with_force_and_verbose(self):
-        """build_webserver_wget_command includes -q and --timestamping when verbose and force are True."""
+    def test_with_verbose(self):
+        """build_webserver_wget_command includes --timestamping and -q and when verbose is True."""
         url = "http://example.com/data/"
         cut_dirs = 2
         dst_dir = "/path/to/download/directory"
-        cmd = build_webserver_wget_command(url, cut_dirs=cut_dirs, dst_dir=dst_dir, force=True, verbose=True)
+        cmd = build_webserver_wget_command(url, cut_dirs=cut_dirs, dst_dir=dst_dir, verbose=True)
 
         assert cmd[0] == "wget"
         assert "-q" not in cmd
@@ -100,16 +100,16 @@ class TestBuildWebserverWgetCommand:
         assert dst_dir in cmd
         assert url in cmd
 
-    def test_without_force_and_verbose(self):
-        """build_webserver_wget_command omits -q and --timestamping when verbose and force are False."""
+    def test_without_verbose(self):
+        """build_webserver_wget_command omits -q when verbose is False."""
         url = "http://example.com/data/"
         cut_dirs = 1
         dst_dir = "/var/data"
-        cmd = build_webserver_wget_command(url, cut_dirs=cut_dirs, dst_dir=dst_dir, force=False, verbose=False)
+        cmd = build_webserver_wget_command(url, cut_dirs=cut_dirs, dst_dir=dst_dir, verbose=False)
 
         assert cmd[0] == "wget"
         assert "-q" in cmd
-        assert "--timestamping" not in cmd
+        assert "--timestamping" in cmd
         assert "-r" in cmd
         assert "-np" in cmd
         assert "-nH" in cmd
@@ -122,34 +122,30 @@ class TestBuildWebserverWgetCommand:
 class TestBuildFTPServerWgetCommand:
     """Test build_ftp_server_wget_command."""
 
-    def test_force_true_and_verbose_true(self):
+    def test_build_ftp_server_wget_with_verbose_true(self):
         cmd = build_ftp_server_wget_command(
             url="ftp.test.com/data/",
             cut_dirs=2,
             dst_dir="/dummy/path",
-            force=True,
             verbose=True,
         )
         assert cmd[0] == "wget"
-        assert "--timestamping" in cmd
-        assert "--no-clobber" not in cmd
         assert "-q" not in cmd
         assert "--cut-dirs=2" in cmd
+        assert "--timestamping" in cmd
         assert cmd[-2] == "/dummy/path"
         assert cmd[-1] == "ftp://anonymous:disdrodb@ftp.test.com/data/"
 
-    def test_force_false_and_verbose_false(self):
+    def test_build_ftp_server_wget_with_verbose_false(self):
         cmd = build_ftp_server_wget_command(
             url="ftp.test.com/data/",
             cut_dirs=1,
             dst_dir="/tmp/out",
-            force=False,
             verbose=False,
         )
-        assert "--no-clobber" in cmd
-        assert "--timestamping" not in cmd
         assert "-q" in cmd
         assert "--cut-dirs=1" in cmd
+        assert "--timestamping" in cmd
 
 
 class TestEnsureWgetAvailable:
@@ -170,21 +166,13 @@ class TestEnsureWgetAvailable:
 def test_download_file_from_url(tmp_path):
     # Test download case when empty directory
     url = "https://raw.githubusercontent.com/ltelab/disdrodb/main/README.md"
-    # url = "https://httpbin.org/stream-bytes/1024"
-    dst_filepath = _download_file_from_url(url, tmp_path, force=False)
+    dst_filepath = _download_file_from_url(url, tmp_path)
     assert os.path.isfile(dst_filepath)
 
-    # Test download case when directory is not empty and force=False --> avoid download
+    # Test raise error when directory is not empty
     url = "https://raw.githubusercontent.com/ltelab/disdrodb/main/CODE_OF_CONDUCT.md"
-    # url = "https://httpbin.org/stream-bytes/1025"
     with pytest.raises(ValueError):
-        _download_file_from_url(url, tmp_path, force=False)
-
-    # Test download case when directory is not empty and force=True --> it download
-    url = "https://raw.githubusercontent.com/ltelab/disdrodb/main/CODE_OF_CONDUCT.md"
-    # url = "https://httpbin.org/stream-bytes/1026"
-    dst_filepath = _download_file_from_url(url, tmp_path, force=True)
-    assert os.path.isfile(dst_filepath)
+        _download_file_from_url(url, tmp_path)
 
 
 def test_download_station_data(tmp_path):
@@ -209,7 +197,7 @@ def test_download_station_data(tmp_path):
     )
 
     # Download data
-    download_station_data(metadata_filepath=metadata_filepath, data_archive_dir=data_archive_dir, force=True)
+    download_station_data(metadata_filepath=metadata_filepath, data_archive_dir=data_archive_dir)
 
     # Define expected station directory
     station_dir = define_station_dir(
@@ -456,15 +444,15 @@ def test_download_station_calls_correct_backend(tmp_path, monkeypatch, url, expe
 
     monkeypatch.setattr(
         "disdrodb.data_transfer.download_data.download_zip_file",
-        lambda url, dst_dir, force: calls["zip"].append((url, dst_dir, force)),
+        lambda url, dst_dir: calls["zip"].append((url, dst_dir)),
     )
     monkeypatch.setattr(
         "disdrodb.data_transfer.download_data.download_web_server_data",
-        lambda url, dst_dir, force, verbose: calls["web"].append((url, dst_dir, force, verbose)),
+        lambda url, dst_dir, verbose: calls["web"].append((url, dst_dir, verbose)),
     )
     monkeypatch.setattr(
         "disdrodb.data_transfer.download_data.download_ftp_server_data",
-        lambda url, dst_dir, force, verbose: calls["ftp"].append((url, dst_dir, force, verbose)),
+        lambda url, dst_dir, verbose: calls["ftp"].append((url, dst_dir, verbose)),
     )
 
     # Run function
@@ -484,7 +472,7 @@ def test_download_station_calls_correct_backend(tmp_path, monkeypatch, url, expe
         else:
             assert not backend_calls, f"{backend} should NOT have been called for {url}"
 
-    # Special check: web/ftp should call twice (force=False, then force=True)
+    # Special check: web/ftp should call twice
     if expected_func in {"web", "ftp"}:
         assert len(calls[expected_func]) == 2
     else:
@@ -516,7 +504,7 @@ class TestDownloadWebServerData:
         # Stub build_webserver_wget_command to return a known command list
         monkeypatch.setattr(
             "disdrodb.data_transfer.download_data.build_webserver_wget_command",
-            lambda url, cut_dirs, dst_dir, force, verbose: [
+            lambda url, cut_dirs, dst_dir, verbose: [
                 "wget",
                 "-r",
                 "-np",
@@ -545,7 +533,7 @@ class TestDownloadWebServerData:
         """download_web_server_data should invoke subprocess.run with constructed command on success."""
         url = "http://example.com/data"
         dst_dir = str(tmp_path / "out")
-        download_web_server_data(url, dst_dir, force=True, verbose=True)
+        download_web_server_data(url, dst_dir, verbose=True)
 
         # os.makedirs should have been called for dst_dir
         assert (dst_dir, True) in self.makedirs_calls
@@ -568,7 +556,7 @@ class TestDownloadWebServerData:
         url = "http://example.com/data"
         dst_dir = str(tmp_path / "out")
         with pytest.raises(subprocess.CalledProcessError) as excinfo:
-            download_web_server_data(url, dst_dir, force=False, verbose=False)
+            download_web_server_data(url, dst_dir, verbose=False)
         assert excinfo.value.returncode == 1
         assert "wget" in excinfo.value.cmd
 
@@ -598,7 +586,7 @@ class TestDownloadFTPServerData:
         # Stub build_ftp_server_wget_command to return a known command
         monkeypatch.setattr(
             "disdrodb.data_transfer.download_data.build_ftp_server_wget_command",
-            lambda url, cut_dirs, dst_dir, force, verbose: [
+            lambda url, cut_dirs, dst_dir, verbose: [
                 "wget",
                 "-r",
                 "-np",
@@ -631,7 +619,7 @@ class TestDownloadFTPServerData:
         """download_ftp_server_data should invoke subprocess.run with constructed command."""
         url = "ftp.test.com/data"
         dst_dir = str(tmp_path / "out")
-        download_ftp_server_data(url, dst_dir, force=True, verbose=True)
+        download_ftp_server_data(url, dst_dir, verbose=True)
 
         # os.makedirs called
         assert (dst_dir, True) in self.makedirs_calls
@@ -667,6 +655,6 @@ class TestDownloadFTPServerData:
         url = "ftp.test.com/data"
         dst_dir = str(tmp_path / "out")
         with pytest.raises(subprocess.CalledProcessError) as excinfo:
-            download_ftp_server_data(url, dst_dir, force=False, verbose=False)
+            download_ftp_server_data(url, dst_dir, verbose=False)
         assert excinfo.value.returncode == 1
         assert "wget" in excinfo.value.cmd

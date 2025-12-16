@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -97,6 +95,35 @@ def xr_get_last_valid_idx(da_condition, dim, fill_value=None):
         fill_value,
     )
     return last_idx
+
+
+def _np_remap_numeric_array(arr, remapping_dict, fill_value=np.nan):
+    # Define conditions
+    conditions = [arr == i for i in remapping_dict]
+    # Define choices corresponding to conditions
+    choices = remapping_dict.values()
+    # Apply np.select to transform the array
+    return np.select(conditions, choices, default=fill_value)
+
+
+def _dask_remap_numeric_array(arr, remapping_dict, fill_value=np.nan):
+    import dask.array
+
+    return dask.array.map_blocks(_np_remap_numeric_array, arr, remapping_dict, fill_value, dtype=arr.dtype)
+
+
+def remap_numeric_array(arr, remapping_dict, fill_value=np.nan):
+    """Remap the values of a numeric array."""
+    if hasattr(arr, "chunks"):
+        return _dask_remap_numeric_array(arr, remapping_dict, fill_value=fill_value)
+    return _np_remap_numeric_array(arr, remapping_dict, fill_value=fill_value)
+
+
+def xr_remap_numeric_array(da, remapping_dict, fill_value=np.nan):
+    """Remap values of a xr.DataArray."""
+    output = da.copy()
+    output.data = remap_numeric_array(da.data, remapping_dict, fill_value=fill_value)
+    return output
 
 
 ####-------------------------------------------------------------------

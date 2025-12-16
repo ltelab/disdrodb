@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,10 +15,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for GID LPM sensors not measuring wind."""
+import os
+
+import numpy as np
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
+from disdrodb.utils.logger import log_warning
 
 
 @is_documented_by(reader_generic_docstring)
@@ -49,6 +51,9 @@ def reader(
 
     # - Number of rows to be skipped at the beginning of the file
     reader_kwargs["skiprows"] = None
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "latin"
 
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
@@ -181,9 +186,45 @@ def reader(
     # Remove checksum from raw_drop_number
     df["raw_drop_number"] = df["raw_drop_number"].str.strip(";").str.rsplit(";", n=1, expand=True)[0]
 
-    # Define datetime "time" column
-    df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
-    df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y-%H:%M:%S", errors="coerce")
+    # Identify rows with bad sensor date (compared to file name)
+    filename = os.path.basename(filepath)
+    file_date_str = filename[0:8]
+    idx_bad_date = df["sensor_date"] != pd.to_datetime(file_date_str, format="%Y%m%d").strftime("%d.%m.%y")
+
+    # If all rows have bad sensor_date, use the one of the file name
+    if idx_bad_date.all():
+        # -  Infer and define "time" column
+        start_time_str = filename[0:10]
+        start_time = pd.to_datetime(start_time_str, format="%Y%m%d%H")
+
+        # - Define timedelta based on sensor_time
+        # --> Add +24h to subsequent times when time resets
+        dt = pd.to_timedelta(df["sensor_time"]).to_numpy().astype("m8[s]")
+        rollover_indices = np.where(np.diff(dt) < np.timedelta64(0, "s"))[0]
+        if rollover_indices.size > 0:
+            for idx in rollover_indices:
+                dt[idx + 1 :] += np.timedelta64(24, "h")
+        dt = dt - dt[0]
+
+        # - Define approximate time
+        df["time"] = start_time + dt
+
+        # - Keep rows where time increment is between 00 and 59 minutes
+        valid_rows = dt <= np.timedelta64(3540, "s")
+        df = df[valid_rows]
+
+    # If only some rows have bad sensor date, just drop such bad rows
+    else:
+        if idx_bad_date.any():
+            # Remove rows with bad dates
+            bad_dates = df[idx_bad_date]["sensor_date"].unique().tolist()
+            df = df[~idx_bad_date]
+            msg = f"{filepath} contain rows with the following unexpected sensor_date values {bad_dates}"
+            log_warning(msg=msg, logger=logger)
+
+        # Define datetime "time" column
+        df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
+        df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y-%H:%M:%S", errors="coerce")
 
     # Drop row if start_identifier different than 00
     df = df[df["start_identifier"].astype(str) == "00"]

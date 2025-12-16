@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,25 +46,45 @@ def disdrodb_initialize_station(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-    r"""Initialize the DISDRODB directory structure for a station.
+    """Initialize the DISDRODB directory structure for a new station.
 
-    It adds the relevant directories and the default issue and metadata YAML files..
+    Creates the required directory structure and default YAML configuration files
+    for a new station in both the DISDRODB Data and Metadata archives.
 
-    Parameters \n
-    ---------- \n
-    data_source : str \n
-        Institution name (when campaign data spans more than 1 country), or country (when all campaigns (or sensor
-        networks) are inside a given country).\n
-        Must be UPPER CASE.\n
-    campaign_name : str \n
-        Campaign name. Must be UPPER CASE.\n
-    station_name : str \n
-        Station name \n
-    data_archive_dir : str \n
-        DISDRODB Data Archive directory \n
-        Format: <...>/DISDRODB \n
-        If not specified, uses path specified in the DISDRODB active configuration. \n
-    """
+    \b
+    Station Specification:
+        Requires exact specification of data_source, campaign_name, and station_name.
+        All three parameters must be provided and are case-sensitive (UPPER CASE required).
+
+    \b
+    Created Structure:
+        Data Archive:
+            - Data directory for the station where to place the raw data files
+
+        Metadata Archive:
+            - Station metadata YAML file (template)
+            - Station issue YAML file (template)
+
+    \b
+    Archive Directories:
+        --data_archive_dir: Custom path to DISDRODB data archive
+        --metadata_archive_dir: Custom path to DISDRODB metadata archive
+        If not specified, paths from the active DISDRODB configuration are used
+
+    \b
+    Examples:
+        # Initialize a new station with default configuration
+        disdrodb_initialize_station DATA_SOURCE CAMPAIGN_NAME STATION_NAME
+
+        # Initialize with custom archive directories
+        disdrodb_initialize_station DATA_SOURCE CAMPAIGN_NAME STATION_NAME --data_archive_dir /path/to/DISDRODB
+
+    \b
+    Important Notes:
+        - Data source, campaign, and station names must be in UPPER CASE
+        - All three station identifiers are required (no wildcards)
+        - Creates template YAML files that need to be manually filled in
+    """  # noqa: D301
     from disdrodb.api.create_directories import create_initial_station_structure
 
     data_archive_dir = parse_archive_dir(data_archive_dir)

@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,6 +48,7 @@ from disdrodb.l0.l0b_nc_processing import sanitize_ds
 from disdrodb.l0.l0b_processing import generate_l0b
 from disdrodb.l0.l0c_processing import TOLERANCE_SECONDS, create_l0c_datasets
 from disdrodb.metadata import read_station_metadata
+from disdrodb.routines.options import L0CProcessingOptions
 from disdrodb.utils.archiving import group_files_by_time_block
 from disdrodb.utils.dask import execute_tasks_safely
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
@@ -329,6 +328,7 @@ def _generate_l0c(
     # Processing info
     metadata,
     # Processing options
+    folder_partitioning,
     force,
     verbose,
     parallel,  # this is used only to initialize the correct logger !
@@ -336,8 +336,6 @@ def _generate_l0c(
     """Define L0C product processing."""
     # Define product
     product = "L0C"
-    # Define folder partitioning
-    folder_partitioning = get_folder_partitioning()
 
     # Define product processing function
     def core(
@@ -873,15 +871,6 @@ def run_l0c_station(
         station_name=station_name,
     )
 
-    # -----------------------------------------------------------------.
-    # Retrieve metadata
-    metadata = read_station_metadata(
-        metadata_archive_dir=metadata_archive_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-
     # ------------------------------------------------------------------------.
     # Start processing
     t_i = time.time()
@@ -925,10 +914,30 @@ def run_l0c_station(
     if filepaths is None:
         return
 
+    # -----------------------------------------------------------------.
+    # Read station metadata and sensor name
+    metadata = read_station_metadata(
+        metadata_archive_dir=metadata_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    sensor_name = metadata["sensor_name"]
+
+    # -------------------------------------------------------------------------.
+    # Retrieve L0C processing options
+    l0c_processing_options = L0CProcessingOptions(sensor_name=sensor_name)
+    product_frequency = l0c_processing_options.product_frequency
+    folder_partitioning = l0c_processing_options.folder_partitioning
+
     # -------------------------------------------------------------------------.
     # Retrieve dictionary with the required files per time block
-    # TODO: allow customizing this in config file, but risk of out of memory !
-    list_event_info = group_files_by_time_block(filepaths=filepaths, freq="day", tolerance_seconds=TOLERANCE_SECONDS)
+    # - Default is "day". If "month", risk of going out of memory on small laptops
+    list_event_info = group_files_by_time_block(
+        filepaths=filepaths,
+        freq=product_frequency,
+        tolerance_seconds=TOLERANCE_SECONDS,
+    )
 
     # -----------------------------------------------------------------.
     # Generate L0C files
@@ -941,6 +950,7 @@ def run_l0c_station(
             data_dir=data_dir,
             logs_dir=logs_dir,
             logs_filename=event_info["start_time"].strftime("%Y%m%dT%H%M%S"),
+            folder_partitioning=folder_partitioning,
             # Processing options
             force=force,
             verbose=verbose,

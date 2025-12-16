@@ -11,7 +11,7 @@ description = "disdrodb provides tools to download, standardize, share and analy
 readme = "README.md"
 keywords = ["python", "disdrometer","parsivel", "drop size distribution"]
 classifiers = [
-	"Development Status :: 1 - Planning",
+	"Development Status :: 5 - Production/Stable",
 	"Intended Audience :: Developers",
 	"Programming Language :: Python :: 3",
 	"Operating System :: Unix",
@@ -80,6 +80,9 @@ disdrodb_metadata_archive_directory="disdrodb.cli.disdrodb_metadata_archive_dire
 disdrodb_download_metadata_archive="disdrodb.cli.disdrodb_download_metadata_archive:disdrodb_download_metadata_archive"
 disdrodb_check_metadata_archive="disdrodb.cli.disdrodb_check_metadata_archive:disdrodb_check_metadata_archive"
 
+# Products options
+disdrodb_check_products_options="disdrodb.cli.disdrodb_check_products_options:disdrodb_check_products_options"
+
 # Open directories
 disdrodb_open_metadata_archive="disdrodb.cli.disdrodb_open_metadata_archive:disdrodb_open_metadata_archive"
 disdrodb_open_data_archive="disdrodb.cli.disdrodb_open_data_archive:disdrodb_open_data_archive"
@@ -115,6 +118,9 @@ disdrodb_run_l2e="disdrodb.cli.disdrodb_run_l2e:disdrodb_run_l2e"
 # L2M
 disdrodb_run_l2m_station="disdrodb.cli.disdrodb_run_l2m_station:disdrodb_run_l2m_station"
 disdrodb_run_l2m="disdrodb.cli.disdrodb_run_l2m:disdrodb_run_l2m"
+# Wrappers
+disdrodb_run_station="disdrodb.cli.disdrodb_run_station:disdrodb_run_station"
+disdrodb_run="disdrodb.cli.disdrodb_run:disdrodb_run"
 
 # Summary
 disdrodb_create_summary_station="disdrodb.cli.disdrodb_create_summary_station:disdrodb_create_summary_station"
@@ -229,6 +235,7 @@ ignore = [
     #  "PD901",
     "RUF043",
     "PLC0415",
+    "PLC0206",
     "PLW1641",
     "RUF059",
 

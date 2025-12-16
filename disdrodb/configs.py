@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -194,7 +192,11 @@ def get_scattering_table_dir(scattering_table_dir=None):
     if scattering_table_dir is None:
         scattering_table_dir = disdrodb.config.get("scattering_table_dir", None)
     if scattering_table_dir is None:
-        raise ValueError("The directory where to save DISDRODB T-Matrix scattering tables is not specified.")
+        msg = (
+            "The directory where to save DISDRODB T-Matrix scattering look-up tables is not specified. "
+            + "Please specify it using disdrodb.define_configs(scattering_table_dir=<path>)"
+        )
+        raise ValueError(msg)
     scattering_table_dir = check_scattering_table_dir(scattering_table_dir)  # ensure Path converted to str
     return scattering_table_dir
 
@@ -246,16 +248,19 @@ def get_default_products_configs_dir():
     return products_configs_dir
 
 
-def get_products_configs_dir():
+def get_products_configs_dir(products_configs_dir=None):
     """Return the DISDRODB products configuration directory."""
     import disdrodb
 
-    if os.environ.get("PYTEST_CURRENT_TEST"):
+    if products_configs_dir is not None:
+        return str(products_configs_dir)
+
+    if os.environ.get("PYTEST_CURRENT_TEST") and not os.environ.get("DISDRODB_VALIDATION_FLAG"):
         products_configs_dir = os.path.join(disdrodb.package_dir, "tests", "products")
     else:
         products_configs_dir = disdrodb.config.get("products_configs_dir", None)
-        if products_configs_dir is None:
-            products_configs_dir = get_default_products_configs_dir()
+        if products_configs_dir is None:  # not specified by user
+            products_configs_dir = get_default_products_configs_dir()  # take disdrodb defaults
     return products_configs_dir
 
 

@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +20,8 @@ import os
 import shutil
 import urllib.request
 import zipfile
+
+from disdrodb.utils.directories import remove_file_or_directories
 
 
 def download_metadata_archive(directory_path, force=False):
@@ -64,7 +64,7 @@ def download_metadata_archive(directory_path, force=False):
     # Handle existing target directory
     if os.path.exists(target_dir):
         if force:
-            shutil.rmtree(target_dir)
+            remove_file_or_directories(target_dir)
         else:
             raise FileExistsError(
                 f"A DISDRODB Metadata Archive already exists at '{target_dir}'. Use force=True to update it.",

@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Routines to download data from the DISDRODB Decentralized Data Archive."""
-
 import logging
 import os
 import shutil
@@ -33,7 +30,7 @@ from disdrodb.api.path import define_metadata_filepath, define_station_dir
 from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
 from disdrodb.metadata import get_list_metadata
 from disdrodb.utils.compression import unzip_file
-from disdrodb.utils.directories import is_empty_directory
+from disdrodb.utils.directories import is_empty_directory, remove_file_or_directories
 from disdrodb.utils.yaml import read_yaml
 
 
@@ -123,7 +120,7 @@ def download_archive(
         If not provided (``None``), all stations will be downloaded.
         The default value is ``station_name=None``.
     force : bool, optional
-        If ``True``, overwrite the already existing raw data file.
+        If ``True``, delete existing files and re-download raw data files.
         The default value is ``False``.
     data_archive_dir : str (optional)
         DISDRODB Data Archive directory. Format: ``<...>/DISDRODB``.
@@ -167,7 +164,8 @@ def download_archive(
                 force=force,
             )
         except Exception as e:
-            print(f" - Download error: {e}")
+            msg = e.args[0] if e.args else str(e)
+            print(f" - Download error: {msg}")
             print(" ")
 
 
@@ -196,7 +194,7 @@ def download_station(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     force: bool, optional
-        If ``True``, overwrite the already existing raw data file.
+        If ``True``, remove existing data and re-download.
         The default value is ``False``.
     data_archive_dir : str (optional)
         DISDRODB Data Archive directory. Format: ``<...>/DISDRODB``.
@@ -240,7 +238,7 @@ def check_consistent_station_name(metadata_filepath, station_name):
 
 
 def download_station_data(metadata_filepath: str, data_archive_dir: str, force: bool = False, verbose=True) -> None:
-    """Download and unzip the station data .
+    """Download and unzip the station data.
 
     Parameters
     ----------
@@ -270,26 +268,34 @@ def download_station_data(metadata_filepath: str, data_archive_dir: str, force: 
         product="RAW",
     )
     # Check DISDRODB data url
-    disdrodb_data_url = metadata_dict.get("disdrodb_data_url", None)
+    disdrodb_data_url = metadata_dict.get("disdrodb_data_url", "")
+    if disdrodb_data_url == "":
+        raise ValueError(f"{campaign_name} {station_name} station data are not yet publicly available.")
     if not _is_valid_disdrodb_data_url(disdrodb_data_url):
         raise ValueError(f"Invalid disdrodb_data_url '{disdrodb_data_url}' for station {station_name}")
 
+    # Remove existing station directory if force=True
+    if force and os.path.exists(station_dir):
+        print(f" - Removing existing station data at {station_dir}.")
+        remove_file_or_directories(station_dir)
+
     # Download files
     # - Option 1: Download ZIP file containing all station raw data
-    if disdrodb_data_url.startswith("https://zenodo.org/") or disdrodb_data_url.startswith("https://cloudnet.fmi.fi/"):
-        download_zip_file(url=disdrodb_data_url, dst_dir=station_dir, force=force)
+    zip_repos = ["https://zenodo.org/", "https://cloudnet.fmi.fi/", "https://data.dtu.dk/"]
+    if any(disdrodb_data_url.startswith(repo) for repo in zip_repos):
+        download_zip_file(url=disdrodb_data_url, dst_dir=station_dir)
 
     # - Option 2: Recursive download from a web server via HTTP or HTTPS.
     elif disdrodb_data_url.startswith("http"):
-        download_web_server_data(url=disdrodb_data_url, dst_dir=station_dir, force=force, verbose=verbose)
+        download_web_server_data(url=disdrodb_data_url, dst_dir=station_dir, verbose=verbose)
         # - Retry to be more sure that all data have been downloaded
-        download_web_server_data(url=disdrodb_data_url, dst_dir=station_dir, force=True, verbose=verbose)
+        download_web_server_data(url=disdrodb_data_url, dst_dir=station_dir, verbose=verbose)
 
     # - Option 3: Recursive download from a ftp server
     elif disdrodb_data_url.startswith("ftp"):
-        download_ftp_server_data(url=disdrodb_data_url, dst_dir=station_dir, force=force, verbose=verbose)
+        download_ftp_server_data(url=disdrodb_data_url, dst_dir=station_dir, verbose=verbose)
         # - Retry to be more sure that all data have been downloaded
-        download_ftp_server_data(url=disdrodb_data_url, dst_dir=station_dir, force=True, verbose=verbose)
+        download_ftp_server_data(url=disdrodb_data_url, dst_dir=station_dir, verbose=verbose)
 
     else:
         raise NotImplementedError(f"Open a GitHub Issue to enable the download of data from {disdrodb_data_url}.")
@@ -299,7 +305,7 @@ def download_station_data(metadata_filepath: str, data_archive_dir: str, force: 
 #### Download from Web Server via HTTP or HTTPS
 
 
-def download_web_server_data(url: str, dst_dir: str, force=True, verbose=True) -> None:
+def download_web_server_data(url: str, dst_dir: str, verbose=True) -> None:
     """Download data from a web server via HTTP or HTTPS.
 
     Use the system's wget command to recursively download all files and subdirectories
@@ -317,9 +323,6 @@ def download_web_server_data(url: str, dst_dir: str, force=True, verbose=True) -
         HTTPS URL pointing to webserver folder. Example: "https://ruisdael.citg.tudelft.nl/parsivel/PAR001_Cabauw/"
     dst_dir : str
          Local directory where to download the file (DISDRODB station data directory).
-    force : bool, optional
-        If ``True``, re-download new/updated files (skip unchanged ones).
-        If ``False``, keep existing files untouched.
     verbose : bool, optional
         Print wget output (default is True).
     """
@@ -336,7 +339,7 @@ def download_web_server_data(url: str, dst_dir: str, force=True, verbose=True) -
     os.makedirs(dst_dir, exist_ok=True)
 
     # 5. Build wget command
-    cmd = build_webserver_wget_command(url, cut_dirs=cut_dirs, dst_dir=dst_dir, force=force, verbose=verbose)
+    cmd = build_webserver_wget_command(url, cut_dirs=cut_dirs, dst_dir=dst_dir, verbose=verbose)
 
     # 6. Run wget command
     try:
@@ -375,7 +378,7 @@ def compute_cut_dirs(url: str) -> int:
     return len(segments)
 
 
-def build_webserver_wget_command(url: str, cut_dirs: int, dst_dir: str, force: bool, verbose: bool) -> list[str]:
+def build_webserver_wget_command(url: str, cut_dirs: int, dst_dir: str, verbose: bool) -> list[str]:
     """Construct the wget command list for subprocess.run.
 
     Notes
@@ -400,9 +403,9 @@ def build_webserver_wget_command(url: str, cut_dirs: int, dst_dir: str, force: b
         "--reject",
         "index.html*",  # avoid to download Apache autoindex index.html
         f"--cut-dirs={cut_dirs}",
+        # Downloads just new data without re-downloading existing files
+        "--timestamping",  # -N
     ]
-    if force:
-        cmd.append("--timestamping")  # -N
 
     # Define source and destination directory
     cmd += [
@@ -421,7 +424,6 @@ def build_ftp_server_wget_command(
     url: str,
     cut_dirs: int,
     dst_dir: str,
-    force: bool,
     verbose: bool,
 ) -> list[str]:
     """Construct the wget command list for FTP recursive download.
@@ -434,9 +436,6 @@ def build_ftp_server_wget_command(
         Number of leading path components to strip.
     dst_dir : str
         Local destination directory.
-    force : bool
-        If True, re-download newer files (--timestamping).
-        If False, keep existing files untouched (--no-clobber).
     verbose : bool
         If False, suppress wget output (-q).
     """
@@ -450,14 +449,7 @@ def build_ftp_server_wget_command(
         "-np",  # no parent --> don't ascend to higher-level dirs
         "-nH",  # no host dirs --> avoid creating ftp.example.com/ locally
         f"--cut-dirs={cut_dirs}",  # strip N leading path components
-    ]
-
-    if force:
-        cmd.append("--timestamping")  # download if remote file is newer
-    else:
-        cmd.append("--no-clobber")  # skip files that already exist
-
-    cmd += [
+        "--timestamping",  # download if remote file is newer
         "-P",  # specify local destination directory
         dst_dir,
         f"ftp://anonymous:disdrodb@{url}",  # target FTP URL
@@ -465,7 +457,7 @@ def build_ftp_server_wget_command(
     return cmd
 
 
-def download_ftp_server_data(url: str, dst_dir: str, force: bool = False, verbose: bool = True) -> None:
+def download_ftp_server_data(url: str, dst_dir: str, verbose: bool = True) -> None:
     """Download data from an FTP server with anonymous login.
 
     Parameters
@@ -474,9 +466,6 @@ def download_ftp_server_data(url: str, dst_dir: str, force: bool = False, verbos
         FTP server URL pointing to a folder. Example: "ftp://ftp.example.com/path/to/data/"
     dst_dir : str
          Local directory where to download the file (DISDRODB station data directory).
-    force : bool, optional
-        If ``True``, re-download new/updated files (skip unchanged ones).
-        If ``False``, keep existing files untouched.
     verbose : bool, optional
         Print wget output (default is True).
     """
@@ -496,7 +485,6 @@ def download_ftp_server_data(url: str, dst_dir: str, force: bool = False, verbos
         url,
         cut_dirs=cut_dirs,
         dst_dir=dst_dir,
-        force=force,
         verbose=verbose,
     )
     # Run wget
@@ -515,15 +503,15 @@ def download_ftp_server_data(url: str, dst_dir: str, force: bool = False, verbos
 #### Download from Zenodo
 
 
-def download_zip_file(url, dst_dir, force):
+def download_zip_file(url, dst_dir):
     """Download zip file from zenodo and extract station raw data."""
     # Download zip file
-    zip_filepath = _download_file_from_url(url, dst_dir=dst_dir, force=force)
+    zip_filepath = _download_file_from_url(url, dst_dir=dst_dir)
     # Extract the stations files from the downloaded station.zip file
     _extract_station_files(zip_filepath, station_dir=dst_dir)
 
 
-def _download_file_from_url(url: str, dst_dir: str, force: bool = False) -> str:
+def _download_file_from_url(url: str, dst_dir: str) -> str:
     """Download station zip file into the DISDRODB station data directory.
 
     Parameters
@@ -532,8 +520,6 @@ def _download_file_from_url(url: str, dst_dir: str, force: bool = False) -> str:
         URL of the file to download.
     dst_dir : str
         Local directory where to download the file (DISDRODB station data directory).
-    force : bool, optional
-        Overwrite the raw data file if already existing. The default value is ``False``.
 
     Returns
     -------
@@ -544,16 +530,14 @@ def _download_file_from_url(url: str, dst_dir: str, force: bool = False) -> str:
     """
     dst_filename = os.path.basename(dst_dir) + ".zip"
     dst_filepath = os.path.join(dst_dir, dst_filename)
+    # Ensure destination directory exists and is empty
     os.makedirs(dst_dir, exist_ok=True)
     if not is_empty_directory(dst_dir):
-        if force:
-            shutil.rmtree(dst_dir)
-            os.makedirs(dst_dir)  # station directory
-        else:
-            raise ValueError(
-                f"There are already raw files within the DISDRODB Data Archive at {dst_dir}. Download is suspended. "
-                "Use force=True to force the download and overwrite existing raw files.",
-            )
+        raise ValueError(
+            "ZIP archive download is aborted."
+            f"There are already raw files within the DISDRODB Data Archive at {dst_dir}."
+            "Use force=True if you wish to remove existing files and redownload the station archive.",
+        )
 
     os.makedirs(dst_dir, exist_ok=True)
 

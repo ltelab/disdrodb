@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -201,7 +201,7 @@ class TestIdentifyEvents:
         # --- Monkeypatch open_netcdf_files to return a minimal dataset ---
         def fake_open_netcdf_files(filepaths, variables, parallel, compute):
             times = pd.date_range("2022-01-01", periods=5, freq="h")
-            N = [0, 10, 0, 12, 15]  # some below and some above min_drops
+            N = [0, 10, 0, 12, 15]  # some below and some above detection_threshold
             ds = xr.Dataset(
                 {
                     "N": ("time", np.array(N)),
@@ -213,7 +213,7 @@ class TestIdentifyEvents:
         monkeypatch.setattr(archiving, "open_netcdf_files", fake_open_netcdf_files)
 
         # --- Run function ---
-        events = identify_events(filepaths=["fake1", "fake2"], min_drops=5)
+        events = identify_events(filepaths=["fake1", "fake2"], variable="N", detection_threshold=5)
 
         # --- Assertions ---
         assert isinstance(events, list)
@@ -243,7 +243,7 @@ class TestIdentifyEvents:
         monkeypatch.setattr(archiving, "open_netcdf_files", fake_open_netcdf_files)
 
         # Test identify_events function return empty list
-        events = identify_events(["fake"], min_drops=5)
+        events = identify_events(["fake"], variable="N", detection_threshold=5)
         assert events == []
 
 

@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 # -----------------------------------------------------------------------------.
 """Routine to download the DISDRODB Metadata Data Archive."""
 import sys
+from pathlib import Path
 
 import click
 
@@ -25,7 +26,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 
 @click.command()
-@click.argument("directory_path", metavar="<station>")
+@click.argument("directory_path", required=False, metavar="[directory]", type=click.Path())
 @click.option("-f", "--force", type=bool, show_default=True, default=False, help="Force overwriting")
 def disdrodb_download_metadata_archive(
     directory_path,
@@ -33,21 +34,31 @@ def disdrodb_download_metadata_archive(
 ):
     """Download the DISDRODB Metadata Archive to the specified directory.
 
-    Parameters
-    ----------
-    directory_path : str
-        The directory path where the DISDRODB-METADATA directory will be downloaded.
-    force : bool, optional
-         If ``True``, the existing DISDRODB-METADATA directory will be removed
-         and a new one will be downloaded. The default value is ``False``.
+    \b
+    Download Options:
+        '--force True' removes the existing DISDRODB-METADATA directory and forces re-download.
+        The default is --force False. If the DISDRODB-METADATA directory already exists, it raises an error.
 
-    Returns
-    -------
-    metadata_archive_dir
-        The DISDRODB Metadata Archive directory path.
-    """
+    \b
+    Examples:
+        # Download metadata archive to current directory
+        disdrodb_download_metadata_archive
+
+        # Download to specific directory
+        disdrodb_download_metadata_archive /path/to/directory
+
+        # Force re-download of existing metadata archive
+        disdrodb_download_metadata_archive /path/to/directory --force True
+
+    \b
+    Important Notes:
+        - Use --force with caution as it will delete the existing metadata archive
+    """  # noqa: D301
     from disdrodb import download_metadata_archive
 
-    directory_path = parse_archive_dir(directory_path)
+    # Default to current directory if none provided
+    directory_path = Path(directory_path or ".").resolve()
+    directory_path = parse_archive_dir(str(directory_path))
 
+    # Download metadata archive
     download_metadata_archive(directory_path, force=force)

@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # temperaturehis program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ def get_refractive_index_function(permittivity_model):
     ----------
     model : str
         The model to use for calculating the complex refractive index. Available models are:
-        'Liebe1991', 'Liebe1991v2', 'Ellison2005', 'Turner2016', 'Turner2016SLC'.
+        'Liebe1991', 'Liebe1991v2', 'Ellison2007', 'Turner2016', 'Turner2016SLC'.
 
     Returns
     -------
@@ -104,7 +104,7 @@ def get_refractive_index(temperature, frequency, permittivity_model):
         Frequency in GHz.
     permittivity_model : str
         The permittivity model to use for calculating the complex refractive index.
-        Available models are: 'Liebe1991', 'Liebe1991v2', 'Ellison2005', 'Turner2016', 'Turner2016SLC'.
+        Available models are: 'Liebe1991', 'Liebe1991v2', 'Ellison2007', 'Turner2016', 'Turner2016SLC'.
         See available models with ``disdrodb.scattering.available_permittivity_models()``.
 
     Returns
@@ -309,7 +309,7 @@ def get_rain_refractive_index_liebe1991(temperature, frequency):
     return m
 
 
-def get_rain_refractive_index_ellison2005(temperature, frequency):
+def get_rain_refractive_index_ellison2007(temperature, frequency):
     """Compute the complex refractive index according to Ellison (2005) model.
 
     Parameters
@@ -343,8 +343,8 @@ def get_rain_refractive_index_ellison2005(temperature, frequency):
     temperature = ensure_array(temperature)
 
     # Check frequency and temperature within validity range
-    temperature = check_temperature_validity_range(temperature, vmin=0, vmax=100, permittivity_model="Ellison2005")
-    frequency = check_frequency_validity_range(frequency, vmin=0, vmax=1000, permittivity_model="Ellison2005")
+    temperature = check_temperature_validity_range(temperature, vmin=0, vmax=100, permittivity_model="Ellison2007")
+    frequency = check_frequency_validity_range(frequency, vmin=0, vmax=1000, permittivity_model="Ellison2007")
 
     # Conversion of frequency to Hz
     frequency = frequency / 1e-9
@@ -479,7 +479,7 @@ def get_rain_refractive_index_turner2016(frequency, temperature):
 def get_rayleigh_dielectric_factor(m):
     """Compute the Rayleigh dielectric factor |K|**2 from the complex refractive index.
 
-    The magnitude squared of the complex dielectric contrast factor for liquid water,
+    The magnitude squared of the complex dielectric constant factor for liquid water,
     relative to the surrounding medium (typically air).
 
     This factor is used to compute the radar reflectivity.
@@ -505,6 +505,6 @@ def get_rayleigh_dielectric_factor(m):
 REFRACTIVE_INDEX_MODELS = {
     "Liebe1991": get_rain_refractive_index_liebe1991,
     "Liebe1991single": get_rain_refractive_index_liebe1991_single,
-    "Ellison2005": get_rain_refractive_index_ellison2005,
+    "Ellison2007": get_rain_refractive_index_ellison2007,
     "Turner2016": get_rain_refractive_index_turner2016,
 }

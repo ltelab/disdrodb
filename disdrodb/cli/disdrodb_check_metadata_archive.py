@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
     help="Whether to raise error of finish the check",
 )
 def disdrodb_check_metadata_archive(metadata_archive_dir=None, raise_error=True):
-    """Run the DISDRODB Metadata Archive Checks."""
+    """Validate the DISDRODB Metadata Archive."""
     from disdrodb.metadata.checks import check_metadata_archive
 
     metadata_archive_dir = parse_archive_dir(metadata_archive_dir)

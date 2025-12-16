@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ from scipy.optimize import minimize
 from scipy.special import gamma, gammaln  # Regularized lower incomplete gamma function
 
 from disdrodb.constants import DIAMETER_DIMENSION
-from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity_from_ds
+from disdrodb.fall_velocity import get_rain_fall_velocity_from_ds
 from disdrodb.l2.empirical_dsd import (
     get_median_volume_drop_diameter,
     get_moment,
@@ -1056,14 +1056,26 @@ def _compute_z(ND, D, dD):
     return Z
 
 
-def _compute_target_variable_error(target, ND_obs, ND_preds, D, dD, V):
+def _compute_target_variable_error(target, ND_obs, ND_preds, D, dD, V, relative=False, eps=1e-12):
+    # Compute observed and predicted target variables
     if target == "Z":
-        errors = np.abs(_compute_z(ND_obs, D, dD) - _compute_z(ND_preds, D, dD))
+        obs = _compute_z(ND_obs, D, dD)
+        pred = _compute_z(ND_preds, D, dD)
     elif target == "R":
-        errors = np.abs(_compute_rain_rate(ND_obs, D, dD, V) - _compute_rain_rate(ND_preds, D, dD, V))
-    else:  # if target == "LWC":
-        errors = np.abs(_compute_lwc(ND_obs, D, dD) - _compute_lwc(ND_preds, D, dD))
-    return errors
+        obs = _compute_rain_rate(ND_obs, D, dD, V)
+        pred = _compute_rain_rate(ND_preds, D, dD, V)
+    else:  # "LWC"
+        obs = _compute_lwc(ND_obs, D, dD)
+        pred = _compute_lwc(ND_preds, D, dD)
+
+    # Absolute error
+    abs_error = np.abs(obs - pred)
+
+    # Return relative error if requested
+    if relative:
+        return abs_error / (np.abs(obs) + eps)
+
+    return abs_error
 
 
 def _compute_cost_function(ND_obs, ND_preds, D, dD, V, target, transformation, error_order):
@@ -1992,6 +2004,7 @@ ATTRS_PARAMS_DICT = {
     },
 }
 
+PSD_MODELS = list(ATTRS_PARAMS_DICT)
 
 MOM_METHODS_DICT = {
     "GammaPSD": {
@@ -2356,7 +2369,7 @@ def get_gs_parameters(ds, psd_model, target="ND", transformation="log", error_or
 
     # Check fall velocity is available if target R
     if "fall_velocity" not in ds:
-        ds["fall_velocity"] = get_raindrop_fall_velocity_from_ds(ds)
+        ds["fall_velocity"] = get_rain_fall_velocity_from_ds(ds)
 
     # Retrieve estimation function
     func = OPTIMIZATION_ROUTINES_DICT["GS"][psd_model]

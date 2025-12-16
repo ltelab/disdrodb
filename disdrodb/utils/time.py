@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -238,7 +238,7 @@ def regularize_dataset(
     start_time=None,
     end_time=None,
 ):
-    """Regularize a dataset across time dimension with uniform resolution.
+    """Regularize a xarray object across time dimension with uniform resolution.
 
     Parameters
     ----------
@@ -274,6 +274,7 @@ def regularize_dataset(
         start_time = start
     if end_time is None:
         end_time = end
+    xr_obj = xr_obj.sel({time_dim: slice(start_time, end_time)})
 
     # Define new time index
     new_time_index = pd.date_range(

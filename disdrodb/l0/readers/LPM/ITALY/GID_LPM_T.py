@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -200,10 +200,13 @@ def read_txt_file(file, filename, logger):
     valid_rows = dt <= np.timedelta64(3540, "s")
     df = df[valid_rows]
 
+    # Remove checksum from raw_drop_number
+    df["raw_drop_number"] = df["raw_drop_number"].str.strip(";").str.rsplit(";", n=1, expand=True)[0]
+
     # Drop rows with invalid raw_drop_number
     # --> 440 value # 22x20
     # --> 400 here  # 20x20
-    df = df[df["raw_drop_number"].astype(str).str.len() == 1763]
+    df = df[df["raw_drop_number"].astype(str).str.len() == 1759]
 
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [

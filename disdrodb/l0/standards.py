@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,9 +48,10 @@ def get_sensor_logged_variables(sensor_name: str) -> list:
 
 def allowed_l0_variables(sensor_name: str) -> list:
     """Get the list of allowed L0 variables for a given sensor."""
+    from disdrodb.constants import GEOLOCATION_COORDS, METEOROLOGICAL_VARIABLES
+
     sensor_variables = list(get_l0a_dtype(sensor_name))
-    weather_variables = ["air_temperature", "relative_humidity", "wind_speed", "wind_direction"]
-    allowed_variables = [*sensor_variables, *weather_variables, "time", "latitude", "longitude", "altitude"]
+    allowed_variables = [*sensor_variables, *METEOROLOGICAL_VARIABLES, *GEOLOCATION_COORDS, "time"]
     allowed_variables = sorted(np.unique(allowed_variables).tolist())
     return allowed_variables
 

@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -79,9 +79,9 @@ def get_axis_ratio_andsager_1999(diameter):
     return axis_ratio
 
 
-def get_axis_ratio_battaglia_2010(diameter):
+def get_axis_ratio_parsivel(diameter):
     """
-    Compute the axis ratio of raindrops using the Battaglia et al. (2010) model.
+    Compute the axis ratio of raindrops as used by OTT Parsivel sensors.
 
     This axis ratio is assumed by OTT Parsivel sensors internally to compute the
     reported particle size (Deq).
@@ -279,7 +279,7 @@ def get_axis_ratio_thurai_2007(diameter):
 AXIS_RATIO_MODELS = {
     "Thurai2005": get_axis_ratio_thurai_2005,
     "Thurai2007": get_axis_ratio_thurai_2007,
-    "Battaglia2010": get_axis_ratio_battaglia_2010,
+    "Parsivel": get_axis_ratio_parsivel,
     "Brandes2002": get_axis_ratio_brandes_2002,
     "Pruppacher1970": get_axis_ratio_pruppacher_1970,
     "Beard1987": get_axis_ratio_beard_1987,
@@ -307,7 +307,7 @@ def get_axis_ratio_model(model):
     ----------
     model : str
         The model to use for calculating the axis ratio. Available models are:
-        'Thurai2005', 'Thurai2007', 'Battaglia2010', 'Brandes2002',
+        'Thurai2005', 'Thurai2007', 'Parsivel', 'Brandes2002',
         'Pruppacher1970', 'Beard1987', 'Andsager1999'.
 
     Returns
@@ -339,7 +339,7 @@ def get_axis_ratio(diameter, model):
         Raindrops diameter in mm.
     model : str
         The axis ratio model to use for calculating the axis ratio. Available models are:
-        'Thurai2005', 'Thurai2007', 'Battaglia2010', 'Brandes2002',
+        'Thurai2005', 'Thurai2007', 'Parsivel', 'Brandes2002',
         'Pruppacher1970', 'Beard1987', 'Andsager1999'.
 
     Returns

@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -190,13 +188,13 @@ def compress_station_files(
     # Get list of files inside the station directory (in all nested directories)
     filepaths = list_files(station_dir, recursive=True)
     for filepath in filepaths:
-        _ = _compress_file(filepath, method, skip=skip)
+        _ = compress_file(filepath, method, skip=skip)
 
     print(f"All files of {data_source} {campaign_name} {station_name} have been compressed.")
     print("Please now remember to update the glob_pattern of the reader ¨!")
 
 
-def _compress_file(filepath: str, method: str, skip: bool) -> str:
+def compress_file(filepath: str, method: str, skip: bool) -> str:
     """Compress a file and delete the original.
 
     If the file is already compressed, it is not compressed again.
@@ -230,9 +228,9 @@ def _compress_file(filepath: str, method: str, skip: bool) -> str:
     archive_name = os.path.basename(filepath) + extension
     compressed_filepath = os.path.join(os.path.dirname(filepath), archive_name)
     compress_file_function = {
-        "zip": _compress_file_zip,
-        "gzip": _compress_file_gzip,
-        "bzip2": _compress_file_bzip2,
+        "zip": compress_file_zip,
+        "gzip": compress_file_gzip,
+        "bzip2": compress_file_bzip2,
     }[method]
 
     compress_file_function(filepath, compressed_filepath)
@@ -271,7 +269,7 @@ def _check_file_compression(filepath: str) -> Optional[str]:
     return None
 
 
-def _compress_file_zip(filepath: str, compressed_filepath: str) -> None:
+def compress_file_zip(filepath: str, compressed_filepath: str) -> None:
     """Compress a single file into a zip archive.
 
     Parameters
@@ -287,7 +285,7 @@ def _compress_file_zip(filepath: str, compressed_filepath: str) -> None:
         zipf.write(filepath, os.path.basename(filepath))
 
 
-def _compress_file_gzip(filepath: str, compressed_filepath: str) -> None:
+def compress_file_gzip(filepath: str, compressed_filepath: str) -> None:
     """Compress a single file into a gzip archive.
 
     Parameters
@@ -303,7 +301,7 @@ def _compress_file_gzip(filepath: str, compressed_filepath: str) -> None:
         f_out.writelines(f_in)
 
 
-def _compress_file_bzip2(filepath: str, compressed_filepath: str) -> None:
+def compress_file_bzip2(filepath: str, compressed_filepath: str) -> None:
     """Compress a single file into a bzip2 archive.
 
     Parameters

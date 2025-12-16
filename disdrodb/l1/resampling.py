@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -170,6 +170,9 @@ def resample_dataset(ds, sample_interval, temporal_resolution):
     - The function updates the dataset attributes and the sample_interval coordinate.
 
     """
+    from disdrodb.constants import METEOROLOGICAL_VARIABLES
+    from disdrodb.l1.classification import TEMPERATURE_VARIABLES
+
     # --------------------------------------------------------------------------.
     # Ensure sample interval in seconds
     sample_interval = int(ensure_sample_interval_in_seconds(sample_interval))
@@ -244,6 +247,7 @@ def resample_dataset(ds, sample_interval, temporal_resolution):
 
     # Retrieve variables to average/sum
     # - ATTENTION: it will not resample non-dimensional time coordinates of the dataset !
+    # - precip_flag used for OceanRain ODM470 data
     var_to_average = ["fall_velocity"]
     var_to_cumulate = [
         "raw_drop_number",
@@ -255,8 +259,9 @@ def resample_dataset(ds, sample_interval, temporal_resolution):
         "Nremoved",
         "qc_resampling",
     ]
-    var_to_min = ["Dmin"]
-    var_to_max = ["Dmax", "time_qc"]
+    var_to_min = ["Dmin", *TEMPERATURE_VARIABLES]
+    met_vars = set(METEOROLOGICAL_VARIABLES) - set(TEMPERATURE_VARIABLES)  # exclude air_temperature variable
+    var_to_max = ["Dmax", "qc_time", "precip_flag", *met_vars]
 
     # Retrieve available variables
     var_to_average = [var for var in var_to_average if var in ds]

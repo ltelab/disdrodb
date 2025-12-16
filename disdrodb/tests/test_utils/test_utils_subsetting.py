@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from disdrodb.tests.fake_datasets import create_template_dataset
+from disdrodb.tests.fake_datasets import create_template_dataset, create_template_l2e_dataset
 
 
 class TestSel:
@@ -300,8 +300,8 @@ class TestAlign:
 
     def test_alignment_preserves_data_variables(self):
         """Test that alignment preserves data variables correctly."""
-        ds1 = create_template_dataset()
-        ds2 = create_template_dataset()
+        ds1 = create_template_l2e_dataset()
+        ds2 = create_template_l2e_dataset()
 
         # Modify one dataset's data to make it different
         ds2["fall_velocity"] = ds2["fall_velocity"] * 2

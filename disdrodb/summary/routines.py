@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -223,6 +223,11 @@ def create_table_rain_summary(df, temporal_resolution):
     table["n_minutes_Dmax_>7"] = np.sum(df["Dmax"] > 7).item() * accumulation_interval_minutes
     table["n_minutes_Dmax_>8"] = np.sum(df["Dmax"] > 8).item() * accumulation_interval_minutes
     table["n_minutes_Dmax_>9"] = np.sum(df["Dmax"] > 9).item() * accumulation_interval_minutes
+
+    # Convert all minutes columns to integer
+    for key in table:
+        if "minutes" in key:
+            table[key] = int(table[key])
     return table
 
 
@@ -233,7 +238,7 @@ def create_table_dsd_summary(df):
     df["log10(Nt)"] = np.log10(df["Nt"])
 
     # List of variables to summarize
-    variables = ["W", "R", "Z", "D50", "Dm", "sigma_m", "Dmax", "Nw", "log10(Nw)", "Nt", "log10(Nt)"]
+    variables = ["LWC", "R", "Z", "D50", "Dm", "sigma_m", "Dmax", "Nw", "log10(Nw)", "Nt", "log10(Nt)"]
 
     # Define subset dataframe
     df_subset = df[variables]
@@ -356,9 +361,9 @@ def create_table_events_summary(df, temporal_resolution):
             "mean_sigma_m": df_event["sigma_m"].mean(),
             "median_sigma_m": df_event["sigma_m"].median(),
             "max_sigma_m": df_event["sigma_m"].max(),
-            "mean_W": df_event["W"].mean(),
-            "median_W": df_event["W"].median(),
-            "max_W": df_event["W"].max(),
+            "mean_LWC": df_event["LWC"].mean(),
+            "median_LWC": df_event["LWC"].median(),
+            "max_LWC": df_event["LWC"].max(),
             "max_Z": df_event["Z"].max(),
             "mean_Nbins": int(df_event["Nbins"].mean()),
             "max_Nbins": int(df_event["Nbins"].max()),
@@ -371,9 +376,22 @@ def create_table_events_summary(df, temporal_resolution):
 
     df_events = pd.DataFrame.from_records(events_stats)
 
-    # Round float columns to nearest integer, leave ints unchanged
-    float_cols = df_events.select_dtypes(include=["float"]).columns
-    df_events[float_cols] = df_events[float_cols].astype(float).round(decimals=2)
+    # Round and cast columns
+    # - Round to 3 decimals
+    df_events["P_total"] = df_events["P_total"].round(decimals=3)
+
+    lwc_columns = [c for c in df_events.columns if "LWC" in c]
+    df_events[lwc_columns] = df_events[lwc_columns].round(decimals=3)
+
+    # - Cast to integer
+    df_events["duration"] = df_events["duration"].astype(int)
+    minutes_columns = [c for c in df_events.columns if "minutes" in c]
+    df_events[minutes_columns] = df_events[minutes_columns].astype(int)
+
+    # - Round to 2 decimals
+    for var in ["Dmax", "Dm", "sigma_m", "R", "Z"]:
+        names = [c for c in df_events.columns if var in c]
+        df_events[names] = df_events[names].round(decimals=2)
     return df_events
 
 
@@ -385,7 +403,7 @@ def prepare_latex_table_dsd_summary(df):
     df[numeric_cols] = df[numeric_cols].astype(str)
     # Rename
     rename_dict = {
-        "W": r"$W\,[\mathrm{g}\,\mathrm{m}^{-3}]$",  # [g/m3]
+        "LWC": r"$LWC\,[\mathrm{g}\,\mathrm{m}^{-3}]$",  # [g/m3]
         "R": r"$R\,[\mathrm{mm}\,\mathrm{h}^{-1}]$",  # [mm/hr]
         "Z": r"$Z\,[\mathrm{dBZ}]$",  # [dBZ]
         "D50": r"$D_{50}\,[\mathrm{mm}]$",  # [mm]
@@ -433,9 +451,9 @@ def prepare_latex_table_events_summary(df):
         "mean_sigma_m": r"$\sigma_{m,\mathrm{mean}}$",
         "median_sigma_m": r"$\sigma_{m,\mathrm{median}}$",
         "max_sigma_m": r"$\sigma_{m,\max}$",
-        "mean_W": r"$W_{\mathrm{mean}}$",
-        "median_W": r"$W_{\mathrm{median}}$",
-        "max_W": r"$W_{\max}$",
+        "mean_LWC": r"$LWC_{\mathrm{mean}}$",
+        "median_LWC": r"$LWC_{\mathrm{median}}$",
+        "max_LWC": r"$LWC_{\max}$",
         "max_Z": r"$Z_{\max}$",
         "mean_Nbins": r"$N_{\mathrm{bins},\mathrm{mean}}$",
         "max_Nbins": r"$N_{\mathrm{bins},\max}$",
@@ -918,7 +936,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
         df,
         x="Dm",
         y="Nw",
-        variables=["R", "W", "Nt"],
+        variables=["R", "LWC", "Nt"],
         x_bins=np.arange(0, 8, 0.1),
         y_bins=log_arange(10, 1_000_000, log_step=0.05, base=10),
     )
@@ -927,7 +945,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
     ds_Dm_LWC_stats = compute_2d_histogram(
         df,
         x="Dm",
-        y="W",
+        y="LWC",
         variables=["R", "Nw", "Nt"],
         x_bins=np.arange(0, 8, 0.1),
         y_bins=log_arange(0.01, 10, log_step=0.05, base=10),
@@ -938,7 +956,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
         df,
         x="Dm",
         y="R",
-        variables=["Nw", "W", "Nt"],
+        variables=["Nw", "LWC", "Nt"],
         x_bins=np.arange(0, 8, 0.1),
         y_bins=log_arange(0.1, 500, log_step=0.05, base=10),
     )
@@ -948,7 +966,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
         df,
         x="Dm",
         y="Nt",
-        variables=["R", "W", "Nw"],
+        variables=["R", "LWC", "Nw"],
         x_bins=np.arange(0, 8, 0.1),
         y_bins=log_arange(1, 100_000, log_step=0.05, base=10),
     )
@@ -1019,7 +1037,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
     axes[1, 0].set_ylim(nw_lim)
 
     #### - LWC
-    im_lwc = ds_Dm_Nw_stats["W_median"].plot.pcolormesh(
+    im_lwc = ds_Dm_Nw_stats["LWC_median"].plot.pcolormesh(
         x="Dm",
         y="Nw",
         cmap=cmap_lwc,
@@ -1067,7 +1085,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
     #### - Counts
     ds_Dm_LWC_stats["count"].plot.pcolormesh(
         x="Dm",
-        y="W",
+        y="LWC",
         cmap=cmap_counts,
         norm=norm_counts,
         extend="max",
@@ -1083,7 +1101,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
     # - Empty (diagonal where y-axis is W) - handled above in the loop
     ds_Dm_LWC_stats["R_median"].plot.pcolormesh(
         x="Dm",
-        y="W",
+        y="LWC",
         cmap=cmap_r,
         norm=norm_r,
         alpha=0,  # fully transparent
@@ -1099,7 +1117,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
     #### - R
     ds_Dm_LWC_stats["R_median"].plot.pcolormesh(
         x="Dm",
-        y="W",
+        y="LWC",
         cmap=cmap_r,
         norm=norm_r,
         extend="both",
@@ -1114,7 +1132,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
     #### - Nt
     im_nt = ds_Dm_LWC_stats["Nt_median"].plot.pcolormesh(
         x="Dm",
-        y="W",
+        y="LWC",
         cmap=cmap_nt,
         norm=norm_nt,
         extend="both",
@@ -1144,7 +1162,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
     axes[3, 0].set_ylim(r_lim)
 
     #### - LWC
-    im_lwc = ds_Dm_R_stats["W_median"].plot.pcolormesh(
+    im_lwc = ds_Dm_R_stats["LWC_median"].plot.pcolormesh(
         x="Dm",
         y="R",
         cmap=cmap_lwc,
@@ -1211,7 +1229,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
         axes[4, 0].set_ylim(nt_lim)
 
         #### - LWC
-        ds_Dm_Nt_stats["W_median"].plot.pcolormesh(
+        ds_Dm_Nt_stats["LWC_median"].plot.pcolormesh(
             x="Dm",
             y="Nt",
             cmap=cmap_lwc,
@@ -1336,7 +1354,7 @@ def plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=False, fig
     norm = Normalize(0, 1)  # Normalized data goes from 0 to 1
 
     # Define the water variable based on lwc flag
-    df["LWC"] = df["W"]
+    df["LWC"] = df["LWC"]
     water_var = "LWC" if lwc else "R"
     water_label = "LWC [g/m³]" if lwc else "R [mm/h]"
 
@@ -3742,7 +3760,7 @@ def create_l2_dataframe(ds):
     return df
 
 
-def prepare_summary_dataset(ds, velocity_method="fall_velocity", source="drop_number"):
+def prepare_summary_dataset(ds, velocity_method="theoretical_velocity", source="drop_number"):
     """Prepare the L2E or L2M dataset to be converted to a dataframe."""
     # Select fall velocity method
     if "velocity_method" in ds.dims:
@@ -3909,7 +3927,47 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             table_events_summary.to_csv(table_events_summary_csv_filepath)
             # - Save table as pdf
             if is_latex_engine_available():
+                # Sorted by time
                 table_events_summary_pdf_filename = table_events_summary_csv_filename.replace(".csv", ".pdf")
+                table_events_summary_pdf_filepath = os.path.join(summary_dir_path, table_events_summary_pdf_filename)
+                save_table_to_pdf(
+                    df=prepare_latex_table_events_summary(table_events_summary),
+                    filepath=table_events_summary_pdf_filepath,
+                    index=True,
+                    caption="Events Summary",
+                    orientation="landscape",
+                )
+
+                # Sorted by maximum rain intensity
+                table_events_summary = table_events_summary.sort_values(by="max_R", ascending=False)
+                table_events_summary = table_events_summary.reset_index(drop=True)
+                table_events_summary_pdf_filename = define_filename(
+                    prefix="Events_Summary_Sorted_By_Rmax",
+                    extension="pdf",
+                    data_source=data_source,
+                    campaign_name=campaign_name,
+                    station_name=station_name,
+                    temporal_resolution=temporal_resolution,
+                )
+                table_events_summary_pdf_filepath = os.path.join(summary_dir_path, table_events_summary_pdf_filename)
+                save_table_to_pdf(
+                    df=prepare_latex_table_events_summary(table_events_summary),
+                    filepath=table_events_summary_pdf_filepath,
+                    index=True,
+                    caption="Events Summary",
+                    orientation="landscape",
+                )
+                # Sorted by Ptotal
+                table_events_summary = table_events_summary.sort_values(by="P_total", ascending=False)
+                table_events_summary = table_events_summary.reset_index(drop=True)
+                table_events_summary_pdf_filename = define_filename(
+                    prefix="Events_Summary_Sorted_By_Ptot",
+                    extension="pdf",
+                    data_source=data_source,
+                    campaign_name=campaign_name,
+                    station_name=station_name,
+                    temporal_resolution=temporal_resolution,
+                )
                 table_events_summary_pdf_filepath = os.path.join(summary_dir_path, table_events_summary_pdf_filename)
                 save_table_to_pdf(
                     df=prepare_latex_table_events_summary(table_events_summary),

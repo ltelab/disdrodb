@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,15 +30,15 @@ DEFAULT_GEOLOCATION = {
 
 
 def get_default_environment_dataset():
-    """Define defaults values for the ENV dataset."""
+    """Set International Standard Atmosphere values for the default ENV dataset."""
     ds_env = xr.Dataset()
-    ds_env["sea_level_air_pressure"] = 101_325  # Pa
+    ds_env["sea_level_air_pressure"] = 101_325  # Pa # sea level
     ds_env["gas_constant_dry_air"] = 287.04  # J kg⁻¹ K⁻¹
-    ds_env["lapse_rate"] = 0.0065  # K m⁻¹
+    ds_env["lapse_rate"] = 0.0065  # K m⁻¹  (6.5 deg/km)
     ds_env["relative_humidity"] = 0.95  # 0-1 !
-    ds_env["temperature"] = 20 + 273.15  # K
+    ds_env["temperature"] = 15 + 273.15  # K
     ds_env["water_density"] = 1000  # kg m⁻³   (T == 10 --> 999.7, T == 20 --> 998.2)
-    # get_water_density(temperature=temperature, air_pressure=air_pressure
+    # air density = 1.225 kg m⁻³ (if RH = 0) using retrieve_air_density(ds_env)
     return ds_env
 
 

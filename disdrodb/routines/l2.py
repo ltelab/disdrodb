@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -297,6 +297,7 @@ def run_l2e_station(
         campaign_name=campaign_name,
         station_name=station_name,
     )
+    sensor_name = metadata["sensor_name"]
     sample_interval = metadata["measurement_interval"]
     if isinstance(sample_interval, list):
         sample_interval = min(sample_interval)
@@ -305,7 +306,7 @@ def run_l2e_station(
     # Generate products for each temporal resolution
     # temporal_resolution = "1MIN"
     # temporal_resolution = "10MIN"
-    temporal_resolutions = get_product_temporal_resolutions(product)
+    temporal_resolutions = get_product_temporal_resolutions(product=product, sensor_name=sensor_name)
     for temporal_resolution in temporal_resolutions:
 
         # ------------------------------------------------------------------.
@@ -339,6 +340,7 @@ def run_l2e_station(
         l2e_processing_options = L2ProcessingOptions(
             product=product,
             temporal_resolution=temporal_resolution,
+            sensor_name=sensor_name,
             filepaths=filepaths,
             parallel=parallel,
         )
@@ -692,6 +694,7 @@ def run_l2m_station(
         campaign_name=campaign_name,
         station_name=station_name,
     )
+    sensor_name = metadata["sensor_name"]
     sample_interval = metadata["measurement_interval"]
     if isinstance(sample_interval, list):
         sample_interval = min(sample_interval)
@@ -700,7 +703,7 @@ def run_l2m_station(
     # Loop
     # temporal_resolution = "1MIN"
     # temporal_resolution = "10MIN"
-    temporal_resolutions = get_product_temporal_resolutions(product)
+    temporal_resolutions = get_product_temporal_resolutions(product=product, sensor_name=sensor_name)
     for temporal_resolution in temporal_resolutions:
 
         # ------------------------------------------------------------------.
@@ -734,6 +737,7 @@ def run_l2m_station(
         l2m_processing_options = L2ProcessingOptions(
             product=product,
             temporal_resolution=temporal_resolution,
+            sensor_name=sensor_name,
             filepaths=filepaths,
             parallel=parallel,
         )
@@ -766,7 +770,7 @@ def run_l2m_station(
             # -----------------------------------------------------------------.
             # Retrieve product-model options
             product_options = copy.deepcopy(global_product_options)
-            model_options = get_model_options(product="L2M", model_name=model_name)
+            model_options = get_model_options(model_name=model_name)
             product_options["product_options"].update(model_options)
 
             psd_model = model_options["psd_model"]

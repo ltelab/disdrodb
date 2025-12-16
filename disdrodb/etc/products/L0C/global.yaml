@@ -1,0 +1,5 @@
+archive_options:
+  strategy: time_block
+  strategy_options:
+    freq: day
+  folder_partitioning: "year"

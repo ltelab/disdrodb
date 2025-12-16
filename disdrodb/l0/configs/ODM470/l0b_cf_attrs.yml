@@ -1,0 +1,46 @@
+precipitation_rate:
+  description: Total precipitation intensity
+  long_name: Total precipitation intensity
+  units: mm/h
+reference_voltage:
+  description: Reference voltage
+  long_name: Reference_voltage
+  units: "V"
+relative_wind_speed:
+  description: Relative wind speed
+  long_name: Relative wind speed
+  units: "m s-1"
+relative_wind_direction:
+  description: Relative wind direction
+  long_name: Relative wind direction
+  units: "degrees"
+weather_code_synop_4677:
+  description: SYNOP weather code according to table 4677 of Parsivel documentation
+  long_name: Weather code SYNOP 4677
+  units: ""
+precip_flag:
+  description: Precipitation classification
+  long_name: Precipitation flag
+  flag_meanings: "true_zero_value rain snow mixed_phase"
+  flag_values: "-1 0 1 2 3"
+  units: ""
+raw_drop_number:
+  description: Precipitation spectrum
+  long_name: Precipitation spectrum
+  units: ""
+air_temperature:
+  description: "Air temperature in degrees Celsius (C)"
+  long_name: Air temperature
+  units: "degC"
+relative_humidity:
+  description: "Relative humidity in percent (%)"
+  long_name: Relative humidity
+  units: "%"
+wind_speed:
+  description: "Wind speed in m/s"
+  long_name: Wind speed
+  units: "m/s"
+wind_direction:
+  description: "Wind direction in degrees (0-360)"
+  long_name: Wind direction
+  units: "degrees"

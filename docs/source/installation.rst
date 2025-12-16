@@ -212,6 +212,7 @@ To simulate radar polarimetric variables in the DISDRODB L2E and L2M products, y
 The original pyTMatrix can be difficult to install on recent Python versions.
 
 The instructions below describe how to install the LTE-maintained fork of pyTMatrix, which is compatible with modern Python interpreters.
+Please note that it's currently not possible to install pyTmatrix on Windows systems.
 
 1. Install the GNU `Fortran <https://fortran-lang.org/>`__ Compiler (gfortran) and the `Meson Build system <https://mesonbuild.com/>`__.
 
@@ -228,6 +229,7 @@ The instructions below describe how to install the LTE-maintained fork of pyTMat
 3. Enter the newly cloned ``pytmatrix-lte`` directory and install the package in editable mode:
 
 .. code-block:: bash
+
    cd pytmatrix-lte
    pip install -e .
 

@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,13 +49,13 @@ from disdrodb.l2.empirical_dsd import (
     get_std_volume_drop_diameter,
     get_total_number_concentration,
 )
-from disdrodb.tests.fake_datasets import create_template_dataset
+from disdrodb.tests.fake_datasets import create_template_l2e_dataset
 
 
 @pytest.fixture(scope="session")
 def template_dataset():
     """Read a template NetCDF file once for all tests."""
-    ds = create_template_dataset(with_velocity=True)
+    ds = create_template_l2e_dataset(with_velocity=True)
     return ds
 
 
@@ -1937,7 +1937,7 @@ class TestKineticEnergyVariables:
         velocity = xr.Dataset(
             {
                 "measured_velocity": xr.ones_like(ds["drop_number"]) * ds["velocity_bin_center"],
-                "fall_velocity": xr.ones_like(ds["drop_number"]) * ds["fall_velocity"],
+                "theoretical_velocity": xr.ones_like(ds["drop_number"]) * ds["fall_velocity"],
             },
         ).to_array(dim="velocity_method")
 

@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,16 +20,163 @@ import pytest
 import xarray as xr
 
 import disdrodb
-from disdrodb.constants import DIAMETER_DIMENSION
+from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.tests.fake_datasets import create_template_l2e_dataset
 from disdrodb.utils.manipulations import (
     convert_from_decibel,
     convert_to_decibel,
+    define_diameter_array,
+    define_diameter_datarray,
+    define_velocity_array,
+    define_velocity_datarray,
+    filter_diameter_bins,
+    filter_velocity_bins,
     get_diameter_bin_edges,
     get_diameter_coords_dict_from_bin_edges,
     resample_drop_number_concentration,
     unstack_radar_variables,
 )
+
+
+def test_define_diameter_datarray_basic():
+    """Test define_diameter_datarrayrray creation."""
+    bounds = np.array([0, 1, 2])
+    da = define_diameter_datarray(bounds)
+
+    expected_centers = np.array([0.5, 1.5])
+    expected_widths = np.array([1, 1])
+
+    assert isinstance(da, xr.DataArray)
+    assert da.dims == ("diameter_bin_center",)
+    np.testing.assert_array_equal(da.values, expected_centers)
+    np.testing.assert_array_equal(da.coords["diameter_bin_width"], expected_widths)
+    np.testing.assert_array_equal(da.coords["diameter_bin_lower"], bounds[:-1])
+    np.testing.assert_array_equal(da.coords["diameter_bin_upper"], bounds[1:])
+
+
+def test_define_velocity_datarray():
+    """Test define_velocity_datarray creation."""
+    bounds = np.array([0, 2, 4])
+    da = define_velocity_datarray(bounds)
+
+    expected_centers = np.array([1, 3])
+    expected_widths = np.array([2, 2])
+
+    assert isinstance(da, xr.DataArray)
+    assert da.dims == ("velocity_bin_center",)
+
+    np.testing.assert_array_equal(da.values, expected_centers)
+    np.testing.assert_array_equal(da.coords["velocity_bin_width"], expected_widths)
+    np.testing.assert_array_equal(da.coords["velocity_bin_lower"], bounds[:-1])
+    np.testing.assert_array_equal(da.coords["velocity_bin_upper"], bounds[1:])
+
+
+class TestDefineDiameterArray:
+    def test_define_diameter_array_defaults(self):
+        """Test diameter array with default arguments."""
+        da = define_diameter_array()
+
+        # Expected number of bins: (10 - 0) / 0.05 = 200
+        assert len(da) == 200
+        assert np.isclose(da.values[0], 0.025)  # center of first bin
+        assert np.isclose(da.values[-1], 9.975)  # center of last bin
+
+    def test_define_diameter_array_custom(self):
+        """Test diameter array with custom spacing."""
+        da = define_diameter_array(0, 2, 1)
+        expected_centers = np.array([0.5, 1.5])
+        np.testing.assert_array_equal(da.values, expected_centers)
+
+
+class TestDefineVelocityArray:
+    def test_define_velocity_array_defaults(self):
+        """Test velocity array with default arguments."""
+        da = define_velocity_array()
+        assert len(da) == 200
+        assert np.isclose(da.values[0], 0.025)
+        assert np.isclose(da.values[-1], 9.975)
+
+    def test_define_velocity_array_custom(self):
+        """Test velocity array with custom spacing."""
+        da = define_velocity_array(0, 4, 2)
+        expected_centers = np.array([1, 3])
+        np.testing.assert_array_equal(da.values, expected_centers)
+
+
+def create_test_dataset():
+    """Create a small synthetic dataset with diameter and velocity bins."""
+    ds = xr.Dataset(
+        {
+            "diameter_bin_lower": ("diameter", [0.5, 1.0, 2.0, 3.0]),
+            "diameter_bin_upper": ("diameter", [1.0, 2.0, 3.0, 4.0]),
+            "velocity_bin_lower": ("velocity", [0.0, 2.0, 5.0, 10.0]),
+            "velocity_bin_upper": ("velocity", [2.0, 5.0, 10.0, 15.0]),
+            "drop_number": (("diameter", "velocity"), np.ones((4, 4))),
+        },
+    )
+    ds = ds.rename({"diameter": DIAMETER_DIMENSION, "velocity": VELOCITY_DIMENSION})
+    ds = ds.set_coords(["diameter_bin_lower", "diameter_bin_upper", "velocity_bin_lower", "velocity_bin_upper"])
+    return ds
+
+
+class TestFilterDiameterBins:
+    """Test units for filter_diameter_bins."""
+
+    def test_filter_diameter_bins_with_bounds(self):
+        """Test filter_diameter_bins keeps bins overlapping specified min/max diameters."""
+        ds = create_test_dataset()
+        ds_filtered = filter_diameter_bins(ds, minimum_diameter=1.5, maximum_diameter=3.5)
+        assert np.all(ds_filtered["diameter_bin_lower"].to_numpy() >= 1.0)
+        assert np.all(ds_filtered["diameter_bin_upper"].to_numpy() <= 4.0)
+
+    def test_filter_diameter_bins_boundaries_inclusion(self):
+        """Test filter_diameter_bins excludes bins that only touch the min/max boundaries."""
+        ds = create_test_dataset()
+        ds_filtered = filter_diameter_bins(ds, minimum_diameter=1.0, maximum_diameter=3.0)
+        np.testing.assert_allclose(ds_filtered["diameter_bin_lower"].to_numpy(), [1, 2])
+        np.testing.assert_allclose(ds_filtered["diameter_bin_upper"].to_numpy(), [2, 3])
+
+    def test_filter_diameter_bins_without_arguments(self):
+        """Test filter_diameter_bins without arguments returns input dataset."""
+        ds = create_test_dataset()
+        ds_filtered = filter_diameter_bins(ds)
+        assert ds_filtered.sizes[DIAMETER_DIMENSION] == ds.sizes[DIAMETER_DIMENSION]  # all bins kept
+
+    def test_filter_diameter_bins_raise_error_if_filter_everything(self):
+        """Test filter_diameter_bins raise error if filter everything."""
+        ds = create_test_dataset()
+        with pytest.raises(ValueError):
+            filter_diameter_bins(ds, minimum_diameter=1000)
+
+
+class TestFilterVelocityBins:
+    """Test units for filter_velocity_bins."""
+
+    def test_filter_velocity_bins_with_bounds(self):
+        """Test filter_velocity_bins keeps bins overlapping specified min/max velocities."""
+        ds = create_test_dataset()
+        ds_filtered = filter_velocity_bins(ds, minimum_velocity=1, maximum_velocity=6)
+        assert np.all(ds_filtered["velocity_bin_lower"].to_numpy() < 6)
+        assert np.all(ds_filtered["velocity_bin_upper"].to_numpy() > 1)
+
+    def test_filter_velocity_bins_boundaries_inclusion(self):
+        """Test filter_velocity_bins excludes bins that only touch the min/max boundaries."""
+        ds = create_test_dataset()
+        ds_filtered = filter_velocity_bins(ds, minimum_velocity=2.0, maximum_velocity=10.0)
+        np.testing.assert_allclose(ds_filtered["velocity_bin_lower"].to_numpy(), [2, 5])
+        np.testing.assert_allclose(ds_filtered["velocity_bin_upper"].to_numpy(), [5, 10])
+
+    def test_filter_velocity_bins_without_arguments(self):
+        """Test filter_velocity_bins without arguments returns input dataset."""
+        ds = create_test_dataset()
+        ds_filtered = filter_velocity_bins(ds)
+        assert ds_filtered.sizes[VELOCITY_DIMENSION] == ds.sizes[VELOCITY_DIMENSION]  # all bins kept
+
+    def test_filter_velocity_bins_raise_error_if_filter_everything(self):
+        """Test filter_velocity_bins raise error if filter everything."""
+        ds = create_test_dataset()
+        with pytest.raises(ValueError):
+            filter_velocity_bins(ds, minimum_velocity=1000)
 
 
 def test_get_diameter_bin_edges():

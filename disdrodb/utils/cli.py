@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -105,7 +103,7 @@ def click_data_archive_dir_option(function: object):
         type=str,
         show_default=True,
         default=None,
-        help="DISDRODB base directory",
+        help="DISDRODB Data Archive Directory. Format: <...>/DISDRODB",
     )(function)
     return function
 
@@ -123,7 +121,7 @@ def click_metadata_archive_dir_option(function: object):
         type=str,
         show_default=True,
         default=None,
-        help="DISDRODB Metadata Archive Directory",
+        help="DISDRODB Metadata Archive Directory. Format: <...>/DISDRODB-METADATA/DISDRODB",
     )(function)
     return function
 
@@ -233,14 +231,14 @@ def click_l0_archive_options(function: object):
         type=bool,
         show_default=True,
         default=False,
-        help="If true, remove all source L0B files once L0B concatenation is terminated.",
+        help="If True, remove L0B files after L0C.",
     )(function)
     function = click.option(
         "--remove_l0a",
         type=bool,
         show_default=True,
         default=False,
-        help="If true, remove the L0A files once the L0B processing is terminated.",
+        help="If True, remove L0A files after L0B.",
     )(function)
     function = click.option(
         "-l0c",
@@ -248,7 +246,7 @@ def click_l0_archive_options(function: object):
         type=bool,
         show_default=True,
         default=True,
-        help="Perform L0C processing.",
+        help="Run L0C processing",
     )(function)
     function = click.option(
         "-l0b",
@@ -256,7 +254,7 @@ def click_l0_archive_options(function: object):
         type=bool,
         show_default=True,
         default=True,
-        help="Perform L0B processing.",
+        help="Run L0B processing",
     )(function)
     function = click.option(
         "-l0a",
@@ -264,6 +262,6 @@ def click_l0_archive_options(function: object):
         type=bool,
         show_default=True,
         default=True,
-        help="Perform L0A processing.",
+        help="Run L0A processing",
     )(function)
     return function

@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2023 DISDRODB developers
+# Copyright (c) 2021-2026 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,14 +34,21 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 def disdrodb_open_data_archive(
     data_archive_dir: Optional[str] = None,
 ):
-    """Open the DISDRODB Data Archive.
+    """Open the DISDRODB Data Archive directory in the system file explorer.
 
-    Parameters
-    ----------
-    data_archive_dir : str, optional
-        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the path specified in the DISDRODB active configuration will be used.
-    """
+    \b
+    Archive Directory:
+        --data_archive_dir: Custom path to DISDRODB data archive
+        If not specified, the path from the active DISDRODB configuration is used
+
+    \b
+    Examples:
+        # Open the data archive from active configuration
+        disdrodb_open_data_archive
+
+        # Open a custom data archive directory
+        disdrodb_open_data_archive --data_archive_dir /path/to/DISDRODB
+    """  # noqa: D301
     from disdrodb.api.io import open_data_archive
 
     data_archive_dir = parse_archive_dir(data_archive_dir)
