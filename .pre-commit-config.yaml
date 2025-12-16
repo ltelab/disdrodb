@@ -12,20 +12,22 @@ repos:
       - id: check-ast
       - id: check-added-large-files
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.4
+    rev: v0.14.9
     hooks:
       - id: ruff
         args: [--fix]
   - repo: https://github.com/psf/black
-    rev: 25.9.0
+    rev: 25.12.0
     hooks:
       - id: black
         language_version: python3
+        additional_dependencies: ["black[jupyter]"]
   - repo: https://github.com/keewis/blackdoc
-    rev: v0.4.5
+    rev: v0.4.6
     hooks:
       - id: blackdoc
         additional_dependencies: ["black[jupyter]"]
+        files: \.(rst)$
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
     hooks:
@@ -42,7 +44,7 @@ repos:
       # - id: conda-env-sorter # conflicts with prettier
       - id: check-execution-order
   - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.22
+    rev: 1.0.0
     hooks:
       - id: mdformat
         additional_dependencies: [mdformat-gfm, mdformat-black]
@@ -56,8 +58,8 @@ repos:
     rev: 1.9.1
     hooks:
       - id: nbqa-black
-      - id: nbqa-ruff
-        args: [--fix, "--ignore=E402,B018"]
+      # - id: nbqa-ruff
+      #  args: [--fix, "--ignore=E402,B018"]
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: "v1.10.0"
     hooks:
