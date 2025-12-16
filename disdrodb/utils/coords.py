@@ -16,29 +16,28 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB coordinates utilities."""
 
-import xarray as xr
-
 
 def add_dataset_crs_coords(xr_obj):
     """Add a CF-compliant CRS (WGS84) to an xarray.Dataset."""
-    da_crs = xr.DataArray(
-        0,
-        attrs={
-            "grid_mapping_name": "latitude_longitude",
-            "crs_wkt": (
-                'GEOGCRS["WGS 84",'
-                'DATUM["World Geodetic System 1984",'
-                'ELLIPSOID["WGS 84",6378137,298.257223563]],'
-                'PRIMEM["Greenwich",0],'
-                "CS[ellipsoidal,2],"
-                'AXIS["latitude",north],'
-                'AXIS["longitude",east],'
-                'UNIT["degree",0.0174532925199433]]'
-            ),
-            "epsg_code": "EPSG:4326",
-            "semi_major_axis": 6378137.0,
-            "inverse_flattening": 298.257223563,
-            "longitude_of_prime_meridian": 0.0,
-        },
-    )
-    return xr_obj.assign_coords({"crs": da_crs})
+    return xr_obj.assign_coords({"crs": ["WGS84"]})
+    # da_crs = xr.DataArray(
+    #     0,
+    #     attrs={
+    #         "grid_mapping_name": "latitude_longitude",
+    #         "crs_wkt": (
+    #             'GEOGCRS["WGS 84",'
+    #             'DATUM["World Geodetic System 1984",'
+    #             'ELLIPSOID["WGS 84",6378137,298.257223563]],'
+    #             'PRIMEM["Greenwich",0],'
+    #             "CS[ellipsoidal,2],"
+    #             'AXIS["latitude",north],'
+    #             'AXIS["longitude",east],'
+    #             'UNIT["degree",0.0174532925199433]]'
+    #         ),
+    #         "epsg_code": "EPSG:4326",
+    #         "semi_major_axis": 6378137.0,
+    #         "inverse_flattening": 298.257223563,
+    #         "longitude_of_prime_meridian": 0.0,
+    #     },
+    # )
+    # return xr_obj.assign_coords({"crs": da_crs})

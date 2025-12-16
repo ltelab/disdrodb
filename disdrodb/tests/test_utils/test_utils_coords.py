@@ -34,5 +34,6 @@ def test_add_dataset_crs_coords():
     # Call the function and check the output
     ds_out = add_dataset_crs_coords(ds)
     assert "crs" in ds_out.coords
-    assert "crs_wkt" in ds_out["crs"].attrs
-    assert ds_out["crs"].attrs["epsg_code"] == "EPSG:4326"
+    assert ds_out["crs"].to_numpy() == "WGS84"
+    # assert "crs_wkt" in ds_out["crs"].attrs
+    # assert ds_out["crs"].attrs["epsg_code"] == "EPSG:4326"
