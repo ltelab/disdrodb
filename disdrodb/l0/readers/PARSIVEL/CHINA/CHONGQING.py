@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Reader for CHONGQING campaign."""
+
 import numpy as np
 import pandas as pd
 

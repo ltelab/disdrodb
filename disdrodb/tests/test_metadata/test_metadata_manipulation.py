@@ -16,7 +16,6 @@
 # -----------------------------------------------------------------------------.
 """Test Metadata Manipulation Tools."""
 
-
 from disdrodb.metadata.manipulation import (
     add_missing_metadata_keys,
     remove_invalid_metadata_keys,

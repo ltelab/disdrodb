@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB metadata reader."""
+
 import pandas as pd
 
 import disdrodb

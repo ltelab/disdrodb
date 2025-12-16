@@ -16,7 +16,6 @@
 # -----------------------------------------------------------------------------.
 """Implement PSD scattering routines."""
 
-
 from disdrodb.scattering.axis_ratio import available_axis_ratio_models, get_axis_ratio_model
 from disdrodb.scattering.permittivity import available_permittivity_models, get_refractive_index
 from disdrodb.scattering.routines import (

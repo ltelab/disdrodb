@@ -16,7 +16,6 @@
 # -----------------------------------------------------------------------------.
 """Test DISDRODB L0 standards routines."""
 
-
 import pytest
 
 import disdrodb

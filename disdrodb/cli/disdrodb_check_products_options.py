@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Script to check the validity of the DISDRODB products configuration files."""
+
 import sys
 
 import click

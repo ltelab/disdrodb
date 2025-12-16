@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Implement particle permittivity models."""
+
 import numpy as np
 import xarray as xr
 

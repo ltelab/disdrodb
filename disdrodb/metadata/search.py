@@ -16,7 +16,6 @@
 # -----------------------------------------------------------------------------.
 """Routines to manipulate the DISDRODB Metadata Archive."""
 
-
 from disdrodb.api.path import define_metadata_filepath
 from disdrodb.api.search import available_stations
 

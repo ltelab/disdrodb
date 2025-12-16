@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Metadata tools to verify/complete geolocation information."""
+
 import time
 
 import numpy as np

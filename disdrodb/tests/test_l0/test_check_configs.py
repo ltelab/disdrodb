@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Check DISDRODB L0 configuration files."""
+
 import pytest
 
 from disdrodb.api.configs import available_sensor_names

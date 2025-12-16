@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB fall velocity module."""
+
 from disdrodb.fall_velocity.graupel import (
     available_graupel_fall_velocity_models,
     get_graupel_fall_velocity,

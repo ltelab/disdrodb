@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test Metadata Info Extraction."""
+
 import os
 from typing import Optional
 

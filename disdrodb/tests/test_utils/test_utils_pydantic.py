@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test pydantic custom validation model."""
+
 import pytest
 from pydantic import BaseModel, Field, ValidationError, model_validator
 

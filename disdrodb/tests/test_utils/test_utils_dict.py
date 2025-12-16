@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB dictionaries utilities."""
+
 import pytest
 
 from disdrodb.utils.dict import extract_dictionary, extract_product_kwargs

@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Testing module for L2E processing."""
+
 import numpy as np
 import pytest
 import xarray as xr

@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Testing time utilities."""
+
 from datetime import datetime
 
 import numpy as np

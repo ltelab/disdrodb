@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for GID LPM sensors not reporting time (TC-MI2, TC-MI3, TC-ER e TC-FI)."""
+
 import numpy as np
 import pandas as pd
 

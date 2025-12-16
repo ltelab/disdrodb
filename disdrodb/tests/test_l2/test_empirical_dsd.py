@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Testing module for empirical DSD parameters computations."""
+
 import dask.array
 import numpy as np
 import pytest

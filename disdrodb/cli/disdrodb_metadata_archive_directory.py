@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Routine to print the DISDRODB Data Archive directory."""
+
 import sys
 
 import click

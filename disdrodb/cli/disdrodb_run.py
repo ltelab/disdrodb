@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Script to launch DISDRODB products generation for the entire DISDRODB Archive."""
+
 import sys
 from typing import Optional
 

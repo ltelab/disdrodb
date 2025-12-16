@@ -15,6 +15,7 @@
 # along with this progra  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test L1 processing function."""
+
 import pytest
 import xarray as xr
 

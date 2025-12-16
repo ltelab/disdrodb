@@ -18,6 +18,7 @@
 
 See https://donfig.readthedocs.io/en/latest/configuration.html for more info.
 """
+
 from donfig import Config
 
 from disdrodb.configs import read_configs

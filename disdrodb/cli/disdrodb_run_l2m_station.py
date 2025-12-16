@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Script to run the DISDRODB L2M station processing."""
+
 import sys
 from typing import Optional
 

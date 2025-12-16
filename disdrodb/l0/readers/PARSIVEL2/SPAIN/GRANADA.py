@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for Granada Parsivel2 raw text data."""
+
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring

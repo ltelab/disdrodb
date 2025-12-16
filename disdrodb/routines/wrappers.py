@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB CLI routine wrappers."""
+
 import datetime
 import time
 from typing import Optional

@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Routine to open the disdrodb software readers directory."""
+
 import sys
 
 import click

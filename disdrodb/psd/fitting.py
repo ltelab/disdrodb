@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Routines for PSD fitting."""
+
 import numpy as np
 import scipy.stats as ss
 import xarray as xr

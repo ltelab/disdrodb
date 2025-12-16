@@ -20,6 +20,7 @@ The functions of this module expects xarray.DataArray objects as input.
 Zeros and NaN values input arrays are correctly processed.
 Infinite values should be removed beforehand or otherwise are propagated throughout the computations.
 """
+
 import numpy as np
 import xarray as xr
 

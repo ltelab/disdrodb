@@ -15,7 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB coordinates utilities."""
+
 import xarray as xr
+
 from disdrodb.utils.coords import add_dataset_crs_coords
 
 
@@ -33,4 +35,4 @@ def test_add_dataset_crs_coords():
     ds_out = add_dataset_crs_coords(ds)
     assert "crs" in ds_out.coords
     assert "crs_wkt" in ds_out["crs"].attrs
-    assert ds_out["crs"].attrs["epsg_code"] == 'EPSG:4326'
+    assert ds_out["crs"].attrs["epsg_code"] == "EPSG:4326"

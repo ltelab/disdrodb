@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Utilities to create summary statistics."""
+
 import gc
 import importlib
 import os
@@ -627,7 +628,7 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False, use_ra
                 absolute_sigma=True,
                 maxfev=10_000,  # max n iterations
             )
-            (a_std, b_std) = np.sqrt(np.diag(pcov))
+            a_std, b_std = np.sqrt(np.diag(pcov))
             a_std = float(a_std)
             b_std = float(b_std)
 

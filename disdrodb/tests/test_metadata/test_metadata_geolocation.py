@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test code to infer altitude from lat/lon using OpenTopoData API."""
+
 import numpy as np
 
 from disdrodb.metadata.geolocation import infer_altitude, infer_altitudes

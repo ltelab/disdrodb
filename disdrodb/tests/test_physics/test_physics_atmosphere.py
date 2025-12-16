@@ -15,6 +15,7 @@
 # along with this progra  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Testing atmospheric physics functions."""
+
 import pytest
 
 from disdrodb.physics.atmosphere import (

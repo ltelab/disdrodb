@@ -16,7 +16,6 @@
 # -----------------------------------------------------------------------------.
 """Test DISDRODB L0B processing routines."""
 
-
 import numpy as np
 import pandas as pd
 import pytest

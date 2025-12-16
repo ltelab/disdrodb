@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Define paths within the DISDRODB infrastructure."""
+
 import os
 
 from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir

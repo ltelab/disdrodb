@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB coordinates utilities."""
+
 import xarray as xr
 
 
@@ -25,14 +26,14 @@ def add_dataset_crs_coords(xr_obj):
         attrs={
             "grid_mapping_name": "latitude_longitude",
             "crs_wkt": (
-                 'GEOGCRS["WGS 84",'
-                 'DATUM["World Geodetic System 1984",'
-                 'ELLIPSOID["WGS 84",6378137,298.257223563]],'
-                 'PRIMEM["Greenwich",0],'
-                 'CS[ellipsoidal,2],'
-                 'AXIS["latitude",north],'
-                 'AXIS["longitude",east],'
-                 'UNIT["degree",0.0174532925199433]]'
+                'GEOGCRS["WGS 84",'
+                'DATUM["World Geodetic System 1984",'
+                'ELLIPSOID["WGS 84",6378137,298.257223563]],'
+                'PRIMEM["Greenwich",0],'
+                "CS[ellipsoidal,2],"
+                'AXIS["latitude",north],'
+                'AXIS["longitude",east],'
+                'UNIT["degree",0.0174532925199433]]'
             ),
             "epsg_code": "EPSG:4326",
             "semi_major_axis": 6378137.0,
@@ -41,4 +42,3 @@ def add_dataset_crs_coords(xr_obj):
         },
     )
     return xr_obj.assign_coords({"crs": da_crs})
- 

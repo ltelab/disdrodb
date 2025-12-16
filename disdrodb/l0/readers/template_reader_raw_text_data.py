@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB reader template for raw text data."""
+
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
 

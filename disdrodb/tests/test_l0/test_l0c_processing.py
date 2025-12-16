@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB L0C processing routines."""
+
 import logging
 
 import numpy as np

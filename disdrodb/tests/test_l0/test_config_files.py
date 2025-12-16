@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Check DISDRODB L0 configuration files."""
+
 import os
 from typing import Union
 

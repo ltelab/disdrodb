@@ -16,7 +16,6 @@
 # -----------------------------------------------------------------------------.
 """Implement PSD model and fitting routines."""
 
-
 from disdrodb.psd.fitting import estimate_model_parameters
 from disdrodb.psd.models import (
     ExponentialPSD,

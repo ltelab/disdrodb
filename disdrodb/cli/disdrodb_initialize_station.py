@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Script to initialize the DISDRODB station directory structure."""
+
 import sys
 from typing import Optional
 
