@@ -35,6 +35,7 @@ dependencies = [
 	"dask[distributed]",
 	"xarray",
     "bottleneck",
+    "flox",
     "matplotlib",
 
 ]
