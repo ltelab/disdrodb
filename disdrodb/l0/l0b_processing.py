@@ -40,6 +40,7 @@ from disdrodb.utils.attrs import (
     set_coordinate_attributes,
     set_disdrodb_attrs,
 )
+from disdrodb.utils.coords import add_dataset_crs_coords
 from disdrodb.utils.encoding import set_encodings
 from disdrodb.utils.logger import log_info
 from disdrodb.utils.time import ensure_sorted_by_time
@@ -388,19 +389,6 @@ def set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
         if var in data_range_dict:
             ds[var].attrs["valid_min"] = data_range_dict[var][0]
             ds[var].attrs["valid_max"] = data_range_dict[var][1]
-    return ds
-
-
-def add_dataset_crs_coords(ds):
-    """Add the CRS coordinate to the xr.Dataset."""
-    # TODO: define CF-compliant CRS !
-    # - CF compliant
-    # - wkt
-    # - add grid_mapping name
-    # -->
-    # attrs["EPSG"] = 4326
-    # attrs["proj4_string"] = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
-    ds = ds.assign_coords({"crs": ["WGS84"]})
     return ds
 
 

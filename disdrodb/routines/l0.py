@@ -368,11 +368,16 @@ def _generate_l0c(
 
         # Write a dataset for each sample interval
         valid_datasets = []
-        for ds in dict_ds.values():  # (sample_interval, ds)
+        for sample_interval, ds in dict_ds.items():
             # Write L0C netCDF4 dataset
             if ds["time"].size > 1:
                 # Write L0C netCDF4 dataset
-                filename = define_l0c_filename(ds, campaign_name=campaign_name, station_name=station_name)
+                filename = define_l0c_filename(
+                    ds,
+                    campaign_name=campaign_name,
+                    station_name=station_name,
+                    sample_interval=sample_interval,
+                )
                 folder_path = define_file_folder_path(ds, dir_path=data_dir, folder_partitioning=folder_partitioning)
                 filepath = os.path.join(folder_path, filename)
                 write_product(ds, filepath=filepath, force=force)

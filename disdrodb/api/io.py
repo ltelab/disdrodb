@@ -29,7 +29,7 @@ from disdrodb.api.checks import (
     check_start_end_time,
     get_current_utc_time,
 )
-from disdrodb.api.info import get_start_end_time_from_filepaths
+from disdrodb.api.info import get_start_end_time_from_filepaths, group_filepaths
 from disdrodb.api.path import (
     define_campaign_dir,
     define_data_dir,
@@ -289,6 +289,42 @@ def _open_raw_files(filepaths, data_source, campaign_name, station_name, metadat
     return ds
 
 
+def list_coordinates_names(ds):
+    """List coordinates of a xarray.Dataset not CF decoded !."""
+    coords = set()
+    for v in ds.variables:
+        attrs = ds[v].attrs
+        # auxiliary coordinates
+        if "coordinates" in attrs:
+            coords |= set(attrs["coordinates"].split())
+        # bounds variables
+        if "bounds" in attrs:
+            coords.add(attrs["bounds"])
+        # grid mapping
+        if "grid_mapping" in attrs:
+            coords.add(attrs["grid_mapping"])
+    return coords
+
+
+def subset_variables(ds, variables):
+    """Subset variables while keeping coordinates."""
+    # Ensure list
+    variables = list(variables)
+
+    # Always keep dimension variables
+    dim_vars = list(ds.dims)
+
+    # Variables referenced by CF relationships
+    coords = list_coordinates_names(ds)
+
+    # Union of everything we must keep
+    keep = set(variables) | set(dim_vars) | coords
+
+    # Only keep variables that exist
+    keep = [v for v in keep if v in list(ds.variables)]
+    return ds[keep]
+
+
 def filter_dataset_by_time(ds, start_time=None, end_time=None):
     """Subset an xarray.Dataset by time, robust to duplicated/non-monotonic indices.
 
@@ -326,11 +362,33 @@ def open_netcdf_files(
     variables=None,
     parallel=False,
     compute=True,
+    engine="netcdf4",
     **open_kwargs,
 ):
     """Open DISDRODB netCDF files using xarray.
 
-    Using combine="nested" and join="outer" ensure that duplicated timesteps are not overwritten!
+    Using data_vars="minimal", coords="minimal", compat="override"
+    --> will only concatenate those variables with the time dimension,
+    --> will skip any checking for variables that don't have a time dimension
+       (simply pick the variable from the first file).
+    https://github.com/pydata/xarray/issues/1385#issuecomment-1958761334
+
+    Using combine="nested" and join="outer" ensure that duplicated timesteps
+    are not overwritten!
+
+    When decode_cf=False
+    --> lat,lon are data_vars and get concatenated without any checking or reading
+    When decode_cf=True
+    --> lat, lon are promoted to coords, then get checked for equality across all files
+
+    For L0B product, if sample_interval variable is present and varies with time,
+    this function concatenate the variable over time without problems.
+    For L0C product, if sample_interval changes across listed files,
+    only sample_interval of first file is reported.
+    --> open_dataset take care of just providing filepaths of files with same sample interval.
+    In L1 and L2 processing, only filepaths of files with same sample interval
+    must be passed to this function.
+
     """
     import xarray as xr
 
@@ -341,35 +399,64 @@ def open_netcdf_files(
         variables = np.unique(variables).tolist()
 
     # Define preprocessing function for parallel opening
-    preprocess = (lambda ds: ds[variables]) if parallel and variables is not None else None
+    if parallel and variables is not None:
+
+        def preprocess(ds):
+            return subset_variables(ds, variables)
+
+    else:
+        preprocess = None
 
     # Open netcdf
+    xr.set_options(use_new_combine_kwarg_defaults=True)
     ds = xr.open_mfdataset(
         filepaths,
         chunks=chunks,
-        data_vars="all",
         combine="nested",
-        join="outer",
         concat_dim="time",
-        engine="netcdf4",
-        parallel=parallel,
-        preprocess=preprocess,
-        compat="no_conflicts",
+        data_vars="minimal",  # ["sample_interval"], "all" would concat all across time
+        coords="minimal",
+        join="outer",  # "exact"
+        compat="override",  # "no_conflicts" slows down
         combine_attrs="override",
-        coords="different",  # maybe minimal? would remove lon/lat/alt?
+        preprocess=preprocess,  # only if parallel=True
+        engine=engine,
+        parallel=parallel,
+        decode_cf=False,  # assume encoding do not vary across files (e.g. "time" units)
+        decode_coords=False,  # no effect if decode_cf=False
         decode_timedelta=False,
         cache=False,
         autoclose=True,
         **open_kwargs,
     )
-    # - Subset variables
+
+    # Decode CF
+    # - Set to coordinates the variables
+    #   - latitude/longitude/altitude
+    #   - sample_interval
+    #   - diameter/velocity bin width/upper/lower
+    ds = xr.decode_cf(ds, decode_times=True, decode_coords=True, decode_timedelta=False)
+
+    # Subset variables
+    # --> After decoding CF, when coordinates are properly set
+    # --> Othewerwise, coordinate variables would be removed unless listed in variables
     if variables is not None and preprocess is None:
         variables = [var for var in variables if var in ds]
         ds = ds[variables]
-    # - Subset time
+
+    # Subset time
     if start_time is not None or end_time is not None:
         ds = filter_dataset_by_time(ds, start_time=start_time, end_time=end_time)
-    # - If compute=True, load in memory and close connections to files
+
+    # Ensure coordinates are already loaded in memory
+    for coord in list(ds.coords):
+        ds[coord] = ds[coord].load()
+
+    # Update time coverage attributes
+    ds.attrs["time_coverage_start"] = str(ds.disdrodb.start_time)
+    ds.attrs["time_coverage_end"] = str(ds.disdrodb.end_time)
+
+    # If compute=True, load in memory and close connections to files
     if compute:
         dataset = ds.compute()
         ds.close()
@@ -430,6 +517,8 @@ def open_dataset(
     xarray.Dataset
 
     """
+    import xarray as xr
+
     from disdrodb.l0.l0a_processing import read_l0a_dataframe
 
     # Extract product kwargs from open_kwargs
@@ -467,6 +556,36 @@ def open_dataset(
         return read_l0a_dataframe(filepaths)
 
     # Open DISDRODB netCDF files using xarray
+    # - Special handling for L0C product with possible multiple sample intervals
+    if product == "L0C":
+        dict_sample_intervals = group_filepaths(filepaths, groups="sample_interval")
+        if len(dict_sample_intervals) > 1:
+            # Open separately each sample interval
+            list_ds = [
+                open_netcdf_files(
+                    filepaths=filepaths,
+                    chunks=chunks,
+                    start_time=start_time,
+                    end_time=end_time,
+                    variables=variables,
+                    parallel=parallel,
+                    compute=compute,
+                    **open_kwargs,
+                )
+                for filepaths in dict_sample_intervals.values()
+            ]
+            # Expand sample_interval coordinate for each dataset
+            list_ds = [ds.assign_coords(sample_interval=ds.sample_interval.expand_dims(time=ds.time)) for ds in list_ds]
+            # Concatenate along time dimension and sort by time
+            ds = xr.concat(list_ds, dim="time")
+            ds.attrs["measurement_interval"] = list(dict_sample_intervals)
+            ds = ds.sortby("time")
+            # Update time coverage attributes
+            ds.attrs["time_coverage_start"] = str(ds.disdrodb.start_time)
+            ds.attrs["time_coverage_end"] = str(ds.disdrodb.end_time)
+            return ds
+
+    # Otherwise, open all files together
     ds = open_netcdf_files(
         filepaths=filepaths,
         chunks=chunks,
@@ -477,10 +596,6 @@ def open_dataset(
         compute=compute,
         **open_kwargs,
     )
-
-    # Ensure coordinates in memory
-    # for coord in list(ds.coords):
-    #     ds[coord] = ds[coord].compute()
     return ds
 
 

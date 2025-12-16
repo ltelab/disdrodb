@@ -310,6 +310,10 @@ def resample_dataset(ds, sample_interval, temporal_resolution):
     # Add attributes
     ds_resampled.attrs = attrs
 
+    # Add crs coordinate
+    if "crs" in ds:
+        ds_resampled = ds_resampled.assign_coords({"crs": ds.crs})
+
     # Add accumulation_interval as new sample_interval coordinate
     ds_resampled = add_sample_interval(ds_resampled, sample_interval=accumulation_interval)
     return ds_resampled

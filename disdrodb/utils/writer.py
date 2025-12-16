@@ -15,12 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB product writers."""
-
 import os
 
 import xarray as xr
 
 from disdrodb.utils.attrs import get_attrs_dict, set_attrs, set_disdrodb_attrs
+from disdrodb.utils.coords import add_dataset_crs_coords
 from disdrodb.utils.directories import create_directory, remove_if_exists
 from disdrodb.utils.encoding import get_encodings_dict, set_encodings
 
@@ -34,6 +34,9 @@ def finalize_product(ds, product=None) -> xr.Dataset:
     # Add variables encoding
     encodings_dict = get_encodings_dict()
     ds = set_encodings(ds, encodings_dict=encodings_dict)
+
+    # Add dataset CRS
+    ds = add_dataset_crs_coords(ds)
 
     # Add DISDRODB global attributes
     # - e.g. in generate_l2_radar it inherit from input dataset !

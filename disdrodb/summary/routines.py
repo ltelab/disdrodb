@@ -3813,7 +3813,10 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         drop_number = ds["drop_number"].sum(dim="time")
 
         # Define theoretical and measured average velocity
-        theoretical_average_velocity = ds["fall_velocity"].mean(dim="time")
+        if "time" in ds["fall_velocity"].dims:
+            theoretical_average_velocity = ds["fall_velocity"].mean(dim="time")
+        else:
+            theoretical_average_velocity = ds["fall_velocity"]
         measured_average_velocity = get_drop_average_velocity(drop_number)
 
         # Save raw and filtered spectrum over time & theoretical and measured average fall velocity
