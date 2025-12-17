@@ -183,38 +183,38 @@ def reader(
         "TO_BE_FURTHER_PROCESSED",
     ]
     df.columns = names
-    
+
     # Extract the last variables remained in raw_drop_number
     if df["TO_BE_FURTHER_PROCESSED"].iloc[0].count(";") == 444:
         df_parsed = df["TO_BE_FURTHER_PROCESSED"].str.rsplit(";", n=5, expand=True)
         df_parsed.columns = [
             "raw_drop_number",
-            "air_temperature", # only values between 0 and 2
-            "relative_humidity", # 999
+            "air_temperature",  # only values between 0 and 2
+            "relative_humidity",  # 999
             "wind_speed",
             "wind_direction",
             "checksum",
         ]
-        
-    else: # 440
+
+    else:  # 440
         df_parsed = df["TO_BE_FURTHER_PROCESSED"].str.rsplit(";", n=1, expand=True)
         df_parsed.columns = [
             "raw_drop_number",
             "checksum",
         ]
-        # Add missing met variables columns 
-        met_vars = [ 
+        # Add missing met variables columns
+        met_vars = [
             "air_temperature",
             "relative_humidity",
             "wind_speed",
-            "wind_direction"
+            "wind_direction",
         ]
-        for var in met_vars: 
+        for var in met_vars:
             df_parsed[var] = "NaN"
-       
+
     # Assign columns to the original dataframe
-    df[df_parsed.columns] = df_parsed  
-    
+    df[df_parsed.columns] = df_parsed
+
     # Identify rows with bad sensor date (compared to file name)
     filename = os.path.basename(filepath)
     file_date_str = filename[0:8]

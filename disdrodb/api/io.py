@@ -27,8 +27,8 @@ import numpy as np
 from disdrodb.api.checks import (
     check_filepaths,
     check_start_end_time,
-    get_current_utc_time,
     check_time,
+    get_current_utc_time,
 )
 from disdrodb.api.info import get_start_end_time_from_filepaths, group_filepaths
 from disdrodb.api.path import (
@@ -365,13 +365,13 @@ def open_parquet_files(
 ):
     """Open Parquet files."""
     import pyarrow.dataset as ds
-    
+
     # Open dataset
     dataset = ds.dataset(
         filepaths,
         format="parquet",
     )
-    
+
     # Define filters
     filters = []
     if start_time is not None:
@@ -388,14 +388,14 @@ def open_parquet_files(
         filter_expr = filters[0]
         for f in filters[1:]:
             filter_expr = filter_expr & f
-            
-    # Read table and convert to pandas 
+
+    # Read table and convert to pandas
     df = dataset.to_table(
         columns=variables,
         filter=filter_expr,
         use_threads=use_threads,
-     ).to_pandas() 
-    return df 
+    ).to_pandas()
+    return df
 
 
 def open_netcdf_files(
