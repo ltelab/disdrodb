@@ -18,12 +18,9 @@
 
 import logging
 import os
-from typing import Union
 
 import numpy as np
 import pandas as pd
-import pyarrow.parquet as pq
-
 from disdrodb.l0.check_standards import check_l0a_column_names, check_l0a_standards
 from disdrodb.l0.l0b_processing import infer_split_str
 from disdrodb.l0.standards import (
@@ -769,7 +766,7 @@ def concatenate_dataframe(list_df: list, logger=None, verbose: bool = False) -> 
 
 
 def read_l0a_dataframe(
-    filepaths: Union[str, list],
+    filepaths: str | list,
     debugging_mode: bool = False,
 ) -> pd.DataFrame:
     """Read DISDRODB L0A Apache Parquet file(s).
@@ -790,6 +787,8 @@ def read_l0a_dataframe(
         L0A Dataframe.
 
     """
+    from disdrodb.api.io import open_parquet_files
+
     # ----------------------------------------
     # Check filepaths validity
     if not isinstance(filepaths, (list, str)):
@@ -806,7 +805,7 @@ def read_l0a_dataframe(
 
     # ---------------------------------------------------
     # Define the list of dataframe
-    df = pq.ParquetDataset(filepaths).read().to_pandas()
+    df = open_parquet_files(filepaths, use_threads=False)
 
     # Reduce rows
     if debugging_mode:
@@ -832,7 +831,7 @@ def read_l0a_dataframe(
 
 
 def generate_l0a(
-    filepaths: Union[list, str],
+    filepaths: list | str,
     reader,
     sensor_name,
     issue_dict=None,

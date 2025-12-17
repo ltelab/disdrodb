@@ -160,7 +160,7 @@ def _define_creators_list(metadata):
 
         # Create info dictionary of each author
         list_creator_dict = []
-        for name, identifier, affiliation in zip(list_names, list_identifier, list_affiliation):
+        for name, identifier, affiliation in zip(list_names, list_identifier, list_affiliation, strict=True):
             creator_dict = {}
             creator_dict["name"] = name.strip()
             creator_dict["orcid"] = identifier.strip()

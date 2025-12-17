@@ -17,7 +17,6 @@
 """Check metadata."""
 
 import os
-from typing import Optional, Union
 
 import numpy as np
 
@@ -190,7 +189,7 @@ def check_station_metadata_geolocation(metadata, raise_error_if_unknown=True) ->
         _check_lonlat_validity(longitude=longitude, latitude=latitude, raise_error_if_unknown=raise_error_if_unknown)
 
 
-def check_metadata_archive_geolocation(metadata_archive_dir: Optional[str] = None, raise_error_if_unknown=True):
+def check_metadata_archive_geolocation(metadata_archive_dir: str | None = None, raise_error_if_unknown=True):
     """Check the metadata files have missing or wrong geolocation..
 
     Parameters
@@ -259,7 +258,7 @@ def check_station_metadata(data_source, campaign_name, station_name, metadata_ar
     check_metadata_reader(metadata)
 
 
-def check_metadata_archive(metadata_archive_dir: Optional[str] = None, raise_error=False):
+def check_metadata_archive(metadata_archive_dir: str | None = None, raise_error=False):
     """Check the archive metadata compliance.
 
     Parameters
@@ -334,7 +333,7 @@ def identify_missing_metadata_coords(metadata_filepaths: str) -> None:
         check_station_metadata_geolocation(metadata)
 
 
-def identify_empty_metadata_keys(metadata_filepaths: list, keys: Union[str, list]) -> None:
+def identify_empty_metadata_keys(metadata_filepaths: list, keys: str | list) -> None:
     """Identify empty metadata keys.
 
     Parameters
@@ -358,7 +357,7 @@ def identify_empty_metadata_keys(metadata_filepaths: list, keys: Union[str, list
 #### Metadata Archive Utilities
 
 
-def check_metadata_archive_keys(metadata_archive_dir: Optional[str] = None) -> bool:
+def check_metadata_archive_keys(metadata_archive_dir: str | None = None) -> bool:
     """Check that all metadata files have valid keys.
 
     Parameters
@@ -405,7 +404,7 @@ def check_metadata_archive_keys(metadata_archive_dir: Optional[str] = None) -> b
     return is_valid
 
 
-def check_metadata_archive_campaign_name(metadata_archive_dir: Optional[str] = None) -> bool:
+def check_metadata_archive_campaign_name(metadata_archive_dir: str | None = None) -> bool:
     """Check metadata ``campaign_name``.
 
     Parameters
@@ -451,7 +450,7 @@ def check_metadata_archive_campaign_name(metadata_archive_dir: Optional[str] = N
     return is_valid
 
 
-def check_metadata_archive_data_source(metadata_archive_dir: Optional[str] = None) -> bool:
+def check_metadata_archive_data_source(metadata_archive_dir: str | None = None) -> bool:
     """Check metadata ``data_source``.
 
     Parameters
@@ -497,7 +496,7 @@ def check_metadata_archive_data_source(metadata_archive_dir: Optional[str] = Non
     return is_valid
 
 
-def check_metadata_archive_sensor_name(metadata_archive_dir: Optional[str] = None) -> bool:
+def check_metadata_archive_sensor_name(metadata_archive_dir: str | None = None) -> bool:
     """Check metadata ``sensor_name``.
 
     Parameters
@@ -543,7 +542,7 @@ def check_metadata_archive_sensor_name(metadata_archive_dir: Optional[str] = Non
     return is_valid
 
 
-def check_metadata_archive_station_name(metadata_archive_dir: Optional[str] = None) -> bool:
+def check_metadata_archive_station_name(metadata_archive_dir: str | None = None) -> bool:
     """Check metadata ``station_name``.
 
     Parameters
@@ -589,7 +588,7 @@ def check_metadata_archive_station_name(metadata_archive_dir: Optional[str] = No
     return is_valid
 
 
-def check_metadata_archive_reader(metadata_archive_dir: Optional[str] = None) -> bool:
+def check_metadata_archive_reader(metadata_archive_dir: str | None = None) -> bool:
     """Check if the ``reader`` key is available and there is the associated reader.
 
     Parameters

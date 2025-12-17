@@ -14,12 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB reader for GID LPM sensors measuring also wind."""
+"""DISDRODB reader for GID LPM sensors not measuring wind."""
 
+import os
+
+import numpy as np
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
+from disdrodb.utils.logger import log_warning
 
 
 @is_documented_by(reader_generic_docstring)
@@ -30,7 +34,7 @@ def reader(
     """Reader."""
     ##------------------------------------------------------------------------.
     #### - Define raw data headers
-    column_names = ["TO_BE_SPLITTED"]
+    column_names = ["TO_PARSE"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
@@ -48,6 +52,9 @@ def reader(
 
     # - Number of rows to be skipped at the beginning of the file
     reader_kwargs["skiprows"] = None
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "latin"
 
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
@@ -78,11 +85,19 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Count number of delimiters to identify valid rows
-    df = df[df["TO_BE_SPLITTED"].str.count(";") == 523]
+    # Raise error if empty file
+    if len(df) == 0:
+        raise ValueError(f"{filepath} is empty.")
+
+    # Select only rows with expected number of delimiters
+    df = df[df["TO_PARSE"].str.count(";").isin([519, 520, 523])]
+
+    # Check there are still valid rows
+    if len(df) == 0:
+        raise ValueError(f"No valid rows in {filepath}.")
 
     # Split by ; delimiter (before raw drop number)
-    df = df["TO_BE_SPLITTED"].str.split(";", expand=True, n=79)
+    df = df["TO_PARSE"].str.split(";", expand=True, n=79)
 
     # Assign column names
     names = [
@@ -168,24 +183,77 @@ def reader(
         "TO_BE_FURTHER_PROCESSED",
     ]
     df.columns = names
-
+    
     # Extract the last variables remained in raw_drop_number
-    df_parsed = df["TO_BE_FURTHER_PROCESSED"].str.rsplit(";", n=5, expand=True)
-    df_parsed.columns = [
-        "raw_drop_number",
-        "air_temperature",
-        "relative_humidity",
-        "wind_speed",
-        "wind_direction",
-        "checksum",
-    ]
-
+    if df["TO_BE_FURTHER_PROCESSED"].iloc[0].count(";") == 444:
+        df_parsed = df["TO_BE_FURTHER_PROCESSED"].str.rsplit(";", n=5, expand=True)
+        df_parsed.columns = [
+            "raw_drop_number",
+            "air_temperature", # only values between 0 and 2
+            "relative_humidity", # 999
+            "wind_speed",
+            "wind_direction",
+            "checksum",
+        ]
+        
+    else: # 440
+        df_parsed = df["TO_BE_FURTHER_PROCESSED"].str.rsplit(";", n=1, expand=True)
+        df_parsed.columns = [
+            "raw_drop_number",
+            "checksum",
+        ]
+        # Add missing met variables columns 
+        met_vars = [ 
+            "air_temperature",
+            "relative_humidity",
+            "wind_speed",
+            "wind_direction"
+        ]
+        for var in met_vars: 
+            df_parsed[var] = "NaN"
+       
     # Assign columns to the original dataframe
-    df[df_parsed.columns] = df_parsed
+    df[df_parsed.columns] = df_parsed  
+    
+    # Identify rows with bad sensor date (compared to file name)
+    filename = os.path.basename(filepath)
+    file_date_str = filename[0:8]
+    idx_bad_date = df["sensor_date"] != pd.to_datetime(file_date_str, format="%Y%m%d").strftime("%d.%m.%y")
 
-    # Define datetime "time" column
-    df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
-    df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y-%H:%M:%S", errors="coerce")
+    # If all rows have bad sensor_date, use the one of the file name
+    if idx_bad_date.all():
+        # -  Infer and define "time" column
+        start_time_str = filename[0:10]
+        start_time = pd.to_datetime(start_time_str, format="%Y%m%d%H")
+
+        # - Define timedelta based on sensor_time
+        # --> Add +24h to subsequent times when time resets
+        dt = pd.to_timedelta(df["sensor_time"]).to_numpy().astype("m8[s]")
+        rollover_indices = np.where(np.diff(dt) < np.timedelta64(0, "s"))[0]
+        if rollover_indices.size > 0:
+            for idx in rollover_indices:
+                dt[idx + 1 :] += np.timedelta64(24, "h")
+        dt = dt - dt[0]
+
+        # - Define approximate time
+        df["time"] = start_time + dt
+
+        # - Keep rows where time increment is between 00 and 59 minutes
+        valid_rows = dt <= np.timedelta64(3540, "s")
+        df = df[valid_rows]
+
+    # If only some rows have bad sensor date, just drop such bad rows
+    else:
+        if idx_bad_date.any():
+            # Remove rows with bad dates
+            bad_dates = df[idx_bad_date]["sensor_date"].unique().tolist()
+            df = df[~idx_bad_date]
+            msg = f"{filepath} contain rows with the following unexpected sensor_date values {bad_dates}"
+            log_warning(msg=msg, logger=logger)
+
+        # Define datetime "time" column
+        df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
+        df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y-%H:%M:%S", errors="coerce")
 
     # Drop row if start_identifier different than 00
     df = df[df["start_identifier"].astype(str) == "00"]
@@ -200,9 +268,10 @@ def reader(
         "sensor_serial_number",
         "sensor_date",
         "sensor_time",
-        "checksum",
-        "relative_humidity",  # TO DROP? ALWAYS NOT AVAILABLE?
+        "air_temperature",
+        "relative_humidity",
         "TO_BE_FURTHER_PROCESSED",
+        "checksum",
     ]
     df = df.drop(columns=columns_to_drop)
     return df

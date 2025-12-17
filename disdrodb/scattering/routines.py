@@ -562,7 +562,7 @@ def _estimate_model_radar_parameters(
     scatterer,
 ):
     # Assign PSD model to the scatterer object
-    parameters = dict(zip(psd_parameters_names, parameters))
+    parameters = dict(zip(psd_parameters_names, parameters, strict=True))
     scatterer.psd = create_psd(psd_model, parameters)
 
     # Get radar variables

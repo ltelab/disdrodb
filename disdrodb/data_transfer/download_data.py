@@ -21,7 +21,6 @@ import os
 import shutil
 import subprocess
 import urllib.parse
-from typing import Optional, Union
 
 import click
 import pooch
@@ -97,12 +96,12 @@ def click_download_options(function: object):
 
 
 def download_archive(
-    data_sources: Optional[Union[str, list[str]]] = None,
-    campaign_names: Optional[Union[str, list[str]]] = None,
-    station_names: Optional[Union[str, list[str]]] = None,
+    data_sources: str | list[str] | None = None,
+    campaign_names: str | list[str] | None = None,
+    station_names: str | list[str] | None = None,
     force: bool = False,
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Download DISDRODB stations with the ``disdrodb_data_url`` in the metadata.
 
@@ -175,8 +174,8 @@ def download_station(
     campaign_name: str,
     station_name: str,
     force: bool = False,
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ) -> None:
     """
     Download data of a single DISDRODB station from the DISDRODB remote repository.

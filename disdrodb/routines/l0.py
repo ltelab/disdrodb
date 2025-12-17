@@ -20,7 +20,6 @@ import datetime
 import logging
 import os
 import time
-from typing import Optional
 
 from disdrodb.api.checks import check_measurement_intervals, check_sensor_name, check_station_inputs
 from disdrodb.api.create_directories import (
@@ -431,8 +430,8 @@ def run_l0a_station(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """
     Run the L0A processing of a specific DISDRODB station when invoked from the terminal.
@@ -626,8 +625,8 @@ def run_l0b_station(
     parallel: bool = True,
     debugging_mode: bool = False,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """
     Run the L0B processing of a specific DISDRODB station when invoked from the terminal.
@@ -807,8 +806,8 @@ def run_l0c_station(
     parallel: bool = True,
     debugging_mode: bool = False,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """
     Run the L0C processing of a specific DISDRODB station when invoked from the terminal.

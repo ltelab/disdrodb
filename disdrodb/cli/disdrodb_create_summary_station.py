@@ -17,7 +17,6 @@
 """Script to create summary figures and tables for a DISDRODB station."""
 
 import sys
-from typing import Optional
 
 import click
 
@@ -54,7 +53,7 @@ def disdrodb_create_summary_station(
     parallel=False,
     temporal_resolution="1MIN",
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
 ):
     """Create summary figures and tables for a specific DISDRODB station.
 

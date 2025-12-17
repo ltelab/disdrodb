@@ -125,7 +125,7 @@ def infer_altitudes(lats, lons, dem="aster30m"):
         block_lons = lons[i : i + max_locations]
 
         # Create the list_coords string in the format "lat1,lon1|lat2,lon2|..."
-        list_coords = "|".join([f"{lat},{lon}" for lat, lon in zip(block_lats, block_lons)])
+        list_coords = "|".join([f"{lat},{lon}" for lat, lon in zip(block_lats, block_lons, strict=True)])
 
         # Define API URL
         url = f"https://api.opentopodata.org/v1/{dem}?locations={list_coords}&interpolation=nearest"

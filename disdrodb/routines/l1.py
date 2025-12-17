@@ -20,7 +20,6 @@ import datetime
 import logging
 import os
 import time
-from typing import Optional
 
 import pandas as pd
 
@@ -144,10 +143,13 @@ def _generate_l1(
         folder_partitioning,
     ):
         """Define L1 product processing."""
-        # Open the L0C netCDF files
+        # Define variables to load
         # - precip_flag used for OceanRain ODM470 data only
         # - Missing variables in dataset are simply not selected
         variables = ["raw_drop_number", "qc_time", "precip_flag", *TEMPERATURE_VARIABLES, *METEOROLOGICAL_VARIABLES]
+        
+        # Open the L0C netCDF files
+        # with dask.config.set(scheduler="synchronous"):
         ds = open_netcdf_files(
             filepaths,
             start_time=start_time,
@@ -234,8 +236,8 @@ def run_l1_station(
     parallel: bool = True,
     debugging_mode: bool = False,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """
     Run the L1 processing of a specific DISDRODB station when invoked from the terminal.

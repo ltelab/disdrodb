@@ -17,7 +17,6 @@
 """Routine to open the DISDRODB Data Archive station product directory."""
 
 import sys
-from typing import Optional
 
 import click
 
@@ -39,7 +38,7 @@ def disdrodb_open_product_directory(
     data_source: str,
     campaign_name: str,
     station_name: str,
-    data_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
 ):
     """Open the DISDRODB Data Archive station product directory in the system file explorer.
 

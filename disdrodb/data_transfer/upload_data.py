@@ -16,8 +16,6 @@
 # -----------------------------------------------------------------------------.
 """Routines to upload data to the DISDRODB Decentralized Data Archive."""
 
-from typing import Optional
-
 import click
 
 from disdrodb.api.path import define_metadata_filepath
@@ -123,10 +121,10 @@ def upload_station(
     data_source: str,
     campaign_name: str,
     station_name: str,
-    platform: Optional[str] = "sandbox.zenodo",
+    platform: str | None = "sandbox.zenodo",
     force: bool = False,
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ) -> None:
     """
     Upload data from a single DISDRODB station on a remote repository.
@@ -189,10 +187,10 @@ def upload_station(
 
 
 def upload_archive(
-    platform: Optional[str] = None,
+    platform: str | None = None,
     force: bool = False,
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
     **fields_kwargs,
 ) -> None:
     """Find all stations containing local data and upload them to a remote repository.

@@ -21,7 +21,6 @@ import difflib
 import logging
 import os
 import re
-import sys
 import warnings
 
 import numpy as np
@@ -566,9 +565,7 @@ def check_filepaths(filepaths):
 
 def get_current_utc_time():
     """Get current UTC time."""
-    if sys.version_info >= (3, 11):
-        return datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
-    return datetime.datetime.utcnow()
+    return datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
 
 def check_start_end_time(start_time, end_time):

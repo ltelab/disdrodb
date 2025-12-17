@@ -3750,7 +3750,7 @@ def define_filename(prefix, extension, data_source, campaign_name, station_name,
 
 def create_l2_dataframe(ds):
     """Create pandas Dataframe for L2 analysis."""
-    dims_to_drop = set(ds.dims).intersection({DIAMETER_DIMENSION, VELOCITY_DIMENSION})
+    dims_to_drop = set(ds.dims).intersection({DIAMETER_DIMENSION, VELOCITY_DIMENSION, "crs"})
     # - Drop array variables and convert to pandas
     df = ds.drop_dims(dims_to_drop).to_pandas()
     # - Drop coordinates

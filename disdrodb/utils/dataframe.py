@@ -208,7 +208,7 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
 
     # Reset index and add coordinates/labels
     df_stats = df_stats.reset_index()
-    df_stats[f"{column}"] = pd.Categorical(df_stats[f"{column}_binned"].map(dict(zip(intervals, coords, strict=False))))
+    df_stats[f"{column}"] = pd.Categorical(df_stats[f"{column}_binned"].map(dict(zip(intervals, coords, strict=True))))
     df_stats = df_stats.drop(columns=f"{column}_binned")
 
     return df_stats
@@ -374,8 +374,8 @@ def compute_2d_histogram(
 
     # Reset index and set new coordinates
     df_stats = df_stats.reset_index()
-    df_stats[f"{x}"] = pd.Categorical(df_stats[f"{x}_binned"].map(dict(zip(x_intervals, x_coords, strict=False))))
-    df_stats[f"{y}"] = pd.Categorical(df_stats[f"{y}_binned"].map(dict(zip(y_intervals, y_coords, strict=False))))
+    df_stats[f"{x}"] = pd.Categorical(df_stats[f"{x}_binned"].map(dict(zip(x_intervals, x_coords, strict=True))))
+    df_stats[f"{y}"] = pd.Categorical(df_stats[f"{y}_binned"].map(dict(zip(y_intervals, y_coords, strict=True))))
 
     # Set new MultiIndex with coordinates
     df_stats = df_stats.set_index([f"{x}", f"{y}"])

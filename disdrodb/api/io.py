@@ -21,7 +21,6 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 
@@ -29,6 +28,7 @@ from disdrodb.api.checks import (
     check_filepaths,
     check_start_end_time,
     get_current_utc_time,
+    check_time,
 )
 from disdrodb.api.info import get_start_end_time_from_filepaths, group_filepaths
 from disdrodb.api.path import (
@@ -131,8 +131,8 @@ def find_files(
     station_name,
     product,
     debugging_mode: bool = False,
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
     glob_pattern=None,
     start_time=None,
     end_time=None,
@@ -355,6 +355,49 @@ def filter_dataset_by_time(ds, start_time=None, end_time=None):
     return ds.isel(time=np.where(mask)[0])
 
 
+def open_parquet_files(
+    filepaths,
+    variables=None,
+    start_time=None,
+    end_time=None,
+    time_col="time",
+    use_threads=True,
+):
+    """Open Parquet files."""
+    import pyarrow.dataset as ds
+    
+    # Open dataset
+    dataset = ds.dataset(
+        filepaths,
+        format="parquet",
+    )
+    
+    # Define filters
+    filters = []
+    if start_time is not None:
+        start_time = check_time(start_time)
+        filters.append(ds.field(time_col) >= start_time)
+
+    if end_time is not None:
+        end_time = check_time(end_time)
+        filters.append(ds.field(time_col) <= end_time)
+
+    # Combine filters if any exist
+    filter_expr = None
+    if filters:
+        filter_expr = filters[0]
+        for f in filters[1:]:
+            filter_expr = filter_expr & f
+            
+    # Read table and convert to pandas 
+    df = dataset.to_table(
+        columns=variables,
+        filter=filter_expr,
+        use_threads=use_threads,
+     ).to_pandas() 
+    return df 
+
+
 def open_netcdf_files(
     filepaths,
     chunks=-1,
@@ -475,8 +518,8 @@ def open_dataset(
     product,
     product_kwargs=None,
     debugging_mode: bool = False,
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
     chunks=-1,
     parallel=False,
     compute=False,
@@ -520,8 +563,6 @@ def open_dataset(
     """
     import xarray as xr
 
-    from disdrodb.l0.l0a_processing import read_l0a_dataframe
-
     # Extract product kwargs from open_kwargs
     product_kwargs = extract_product_kwargs(open_kwargs, product=product)
 
@@ -554,7 +595,14 @@ def open_dataset(
 
     # Open L0A Parquet files
     if product == "L0A":
-        return read_l0a_dataframe(filepaths)
+        df = open_parquet_files(
+            filepaths=filepaths,
+            variables=variables,
+            start_time=start_time,
+            end_time=end_time,
+            use_threads=parallel,
+        )
+        return df
 
     # Open DISDRODB netCDF files using xarray
     # - Special handling for L0C product with possible multiple sample intervals

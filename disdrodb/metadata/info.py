@@ -17,7 +17,6 @@
 """Test Metadata Info Extraction."""
 
 import os
-from typing import Optional
 
 from disdrodb.api.info import (
     infer_campaign_name_from_path,
@@ -28,7 +27,7 @@ from disdrodb.metadata.reader import read_station_metadata
 from disdrodb.metadata.search import get_list_metadata
 
 
-def get_archive_metadata_key_value(key: str, return_tuple: bool = True, metadata_archive_dir: Optional[str] = None):
+def get_archive_metadata_key_value(key: str, return_tuple: bool = True, metadata_archive_dir: str | None = None):
     """Return the values of a metadata key for all the archive.
 
     Parameters

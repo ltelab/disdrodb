@@ -17,7 +17,6 @@
 """Routine to download station data from the DISDRODB Decentralized Data Archive."""
 
 import sys
-from typing import Optional
 
 import click
 
@@ -41,8 +40,8 @@ def disdrodb_download_station(
     data_source: str,
     campaign_name: str,
     station_name: str,
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
     force: bool = False,
 ):
     """Download raw data of a single station from the DISDRODB Decentralized Data Archive.

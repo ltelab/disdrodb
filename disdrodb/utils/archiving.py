@@ -325,7 +325,7 @@ def _map_files_to_blocks(files_start_time, files_end_time, filepaths, block_star
     # Create a list with the a dictionary for each block
     filepaths = np.array(filepaths)
     results = []
-    for i, (start, end) in enumerate(zip(block_starts, block_ends)):
+    for i, (start, end) in enumerate(zip(block_starts, block_ends, strict=True)):
         indices = np.where(mask[:, i])[0]
         if indices.size > 0:
             results.append(

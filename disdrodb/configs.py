@@ -18,7 +18,6 @@
 
 import os
 import shutil
-from typing import Optional
 
 from disdrodb.utils.yaml import read_yaml, write_yaml
 
@@ -32,13 +31,13 @@ def _define_config_filepath():
 
 
 def define_configs(
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
-    scattering_table_dir: Optional[str] = None,
-    products_configs_dir: Optional[str] = None,
-    folder_partitioning: Optional[str] = None,
-    zenodo_token: Optional[str] = None,
-    zenodo_sandbox_token: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
+    scattering_table_dir: str | None = None,
+    products_configs_dir: str | None = None,
+    folder_partitioning: str | None = None,
+    zenodo_token: str | None = None,
+    zenodo_sandbox_token: str | None = None,
 ):
     """
     Defines the DISDRODB configuration file with the given credentials and base directory.

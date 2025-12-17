@@ -18,7 +18,7 @@ classifiers = [
 	"Operating System :: MacOS :: MacOS X",
 	"Operating System :: Microsoft :: Windows",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
 	"click",
 	"tqdm",

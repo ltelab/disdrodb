@@ -17,7 +17,6 @@
 """Script to run the DISDRODB L0 station processing."""
 
 import sys
-from typing import Optional
 
 import click
 
@@ -59,8 +58,8 @@ def disdrodb_run_l0_station(
     parallel: bool = True,
     debugging_mode: bool = False,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Run the DISDRODB L0 processing chain for a specific DISDRODB station.
 
