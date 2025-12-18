@@ -85,7 +85,7 @@ def single_threaded_if_parallel(function):
         if parallel:
             # Call function with single thread
             # with dask.config.set(scheduler='single-threaded'):
-            with dask.config.set(scheduler="synchronous"):
+            with dask.config.set(scheduler="single-threaded"):  # "synchronous"
                 result = function(*args, **kwargs)
         else:
             # Else run the function as usual

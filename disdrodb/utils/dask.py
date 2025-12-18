@@ -29,7 +29,7 @@ def check_parallel_validity(parallel):
     scheduler = dask.config.get("scheduler", None)
     if scheduler is None:
         return parallel
-    if scheduler in ["synchronous", "threads"]:
+    if scheduler in ["synchronous", "threads", "single-threaded"]:
         return False
     if scheduler in ["distributed", "dask.distributed"]:
         from dask.distributed import default_client

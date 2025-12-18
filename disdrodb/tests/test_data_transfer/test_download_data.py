@@ -351,14 +351,20 @@ def test_download_station(tmp_path, force):
 
     # Check download_station overwrite existing files if force=True
     else:
-        download_station(
-            data_archive_dir=data_archive_dir,
-            metadata_archive_dir=metadata_archive_dir,
-            data_source=data_source,
-            campaign_name=campaign_name,
-            station_name=station_name,
-            force=force,
-        )
+        try:
+            download_station(
+                data_archive_dir=data_archive_dir,
+                metadata_archive_dir=metadata_archive_dir,
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                force=force,
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:
+                pytest.skip("Zenodo rate limit reached")
+            raise
+
         # Check original raw file does not exist anymore
         if force:
             assert not os.path.exists(raw_file_filepath)

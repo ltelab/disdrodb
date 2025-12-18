@@ -143,21 +143,23 @@ def _generate_l1(
         folder_partitioning,
     ):
         """Define L1 product processing."""
+        import dask
+
         # Define variables to load
         # - precip_flag used for OceanRain ODM470 data only
         # - Missing variables in dataset are simply not selected
         variables = ["raw_drop_number", "qc_time", "precip_flag", *TEMPERATURE_VARIABLES, *METEOROLOGICAL_VARIABLES]
 
         # Open the L0C netCDF files
-        # with dask.config.set(scheduler="synchronous"):
-        ds = open_netcdf_files(
-            filepaths,
-            start_time=start_time,
-            end_time=end_time,
-            variables=variables,
-            parallel=False,
-            compute=True,
-        )
+        with dask.config.set(scheduler="single-threaded"):  # synchronous
+            ds = open_netcdf_files(
+                filepaths,
+                start_time=start_time,
+                end_time=end_time,
+                variables=variables,
+                parallel=False,
+                compute=True,
+            )
 
         # Define sample interval in seconds
         sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"]).to_numpy().item()

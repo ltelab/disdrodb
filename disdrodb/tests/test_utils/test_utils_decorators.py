@@ -72,8 +72,17 @@ class TestDelayedIfParallel:
         assert computed == (5, False, True), "verbose must be forced to False"
 
 
+@pytest.fixture(autouse=True)
+def reset_dask_scheduler():
+    """Force all tests to run with scheduler=None."""
+    import dask
+
+    with dask.config.set(scheduler=None):
+        yield
+
+
 class TestSingleThreadedIfParallel:
-    def test_runs_normally_when_parallel_false(self):
+    def test_runs_normally_when_parallel_false(self, reset_dask_scheduler):
         """It runs normally if parallel=False."""
 
         @single_threaded_if_parallel
@@ -83,7 +92,7 @@ class TestSingleThreadedIfParallel:
         scheduler = dummy_scheduler_func(parallel=False)
         assert scheduler is None or scheduler in ["threads", "synchronous"]
 
-    def test_runs_with_synchronous_when_parallel_true(self):
+    def test_runs_with_synchronous_when_parallel_true(self, reset_dask_scheduler):
         """It forces scheduler='synchronous' if parallel=True."""
 
         @single_threaded_if_parallel
