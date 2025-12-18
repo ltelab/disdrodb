@@ -61,6 +61,9 @@ def initialize_dask_cluster(minimum_memory=None):
     import psutil
 
     # Silence dask warnings
+    # dask.config.set({'distributed.worker.multiprocessing-method': 'forkserver'})
+    dask.config.set({"distributed.worker.multiprocessing-method": "spawn"})
+
     # dask.config.set({"logging.distributed": "error"})
     # Import dask.distributed after setting the config
     from dask.distributed import Client, LocalCluster

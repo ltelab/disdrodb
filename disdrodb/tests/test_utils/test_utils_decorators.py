@@ -90,7 +90,7 @@ class TestSingleThreadedIfParallel:
             return dask.config.get("scheduler", None)
 
         scheduler = dummy_scheduler_func(parallel=False)
-        assert scheduler is None or scheduler in ["threads", "synchronous"]
+        assert scheduler is None or scheduler in ["threads", "single-threaded", "synchronous"]
 
     def test_runs_with_synchronous_when_parallel_true(self, reset_dask_scheduler):
         """It forces scheduler='synchronous' if parallel=True."""
@@ -100,7 +100,7 @@ class TestSingleThreadedIfParallel:
             return dask.config.get("scheduler", None)
 
         scheduler = dummy_scheduler_func(parallel=True)
-        assert scheduler == "synchronous"
+        assert scheduler == "single-threaded"
 
 
 class TestCheckPytmatrixAvailability:
