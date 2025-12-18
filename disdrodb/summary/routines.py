@@ -3805,7 +3805,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
     # Filter dataset to remove noisy timesteps
     # - Keep only timesteps with at least 3 Nbins to remove noise
     # - Keep only timesteps with sigma_m >= 0.2
-    mask = (ds["Nbins"] >= 3) & (ds["sigma_m"] >= 0.2) & (ds["Nbins_missing_fraction"] <= 0.3)(ds["Dmin"] <= 1)
+    mask = (ds["Nbins"] >= 3) & (ds["sigma_m"] >= 0.2) & (ds["Nbins_missing_fraction"] <= 0.3) & (ds["Dmin"] <= 1)
     valid_idx = np.where(mask)[0]
     ds = ds.isel(time=valid_idx)
 
