@@ -149,7 +149,7 @@ def test_generate_l0b(create_test_config_files):
         "raw_drop_number",
     ]
     assert set(ds.variables) == set(expected_variables)
-    assert set(ds.dims) == {"diameter_bin_center", "time", "velocity_bin_center", "crs"}
+    assert set(ds.dims) == {"diameter_bin_center", "time", "velocity_bin_center"}
 
     # Check that the geolocation coordinates have been properly set
     assert np.allclose(ds["latitude"].to_numpy(), df["latitude"].to_numpy())

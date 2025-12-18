@@ -31,7 +31,7 @@ def check_parallel_validity(parallel):
         return parallel
     if scheduler in ["synchronous", "threads"]:
         return False
-    if scheduler == "distributed":
+    if scheduler in ["distributed", "dask.distributed"]:
         from dask.distributed import default_client
 
         client = default_client()
