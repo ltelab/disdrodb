@@ -9,7 +9,7 @@ dependencies:
   - donfig
   - requests
   - trollsift
-  - netcdf4
+  - netcdf4=1.7.1
   - pyarrow
   - pandas
   - numpy

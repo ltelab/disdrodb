@@ -5,6 +5,9 @@ This module is executed automatically by pytest.
 
 """
 
+import faulthandler
+faulthandler.enable()
+
 import os
 import shutil
 
@@ -13,6 +16,7 @@ import pytest
 from disdrodb import package_dir
 from disdrodb.constants import PRODUCTS_ARGUMENTS
 from disdrodb.utils.yaml import write_yaml
+
 
 
 def create_fake_metadata_directory(metadata_archive_dir, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME"):

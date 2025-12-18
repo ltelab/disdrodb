@@ -341,6 +341,7 @@ def run_l1_station(
     # Generate products for each temporal resolution
     # temporal_resolution = "1MIN"
     # temporal_resolution = "10MIN"
+    # temporal_resolution = "ROLL2MIN"
     for temporal_resolution in l1_processing_options.temporal_resolutions:
         # Print progress message
         msg = f"Production of {product} {temporal_resolution} has started."
