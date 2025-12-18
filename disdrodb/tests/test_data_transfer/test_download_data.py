@@ -21,6 +21,7 @@ import shutil
 import subprocess
 
 import pytest
+import requests
 
 import disdrodb
 from disdrodb.api.path import define_station_dir
@@ -198,7 +199,12 @@ def test_download_station_data(tmp_path):
     )
 
     # Download data
-    download_station_data(metadata_filepath=metadata_filepath, data_archive_dir=data_archive_dir)
+    try:
+        download_station_data(metadata_filepath=metadata_filepath, data_archive_dir=data_archive_dir)
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 429:
+            pytest.skip("Zenodo rate limit reached")
+        raise
 
     # Define expected station directory
     station_dir = define_station_dir(

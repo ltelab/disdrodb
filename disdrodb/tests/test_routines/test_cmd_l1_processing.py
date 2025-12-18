@@ -1,186 +1,186 @@
-# # -----------------------------------------------------------------------------.
-# # Copyright (c) 2021-2026 DISDRODB developers
-# #
-# # This program is free software: you can redistribute it and/or modify
-# # it under the terms of the GNU General Public License as published by
-# # the Free Software Foundation, either version 3 of the License, or
-# # (at your option) any later version.
-# #
-# # This program is distributed in the hope that it will be useful,
-# # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# # GNU General Public License for more details.
-# #
-# # You should have received a copy of the GNU General Public License
-# # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-# # -----------------------------------------------------------------------------.
-# """Test DISDRODB L1 processing commands."""
+# -----------------------------------------------------------------------------.
+# Copyright (c) 2021-2026 DISDRODB developers
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# -----------------------------------------------------------------------------.
+"""Test DISDRODB L1 processing commands."""
 
-# import os
-# import shutil
+import os
+import shutil
 
-# import pytest
-# from click.testing import CliRunner
+import pytest
+from click.testing import CliRunner
 
-# from disdrodb import package_dir
-# from disdrodb.api.path import define_data_dir
-# from disdrodb.cli.disdrodb_run_l1 import disdrodb_run_l1
-# from disdrodb.cli.disdrodb_run_l1_station import disdrodb_run_l1_station
-# from disdrodb.constants import ARCHIVE_VERSION
-# from disdrodb.routines import (
-#     run_l1,
-#     run_l1_station,
-# )
-# from disdrodb.utils.directories import count_files
+from disdrodb import package_dir
+from disdrodb.api.path import define_data_dir
+from disdrodb.cli.disdrodb_run_l1 import disdrodb_run_l1
+from disdrodb.cli.disdrodb_run_l1_station import disdrodb_run_l1_station
+from disdrodb.constants import ARCHIVE_VERSION
+from disdrodb.routines import (
+    run_l1,
+    run_l1_station,
+)
+from disdrodb.utils.directories import count_files
 
-# TEST_DATA_L0C_DIR = os.path.join(package_dir, "tests", "data", "test_data_l0c")
-# DATA_SOURCE = "EPFL"
-# CAMPAIGN_NAME = "HYMEX_LTE_SOP2"
-# STATION_NAME = "10"
-# DEBUGGING_MODE = True
-# VERBOSE = True
-# FORCE = False
-# PARALLEL = False
-
-
-# # from disdrodb.metadata.download import download_metadata_archive
-# # import pathlib
-# # tmp_path = pathlib.Path("/tmp/10")
-# # test_data_archive_dir = os.path.join(tmp_path, "DISDRODB")
-# # dst_dir = os.path.join(test_data_archive_dir, "V0")
-# # shutil.copytree(TEST_DATA_L0C_DIR, dst_dir, dirs_exist_ok=True)
-# # test_metadata_archive_dir = download_metadata_archive(tmp_path / "original_metadata_archive_repo")
-# # os.environ["PYTEST_CURRENT_TEST"] = "1"
+TEST_DATA_L0C_DIR = os.path.join(package_dir, "tests", "data", "test_data_l0c")
+DATA_SOURCE = "EPFL"
+CAMPAIGN_NAME = "HYMEX_LTE_SOP2"
+STATION_NAME = "10"
+DEBUGGING_MODE = True
+VERBOSE = True
+FORCE = False
+PARALLEL = False
 
 
-# @pytest.mark.parametrize("cli", [True, False])
-# @pytest.mark.parametrize("parallel", [True, False])
-# def test_disdrodb_run_l1_station(tmp_path, disdrodb_metadata_archive_dir, parallel, cli):
-#     """Test the disdrodb_run_l1_station command."""
-#     test_data_archive_dir = tmp_path / "data" / "DISDRODB"
-#     test_metadata_archive_dir = disdrodb_metadata_archive_dir  # fixture for the original DISDRODB Archive
-
-#     dst_dir = test_data_archive_dir / ARCHIVE_VERSION
-#     shutil.copytree(TEST_DATA_L0C_DIR, dst_dir)
-
-#     # Produce data
-#     if cli:
-#         runner = CliRunner()
-#         runner.invoke(
-#             disdrodb_run_l1_station,
-#             [
-#                 # Station arguments
-#                 DATA_SOURCE,
-#                 CAMPAIGN_NAME,
-#                 STATION_NAME,
-#                 # DISDRODB root directories
-#                 "--data_archive_dir",
-#                 test_data_archive_dir,
-#                 "--metadata_archive_dir",
-#                 test_metadata_archive_dir,
-#                 # Processing options
-#                 "--parallel",
-#                 parallel,
-#                 "--debugging_mode",
-#                 DEBUGGING_MODE,
-#                 "--verbose",
-#                 VERBOSE,
-#                 "--force",
-#                 FORCE,
-#             ],
-#         )
-#     else:
-#         run_l1_station(
-#             # DISDRODB root directories
-#             data_archive_dir=test_data_archive_dir,
-#             metadata_archive_dir=test_metadata_archive_dir,
-#             # Station arguments
-#             data_source=DATA_SOURCE,
-#             campaign_name=CAMPAIGN_NAME,
-#             station_name=STATION_NAME,
-#             # Processing options
-#             parallel=parallel,
-#             force=FORCE,
-#             verbose=VERBOSE,
-#             debugging_mode=DEBUGGING_MODE,
-#         )
-
-#     # Check products at different temporal resolutions are produced
-#     temporal_resolutions = ["1MIN", "10MIN", "ROLL2MIN"]
-#     for temporal_resolution in temporal_resolutions:
-#         data_dir = define_data_dir(
-#             data_archive_dir=test_data_archive_dir,
-#             product="L1",
-#             data_source=DATA_SOURCE,
-#             campaign_name=CAMPAIGN_NAME,
-#             station_name=STATION_NAME,
-#             temporal_resolution=temporal_resolution,
-#         )
-#         assert count_files(data_dir, glob_pattern=f"L1.{temporal_resolution}.*.nc", recursive=True) == 2
+# from disdrodb.metadata.download import download_metadata_archive
+# import pathlib
+# tmp_path = pathlib.Path("/tmp/10")
+# test_data_archive_dir = os.path.join(tmp_path, "DISDRODB")
+# dst_dir = os.path.join(test_data_archive_dir, "V0")
+# shutil.copytree(TEST_DATA_L0C_DIR, dst_dir, dirs_exist_ok=True)
+# test_metadata_archive_dir = download_metadata_archive(tmp_path / "original_metadata_archive_repo")
+# os.environ["PYTEST_CURRENT_TEST"] = "1"
 
 
-# @pytest.mark.parametrize("cli", [True, False])
-# def test_disdrodb_run_l1(tmp_path, disdrodb_metadata_archive_dir, cli):
-#     """Test the disdrodb_run_l1 command."""
-#     test_data_archive_dir = tmp_path / "data" / "DISDRODB"
-#     test_metadata_archive_dir = disdrodb_metadata_archive_dir  # fixture for the original DISDRODB Archive
-#     dst_dir = test_data_archive_dir / ARCHIVE_VERSION
-#     shutil.copytree(TEST_DATA_L0C_DIR, dst_dir)
+@pytest.mark.parametrize("cli", [True, False])
+@pytest.mark.parametrize("parallel", [True, False])
+def test_disdrodb_run_l1_station(tmp_path, disdrodb_metadata_archive_dir, parallel, cli):
+    """Test the disdrodb_run_l1_station command."""
+    test_data_archive_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_archive_dir = disdrodb_metadata_archive_dir  # fixture for the original DISDRODB Archive
 
-#     # Produce data
-#     if cli:
-#         runner = CliRunner()
-#         runner.invoke(
-#             disdrodb_run_l1,
-#             [
-#                 # DISDRODB root directories
-#                 "--data_archive_dir",
-#                 test_data_archive_dir,
-#                 "--metadata_archive_dir",
-#                 test_metadata_archive_dir,
-#                 # Stations arguments
-#                 "--data_sources",
-#                 DATA_SOURCE,
-#                 "--campaign_names",
-#                 CAMPAIGN_NAME,
-#                 "--station_names",
-#                 STATION_NAME,
-#                 "--verbose",
-#                 # Processing options
-#                 VERBOSE,
-#                 "--parallel",
-#                 PARALLEL,
-#                 "--debugging_mode",
-#                 DEBUGGING_MODE,
-#                 "--force",
-#                 FORCE,
-#             ],
-#         )
-#     else:
-#         run_l1(
-#             # DISDRODB root directories
-#             data_archive_dir=test_data_archive_dir,
-#             metadata_archive_dir=test_metadata_archive_dir,
-#             # Station arguments
-#             data_sources=DATA_SOURCE,
-#             campaign_names=CAMPAIGN_NAME,
-#             station_names=STATION_NAME,
-#             # Processing options
-#             parallel=PARALLEL,
-#             force=FORCE,
-#             verbose=VERBOSE,
-#             debugging_mode=DEBUGGING_MODE,
-#         )
+    dst_dir = test_data_archive_dir / ARCHIVE_VERSION
+    shutil.copytree(TEST_DATA_L0C_DIR, dst_dir)
 
-#     # Check products at different temporal resolutions are produced
-#     temporal_resolutions = ["1MIN", "10MIN", "ROLL2MIN"]
-#     for temporal_resolution in temporal_resolutions:
-#         data_dir = define_data_dir(
-#             data_archive_dir=test_data_archive_dir,
-#             product="L1",
-#             data_source=DATA_SOURCE,
-#             campaign_name=CAMPAIGN_NAME,
-#             station_name=STATION_NAME,
-#             temporal_resolution=temporal_resolution,
-#         )
-#         assert count_files(data_dir, glob_pattern=f"L1.{temporal_resolution}.*.nc", recursive=True) == 2
+    # Produce data
+    if cli:
+        runner = CliRunner()
+        runner.invoke(
+            disdrodb_run_l1_station,
+            [
+                # Station arguments
+                DATA_SOURCE,
+                CAMPAIGN_NAME,
+                STATION_NAME,
+                # DISDRODB root directories
+                "--data_archive_dir",
+                test_data_archive_dir,
+                "--metadata_archive_dir",
+                test_metadata_archive_dir,
+                # Processing options
+                "--parallel",
+                parallel,
+                "--debugging_mode",
+                DEBUGGING_MODE,
+                "--verbose",
+                VERBOSE,
+                "--force",
+                FORCE,
+            ],
+        )
+    else:
+        run_l1_station(
+            # DISDRODB root directories
+            data_archive_dir=test_data_archive_dir,
+            metadata_archive_dir=test_metadata_archive_dir,
+            # Station arguments
+            data_source=DATA_SOURCE,
+            campaign_name=CAMPAIGN_NAME,
+            station_name=STATION_NAME,
+            # Processing options
+            parallel=parallel,
+            force=FORCE,
+            verbose=VERBOSE,
+            debugging_mode=DEBUGGING_MODE,
+        )
+
+    # Check products at different temporal resolutions are produced
+    temporal_resolutions = ["1MIN", "10MIN", "ROLL2MIN"]
+    for temporal_resolution in temporal_resolutions:
+        data_dir = define_data_dir(
+            data_archive_dir=test_data_archive_dir,
+            product="L1",
+            data_source=DATA_SOURCE,
+            campaign_name=CAMPAIGN_NAME,
+            station_name=STATION_NAME,
+            temporal_resolution=temporal_resolution,
+        )
+        assert count_files(data_dir, glob_pattern=f"L1.{temporal_resolution}.*.nc", recursive=True) == 2
+
+
+@pytest.mark.parametrize("cli", [True, False])
+def test_disdrodb_run_l1(tmp_path, disdrodb_metadata_archive_dir, cli):
+    """Test the disdrodb_run_l1 command."""
+    test_data_archive_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_archive_dir = disdrodb_metadata_archive_dir  # fixture for the original DISDRODB Archive
+    dst_dir = test_data_archive_dir / ARCHIVE_VERSION
+    shutil.copytree(TEST_DATA_L0C_DIR, dst_dir)
+
+    # Produce data
+    if cli:
+        runner = CliRunner()
+        runner.invoke(
+            disdrodb_run_l1,
+            [
+                # DISDRODB root directories
+                "--data_archive_dir",
+                test_data_archive_dir,
+                "--metadata_archive_dir",
+                test_metadata_archive_dir,
+                # Stations arguments
+                "--data_sources",
+                DATA_SOURCE,
+                "--campaign_names",
+                CAMPAIGN_NAME,
+                "--station_names",
+                STATION_NAME,
+                "--verbose",
+                # Processing options
+                VERBOSE,
+                "--parallel",
+                PARALLEL,
+                "--debugging_mode",
+                DEBUGGING_MODE,
+                "--force",
+                FORCE,
+            ],
+        )
+    else:
+        run_l1(
+            # DISDRODB root directories
+            data_archive_dir=test_data_archive_dir,
+            metadata_archive_dir=test_metadata_archive_dir,
+            # Station arguments
+            data_sources=DATA_SOURCE,
+            campaign_names=CAMPAIGN_NAME,
+            station_names=STATION_NAME,
+            # Processing options
+            parallel=PARALLEL,
+            force=FORCE,
+            verbose=VERBOSE,
+            debugging_mode=DEBUGGING_MODE,
+        )
+
+    # Check products at different temporal resolutions are produced
+    temporal_resolutions = ["1MIN", "10MIN", "ROLL2MIN"]
+    for temporal_resolution in temporal_resolutions:
+        data_dir = define_data_dir(
+            data_archive_dir=test_data_archive_dir,
+            product="L1",
+            data_source=DATA_SOURCE,
+            campaign_name=CAMPAIGN_NAME,
+            station_name=STATION_NAME,
+            temporal_resolution=temporal_resolution,
+        )
+        assert count_files(data_dir, glob_pattern=f"L1.{temporal_resolution}.*.nc", recursive=True) == 2
