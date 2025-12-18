@@ -545,7 +545,7 @@ class TestCheckValidFields:
             # all invalid, results in empty list -> error
             check_valid_fields("x", ["a"], "field", invalid_fields_policy="ignore")
 
-    def test_only_invalid_fields_raise_error(self):
+    def test_only_invalid_fields_raise_error(self, recwarn):
         """Test that presence of only invalid fields trigger an error under 'warn' policy."""
         fields = ["x", "y"]
         available_fields = ["a"]
@@ -558,6 +558,11 @@ class TestCheckValidFields:
                 field_name=field_name,
                 invalid_fields_policy="warn",
             )
+        # Assert exactly one warning was raised
+        assert len(recwarn) == 1
+        warning = recwarn[0]
+        assert issubclass(warning.category, UserWarning)
+        assert "Ignoring invalid field: ['x', 'y']" in str(warning.message)
 
         with pytest.raises(ValueError):
             check_valid_fields(

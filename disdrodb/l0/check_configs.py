@@ -197,16 +197,15 @@ class L0BEncodingSchema(CustomBaseModel):
         return values
 
     @model_validator(mode="after")
-    def remove_offset_and_scale_if_not_int(cls, values):
+    def remove_offset_and_scale_if_not_int(self):
         """Ensure add_offset and scale_factor only apply to integer/uint dtypes."""
-        integer_types = ["int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"]
+        integer_types = {"int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"}
 
-        if values.dtype not in integer_types:
-            # drop those keys to keep model clean
-            values.add_offset = None
-            values.scale_factor = None
+        if self.dtype not in integer_types:
+            self.add_offset = None
+            self.scale_factor = None
 
-        return values
+        return self
 
 
 def check_l0b_encoding(sensor_name: str) -> None:

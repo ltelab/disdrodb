@@ -16,9 +16,9 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB netCDF4 attributes utilities."""
 
-import datetime
 import os
 
+from disdrodb.api.checks import get_current_utc_time
 from disdrodb.constants import ARCHIVE_VERSION, CONVENTIONS, COORDINATES, SOFTWARE_VERSION
 from disdrodb.utils.yaml import read_yaml
 
@@ -105,7 +105,7 @@ def update_disdrodb_attrs(ds, product: str):
     # ----------------------------------------------
     # Set DISDRODDB attributes
     # - Add DISDRODB processing info
-    now = datetime.datetime.utcnow()
+    now = get_current_utc_time()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
     attrs["disdrodb_processing_date"] = current_time
     # - Add DISDRODB product and version

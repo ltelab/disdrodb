@@ -78,7 +78,7 @@ class TestSingleThreadedIfParallel:
 
         @single_threaded_if_parallel
         def dummy_scheduler_func(parallel=False):
-            return dask.config.get("scheduler")
+            return dask.config.get("scheduler", None)
 
         scheduler = dummy_scheduler_func(parallel=False)
         assert scheduler is None or scheduler in ["threads", "synchronous"]
@@ -88,7 +88,7 @@ class TestSingleThreadedIfParallel:
 
         @single_threaded_if_parallel
         def dummy_scheduler_func(parallel=False):
-            return dask.config.get("scheduler")
+            return dask.config.get("scheduler", None)
 
         scheduler = dummy_scheduler_func(parallel=True)
         assert scheduler == "synchronous"
