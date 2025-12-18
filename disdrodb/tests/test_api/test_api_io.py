@@ -17,12 +17,15 @@
 """Test DISDRODB Input/Output Function."""
 
 import datetime
+import datetime as dt
 import os
 import shutil
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 import pytest
 import xarray as xr
 
@@ -39,6 +42,7 @@ from disdrodb.api.io import (
     open_metadata_archive,
     open_metadata_directory,
     open_netcdf_files,
+    open_parquet_files,
     open_product_directory,
     open_readers_directory,
     remove_product,
@@ -700,6 +704,132 @@ def test_subset_variables_keeps_coordinates(tmp_path):
 
     # Dimension variables kept
     assert set(expected_coords) == set(ds_sub.coords) - set(ds_sub.dims)
+
+
+class TestOpenParquetFiles:
+    """Integration-style tests for open_parquet_files using real Parquet files."""
+
+    def test_read_without_filters_returns_all_rows(self, tmp_path):
+        """Returns all rows when no time filters are specified."""
+        df = pd.DataFrame(
+            {
+                "time": pd.date_range("2023-01-01", periods=5, freq="D"),
+                "value": range(5),
+            },
+        )
+        file_path = tmp_path / "data.parquet"
+        table = pa.Table.from_pandas(df)
+        pq.write_table(table, file_path)
+
+        result = open_parquet_files([file_path])
+
+        pd.testing.assert_frame_equal(
+            result.sort_values("time").reset_index(drop=True),
+            df,
+        )
+
+    def test_start_time_filter_excludes_earlier_rows(self, tmp_path):
+        """Filters out rows earlier than the specified start_time."""
+        df = pd.DataFrame(
+            {
+                "time": pd.date_range("2023-01-01", periods=5, freq="D"),
+                "value": range(5),
+            },
+        )
+        file_path = tmp_path / "data.parquet"
+        table = pa.Table.from_pandas(df)
+        pq.write_table(table, file_path)
+
+        result = open_parquet_files(
+            [file_path],
+            start_time=dt.datetime(2023, 1, 3),
+        )
+
+        assert result["time"].min() >= dt.datetime(2023, 1, 3)
+        assert len(result) == 3
+
+    def test_end_time_filter_excludes_later_rows(self, tmp_path):
+        """Filters out rows later than the specified end_time."""
+        df = pd.DataFrame(
+            {
+                "time": pd.date_range("2023-01-01", periods=5, freq="D"),
+                "value": range(5),
+            },
+        )
+        file_path = tmp_path / "data.parquet"
+        table = pa.Table.from_pandas(df)
+        pq.write_table(table, file_path)
+
+        result = open_parquet_files(
+            [file_path],
+            end_time=dt.datetime(2023, 1, 3),
+        )
+
+        assert result["time"].max() <= dt.datetime(2023, 1, 3)
+        assert len(result) == 3
+
+    def test_combined_start_and_end_time_filters(self, tmp_path):
+        """Applies both start_time and end_time filters together."""
+        df = pd.DataFrame(
+            {
+                "time": pd.date_range("2023-01-01", periods=7, freq="D"),
+                "value": range(7),
+            },
+        )
+        file_path = tmp_path / "data.parquet"
+        table = pa.Table.from_pandas(df)
+        pq.write_table(table, file_path)
+
+        result = open_parquet_files(
+            [file_path],
+            start_time=dt.datetime(2023, 1, 3),
+            end_time=dt.datetime(2023, 1, 5),
+        )
+
+        expected_times = pd.date_range("2023-01-03", "2023-01-05", freq="D")
+        assert list(result["time"]) == list(expected_times)
+
+    def test_string_time_arguments_are_converted_and_applied(self, tmp_path):
+        """Accepts string time arguments and correctly applies filtering."""
+        df = pd.DataFrame(
+            {
+                "time": pd.date_range("2023-01-01", periods=5, freq="D"),
+                "value": range(5),
+            },
+        )
+        file_path = tmp_path / "data.parquet"
+        table = pa.Table.from_pandas(df)
+        pq.write_table(table, file_path)
+
+        result = open_parquet_files(
+            [file_path],
+            start_time="2023-01-02",
+            end_time="2023-01-04",
+        )
+
+        expected_times = pd.date_range("2023-01-02", "2023-01-04", freq="D")
+        assert list(result["time"]) == list(expected_times)
+
+    def test_variable_selection_limits_columns(self, tmp_path):
+        """Reads only the specified variables from the Parquet file."""
+        df = pd.DataFrame(
+            {
+                "time": pd.date_range("2023-01-01", periods=3, freq="D"),
+                "value": [10, 20, 30],
+                "extra": [1, 1, 1],
+            },
+        )
+        file_path = tmp_path / "data.parquet"
+        table = pa.Table.from_pandas(df)
+        pq.write_table(table, file_path)
+
+        result = open_parquet_files(
+            [file_path],
+            variables=["time", "value"],
+        )
+
+        assert list(result.columns) == ["time", "value"]
+        assert "extra" not in result.columns
 
 
 class TestRemoveProduct:

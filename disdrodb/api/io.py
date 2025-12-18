@@ -17,6 +17,7 @@
 """Routines to list and open DISDRODB products."""
 
 import datetime
+import functools
 import os
 import subprocess
 import sys
@@ -398,6 +399,41 @@ def open_parquet_files(
     return df
 
 
+def ensure_safe_open_mfdataset(function):
+    """Decorator to ensure safe xarray open_mfdataset.
+
+    parallel argument is changed to False if:
+    - dask threading or single-threaded is active
+    - distributed multiprocessing with more than 1 thread per process
+
+    parallel argument is allowed to be True only if:
+    - distributed multiprocessing with only 1 thread per process
+    """
+    import dask
+
+    from disdrodb.utils.dask import check_parallel_validity
+
+    @functools.wraps(function)
+    def wrapper(*args, **kwargs):
+        # Check if it must be a delayed function
+        parallel = kwargs.get("parallel", False)
+        parallel = check_parallel_validity(parallel)
+        kwargs["parallel"] = parallel
+
+        # If parallel is True at this stage, means being using
+        # multiprocessing or dask.distributed with single thread
+        if parallel:
+            return function(*args, **kwargs)
+
+        # Call function with single threading
+        with dask.config.set(scheduler="single-threaded"):  # "synchronous"
+            result = function(*args, **kwargs)
+        return result
+
+    return wrapper
+
+
+@ensure_safe_open_mfdataset
 def open_netcdf_files(
     filepaths,
     chunks=-1,
