@@ -53,23 +53,23 @@ number_particles_min_diameter_internal_data: "float32"
 number_particles_no_hydrometeor: "float32" # 'uint16'
 number_particles_no_hydrometeor_internal_data: "float32"
 number_particles_unknown_classification: "float32" # 'uint16'
-number_particles_unknown_classification_internal_data: "float32"
-number_particles_class_1: "float32" #  'uint16'
-number_particles_class_1_internal_data: "float32"
-number_particles_class_2: "float32" # 'uint16'
-number_particles_class_2_internal_data: "float32"
-number_particles_class_3: "float32" # 'uint16'
-number_particles_class_3_internal_data: "float32"
-number_particles_class_4: "float32" # 'uint16'
-number_particles_class_4_internal_data: "float32"
-number_particles_class_5: "float32" # 'uint16'
-number_particles_class_5_internal_data: "float32"
-number_particles_class_6: "float32" # 'uint16'
-number_particles_class_6_internal_data: "float32"
-number_particles_class_7: "float32" # 'uint16'
-number_particles_class_7_internal_data: "float32"
-number_particles_class_8: "float32" # 'uint16'
-number_particles_class_8_internal_data: "float32"
+total_gross_volume_unknown_classification: "float32"
+number_particles_hail: "float32" #  'uint16'
+total_gross_volume_hail: "float32"
+number_particles_solid_precipitation: "float32" # 'uint16'
+total_gross_volume_solid_precipitation: "float32"
+number_particles_large_pellet: "float32" # 'uint16'
+total_gross_volume_large_pellet: "float32"
+number_particles_small_pellet: "float32" # 'uint16'
+total_gross_volume_small_pellet: "float32"
+number_particles_snowgrain: "float32" # 'uint16'
+total_gross_volume_snowgrain: "float32"
+number_particles_rain: "float32" # 'uint16'
+total_gross_volume_rain: "float32"
+number_particles_small_rain: "float32" # 'uint16'
+total_gross_volume_small_rain: "float32"
+number_particles_drizzle: "float32" # 'uint16'
+total_gross_volume_drizzle: "float32"
 number_particles_class_9: "float32" # 'uint16'
 number_particles_class_9_internal_data: "float32"
 raw_drop_number: "str"

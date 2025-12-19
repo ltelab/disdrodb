@@ -300,7 +300,7 @@ total_gross_volume_solid_precipitation:
     - 99999.999
   nan_flags: null
   field_number: "31"
-number_particles_great_pellet:
+number_particles_large_pellet:
   n_digits: 5
   n_characters: 5
   n_decimals: 5
@@ -310,7 +310,7 @@ number_particles_great_pellet:
     - 99999
   nan_flags: null
   field_number: "32"
-total_gross_volume_great_pellet:
+total_gross_volume_large_pellet:
   n_digits: 8
   n_characters: 9
   n_decimals: 5

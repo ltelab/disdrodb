@@ -626,7 +626,7 @@ number_particles_unknown_classification:
     - 99999
   nan_flags: null
   field_number: "61"
-number_particles_unknown_classification_internal_data:
+total_gross_volume_unknown_classification:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
@@ -636,7 +636,7 @@ number_particles_unknown_classification_internal_data:
     - 99999.999
   nan_flags: null
   field_number: "62"
-number_particles_class_1:
+number_particles_hail:
   n_digits: 5
   n_characters: 5
   n_decimals: 5
@@ -646,7 +646,7 @@ number_particles_class_1:
     - 99999
   nan_flags: null
   field_number: "63"
-number_particles_class_1_internal_data:
+total_gross_volume_hail:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
@@ -656,7 +656,7 @@ number_particles_class_1_internal_data:
     - 99999.999
   nan_flags: null
   field_number: "64"
-number_particles_class_2:
+number_particles_solid_precipitation:
   n_digits: 5
   n_characters: 5
   n_decimals: 5
@@ -666,7 +666,7 @@ number_particles_class_2:
     - 99999
   nan_flags: null
   field_number: "65"
-number_particles_class_2_internal_data:
+total_gross_volume_solid_precipitation:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
@@ -676,7 +676,7 @@ number_particles_class_2_internal_data:
     - 99999.999
   nan_flags: null
   field_number: "66"
-number_particles_class_3:
+number_particles_large_pellet:
   n_digits: 5
   n_characters: 5
   n_decimals: 5
@@ -686,7 +686,7 @@ number_particles_class_3:
     - 99999
   nan_flags: null
   field_number: "67"
-number_particles_class_3_internal_data:
+total_gross_volume_large_pellet:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
@@ -696,7 +696,7 @@ number_particles_class_3_internal_data:
     - 99999.999
   nan_flags: null
   field_number: "68"
-number_particles_class_4:
+number_particles_small_pellet:
   n_digits: 5
   n_characters: 5
   n_decimals: 5
@@ -706,7 +706,7 @@ number_particles_class_4:
     - 99999
   nan_flags: null
   field_number: "69"
-number_particles_class_4_internal_data:
+total_gross_volume_small_pellet:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
@@ -716,7 +716,7 @@ number_particles_class_4_internal_data:
     - 99999.999
   nan_flags: null
   field_number: "70"
-number_particles_class_5:
+number_particles_snowgrain:
   n_digits: 5
   n_characters: 5
   n_decimals: 5
@@ -726,7 +726,7 @@ number_particles_class_5:
     - 99999
   nan_flags: null
   field_number: "71"
-number_particles_class_5_internal_data:
+total_gross_volume_snowgrain:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
@@ -736,7 +736,7 @@ number_particles_class_5_internal_data:
     - 99999.999
   nan_flags: null
   field_number: "72"
-number_particles_class_6:
+number_particles_rain:
   n_digits: 5
   n_characters: 5
   n_decimals: 5
@@ -746,7 +746,7 @@ number_particles_class_6:
     - 99999
   nan_flags: null
   field_number: "73"
-number_particles_class_6_internal_data:
+total_gross_volume_rain:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
@@ -756,7 +756,7 @@ number_particles_class_6_internal_data:
     - 99999.999
   nan_flags: null
   field_number: "74"
-number_particles_class_7:
+number_particles_small_rain:
   n_digits: 5
   n_characters: 5
   n_decimals: 5
@@ -766,7 +766,7 @@ number_particles_class_7:
     - 99999
   nan_flags: null
   field_number: "75"
-number_particles_class_7_internal_data:
+total_gross_volume_small_rain:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
@@ -776,7 +776,7 @@ number_particles_class_7_internal_data:
     - 99999.999
   nan_flags: null
   field_number: "76"
-number_particles_class_8:
+number_particles_drizzle:
   n_digits: 5
   n_characters: 5
   n_decimals: 5
@@ -786,7 +786,7 @@ number_particles_class_8:
     - 99999
   nan_flags: null
   field_number: "77"
-number_particles_class_8_internal_data:
+total_gross_volume_drizzle:
   n_digits: 8
   n_characters: 9
   n_decimals: 5

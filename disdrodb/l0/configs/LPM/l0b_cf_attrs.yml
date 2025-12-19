@@ -224,81 +224,81 @@ number_particles_unknown_classification:
   description: Number of particles with unknown classification
   long_name: Number of particles with unknown classification
   units: ""
-number_particles_unknown_classification_internal_data:
-  description: Total volume (gross) of this class
-  long_name: Number of particles with unknown classification internal data
+total_gross_volume_unknown_classification:
+  description: Total (gross) volume of particles classified as unknown
+  long_name: Total (gross) volume of particles classified as unknown
   units: ""
-number_particles_class_1:
-  description: Number of particles class 1
-  long_name: Number of particles class 1
+number_particles_hail:
+  description: Number of particles classified as hail
+  long_name: Number of particles classified as hail
   units: ""
-number_particles_class_1_internal_data:
-  description: Total volume (gross) of class 1
-  long_name: Total volume of class 1
+total_gross_volume_hail:
+  description: Total (gross) volume of particles classified as hail
+  long_name: Total (gross) volume of particles classified as hail
   units: ""
-number_particles_class_2:
-  description: Number of particles class 2
-  long_name: Number of particles class 2
+number_particles_solid_precipitation:
+  description: Number of particles classified as solid precipitation
+  long_name: Number of particles classified as solid precipitation
   units: ""
-number_particles_class_2_internal_data:
-  description: Total volume (gross) of class 2
-  long_name: Total volume of class 2
+total_gross_volume_solid_precipitation:
+  description: Total (gross) volume of particles classified as solid precipitation
+  long_name: Total (gross) volume of particles classified as solid precipitation
   units: ""
-number_particles_class_3:
-  description: Number of particles class 3
-  long_name: Number of particles class 3
+number_particles_large_pellet:
+  description: Number of particles classified as great pellet
+  long_name: Number of particles classified as great pellet
   units: ""
-number_particles_class_3_internal_data:
-  description: Total volume (gross) of class 3
-  long_name: Total volume of class 3
+total_gross_volume_large_pellet:
+  description: Total (gross) volume of particles classified as great pellet
+  long_name: Total (gross) volume of particles classified as great pellet
   units: ""
-number_particles_class_4:
-  description: Number of particles class 4
-  long_name: Number of particles class 4
+number_particles_small_pellet:
+  description: Number of particles classified as small pellet
+  long_name: Number of particles classified as small pellet
   units: ""
-number_particles_class_4_internal_data:
-  description: Total volume (gross) of class 4
-  long_name: Total volume of class 4
+total_gross_volume_small_pellet:
+  description: Total (gross) volume of particles classified as small pellet
+  long_name: Total (gross) volume of particles classified as small pellet
   units: ""
-number_particles_class_5:
-  description: Number of particles class 5
-  long_name: Number of particles class 5
+number_particles_snowgrain:
+  description: Number of particles classified as snowgrain
+  long_name: Number of particles classified as snowgrain
   units: ""
-number_particles_class_5_internal_data:
-  description: Total volume (gross) of class 5
-  long_name: Total volume of class 5
+total_gross_volume_snowgrain:
+  description: Total (gross) volume of particles classified as snowgrain
+  long_name: Total (gross) volume of particles classified as snowgrain
   units: ""
-number_particles_class_6:
-  description: Number of particles class 6
-  long_name: Number of particles class 6
+number_particles_rain:
+  description: Number of particles classified as rain
+  long_name: Number of particles classified as rain
   units: ""
-number_particles_class_6_internal_data:
-  description: Total volume (gross) of class 6
-  long_name: Total volume of class 6
+total_gross_volume_rain:
+  description: Total (gross) volume of particles classified as rain
+  long_name: Total (gross) volume of particles classified as rain
   units: ""
-number_particles_class_7:
-  description: Number of particles class 7
-  long_name: Number of particles class 7
+number_particles_small_rain:
+  description: Number of particles classified as small rain
+  long_name: Number of particles classified as small rain
   units: ""
-number_particles_class_7_internal_data:
-  description: Total volume (gross) of class 7
-  long_name: Total volume of class 7
+total_gross_volume_small_rain:
+  description: Total (gross) volume of particles classified as small rain
+  long_name: Total (gross) volume of particles classified as small rain
   units: ""
-number_particles_class_8:
-  description: Number of particles class 8
-  long_name: Number of particles class 8
+number_particles_drizzle:
+  description: Number of particles classified as drizzle
+  long_name: Number of particles classified as drizzle
   units: ""
-number_particles_class_8_internal_data:
-  description: Total volume (gross) of class 8
-  long_name: Total volume of class 8
+total_gross_volume_drizzle:
+  description: Total (gross) volume of particles classified as drizzle
+  long_name: Total (gross) volume of particles classified as drizzle
   units: ""
 number_particles_class_9:
-  description: Number of particles class 9
-  long_name: Number of particles class 9
+  description: Number of particles for reserved class 9
+  long_name: Number of particles for reserved class 9
   units: ""
 number_particles_class_9_internal_data:
-  description: Total volume (gross) of class 9
-  long_name: Total volume of class 9
+  description: Total volume (gross) for reserved class 9
+  long_name: Total volume of reserved class 9
   units: ""
 raw_drop_number:
   description: Precipitation spectrum

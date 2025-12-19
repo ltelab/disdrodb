@@ -110,11 +110,11 @@ total_gross_volume_solid_precipitation:
   description: Total (gross) volume of particles classified as solid precipitation
   long_name: Total (gross) volume of particles classified as solid precipitation
   units: ""
-number_particles_great_pellet:
+number_particles_large_pellet:
   description: Number of particles classified as great pellet
   long_name: Number of particles classified as great pellet
   units: ""
-total_gross_volume_great_pellet:
+total_gross_volume_large_pellet:
   description: Total (gross) volume of particles classified as great pellet
   long_name: Total (gross) volume of particles classified as great pellet
   units: ""

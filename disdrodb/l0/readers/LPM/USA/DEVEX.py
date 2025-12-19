@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for DEVEX LPM sensors."""
+
 import numpy as np
 import pandas as pd
 
@@ -156,23 +157,23 @@ def read_txt_file(
         "number_particles_no_hydrometeor",
         "number_particles_no_hydrometeor_internal_data",
         "number_particles_unknown_classification",
-        "number_particles_unknown_classification_internal_data",
-        "number_particles_class_1",
-        "number_particles_class_1_internal_data",
-        "number_particles_class_2",
-        "number_particles_class_2_internal_data",
-        "number_particles_class_3",
-        "number_particles_class_3_internal_data",
-        "number_particles_class_4",
-        "number_particles_class_4_internal_data",
-        "number_particles_class_5",
-        "number_particles_class_5_internal_data",
-        "number_particles_class_6",
-        "number_particles_class_6_internal_data",
-        "number_particles_class_7",
-        "number_particles_class_7_internal_data",
-        "number_particles_class_8",
-        "number_particles_class_8_internal_data",
+        "total_gross_volume_unknown_classification",
+        "number_particles_hail",
+        "total_gross_volume_hail",
+        "number_particles_solid_precipitation",
+        "total_gross_volume_solid_precipitation",
+        "number_particles_large_pellet",
+        "total_gross_volume_large_pellet",
+        "number_particles_small_pellet",
+        "total_gross_volume_small_pellet",
+        "number_particles_snowgrain",
+        "total_gross_volume_snowgrain",
+        "number_particles_rain",
+        "total_gross_volume_rain",
+        "number_particles_small_rain",
+        "total_gross_volume_small_rain",
+        "number_particles_drizzle",
+        "total_gross_volume_drizzle",
         "number_particles_class_9",
         "number_particles_class_9_internal_data",
         "raw_drop_number",
@@ -181,7 +182,7 @@ def read_txt_file(
 
     # Remove checksum from raw_drop_number
     df["raw_drop_number"] = df["raw_drop_number"].str.rsplit(";", n=2, expand=True)[0]
-    
+
     # Infer and define "time" column
     start_time_str = filename.split(".")[0]  # '2024020200.txt'
     start_time = pd.to_datetime(start_time_str, format="%Y%m%d%H")
@@ -201,7 +202,7 @@ def read_txt_file(
     # - Keep rows where time increment is between 00 and 59 minutes
     valid_rows = dt <= np.timedelta64(3540, "s")
     df = df[valid_rows]
-    
+
     # Drop row if start_identifier different than 00
     # df = df[df["start_identifier"].astype(str) == "00"]
 
