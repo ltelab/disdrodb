@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Script to run the DISDRODB L0B station processing."""
+
 import sys
-from typing import Optional
 
 import click
 
@@ -53,8 +53,8 @@ def disdrodb_run_l0b_station(
     debugging_mode: bool = False,
     remove_l0a: bool = False,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Run the DISDRODB L0B processing  chain for a specific DISDRODB station.
 

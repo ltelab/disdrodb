@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Utilities for Dask Distributed Computations."""
+
 import logging
 import os
 
@@ -28,9 +29,9 @@ def check_parallel_validity(parallel):
     scheduler = dask.config.get("scheduler", None)
     if scheduler is None:
         return parallel
-    if scheduler in ["synchronous", "threads"]:
+    if scheduler in ["synchronous", "threads", "single-threaded"]:
         return False
-    if scheduler == "distributed":
+    if scheduler in ["distributed", "dask.distributed"]:
         from dask.distributed import default_client
 
         client = default_client()
@@ -60,6 +61,8 @@ def initialize_dask_cluster(minimum_memory=None):
     import psutil
 
     # Silence dask warnings
+    # dask.config.set({'distributed.worker.multiprocessing-method': 'forkserver'})
+    # dask.config.set({"distributed.worker.multiprocessing-method": "spawn"})
     # dask.config.set({"logging.distributed": "error"})
     # Import dask.distributed after setting the config
     from dask.distributed import Client, LocalCluster

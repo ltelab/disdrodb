@@ -15,10 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """This module contains utilities related to the processing of temporal dataset."""
+
 import logging
 import numbers
 import re
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -233,7 +233,7 @@ def regularize_dataset(
     xr_obj,
     freq: str,
     time_dim: str = "time",
-    method: Optional[str] = None,
+    method: str | None = None,
     fill_value=None,
     start_time=None,
     end_time=None,
@@ -484,6 +484,7 @@ def infer_sample_interval(ds, robust=False, verbose=False, logger=None):
             unexpected_intervals,
             unexpected_intervals_counts,
             unexpected_intervals_fractions,
+            strict=True,
         ):
             msg = f"--> Interval: {interval} seconds, Occurrence: {count}, Frequency: {fraction} %"
             log_info(logger=logger, msg=msg, verbose=verbose)

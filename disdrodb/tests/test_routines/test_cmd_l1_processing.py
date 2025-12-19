@@ -42,7 +42,6 @@ VERBOSE = True
 FORCE = False
 PARALLEL = False
 
-
 # from disdrodb.metadata.download import download_metadata_archive
 # import pathlib
 # tmp_path = pathlib.Path("/tmp/10")

@@ -17,7 +17,6 @@
 """Routine to open the DISDRODB Metadata Data Archive."""
 
 import sys
-from typing import Optional
 
 import click
 
@@ -32,7 +31,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 @click_metadata_archive_dir_option
 def disdrodb_open_metadata_archive(
-    metadata_archive_dir: Optional[str] = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Open the DISDRODB Metadata Archive directory in the system file explorer.
 

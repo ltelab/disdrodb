@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB path."""
+
 import datetime
 import os
 
@@ -932,6 +933,7 @@ def test_define_l0c_filename():
         ds=ds,
         campaign_name=campaign_name,
         station_name=station_name,
+        sample_interval=sample_interval,
     )
     assert fn == f"L0C.1MIN.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"
 

@@ -357,7 +357,7 @@ def select_only_valid_rows(df, expected_n_values, logger, filepath):
     unique_values, counts = np.unique(n_values_per_row, return_counts=True)
 
     # Determine the valid number of values
-    valid_counts = [(val, count) for val, count in zip(unique_values, counts) if val in expected_n_values]
+    valid_counts = [(val, count) for val, count in zip(unique_values, counts, strict=True) if val in expected_n_values]
     if not valid_counts:
         raise ValueError(
             f"{filepath} has no rows with expected number of values: {expected_n_values}."

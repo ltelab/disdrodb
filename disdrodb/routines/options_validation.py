@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 from pydantic import Field, field_validator, model_validator
 
@@ -239,7 +239,7 @@ class ArchiveOptions(CustomBaseModel):
     """Archive options configuration."""
 
     strategy: Literal["time_block", "event"] = Field(..., description="Archiving strategy")
-    strategy_options: Union[TimeBlockStrategyOptions, EventStrategyOptions] = Field(
+    strategy_options: TimeBlockStrategyOptions | EventStrategyOptions = Field(
         ...,
         description="Strategy-specific options",
     )
@@ -284,35 +284,35 @@ class ArchiveOptionsTimeBlock(ArchiveOptions):
 class RadarOptions(CustomBaseModel):
     """Radar simulation options."""
 
-    frequency: Union[str, int, float, list[Union[str, int, float]]] = Field(
+    frequency: str | int | float | list[str | int | float] = Field(
         ...,
         description="Radar frequency bands or numeric frequency values (in GHz)",
     )
-    num_points: Union[int, float, list[Union[int, float]]] = Field(
+    num_points: int | float | list[int | float] = Field(
         ...,
         description="Number of points for T-matrix simulation",
     )
-    diameter_max: Union[int, float, list[Union[int, float]]] = Field(
+    diameter_max: int | float | list[int | float] = Field(
         ...,
         description="Maximum diameter for T-matrix simulation",
     )
-    canting_angle_std: Union[int, float, list[Union[int, float]]] = Field(
+    canting_angle_std: int | float | list[int | float] = Field(
         ...,
         description="Canting angle standard deviation",
     )
-    axis_ratio_model: Union[str, list[str]] = Field(
+    axis_ratio_model: str | list[str] = Field(
         ...,
         description="Axis ratio model",
     )
-    permittivity_model: Union[str, list[str]] = Field(
+    permittivity_model: str | list[str] = Field(
         ...,
         description="Permittivity model",
     )
-    water_temperature: Union[int, float, list[Union[int, float]]] = Field(
+    water_temperature: int | float | list[int | float] = Field(
         ...,
         description="Water temperature in Celsius",
     )
-    elevation_angle: Union[int, float, list[Union[int, float]]] = Field(
+    elevation_angle: int | float | list[int | float] = Field(
         ...,
         description="Elevation angle in degrees",
     )
@@ -372,9 +372,9 @@ class L2EProductOptions(CustomBaseModel):
     minimum_velocity: float = Field(..., ge=0, description="Minimum velocity threshold")
     maximum_velocity: float = Field(..., gt=0, description="Maximum velocity threshold")
     keep_mixed_precipitation: bool = Field(..., description="Whether to keep mixed precipitation")
-    above_velocity_fraction: Union[float, None] = Field(..., ge=0, le=1, description="Above velocity fraction")
+    above_velocity_fraction: float | None = Field(..., ge=0, le=1, description="Above velocity fraction")
     above_velocity_tolerance: float = Field(..., ge=0, description="Above velocity tolerance")
-    below_velocity_fraction: Union[float, None] = Field(..., ge=0, le=1, description="Below velocity fraction")
+    below_velocity_fraction: float | None = Field(..., ge=0, le=1, description="Below velocity fraction")
     below_velocity_tolerance: float = Field(..., ge=0, description="Below velocity tolerance")
     maintain_drops_smaller_than: float = Field(..., ge=0, description="Maintain drops smaller than threshold")
     maintain_drops_slower_than: float = Field(..., ge=0, description="Maintain drops slower than threshold")

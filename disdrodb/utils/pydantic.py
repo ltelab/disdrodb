@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Definition of pydantic validation custom class."""
+
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 

@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Functions to process DISDRODB L0B files into DISDRODB L0C netCDF files."""
+
 import logging
 
 import numpy as np
@@ -50,7 +51,7 @@ def drop_timesteps_with_invalid_sample_interval(ds, measurement_intervals, verbo
         # Log information for each invalid timestep
         invalid_timesteps = pd.to_datetime(timesteps[indices_invalid_sample_interval]).strftime("%Y-%m-%d %H:%M:%S")
         invalid_sample_intervals = sample_interval[indices_invalid_sample_interval]
-        for tt, ss in zip(invalid_timesteps, invalid_sample_intervals):
+        for tt, ss in zip(invalid_timesteps, invalid_sample_intervals, strict=True):
             msg = f"Unexpected sampling interval ({ss} s) at {tt}. The measurement has been dropped."
             log_warning(logger=logger, msg=msg, verbose=verbose)
         # Remove timesteps with invalid sample intervals

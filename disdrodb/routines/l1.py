@@ -20,7 +20,6 @@ import datetime
 import logging
 import os
 import time
-from typing import Optional
 
 import pandas as pd
 
@@ -144,18 +143,23 @@ def _generate_l1(
         folder_partitioning,
     ):
         """Define L1 product processing."""
-        # Open the L0C netCDF files
+        import dask
+
+        # Define variables to load
         # - precip_flag used for OceanRain ODM470 data only
         # - Missing variables in dataset are simply not selected
         variables = ["raw_drop_number", "qc_time", "precip_flag", *TEMPERATURE_VARIABLES, *METEOROLOGICAL_VARIABLES]
-        ds = open_netcdf_files(
-            filepaths,
-            start_time=start_time,
-            end_time=end_time,
-            variables=variables,
-            parallel=False,
-            compute=True,
-        )
+
+        # Open the L0C netCDF files
+        with dask.config.set(scheduler="single-threaded"):  # synchronous
+            ds = open_netcdf_files(
+                filepaths,
+                start_time=start_time,
+                end_time=end_time,
+                variables=variables,
+                parallel=False,
+                compute=True,
+            )
 
         # Define sample interval in seconds
         sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"]).to_numpy().item()
@@ -234,8 +238,8 @@ def run_l1_station(
     parallel: bool = True,
     debugging_mode: bool = False,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """
     Run the L1 processing of a specific DISDRODB station when invoked from the terminal.
@@ -337,6 +341,7 @@ def run_l1_station(
     # Generate products for each temporal resolution
     # temporal_resolution = "1MIN"
     # temporal_resolution = "10MIN"
+    # temporal_resolution = "ROLL2MIN"
     for temporal_resolution in l1_processing_options.temporal_resolutions:
         # Print progress message
         msg = f"Production of {product} {temporal_resolution} has started."

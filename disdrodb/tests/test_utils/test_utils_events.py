@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Testing events utilities."""
+
 import numpy as np
 
 from disdrodb.utils.event import (

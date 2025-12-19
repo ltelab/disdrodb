@@ -92,14 +92,14 @@ def _check_frequency(frequency):
             # Not numeric, assume radar band name
             frequency = check_radar_band(frequency)
             frequency = frequency_dict[frequency]
-    if isinstance(frequency, (int, float)):
+    if isinstance(frequency, (int, float, np.integer, np.floating)):
         return _is_valid_numeric_frequency(frequency)
     raise TypeError(f"Frequency {frequency} must be a string or a number.")
 
 
 def ensure_numerical_frequency(frequency):
     """Ensure that the frequencies are numerical values in GHz."""
-    if isinstance(frequency, (str, int, float)):
+    if isinstance(frequency, (str, int, float, np.integer, np.floating)):
         frequency = [frequency]
     frequency = np.array([_check_frequency(f) for f in frequency])
     return frequency.squeeze()
@@ -562,7 +562,7 @@ def _estimate_model_radar_parameters(
     scatterer,
 ):
     # Assign PSD model to the scatterer object
-    parameters = dict(zip(psd_parameters_names, parameters))
+    parameters = dict(zip(psd_parameters_names, parameters, strict=True))
     scatterer.psd = create_psd(psd_model, parameters)
 
     # Get radar variables

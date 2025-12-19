@@ -17,7 +17,6 @@
 """Check configuration files."""
 
 import os
-from typing import Optional, Union
 
 import numpy as np
 from pydantic import Field, field_validator, model_validator
@@ -103,7 +102,7 @@ def check_variable_consistency(sensor_name: str) -> None:
             raise ValueError(msg)
 
 
-def _schema_error(object_to_validate: Union[str, list], schema: CustomBaseModel, message) -> bool:
+def _schema_error(object_to_validate: str | list, schema: CustomBaseModel, message) -> bool:
     """Function that validate the schema of a given object with a given schema.
 
     Parameters
@@ -129,10 +128,10 @@ class L0BEncodingSchema(CustomBaseModel):
     complevel: int
     shuffle: bool
     fletcher32: bool
-    FillValue: Optional[Union[int, float]] = Field(default=None, alias="_FillValue")
-    chunksizes: Optional[Union[int, list[int]]]
-    add_offset: Optional[float] = None
-    scale_factor: Optional[float] = None
+    FillValue: int | float | None = Field(default=None, alias="_FillValue")
+    chunksizes: int | list[int] | None
+    add_offset: float | None = None
+    scale_factor: float | None = None
 
     # if contiguous=False, chunksizes specified, otherwise should be not !
     @model_validator(mode="before")
@@ -198,16 +197,15 @@ class L0BEncodingSchema(CustomBaseModel):
         return values
 
     @model_validator(mode="after")
-    def remove_offset_and_scale_if_not_int(cls, values):
+    def remove_offset_and_scale_if_not_int(self):
         """Ensure add_offset and scale_factor only apply to integer/uint dtypes."""
-        integer_types = ["int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"]
+        integer_types = {"int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"}
 
-        if values.dtype not in integer_types:
-            # drop those keys to keep model clean
-            values.add_offset = None
-            values.scale_factor = None
+        if self.dtype not in integer_types:
+            self.add_offset = None
+            self.scale_factor = None
 
-        return values
+        return self
 
 
 def check_l0b_encoding(sensor_name: str) -> None:
@@ -255,16 +253,16 @@ def check_l0a_encoding(sensor_name: str) -> None:
 class RawDataFormatSchema(CustomBaseModel):
     """Pydantic model for the DISDRODB RAW Data Format YAML files."""
 
-    n_digits: Optional[int]
-    n_characters: Optional[int]
-    n_decimals: Optional[int]
-    n_naturals: Optional[int]
-    data_range: Optional[list[float]]
-    nan_flags: Optional[Union[int, float, str]] = None
-    valid_values: Optional[list[float]] = None
-    dimension_order: Optional[list[str]] = None
-    n_values: Optional[int] = None
-    field_number: Optional[str] = None
+    n_digits: int | None
+    n_characters: int | None
+    n_decimals: int | None
+    n_naturals: int | None
+    data_range: list[float] | None
+    nan_flags: int | float | str | None = None
+    valid_values: list[float] | None = None
+    dimension_order: list[str] | None = None
+    n_values: int | None = None
+    field_number: str | None = None
 
     @field_validator("data_range")
     def check_list_length(cls, value):

@@ -15,13 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Define utilities for Directory/File Checks/Creation/Deletion."""
+
 import glob
 import logging
 import os
 import pathlib
 import shutil
 import subprocess
-from typing import Union
 
 from disdrodb.utils.list import flatten_list
 from disdrodb.utils.logger import log_info
@@ -79,7 +79,7 @@ def check_glob_pattern(pattern: str) -> None:
     return pattern
 
 
-def check_glob_patterns(patterns: Union[str, list]) -> list:
+def check_glob_patterns(patterns: str | list) -> list:
     """Check if glob patterns are valids."""
     if not isinstance(patterns, (str, list)):
         raise ValueError("'glob_patterns' must be a str or list of strings.")

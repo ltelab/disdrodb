@@ -21,7 +21,6 @@ import datetime
 import logging
 import os
 import time
-from typing import Optional
 
 import pandas as pd
 
@@ -215,8 +214,8 @@ def run_l2e_station(
     parallel: bool = True,
     debugging_mode: bool = False,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """
     Generate the L2E product of a specific DISDRODB station when invoked from the terminal.
@@ -623,8 +622,8 @@ def run_l2m_station(
     parallel: bool = True,
     debugging_mode: bool = False,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """
     Run the L2M processing of a specific DISDRODB station when invoked from the terminal.

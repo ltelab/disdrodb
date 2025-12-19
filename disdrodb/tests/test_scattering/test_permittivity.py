@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test permittivity models."""
+
 import dask.array as da
 import numpy as np
 import pytest
@@ -61,6 +62,7 @@ class TestGetRefractiveIndex:
         expected = get_refractive_index(np.array([scalar]), frequency=frequency, permittivity_model=model)[0]
         assert np.isclose(result, expected, rtol=1e-6, atol=1e-6)
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide:RuntimeWarning")
     def test_nan_propagation(self, model):
         """Test get_refractive_index returns NaN when input temperature is NaN."""
         frequency = 5.6
@@ -157,6 +159,7 @@ class TestGetRefractiveIndexFunction:
         func = get_refractive_index_function(model)
         assert callable(func), f"Expected callable for model {model}, got {type(func)}"
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide:RuntimeWarning")
     @pytest.mark.parametrize("model", available_permittivity_models())
     def test_callable_nan_propagation(self, model):
         """Test refractive index model functions propagate NaN inputs."""

@@ -20,6 +20,8 @@ import contextlib
 import os
 from importlib.metadata import PackageNotFoundError, version
 
+os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+
 import disdrodb.accessor  # noqa
 from disdrodb._config import config  # noqa
 from disdrodb.api.configs import available_sensor_names

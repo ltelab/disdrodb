@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Fixtures for testing validation of DISDRODB product options."""
+
 import os
 
 import pytest

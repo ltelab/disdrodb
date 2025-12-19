@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Wrapper to check DISDRODB Metadata Archive Compliance from terminal."""
+
 import sys
 
 import click

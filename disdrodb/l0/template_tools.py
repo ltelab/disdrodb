@@ -16,8 +16,6 @@
 # -----------------------------------------------------------------------------.
 """Useful tools helping in the implementation of the DISDRODB L0 readers."""
 
-from typing import Optional, Union
-
 import numpy as np
 import pandas as pd
 
@@ -163,7 +161,7 @@ def _print_df_summary(df, indices, columns, print_column_names):
     df_summary = df.describe()
     df_summary = df_summary.loc[summary_stats]
     # Print summary stats
-    for i, column in zip(indices, columns):
+    for i, column in zip(indices, columns, strict=True):
         tmp_df = df_summary[[column]]
         tmp_df.columns = [""]
         _print_column_index(i, column_name=column, print_column_names=print_column_names)
@@ -172,7 +170,7 @@ def _print_df_summary(df, indices, columns, print_column_names):
 
 def print_df_summary_stats(
     df: pd.DataFrame,
-    column_indices: Optional[Union[int, slice, list]] = None,
+    column_indices: int | slice | list | None = None,
     print_column_names: bool = True,
 ):
     """Create a columns statistics summary.
@@ -224,7 +222,7 @@ def get_unique_sorted_values(array):
 
 def print_df_columns_unique_values(
     df: pd.DataFrame,
-    column_indices: Optional[Union[int, slice, list]] = None,
+    column_indices: int | slice | list | None = None,
     print_column_names: bool = True,
 ) -> None:
     """Print columns' unique values.
@@ -241,7 +239,7 @@ def print_df_columns_unique_values(
     """
     column_indices, columns = _get_selected_column_names(df, column_indices)
     # Printing
-    for i, column in zip(column_indices, columns):
+    for i, column in zip(column_indices, columns, strict=True):
         _print_column_index(i, column_name=column, print_column_names=print_column_names)
         _print_value(get_unique_sorted_values(df[column]))
 
@@ -252,7 +250,7 @@ def print_df_columns_unique_values(
 
 def get_df_columns_unique_values_dict(
     df: pd.DataFrame,
-    column_indices: Optional[Union[int, slice, list]] = None,
+    column_indices: int | slice | list | None = None,
     column_names: bool = True,
 ):
     """Create a dictionary {column: unique values}.
@@ -270,7 +268,7 @@ def get_df_columns_unique_values_dict(
     column_indices, columns = _get_selected_column_names(df, column_indices)
     # Create dictionary
     d = {}
-    for i, column in zip(column_indices, columns):
+    for i, column in zip(column_indices, columns, strict=True):
         key = column if column_names else "Column " + str(i)
         d[key] = get_unique_sorted_values(df[column])
     # Return

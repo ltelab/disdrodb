@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for ENPC PWS100 raw text data."""
+
 import zipfile
 
 import pandas as pd

@@ -15,13 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Define paths within the DISDRODB infrastructure."""
+
 import os
 
 from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
 from disdrodb.constants import ARCHIVE_VERSION
 from disdrodb.utils.directories import check_directory_exists
 from disdrodb.utils.time import (
-    ensure_sample_interval_in_seconds,
     get_file_start_end_time,
     seconds_to_temporal_resolution,
 )
@@ -803,10 +803,8 @@ def define_l0b_filename(ds, campaign_name: str, station_name: str) -> str:
     return filename
 
 
-def define_l0c_filename(ds, campaign_name: str, station_name: str) -> str:
+def define_l0c_filename(ds, campaign_name: str, station_name: str, sample_interval: str) -> str:
     """Define L0C file name."""
-    # TODO: add sample_interval as function argument
-    sample_interval = int(ensure_sample_interval_in_seconds(ds["sample_interval"]).data.item())
     temporal_resolution = define_temporal_resolution(sample_interval, rolling=False)
     starting_time, ending_time = get_file_start_end_time(ds)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")

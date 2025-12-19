@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Script to launch DISDRODB products generation for the entire DISDRODB Archive."""
+
 import sys
-from typing import Optional
 
 import click
 
@@ -65,9 +65,9 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_metadata_archive_dir_option
 def disdrodb_run(
     # Stations options
-    data_sources: Optional[str] = None,
-    campaign_names: Optional[str] = None,
-    station_names: Optional[str] = None,
+    data_sources: str | None = None,
+    campaign_names: str | None = None,
+    station_names: str | None = None,
     # L0 archive options
     l0a_processing: bool = True,
     l0b_processing: bool = True,
@@ -84,8 +84,8 @@ def disdrodb_run(
     parallel: bool = True,
     debugging_mode: bool = False,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Run the complete processing of DISDRODB stations.
 

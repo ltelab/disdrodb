@@ -17,7 +17,6 @@
 """Routine to open the DISDRODB Data Archive logs directory."""
 
 import sys
-from typing import Optional
 
 import click
 
@@ -36,8 +35,8 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 def disdrodb_open_logs_directory(
     data_source: str,
     campaign_name: str,
-    station_name: Optional[str] = None,
-    data_archive_dir: Optional[str] = None,
+    station_name: str | None = None,
+    data_archive_dir: str | None = None,
 ):
     """Open the DISDRODB Data Archive station logs directory in the system file explorer.
 

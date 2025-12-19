@@ -15,9 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB CLI routine wrappers."""
+
 import datetime
 import time
-from typing import Optional
 
 from disdrodb.api.search import available_stations, get_required_product
 from disdrodb.utils.cli import execute_cmd
@@ -111,8 +111,8 @@ def run_l0_station(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Run the L0 processing of a specific DISDRODB station from the terminal.
 
@@ -253,8 +253,8 @@ def run_l0a_station(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """
     Run the L0A processing of a station by invoking the disdrodb_run_l0a_station command in the terminal.
@@ -331,8 +331,8 @@ def run_l0b_station(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """
     Run the L0B processing of a station by invoking the disdrodb_run_l0b_station command in the terminal.
@@ -415,8 +415,8 @@ def run_l0c_station(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """
     Run the L0C processing of a station by invoking the disdrodb_run_l0c_station command in the terminal.
@@ -497,8 +497,8 @@ def run_l1_station(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """
     Run the L1 processing of a station by invoking the disdrodb_run_l1_station command in the terminal.
@@ -573,8 +573,8 @@ def run_l2e_station(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """
     Run the L2E processing of a station by invoking the disdrodb_run_l2e_station command in the terminal.
@@ -649,8 +649,8 @@ def run_l2m_station(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """
     Run the L2M processing of a station by invoking the disdrodb_run_l2m_station command in the terminal.
@@ -757,8 +757,8 @@ def run_l0a(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Run the L0A processing of DISDRODB stations.
 
@@ -860,8 +860,8 @@ def run_l0b(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Run the L0B processing of DISDRODB stations.
 
@@ -969,8 +969,8 @@ def run_l0c(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Run the L0C processing of DISDRODB stations.
 
@@ -1084,8 +1084,8 @@ def run_l0(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Run the L0 processing of DISDRODB stations.
 
@@ -1213,8 +1213,8 @@ def run_l1(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Run the L1 processing of DISDRODB stations.
 
@@ -1317,8 +1317,8 @@ def run_l2e(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Run the L2E processing of DISDRODB stations.
 
@@ -1420,8 +1420,8 @@ def run_l2m(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Run the L2M processing of DISDRODB stations.
 
@@ -1535,8 +1535,8 @@ def run_station(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Run the complete processing chain of a specific DISDRODB station from the terminal.
 
@@ -1722,8 +1722,8 @@ def run(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Run the complete processing chain of DISDRODB stations.
 

@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Script to initialize the DISDRODB station directory structure."""
+
 import sys
-from typing import Optional
 
 import click
 
@@ -43,8 +43,8 @@ def disdrodb_initialize_station(
     campaign_name: str,
     station_name: str,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Initialize the DISDRODB directory structure for a new station.
 

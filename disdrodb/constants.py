@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB constants."""
+
 import importlib
 
 ARCHIVE_VERSION = "V0"

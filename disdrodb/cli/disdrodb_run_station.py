@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Script to launch all DISDRODB products generation for a given station."""
+
 import sys
-from typing import Optional
 
 import click
 
@@ -85,8 +85,8 @@ def disdrodb_run_station(
     parallel: bool = True,
     debugging_mode: bool = False,
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Run the complete processing of a specific DISDRODB station.
 

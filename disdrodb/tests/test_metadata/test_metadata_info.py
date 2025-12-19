@@ -16,7 +16,6 @@
 # -----------------------------------------------------------------------------.
 """Test Metadata Info Extraction."""
 
-
 from disdrodb.metadata.info import get_archive_metadata_key_value
 from disdrodb.tests.conftest import create_fake_metadata_file
 

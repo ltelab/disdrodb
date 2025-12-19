@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Utilities to create summary statistics."""
+
 import gc
 import importlib
 import os
@@ -627,7 +628,7 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False, use_ra
                 absolute_sigma=True,
                 maxfev=10_000,  # max n iterations
             )
-            (a_std, b_std) = np.sqrt(np.diag(pcov))
+            a_std, b_std = np.sqrt(np.diag(pcov))
             a_std = float(a_std)
             b_std = float(b_std)
 
@@ -3749,7 +3750,7 @@ def define_filename(prefix, extension, data_source, campaign_name, station_name,
 
 def create_l2_dataframe(ds):
     """Create pandas Dataframe for L2 analysis."""
-    dims_to_drop = set(ds.dims).intersection({DIAMETER_DIMENSION, VELOCITY_DIMENSION})
+    dims_to_drop = set(ds.dims).intersection({DIAMETER_DIMENSION, VELOCITY_DIMENSION, "crs"})
     # - Drop array variables and convert to pandas
     df = ds.drop_dims(dims_to_drop).to_pandas()
     # - Drop coordinates
@@ -3801,8 +3802,11 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
     # Ensure all data are in memory
     ds = ds.compute()
 
-    # Keep only timesteps with at least 3 Nbins to remove noise
-    valid_idx = np.where(ds["Nbins"] >= 3)[0]
+    # Filter dataset to remove noisy timesteps
+    # - Keep only timesteps with at least 3 Nbins to remove noise
+    # - Keep only timesteps with sigma_m >= 0.2
+    mask = (ds["Nbins"] >= 3) & (ds["sigma_m"] >= 0.2) & (ds["Nbins_missing_fraction"] <= 0.3) & (ds["Dmin"] <= 1)
+    valid_idx = np.where(mask)[0]
     ds = ds.isel(time=valid_idx)
 
     ####---------------------------------------------------------------------.
@@ -3813,7 +3817,10 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         drop_number = ds["drop_number"].sum(dim="time")
 
         # Define theoretical and measured average velocity
-        theoretical_average_velocity = ds["fall_velocity"].mean(dim="time")
+        if "time" in ds["fall_velocity"].dims:
+            theoretical_average_velocity = ds["fall_velocity"].mean(dim="time")
+        else:
+            theoretical_average_velocity = ds["fall_velocity"]
         measured_average_velocity = get_drop_average_velocity(drop_number)
 
         # Save raw and filtered spectrum over time & theoretical and measured average fall velocity

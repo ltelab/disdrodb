@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB netCDF4 encoding utilities."""
+
 import os
 
 import numpy as np
@@ -126,7 +127,7 @@ def rechunk_dataset(ds: xr.Dataset, encodings_dict: dict) -> xr.Dataset:
             chunks = encodings_dict[var].get("chunksizes", None)  # .pop("chunksizes", None)
             if chunks is not None:
                 dims = list(ds[var].dims)
-                chunks_dict = dict(zip(dims, chunks))
+                chunks_dict = dict(zip(dims, chunks, strict=True))
                 ds[var] = ds[var].chunk(chunks_dict)
                 ds[var].encoding["chunksizes"] = chunks
     return ds

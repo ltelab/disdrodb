@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test warnings utility."""
+
 import warnings
 
 from disdrodb.utils.warnings import suppress_warnings

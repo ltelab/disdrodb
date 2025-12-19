@@ -17,7 +17,6 @@
 """Routine to open the DISDRODB Data Archive."""
 
 import sys
-from typing import Optional
 
 import click
 
@@ -32,7 +31,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 @click_data_archive_dir_option
 def disdrodb_open_data_archive(
-    data_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
 ):
     """Open the DISDRODB Data Archive directory in the system file explorer.
 

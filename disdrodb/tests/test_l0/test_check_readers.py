@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Check DISDRODB L0 readers."""
+
 import os
 import shutil
 
@@ -141,7 +142,7 @@ def _check_station_reader_results(
 
     # Compare equality of files
     # ground_truth_filepath, processed_filepath = list( zip(ground_truth_files, processed_files))[0]
-    for ground_truth_filepath, processed_filepath in zip(ground_truth_files, processed_files):
+    for ground_truth_filepath, processed_filepath in zip(ground_truth_files, processed_files, strict=True):
         try:
             check_identical_files(ground_truth_filepath, processed_filepath)
         except Exception as e:

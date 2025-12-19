@@ -15,11 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB download utility."""
+
 import os
 import shutil
 import subprocess
 
 import pytest
+import requests
 
 import disdrodb
 from disdrodb.api.path import define_station_dir
@@ -197,7 +199,12 @@ def test_download_station_data(tmp_path):
     )
 
     # Download data
-    download_station_data(metadata_filepath=metadata_filepath, data_archive_dir=data_archive_dir)
+    try:
+        download_station_data(metadata_filepath=metadata_filepath, data_archive_dir=data_archive_dir)
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 429:
+            pytest.skip("Zenodo rate limit reached")
+        raise
 
     # Define expected station directory
     station_dir = define_station_dir(
@@ -344,14 +351,20 @@ def test_download_station(tmp_path, force):
 
     # Check download_station overwrite existing files if force=True
     else:
-        download_station(
-            data_archive_dir=data_archive_dir,
-            metadata_archive_dir=metadata_archive_dir,
-            data_source=data_source,
-            campaign_name=campaign_name,
-            station_name=station_name,
-            force=force,
-        )
+        try:
+            download_station(
+                data_archive_dir=data_archive_dir,
+                metadata_archive_dir=metadata_archive_dir,
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                force=force,
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:
+                pytest.skip("Zenodo rate limit reached")
+            raise
+
         # Check original raw file does not exist anymore
         if force:
             assert not os.path.exists(raw_file_filepath)

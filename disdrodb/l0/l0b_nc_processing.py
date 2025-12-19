@@ -17,7 +17,6 @@
 """Functions to process DISDRODB raw netCDF files into DISDRODB L0B netCDF files."""
 
 import logging
-from typing import Union
 
 import numpy as np
 
@@ -534,7 +533,7 @@ def open_raw_netcdf_file(
 
 
 def generate_l0b_from_nc(
-    filepaths: Union[list, str],
+    filepaths: list | str,
     reader,
     sensor_name,
     metadata,

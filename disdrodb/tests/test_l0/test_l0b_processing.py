@@ -16,14 +16,12 @@
 # -----------------------------------------------------------------------------.
 """Test DISDRODB L0B processing routines."""
 
-
 import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
 
 from disdrodb.l0.l0b_processing import (
-    add_dataset_crs_coords,
     convert_object_variables_to_string,
     ensure_valid_geolocation,
     format_string_array,
@@ -151,7 +149,7 @@ def test_generate_l0b(create_test_config_files):
         "raw_drop_number",
     ]
     assert set(ds.variables) == set(expected_variables)
-    assert set(ds.dims) == {"diameter_bin_center", "time", "velocity_bin_center", "crs"}
+    assert set(ds.dims) == {"diameter_bin_center", "time", "velocity_bin_center"}
 
     # Check that the geolocation coordinates have been properly set
     assert np.allclose(ds["latitude"].to_numpy(), df["latitude"].to_numpy())
@@ -165,22 +163,6 @@ def test_generate_l0b(create_test_config_files):
     df_bad = df.drop(columns=["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"])
     with pytest.raises(ValueError):
         generate_l0b(df_bad, metadata=metadata)
-
-
-def test_add_dataset_crs_coords():
-    # Create example dataset
-    ds = xr.Dataset(
-        {
-            "var1": xr.DataArray([1, 2, 3], dims="time"),
-            "lat": xr.DataArray([0, 1, 2], dims="time"),
-            "lon": xr.DataArray([0, 1, 2], dims="time"),
-        },
-    )
-
-    # Call the function and check the output
-    ds_out = add_dataset_crs_coords(ds)
-    assert "crs" in ds_out.coords
-    assert ds_out["crs"].to_numpy() == "WGS84"
 
 
 def test_set_variable_attributes(mocker):

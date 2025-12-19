@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for DWD stations."""
+
 import glob
 import os
 from pathlib import Path
@@ -178,7 +179,9 @@ def retrieve_synop_filepaths(df, filepath):
         ymd = d.strftime("%Y%m%d")
         fname_pattern = f"synop10min_{station_id}_{ymd}*1.0days.dat"
         glob_pattern = os.path.join(synop_base_dir, y, m, fname_pattern)
-        synop_filepaths.append(*glob.glob(glob_pattern))
+        files = glob.glob(glob_pattern)
+        if len(files) >= 1:
+            synop_filepaths.append(*files)
     return synop_filepaths
 
 

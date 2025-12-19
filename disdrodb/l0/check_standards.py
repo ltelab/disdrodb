@@ -16,7 +16,6 @@
 # -----------------------------------------------------------------------------.
 """Check data standards."""
 
-
 import logging
 
 import numpy as np

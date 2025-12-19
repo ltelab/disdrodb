@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Script to create summary figures and tables for a DISDRODB stationn."""
+
 import sys
-from typing import Optional
 
 import click
 
@@ -49,15 +49,15 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 )
 def disdrodb_create_summary(
     # Stations options
-    data_sources: Optional[str] = None,
-    campaign_names: Optional[str] = None,
-    station_names: Optional[str] = None,
+    data_sources: str | None = None,
+    campaign_names: str | None = None,
+    station_names: str | None = None,
     # Processing options:
     parallel=False,
     temporal_resolution="1MIN",
     # DISDRODB root directories
-    data_archive_dir: Optional[str] = None,
-    metadata_archive_dir: Optional[str] = None,
+    data_archive_dir: str | None = None,
+    metadata_archive_dir: str | None = None,
 ):
     """Create summary figures and tables for DISDRODB stations.
 

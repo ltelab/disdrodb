@@ -23,7 +23,6 @@ import shutil
 import subprocess
 import tempfile
 import zipfile
-from typing import Optional
 
 from disdrodb.api.checks import check_data_archive_dir
 from disdrodb.api.path import define_station_dir
@@ -239,7 +238,7 @@ def compress_file(filepath: str, method: str, skip: bool) -> str:
     return compressed_filepath
 
 
-def _check_file_compression(filepath: str) -> Optional[str]:
+def _check_file_compression(filepath: str) -> str | None:
     """Check the method used to compress a raw text file.
 
     From https://stackoverflow.com/questions/13044562/python-mechanism-to-identify-compressed-file-type-and-uncompress

@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Check DISDRODB L0 configuration files."""
+
 import os
-from typing import Union
 
 import pytest
 import yaml
@@ -130,7 +130,7 @@ def is_string_list(obj: list) -> bool:
     return False
 
 
-def validate_schema_pytest(schema_to_validate: Union[str, list], schema: BaseModel) -> bool:
+def validate_schema_pytest(schema_to_validate: str | list, schema: BaseModel) -> bool:
     """Validate the schema of a given file path with pytest.
 
     It raise an Exception if failed to validate.

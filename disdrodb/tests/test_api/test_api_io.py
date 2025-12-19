@@ -15,13 +15,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB Input/Output Function."""
+
 import datetime
+import datetime as dt
 import os
 import shutil
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 import pytest
 import xarray as xr
 
@@ -31,19 +35,23 @@ from disdrodb.api import io
 from disdrodb.api.io import (
     filter_by_time,
     find_files,
+    list_coordinates_names,
     open_data_archive,
     open_dataset,
     open_logs_directory,
     open_metadata_archive,
     open_metadata_directory,
     open_netcdf_files,
+    open_parquet_files,
     open_product_directory,
     open_readers_directory,
     remove_product,
+    subset_variables,
 )
 from disdrodb.api.path import define_data_dir
 from disdrodb.constants import ARCHIVE_VERSION
 from disdrodb.tests.conftest import create_fake_metadata_file, create_fake_raw_data_file
+from disdrodb.tests.fake_datasets import create_template_l0c_dataset
 
 TEST_BASE_DIR = os.path.join(package_dir, "tests", "data", "check_readers", "DISDRODB")
 TEST_DATA_L0C_DIR = os.path.join(package_dir, "tests", "data", "test_data_l0c")
@@ -567,6 +575,50 @@ class TestOpenDataset:
         # Test is a xarray dataset
         assert isinstance(ds, xr.Dataset)
 
+    def test_open_l0c_product_multiple_sample_intervals(self, tmp_path, monkeypatch):
+        """Test open_dataset loads correctly L0C product with multiple sample intervals."""
+        # Create test netCDF with different sample intervals
+        ds = create_template_l0c_dataset(with_velocity=True)
+        ds["sample_interval"] = 20
+        fpath_20 = tmp_path / "L0C.20S.EPFL_2009.10.s20091215122600.e20091215235940.V0.nc"
+        ds.to_netcdf(fpath_20)
+
+        ds = create_template_l0c_dataset(with_velocity=True)
+        ds["time"] = ds["time"] + np.timedelta64(10, "D")
+        ds["sample_interval"] = 30
+        fpath_30 = tmp_path / "L0C.30S.EPFL_2009.10.s20091215122600.e20091215235940.V0.nc"
+        ds.to_netcdf(fpath_30)
+
+        filepaths = [str(fpath_20), str(fpath_30)]
+
+        # Mock find_files
+        def mock_find_files(*args, **kwargs):
+            return filepaths
+
+        monkeypatch.setattr(
+            "disdrodb.api.io.find_files",
+            mock_find_files,
+        )
+
+        # Define dummy station name
+        data_source = "EPFL"
+        campaign_name = "HYMEX_LTE_SOP2"
+        station_name = "10"
+
+        # Open dataset
+        ds = open_dataset(
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            compute=False,
+            product="L0C",
+        )
+
+        # Check sample interval coordinate has time dimension
+        assert "time" in ds["sample_interval"].dims
+        # Check info of two sample intervals is present
+        assert ds.attrs["measurement_interval"] == [20, 30]
+
 
 def test_open_netcdf_files_with_duplicate_timesteps(tmp_path):
     """Test open_netcdf_files deals correctly with duplicated timesteps."""
@@ -585,6 +637,199 @@ def test_open_netcdf_files_with_duplicate_timesteps(tmp_path):
     # Test that filtering by times is allowed also in presence of duplicated timesteps
     ds = open_netcdf_files(filepaths, start_time="2000-01-01 00:00:00", end_time="2000-01-01 01:00:00")
     assert ds.sizes["time"] == 4
+
+
+@pytest.mark.parametrize("parallel", [True, False])
+def test_open_netcdf_files_preprocess_function(tmp_path, parallel):
+    """Test open_netcdf_files subset variables but keep coordinates."""
+    # Create test netCDF
+    ds = create_template_l0c_dataset(with_velocity=True)
+    fpath = tmp_path / "test_cf.nc"
+    ds.to_netcdf(fpath)
+
+    # Define list of expected coordinates
+    expected_coords = set(ds.coords) - set(ds.dims)
+
+    # Open netCDF with direct subsetting
+    ds = open_netcdf_files([fpath], parallel=True, variables="raw_drop_number")
+
+    # Assert variables removed but coordinates kept
+    assert list(ds.data_vars) == ["raw_drop_number"]
+    assert set(expected_coords) == set(ds.coords) - set(ds.dims)
+
+
+def test_list_coordinates_names(tmp_path):
+    """Test list_coordinates_names retrieve the list of coordinates."""
+    # Create test netCDF
+    ds = create_template_l0c_dataset(with_velocity=True)
+    fpath = tmp_path / "test_cf.nc"
+    ds.to_netcdf(fpath)
+
+    # Define list of expected coordinates
+    expected_coords = set(ds.coords) - set(ds.dims)
+
+    # Reopen netCDF WITHOUT CF decoding
+    ds_in = xr.open_dataset(fpath, decode_cf=False)
+
+    # Retrieve coordinates and add dimensions
+    coords = list_coordinates_names(ds_in)
+
+    assert set(expected_coords) == set(coords)
+
+
+def test_subset_variables_keeps_coordinates(tmp_path):
+    """Test subset_variables keeps dataset coordinates."""
+    # Create test netCDF
+    ds = create_template_l0c_dataset(with_velocity=True)
+    fpath = tmp_path / "test_cf.nc"
+    ds.to_netcdf(fpath)
+
+    # Define list of expected coordinates
+    expected_coords = set(ds.coords) - set(ds.dims)
+
+    # Reopen netCDF WITHOUT CF decoding
+    ds_in = xr.open_dataset(fpath, decode_cf=False)
+
+    # Test unrequested variables is present
+    assert "qc_resampling" in ds_in
+
+    # Subset dataset and decode CF
+    ds_sub = subset_variables(ds_in, variables=["raw_drop_number"])
+    ds_sub = xr.decode_cf(ds_sub)
+
+    # Test requested variable kept
+    assert "raw_drop_number" in ds_sub.variables
+    # Test unrequested variables is removed
+    assert "qc_resampling" not in ds_sub.variables
+
+    # Dimension variables kept
+    assert set(expected_coords) == set(ds_sub.coords) - set(ds_sub.dims)
+
+
+class TestOpenParquetFiles:
+    """Integration-style tests for open_parquet_files using real Parquet files."""
+
+    def test_read_without_filters_returns_all_rows(self, tmp_path):
+        """Returns all rows when no time filters are specified."""
+        df = pd.DataFrame(
+            {
+                "time": pd.date_range("2023-01-01", periods=5, freq="D"),
+                "value": range(5),
+            },
+        )
+        file_path = tmp_path / "data.parquet"
+        table = pa.Table.from_pandas(df)
+        pq.write_table(table, file_path)
+
+        result = open_parquet_files([file_path])
+
+        pd.testing.assert_frame_equal(
+            result.sort_values("time").reset_index(drop=True),
+            df,
+        )
+
+    def test_start_time_filter_excludes_earlier_rows(self, tmp_path):
+        """Filters out rows earlier than the specified start_time."""
+        df = pd.DataFrame(
+            {
+                "time": pd.date_range("2023-01-01", periods=5, freq="D"),
+                "value": range(5),
+            },
+        )
+        file_path = tmp_path / "data.parquet"
+        table = pa.Table.from_pandas(df)
+        pq.write_table(table, file_path)
+
+        result = open_parquet_files(
+            [file_path],
+            start_time=dt.datetime(2023, 1, 3),
+        )
+
+        assert result["time"].min() >= dt.datetime(2023, 1, 3)
+        assert len(result) == 3
+
+    def test_end_time_filter_excludes_later_rows(self, tmp_path):
+        """Filters out rows later than the specified end_time."""
+        df = pd.DataFrame(
+            {
+                "time": pd.date_range("2023-01-01", periods=5, freq="D"),
+                "value": range(5),
+            },
+        )
+        file_path = tmp_path / "data.parquet"
+        table = pa.Table.from_pandas(df)
+        pq.write_table(table, file_path)
+
+        result = open_parquet_files(
+            [file_path],
+            end_time=dt.datetime(2023, 1, 3),
+        )
+
+        assert result["time"].max() <= dt.datetime(2023, 1, 3)
+        assert len(result) == 3
+
+    def test_combined_start_and_end_time_filters(self, tmp_path):
+        """Applies both start_time and end_time filters together."""
+        df = pd.DataFrame(
+            {
+                "time": pd.date_range("2023-01-01", periods=7, freq="D"),
+                "value": range(7),
+            },
+        )
+        file_path = tmp_path / "data.parquet"
+        table = pa.Table.from_pandas(df)
+        pq.write_table(table, file_path)
+
+        result = open_parquet_files(
+            [file_path],
+            start_time=dt.datetime(2023, 1, 3),
+            end_time=dt.datetime(2023, 1, 5),
+        )
+
+        expected_times = pd.date_range("2023-01-03", "2023-01-05", freq="D")
+        assert list(result["time"]) == list(expected_times)
+
+    def test_string_time_arguments_are_converted_and_applied(self, tmp_path):
+        """Accepts string time arguments and correctly applies filtering."""
+        df = pd.DataFrame(
+            {
+                "time": pd.date_range("2023-01-01", periods=5, freq="D"),
+                "value": range(5),
+            },
+        )
+        file_path = tmp_path / "data.parquet"
+        table = pa.Table.from_pandas(df)
+        pq.write_table(table, file_path)
+
+        result = open_parquet_files(
+            [file_path],
+            start_time="2023-01-02",
+            end_time="2023-01-04",
+        )
+
+        expected_times = pd.date_range("2023-01-02", "2023-01-04", freq="D")
+        assert list(result["time"]) == list(expected_times)
+
+    def test_variable_selection_limits_columns(self, tmp_path):
+        """Reads only the specified variables from the Parquet file."""
+        df = pd.DataFrame(
+            {
+                "time": pd.date_range("2023-01-01", periods=3, freq="D"),
+                "value": [10, 20, 30],
+                "extra": [1, 1, 1],
+            },
+        )
+        file_path = tmp_path / "data.parquet"
+        table = pa.Table.from_pandas(df)
+        pq.write_table(table, file_path)
+
+        result = open_parquet_files(
+            [file_path],
+            variables=["time", "value"],
+        )
+
+        assert list(result.columns) == ["time", "value"]
+        assert "extra" not in result.columns
 
 
 class TestRemoveProduct:

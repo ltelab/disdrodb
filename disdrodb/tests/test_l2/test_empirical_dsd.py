@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Testing module for empirical DSD parameters computations."""
+
 import dask.array
 import numpy as np
 import pytest
@@ -697,6 +698,8 @@ class TestQuantileVolumeDropDiameter:
 
 
 class TestMeanVolumeDropDiameter:
+
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in divide:RuntimeWarning")
     @pytest.mark.parametrize("array_type", ["numpy", "dask"])
     def test_mean_volume_drop_diameter_zero_values(self, template_dataset, array_type):
         """Test returns NaN when all inputs are zero."""
@@ -838,6 +841,8 @@ class TestMeanVolumeDropDiameter:
 
 
 class TestStdVolumeDropDiameter:
+
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in divide:RuntimeWarning")
     @pytest.mark.parametrize("array_type", ["numpy", "dask"])
     def test_std_volume_drop_diameter_zero_values(self, template_dataset, array_type):
         """Test returns NaN when all inputs are zero."""
@@ -1330,6 +1335,8 @@ class TestDropVolume:
 
 
 class TestNormalizedInterceptParameter:
+
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in divide:RuntimeWarning")
     @pytest.mark.parametrize("array_type", ["numpy", "dask"])
     def test_normalized_intercept_parameter_zero_values(self, template_dataset, array_type):
         """Test returns NaN when all inputs are zero."""
@@ -1480,6 +1487,8 @@ class TestNormalizedInterceptParameter:
 
 
 class TestDropAverageVelocity:
+
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in divide:RuntimeWarning")
     @pytest.mark.parametrize("array_type", ["numpy", "dask"])
     def test_drop_average_velocity_zero_values(self, template_dataset, array_type):
         """Test returns NaN when all inputs are zero."""
@@ -1531,6 +1540,7 @@ class TestDropAverageVelocity:
         )
         np.testing.assert_allclose(output.to_numpy(), expected)
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in divide:RuntimeWarning")
     @pytest.mark.parametrize("array_type", ["numpy", "dask"])
     def test_drop_average_velocity_nan_where_no_drops(self, template_dataset, array_type):
         """Test that in diameter bins with no drops, average velocity output is NaN."""
@@ -1703,6 +1713,8 @@ class TestBinDimensions:
 
 
 class TestKineticEnergyVariables:
+
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in divide:RuntimeWarning")
     @pytest.mark.parametrize("array_type", ["numpy", "dask"])
     def test_zero_output_with_dsd_zero_values(self, template_dataset, array_type):
         """Test returns zeros when all inputs are zero."""
@@ -1751,6 +1763,7 @@ class TestKineticEnergyVariables:
             # If everything is NaN, we expect an array with NaN as result
             assert np.all(np.isnan(value.to_numpy())), f"All values for {var} should be NaN for NaN-valued inputs."
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in divide:RuntimeWarning")
     @pytest.mark.parametrize("array_type", ["numpy", "dask"])
     def test_zero_output_with_drop_number_zero_values(self, template_dataset, array_type):
         """Test returns zeros when all inputs are zero."""
