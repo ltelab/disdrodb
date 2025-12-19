@@ -520,7 +520,7 @@ number_particles_unknown_classification:
   contiguous: false
   chunksizes: 5000
   _FillValue: 65535
-number_particles_unknown_classification_internal_data:
+total_gross_volume_unknown_classification:
   dtype: float32
   zlib: true
   complevel: 3
@@ -528,7 +528,7 @@ number_particles_unknown_classification_internal_data:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-number_particles_class_1:
+number_particles_hail:
   dtype: uint16
   zlib: true
   complevel: 3
@@ -537,7 +537,7 @@ number_particles_class_1:
   contiguous: false
   chunksizes: 5000
   _FillValue: 65535
-number_particles_class_1_internal_data:
+total_gross_volume_hail:
   dtype: float32
   zlib: true
   complevel: 3
@@ -545,7 +545,7 @@ number_particles_class_1_internal_data:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-number_particles_class_2:
+number_particles_solid_precipitation:
   dtype: uint16
   zlib: true
   complevel: 3
@@ -554,7 +554,7 @@ number_particles_class_2:
   contiguous: false
   chunksizes: 5000
   _FillValue: 65535
-number_particles_class_2_internal_data:
+total_gross_volume_solid_precipitation:
   dtype: float32
   zlib: true
   complevel: 3
@@ -562,7 +562,7 @@ number_particles_class_2_internal_data:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-number_particles_class_3:
+number_particles_large_pellet:
   dtype: uint16
   zlib: true
   complevel: 3
@@ -571,7 +571,7 @@ number_particles_class_3:
   contiguous: false
   chunksizes: 5000
   _FillValue: 65535
-number_particles_class_3_internal_data:
+total_gross_volume_large_pellet:
   dtype: float32
   zlib: true
   complevel: 3
@@ -579,7 +579,7 @@ number_particles_class_3_internal_data:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-number_particles_class_4:
+number_particles_small_pellet:
   dtype: uint16
   zlib: true
   complevel: 3
@@ -588,7 +588,7 @@ number_particles_class_4:
   contiguous: false
   chunksizes: 5000
   _FillValue: 65535
-number_particles_class_4_internal_data:
+total_gross_volume_small_pellet:
   dtype: float32
   zlib: true
   complevel: 3
@@ -596,7 +596,7 @@ number_particles_class_4_internal_data:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-number_particles_class_5:
+number_particles_snowgrain:
   dtype: uint16
   zlib: true
   complevel: 3
@@ -605,7 +605,7 @@ number_particles_class_5:
   contiguous: false
   chunksizes: 5000
   _FillValue: 65535
-number_particles_class_5_internal_data:
+total_gross_volume_snowgrain:
   dtype: float32
   zlib: true
   complevel: 3
@@ -613,7 +613,7 @@ number_particles_class_5_internal_data:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-number_particles_class_6:
+number_particles_rain:
   dtype: uint16
   zlib: true
   complevel: 3
@@ -622,7 +622,7 @@ number_particles_class_6:
   contiguous: false
   chunksizes: 5000
   _FillValue: 65535
-number_particles_class_6_internal_data:
+total_gross_volume_rain:
   dtype: float32
   zlib: true
   complevel: 3
@@ -630,7 +630,7 @@ number_particles_class_6_internal_data:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-number_particles_class_7:
+number_particles_small_rain:
   dtype: uint16
   zlib: true
   complevel: 3
@@ -639,7 +639,7 @@ number_particles_class_7:
   contiguous: false
   chunksizes: 5000
   _FillValue: 65535
-number_particles_class_7_internal_data:
+total_gross_volume_small_rain:
   dtype: float32
   zlib: true
   complevel: 3
@@ -647,7 +647,7 @@ number_particles_class_7_internal_data:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-number_particles_class_8:
+number_particles_drizzle:
   dtype: uint16
   zlib: true
   complevel: 3
@@ -656,7 +656,7 @@ number_particles_class_8:
   contiguous: false
   chunksizes: 5000
   _FillValue: 65535
-number_particles_class_8_internal_data:
+total_gross_volume_drizzle:
   dtype: float32
   zlib: true
   complevel: 3

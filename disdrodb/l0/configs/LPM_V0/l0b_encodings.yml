@@ -253,7 +253,7 @@ total_gross_volume_solid_precipitation:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-number_particles_great_pellet:
+number_particles_large_pellet:
   dtype: uint16
   zlib: true
   complevel: 3
@@ -262,7 +262,7 @@ number_particles_great_pellet:
   contiguous: false
   chunksizes: 5000
   _FillValue: 65535
-total_gross_volume_great_pellet:
+total_gross_volume_large_pellet:
   dtype: float32
   zlib: true
   complevel: 3

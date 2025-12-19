@@ -14,18 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB reader for GID LPM V0 sensor (TC-TO) with incorrect reported time."""
+"""DISDRODB reader for DEVEX LPM sensors."""
 
 import numpy as np
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
-from disdrodb.utils.logger import log_error, log_warning
+from disdrodb.utils.logger import log_error
 
 
-def read_txt_file(file, filename, logger):
-    """Parse for TC-TO LPM hourly file."""
+@is_documented_by(reader_generic_docstring)
+def read_txt_file(
+    file,
+    filename,
+    logger=None,
+):
+    """Reader."""
+    ##------------------------------------------------------------------------.
     #### - Define raw data headers
     column_names = ["TO_PARSE"]
 
@@ -80,32 +86,66 @@ def read_txt_file(file, filename, logger):
         raise ValueError(f"{filename} is empty.")
 
     # Select only rows with expected number of delimiters
-    df = df[df["TO_PARSE"].str.count(";") == 442]
+    df = df[df["TO_PARSE"].str.count(";") == 520]
 
-    # Check there are still valid rows
+    # Raise error if no data left
     if len(df) == 0:
-        raise ValueError(f"No valid rows in {filename}.")
+        raise ValueError(f"No valid data in {filename}.")
 
     # Split by ; delimiter (before raw drop number)
-    df = df["TO_PARSE"].str.split(";", expand=True, n=43)
+    df = df["TO_PARSE"].str.split(";", expand=True, n=79)
 
     # Assign column names
     names = [
         "start_identifier",
+        "device_address",
         "sensor_serial_number",
+        "sensor_date",
+        "sensor_time",
+        "weather_code_synop_4677_5min",
         "weather_code_synop_4680_5min",
         "weather_code_metar_4678_5min",
         "precipitation_rate_5min",
+        "weather_code_synop_4677",
         "weather_code_synop_4680",
         "weather_code_metar_4678",
         "precipitation_rate",
+        "rainfall_rate",
+        "snowfall_rate",
         "precipitation_accumulated",
-        "sensor_time",
+        "mor_visibility",
+        "reflectivity",
+        "quality_index",
+        "max_hail_diameter",
+        "laser_status",
+        "static_signal_status",
+        "laser_temperature_analog_status",
+        "laser_temperature_digital_status",
+        "laser_current_analog_status",
+        "laser_current_digital_status",
+        "sensor_voltage_supply_status",
+        "current_heating_pane_transmitter_head_status",
+        "current_heating_pane_receiver_head_status",
+        "temperature_sensor_status",
+        "current_heating_voltage_supply_status",
+        "current_heating_house_status",
+        "current_heating_heads_status",
+        "current_heating_carriers_status",
+        "control_output_laser_power_status",
+        "reserved_status",
         "temperature_interior",
         "laser_temperature",
         "laser_current_average",
         "control_voltage",
         "optical_control_voltage_output",
+        "sensor_voltage_supply",
+        "current_heating_pane_transmitter_head",
+        "current_heating_pane_receiver_head",
+        "temperature_ambient",
+        "current_heating_voltage_supply",
+        "current_heating_house",
+        "current_heating_heads",
+        "current_heating_carriers",
         "number_particles",
         "number_particles_internal_data",
         "number_particles_min_speed",
@@ -134,27 +174,22 @@ def read_txt_file(file, filename, logger):
         "total_gross_volume_small_rain",
         "number_particles_drizzle",
         "total_gross_volume_drizzle",
+        "number_particles_class_9",
+        "number_particles_class_9_internal_data",
         "raw_drop_number",
     ]
     df.columns = names
 
-    # Deal with case if there are 61 timesteps
-    # - Occurs sometimes when previous hourly file miss timesteps
-    if len(df) == 61:
-        log_warning(logger=logger, msg=f"{filename} contains 61 timesteps. Dropping the first.")
-        df = df.iloc[1:]
-
-    # Raise error if more than 60 timesteps/rows
-    n_rows = len(df)
-    if n_rows > 60:
-        raise ValueError(f"The hourly file contains {n_rows} timesteps.")
+    # Remove checksum from raw_drop_number
+    df["raw_drop_number"] = df["raw_drop_number"].str.rsplit(";", n=2, expand=True)[0]
 
     # Infer and define "time" column
     start_time_str = filename.split(".")[0]  # '2024020200.txt'
     start_time = pd.to_datetime(start_time_str, format="%Y%m%d%H")
 
     # - Define timedelta based on sensor_time
-    dt = pd.to_timedelta(df["sensor_time"] + ":00").to_numpy().astype("m8[s]")
+    # --> Add +24h to subsequent times when time resets
+    dt = pd.to_timedelta(df["sensor_time"]).to_numpy().astype("m8[s]")
     rollover_indices = np.where(np.diff(dt) < np.timedelta64(0, "s"))[0]
     if rollover_indices.size > 0:
         for idx in rollover_indices:
@@ -168,15 +203,19 @@ def read_txt_file(file, filename, logger):
     valid_rows = dt <= np.timedelta64(3540, "s")
     df = df[valid_rows]
 
+    # Drop row if start_identifier different than 00
+    # df = df[df["start_identifier"].astype(str) == "00"]
+
     # Drop rows with invalid raw_drop_number
-    # --> 440 value # 22x20
-    df = df[df["raw_drop_number"].astype(str).str.len() == 1599]
+    df = df[df["raw_drop_number"].astype(str).str.len() == 1759]
 
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
-        "sensor_time",
         "start_identifier",
+        "device_address",
         "sensor_serial_number",
+        "sensor_date",
+        "sensor_time",
     ]
     df = df.drop(columns=columns_to_drop)
     return df
@@ -189,31 +228,6 @@ def reader(
 ):
     """Reader."""
     import zipfile
-
-    ##------------------------------------------------------------------------.
-    # filename = os.path.basename(filepath)
-    # return read_txt_file(file=filepath, filename=filename, logger=logger)
-
-    # ---------------------------------------------------------------------.
-    #### Iterate over all files (aka timesteps) in the daily zip archive
-    # - Each file contain a single timestep !
-    # list_df = []
-    # with tempfile.TemporaryDirectory() as temp_dir:
-    #     # Extract all files
-    #     unzip_file_on_terminal(filepath, temp_dir)
-
-    #     # Walk through extracted files
-    #     for root, _, files in os.walk(temp_dir):
-    #         for filename in sorted(files):
-    #             if filename.endswith(".txt"):
-    #                 full_path = os.path.join(root, filename)
-    #                 try:
-    #                     df = read_txt_file(file=full_path, filename=filename, logger=logger)
-    #                     if df is not None:
-    #                         list_df.append(df)
-    #                 except Exception as e:
-    #                     msg = f"An error occurred while reading {filename}: {e}"
-    #                     log_error(logger=logger, msg=msg, verbose=True)
 
     list_df = []
     with zipfile.ZipFile(filepath, "r") as zip_ref:

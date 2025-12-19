@@ -26,8 +26,8 @@ number_particles_hail: "float32" #  'uint16'
 total_gross_volume_hail: "float32"
 number_particles_solid_precipitation: "float32" # 'uint16'
 total_gross_volume_solid_precipitation: "float32"
-number_particles_great_pellet: "float32" # 'uint16'
-total_gross_volume_great_pellet: "float32"
+number_particles_large_pellet: "float32" # 'uint16'
+total_gross_volume_large_pellet: "float32"
 number_particles_small_pellet: "float32" # 'uint16'
 total_gross_volume_small_pellet: "float32"
 number_particles_snowgrain: "float32" # 'uint16'
