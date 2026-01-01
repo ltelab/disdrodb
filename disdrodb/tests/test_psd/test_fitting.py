@@ -93,7 +93,8 @@ class TestGSOptimization:
     @pytest.mark.parametrize(("psd_model", "parameters", "optimizations"), CASES)
     @pytest.mark.parametrize("transformation", ["identity", "log", "sqrt"])
     @pytest.mark.parametrize("error_order", [1, 2])
-    def test_gs_on_nd(self, psd_model, parameters, optimizations, transformation, error_order):
+    @pytest.mark.parametrize("censoring", ["none", "left", "right", "both"])
+    def test_gs_on_nd(self, psd_model, parameters, optimizations, transformation, error_order, censoring):
         """Test PSD parameter estimation using Grid Search (GS) on N(D)."""
         if "GS" not in optimizations:
             pytest.skip(f"GS not available for {psd_model}")
@@ -102,6 +103,7 @@ class TestGSOptimization:
             "target": "ND",
             "transformation": transformation,
             "error_order": error_order,
+            "censoring": censoring,
         }
         ds, psd = _simulate_dataset(psd_model, parameters)
         ds_params = estimate_model_parameters(
@@ -117,7 +119,7 @@ class TestGSOptimization:
                 parameters[var],
                 rtol=0.2,
                 atol=ATOL["GS"],
-                err_msg=f"GS fitting of {psd_model} using {transformation=} {error_order=} causes inaccurate {var}.",
+                err_msg=f"GS fitting of {psd_model} using {transformation=} {error_order=} {censoring=} causes inaccurate {var}.",  # noqa
             )
 
     @pytest.mark.parametrize(("psd_model", "parameters", "optimizations"), CASES)

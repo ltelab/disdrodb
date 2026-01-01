@@ -4,3 +4,4 @@ optimization_kwargs:
   target: "ND"
   transformation: "log"
   error_order: 1
+  censoring: left
