@@ -230,8 +230,6 @@ Refer to the table below for a comprehensive summary of all CI tools employed to
 +====================================================+===================================================================================================================================+
 | `pre-commit.ci <https://pre-commit.ci/>`__         | Run pre-commit (as defined in `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`_ ) |
 +----------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| `CodeBeat <https://codebeat.co/>`__                | Automated code review and analysis tools                                                                                          |
-+----------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
 | `CodeScene <https://codescene.com/>`__             | Automated code review and analysis tools                                                                                          |
 +----------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
 | `CodeFactor <https://www.codefactor.io/>`__        | Automated code review and analysis tools                                                                                          |
