@@ -122,6 +122,7 @@ GAMMA_GS_CONFIG = {
         "target": "ND",
         "transformation": "identity",
         "error_order": 1,
+        "censoring": "none",
     },
 }
 

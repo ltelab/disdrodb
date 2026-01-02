@@ -4,3 +4,4 @@ optimization_kwargs:
   target: "ND"
   transformation: "identity"
   error_order: 1
+  censoring: left

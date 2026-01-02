@@ -1079,7 +1079,82 @@ def _compute_target_variable_error(target, ND_obs, ND_preds, D, dD, V, relative=
     return abs_error
 
 
-def _compute_cost_function(ND_obs, ND_preds, D, dD, V, target, transformation, error_order):
+def _left_truncate_bins(ND_obs, ND_preds, D, dD, V):
+    if np.all(ND_obs == 0):  # all zeros
+        return None
+    idx = np.argmax(ND_obs > 0)
+    return (
+        ND_obs[idx:],
+        ND_preds[:, idx:],
+        D[idx:],
+        dD[idx:],
+        V[idx:],
+    )
+
+
+def _right_truncate_bins(ND_obs, ND_preds, D, dD, V):
+    if np.all(ND_obs == 0):  # all zeros
+        return None
+    idx = len(ND_obs) - np.argmax(ND_obs[::-1] > 0)
+    return (
+        ND_obs[:idx],
+        ND_preds[:, :idx],
+        D[:idx],
+        dD[:idx],
+        V[:idx],
+    )
+
+
+def _truncate_bin_edges(
+    ND_obs,
+    ND_preds,
+    D,
+    dD,
+    V,
+    left_censored=False,
+    right_censored=False,
+):
+    data = (ND_obs, ND_preds, D, dD, V)
+    if left_censored:
+        data = _left_truncate_bins(*data)
+        if data is None:
+            return None
+    if right_censored:
+        data = _right_truncate_bins(*data)
+        if data is None:
+            return None
+    return data
+
+
+def _compute_cost_function(
+    ND_obs,
+    ND_preds,
+    D,
+    dD,
+    V,
+    target,
+    transformation,
+    error_order,
+    censoring,
+):
+    # Truncate if asked
+    left_censored = censoring in {"left", "both"}
+    right_censored = censoring in {"right", "both"}
+    if left_censored or right_censored:
+        truncated = _truncate_bin_edges(
+            ND_obs,
+            ND_preds,
+            D,
+            dD,
+            V,
+            left_censored=left_censored,
+            right_censored=right_censored,
+        )
+        if truncated is None:
+            # Grid search logic expects inf so it can be turned into NaN later
+            return np.full(ND_preds.shape[0], np.inf)
+        ND_obs, ND_preds, D, dD, V = truncated
+
     # Assume ND_obs of shape (D bins) and ND_preds of shape (# params, D bins)
     if target == "ND":
         if transformation == "identity":
@@ -1136,6 +1211,7 @@ def apply_exponential_gs(
     target,
     transformation,
     error_order,
+    censoring,
 ):
     """Apply Grid Search for the ExponentialPSD distribution."""
     # Define set of mu values
@@ -1157,6 +1233,7 @@ def apply_exponential_gs(
             target=target,
             transformation=transformation,
             error_order=error_order,
+            censoring=censoring,
         )
     # Replace inf with NaN
     errors[~np.isfinite(errors)] = np.nan
@@ -1170,7 +1247,19 @@ def apply_exponential_gs(
     return np.array([N0_arr[best_index].item(), lambda_arr[best_index].item()])
 
 
-def _apply_gamma_gs(mu_values, lambda_values, Nt, ND_obs, D, dD, V, target, transformation, error_order):
+def _apply_gamma_gs(
+    mu_values,
+    lambda_values,
+    Nt,
+    ND_obs,
+    D,
+    dD,
+    V,
+    target,
+    transformation,
+    error_order,
+    censoring,
+):
     """Routine for GammaPSD parameters grid search."""
     # Define combinations of parameters for grid search
     combo = np.meshgrid(mu_values, lambda_values, indexing="xy")
@@ -1193,6 +1282,7 @@ def _apply_gamma_gs(mu_values, lambda_values, Nt, ND_obs, D, dD, V, target, tran
             target=target,
             transformation=transformation,
             error_order=error_order,
+            censoring=censoring,
         )
 
     # Replace inf with NaN
@@ -1218,6 +1308,7 @@ def apply_gamma_gs(
     target,
     transformation,
     error_order,
+    censoring,
 ):
     """Estimate GammaPSD model parameters using Grid Search."""
     # Define parameters bounds
@@ -1242,6 +1333,7 @@ def apply_gamma_gs(
         target=target,
         transformation=transformation,
         error_order=error_order,
+        censoring=censoring,
     )
     if np.isnan(N0):  # if np.nan, return immediately
         return np.array([N0, mu, Lambda])
@@ -1261,12 +1353,13 @@ def apply_gamma_gs(
         target=target,
         transformation=transformation,
         error_order=error_order,
+        censoring=censoring,
     )
 
     return np.array([N0, mu, Lambda])
 
 
-def _apply_lognormal_gs(mu_values, sigma_values, Nt, ND_obs, D, dD, V, target, transformation, error_order):
+def _apply_lognormal_gs(mu_values, sigma_values, Nt, ND_obs, D, dD, V, target, transformation, error_order, censoring):
     """Routine for LognormalPSD parameters grid search."""
     # Define combinations of parameters for grid search
     combo = np.meshgrid(mu_values, sigma_values, indexing="xy")
@@ -1288,6 +1381,7 @@ def _apply_lognormal_gs(mu_values, sigma_values, Nt, ND_obs, D, dD, V, target, t
             target=target,
             transformation=transformation,
             error_order=error_order,
+            censoring=censoring,
         )
 
     # Replace inf with NaN
@@ -1313,6 +1407,7 @@ def apply_lognormal_gs(
     target,
     transformation,
     error_order,
+    censoring,
 ):
     """Estimate LognormalPSD model parameters using Grid Search."""
     # Define parameters bounds
@@ -1341,6 +1436,7 @@ def apply_lognormal_gs(
         target=target,
         transformation=transformation,
         error_order=error_order,
+        censoring=censoring,
     )
     if np.isnan(mu):  # if np.nan, return immediately
         return np.array([Nt, mu, sigma])
@@ -1361,6 +1457,7 @@ def apply_lognormal_gs(
         target=target,
         transformation=transformation,
         error_order=error_order,
+        censoring=censoring,
     )
 
     return np.array([Nt, mu, sigma])
@@ -1378,6 +1475,7 @@ def apply_normalized_gamma_gs(
     target,
     transformation,
     error_order,
+    censoring,
 ):
     """Estimate NormalizedGammaPSD model parameters using Grid Search."""
     # Define set of mu values
@@ -1398,6 +1496,7 @@ def apply_normalized_gamma_gs(
             target=target,
             transformation=transformation,
             error_order=error_order,
+            censoring=censoring,
         )
 
     # Replace inf with NaN
@@ -1413,7 +1512,7 @@ def apply_normalized_gamma_gs(
     return np.array([Nw, mu, D50])
 
 
-def get_exponential_parameters_gs(ds, target="ND", transformation="log", error_order=1):
+def get_exponential_parameters_gs(ds, target="ND", transformation="log", error_order=1, censoring="none"):
     """Estimate the parameters of an Exponential distribution using Grid Search."""
     # "target": ["ND", "LWC", "Z", "R"]
     # "transformation": "log", "identity", "sqrt",  # only for drop_number_concentration
@@ -1432,6 +1531,7 @@ def get_exponential_parameters_gs(ds, target="ND", transformation="log", error_o
         "target": target,
         "transformation": transformation,
         "error_order": error_order,
+        "censoring": censoring,
     }
 
     # Fit distribution in parallel
@@ -1463,7 +1563,7 @@ def get_exponential_parameters_gs(ds, target="ND", transformation="log", error_o
     return ds_params
 
 
-def get_gamma_parameters_gs(ds, target="ND", transformation="log", error_order=1):
+def get_gamma_parameters_gs(ds, target="ND", transformation="log", error_order=1, censoring="none"):
     """Compute Grid Search to identify mu and Lambda Gamma distribution parameters."""
     # "target": ["ND", "LWC", "Z", "R"]
     # "transformation": "log", "identity", "sqrt",  # only for drop_number_concentration
@@ -1482,6 +1582,7 @@ def get_gamma_parameters_gs(ds, target="ND", transformation="log", error_order=1
         "target": target,
         "transformation": transformation,
         "error_order": error_order,
+        "censoring": censoring,
     }
 
     # Fit distribution in parallel
@@ -1513,7 +1614,7 @@ def get_gamma_parameters_gs(ds, target="ND", transformation="log", error_order=1
     return ds_params
 
 
-def get_lognormal_parameters_gs(ds, target="ND", transformation="log", error_order=1):
+def get_lognormal_parameters_gs(ds, target="ND", transformation="log", error_order=1, censoring="none"):
     """Compute Grid Search to identify mu and sigma lognormal distribution parameters."""
     # "target": ["ND", "LWC", "Z", "R"]
     # "transformation": "log", "identity", "sqrt",  # only for drop_number_concentration
@@ -1532,6 +1633,7 @@ def get_lognormal_parameters_gs(ds, target="ND", transformation="log", error_ord
         "target": target,
         "transformation": transformation,
         "error_order": error_order,
+        "censoring": censoring,
     }
 
     # Fit distribution in parallel
@@ -1563,25 +1665,62 @@ def get_lognormal_parameters_gs(ds, target="ND", transformation="log", error_ord
     return ds_params
 
 
-def get_normalized_gamma_parameters_gs(ds, target="ND", transformation="log", error_order=1):
-    r"""Estimate $\mu$ of a Normalized Gamma distribution using Grid Search.
+def get_normalized_gamma_parameters_gs(
+    ds,
+    target="ND",
+    transformation="log",
+    error_order=1,
+    censoring="none",
+):
+    """Estimate Normalized Gamma PSD parameters using Grid Search optimization.
 
-    The D50 and Nw parameters of the Normalized Gamma distribution are derived empirically from the obs DSD.
-    $\mu$ is derived by minimizing the errors between the obs DSD and modelled Normalized Gamma distribution.
+    This function fits a Normalized Gamma distribution to observed particle size
+    distribution data. The parameters ``Nw`` (normalized intercept parameter) and
+    ``D50`` (median volume diameter) are computed empirically from the observed DSD
+    moments, while the shape parameter ``mu`` is estimated through grid search by
+    minimizing the error between observed and modeled quantities.
 
     Parameters
     ----------
-    Nd : array_like
-        A drop size distribution
-    D50: optional, float
-        Median drop diameter in mm. If none is given, it will be estimated.
-    Nw: optional, float
-        Normalized Intercept Parameter. If none is given, it will be estimated.
-    order: optional, float
-        Order to which square the error when computing the sum of errors.
-        Order = 2 is equivalent to minimize the mean squared error (MSE) (L2 norm). The default is 2.
-        Order = 1 is equivalent to minimize the mean absolute error (MAE) (L1 norm).
-        Higher orders typically stretch higher the gamma distribution.
+    ds : xarray.Dataset
+        Input dataset containing PSD observations. Must include:
+        - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
+        - ``diameter_bin_center`` : Diameter bin centers [mm]
+        - ``diameter_bin_width`` : Diameter bin widths [mm]
+        - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
+    target : str, optional
+        Target quantity to optimize. Valid options:
+        - ``"ND"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
+        - ``"R"`` : Rain rate [mm h⁻¹]
+        - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+        - ``"LWC"`` : Liquid water content [g m⁻³]
+    transformation : str, optional
+        Transformation applied to the target quantity before computing the error.
+        Valid options:
+        - ``"identity"`` : No transformation
+        - ``"log"`` : Logarithmic transformation (default)
+        - ``"sqrt"`` : Square root transformation
+    error_order : int, optional
+        Order of the error metric (p-norm):
+        - ``1`` : L1 norm / Mean Absolute Error (MAE) (default)
+        - ``2`` : L2 norm / Mean Squared Error (MSE)
+        Higher orders tend to emphasize larger errors and may stretch the
+        fitted distribution toward higher diameters.
+    censoring : {"none", "left", "right", "both"}, optional
+        Specifies whether the observed particle size distribution (PSD) is
+        treated as censored at the edges of the diameter range due to
+        instrumental sensitivity limits.
+
+        - ``"none"`` : No censoring is applied. All diameter bins are used.
+        - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+          the spectrum where the observed number concentration is zero are
+          removed prior to cost-function evaluation.
+        - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+          the spectrum where the observed number concentration is zero are
+          removed prior to cost-function evaluation.
+        - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+          range of diameter bins with non-zero observed concentrations is
+          retained.
 
     Returns
     -------
@@ -1622,6 +1761,7 @@ def get_normalized_gamma_parameters_gs(ds, target="ND", transformation="log", er
         "target": target,
         "transformation": transformation,
         "error_order": error_order,
+        "censoring": censoring,
     }
 
     # Fit distribution in parallel
@@ -2079,6 +2219,14 @@ def check_target(target):
     return target
 
 
+def check_censoring(censoring):
+    """Check valid censoring argument."""
+    valid_censoring = {"none", "left", "right", "both"}
+    if censoring not in valid_censoring:
+        raise ValueError(f"Invalid 'censoring' {censoring}. Valid targets are {valid_censoring}.")
+    return censoring
+
+
 def check_transformation(transformation):
     """Check valid transformation argument."""
     valid_transformation = ["identity", "log", "sqrt"]
@@ -2166,6 +2314,7 @@ def check_optimization_kwargs(optimization_kwargs, optimization, psd_model):
             "target": check_target,
             "transformation": check_transformation,
             "error_order": None,
+            "censoring": check_censoring,
         },
         "MOM": {
             "mom_methods": None,
@@ -2272,7 +2421,7 @@ def get_ml_parameters(
 
     Parameters
     ----------
-     ds : xarray.Dataset
+    ds : xarray.Dataset
         Input dataset containing drop number concentration data and diameter information.
         It must include the following variables:
         - ``drop_number_concentration``: The number concentration of drops.
@@ -2357,13 +2506,87 @@ def get_ml_parameters(
     return ds_params
 
 
-def get_gs_parameters(ds, psd_model, target="ND", transformation="log", error_order=1):
-    """Retrieve PSD model parameters using Grid Search."""
+def get_gs_parameters(ds, psd_model, target="ND", transformation="log", error_order=1, censoring="none"):
+    """Estimate PSD model parameters using Grid Search optimization.
+
+    This function estimates particle size distribution (PSD) model parameters
+    by minimizing the error between observed and modeled PSD quantities through
+    a grid search over the parameter space.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset containing PSD observations. Must include:
+        - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
+        - ``diameter_bin_center`` : Diameter bin centers [mm]
+        - ``diameter_bin_width`` : Diameter bin widths [mm]
+        - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
+    psd_model : str
+        Name of the PSD model to fit. Valid options are:
+        - ``"GammaPSD"`` : Gamma distribution
+        - ``"NormalizedGammaPSD"`` : Normalized gamma distribution
+        - ``"LognormalPSD"`` : Lognormal distribution
+        - ``"ExponentialPSD"`` : Exponential distribution
+    target : str, optional
+        Target quantity to optimize. Valid options:
+        - ``"ND"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
+        - ``"R"`` : Rain rate [mm h⁻¹]
+        - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+        - ``"LWC"`` : Liquid water content [g m⁻³]
+    transformation : str, optional
+        Transformation applied to the target quantity before computing the error.
+        Valid options:
+        - ``"identity"`` : No transformation
+        - ``"log"`` : Logarithmic transformation (default)
+        - ``"sqrt"`` : Square root transformation
+    error_order : int, optional
+        Order of the error metric (p-norm). Default is 1 (L1 norm)(MAE).
+        Use 2 for L2 norm (MSEs).
+    censoring : {"none", "left", "right", "both"}, optional
+        Specifies whether the observed PSD is treated as censored at
+        the diameter edges due to instrumental sensitivity limits.
+        - ``"none"`` : No censoring is applied. All diameter bins are used.
+        - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+          the spectrum where the observed number concentration is zero are
+          removed prior to cost-function evaluation.
+        - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+          the spectrum where the observed number concentration is zero are
+          removed prior to cost-function evaluation.
+        - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+          range of diameter bins with non-zero observed concentrations is
+          retained.
+
+    Returns
+    -------
+    ds_params : xarray.Dataset
+        Dataset containing the estimated PSD model parameters.
+        Variables depend on the selected ``psd_model``:
+        - ``GammaPSD`` : ``N0``, ``mu``, ``Lambda``
+        - ``NormalizedGammaPSD`` : ``Nw``, ``mu``, ``Dm``
+        - ``LognormalPSD`` : ``Nt``, ``mu``, ``sigma``
+        - ``ExponentialPSD`` : ``N0``, ``Lambda``
+
+        Each parameter variable includes attributes describing the parameter
+        name, units, and optimization metadata.
+
+    Notes
+    -----
+    Grid search optimization explores a predefined parameter space to find
+    the combination that minimizes the specified error metric. This method
+    is more robust than gradient-based methods but can be computationally
+    expensive for high-dimensional parameter spaces.
+
+    If ``drop_number_concentration`` values are all zeros or contain
+    non-finite values, the output PSD parameters are set to NaN.
+    """
     # Check valid psd_model
     check_psd_model(psd_model, optimization="GS")
 
     # Check valid target
     target = check_target(target)
+
+    # Check valid censoring
+    censoring = check_censoring(censoring)
 
     # Check valid transformation
     transformation = check_transformation(transformation)
@@ -2419,7 +2642,84 @@ def estimate_model_parameters(
     optimization,
     optimization_kwargs=None,
 ):
-    """Routine to estimate PSD model parameters."""
+    """Estimate particle size distribution model parameters.
+
+    This is the main interface function for fitting PSD models to observed data.
+    It supports three optimization methods: Maximum Likelihood (ML), Method of
+    Moments (MOM), and Grid Search (GS).
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset containing PSD observations. Must include:
+
+        - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
+        - ``diameter_bin_center`` : Diameter bin centers [mm]
+        - ``diameter_bin_width`` : Diameter bin widths [mm]
+
+        Additional variables required for specific optimization methods:
+
+        - For ML: ``diameter_bin_lower``, ``diameter_bin_upper``
+        - For GS with target='R': ``fall_velocity`` (auto-computed if missing)
+        - For MOM: Moment variables ``M0``, ``M1``, ..., ``M6`` (depending on method)
+    psd_model : str
+        Name of the PSD model to fit. Valid options:
+
+        - ``"GammaPSD"`` : Gamma distribution
+        - ``"NormalizedGammaPSD"`` : Normalized gamma distribution
+        - ``"LognormalPSD"`` : Lognormal distribution
+        - ``"ExponentialPSD"`` : Exponential distribution
+
+        Use ``available_optimization(psd_model)`` to check which optimization
+        methods are available for a given model.
+    optimization : str
+        Optimization method to use. Valid options:
+
+        - ``"ML"`` : Maximum Likelihood estimation
+        - ``"MOM"`` : Method of Moments
+        - ``"GS"`` : Grid Search
+    optimization_kwargs : dict, optional
+        Dictionary of keyword arguments specific to the chosen optimization method.
+
+        For ``optimization="ML"``:
+
+        - ``init_method`` : str or list, Method(s) of moments for parameter initialization
+        - ``probability_method`` : str, Method to compute probabilities (default: 'cdf')
+        - ``likelihood`` : str, Likelihood function ('multinomial' or 'poisson', default: 'multinomial')
+        - ``truncated_likelihood`` : bool, Use truncated likelihood (default: True)
+        - ``optimizer`` : str, Optimization algorithm (default: 'Nelder-Mead')
+
+        For ``optimization="GS"``:
+
+        - ``target`` : str, Target quantity to optimize ('ND', 'R', 'Z', 'LWC', default: 'ND')
+        - ``transformation`` : str, Error transformation ('identity', 'log', 'sqrt', default: 'log')
+        - ``error_order`` : int, Error metric order (default: 1)
+        - ``censoring`` : str, Censoring type ('none', 'left', 'right', 'both', default: 'none')
+
+        For ``optimization="MOM"``:
+
+        - ``mom_methods`` : str or list, Method(s) of moments to use (e.g., 'M234')
+
+    Returns
+    -------
+    ds_params : xarray.Dataset
+        Dataset containing the estimated PSD model parameters with attributes.
+        Variables depend on the selected ``psd_model``:
+
+        - ``GammaPSD`` : ``N0``, ``mu``, ``Lambda``
+        - ``NormalizedGammaPSD`` : ``Nw``, ``mu``, ``Dm``
+        - ``LognormalPSD`` : ``Nt``, ``mu``, ``sigma``
+        - ``ExponentialPSD`` : ``N0``, ``Lambda``
+
+        Each parameter variable includes attributes with parameter name, units,
+        and optimization metadata.
+
+        Dataset attributes include:
+
+        - ``disdrodb_psd_model`` : The fitted PSD model name
+        - ``disdrodb_psd_optimization`` : The optimization method used
+        - ``disdrodb_psd_optimization_kwargs`` : String representation of kwargs
+    """
     # Check inputs arguments
     optimization_kwargs = {} if optimization_kwargs is None else optimization_kwargs
     optimization = check_optimization(optimization)
