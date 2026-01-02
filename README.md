@@ -1,4 +1,5 @@
-# 📦 disdrodb: an open-source python software for standardized processing, sharing, and analysis of disdrometer data
+# 📦 disdrodb
+An open-source python software for standardized processing, sharing, and analysis of disdrometer data
 
 |                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -17,9 +18,8 @@
 
 [**Slack**](https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA) | [**Documentation**](https://disdrodb.readthedocs.io/en/latest/)
 
-DISDRODB is part of an international joint effort to index, collect and homogenize drop size distribution (DSD) data from around the world.
-
-The DISDRODB project also aims to establish a global standard for sharing disdrometer observations.
+DISDRODB is an international joint effort to index, collect and homogenize drop size distribution (DSD) data from around the world.
+DISDRODB aims to establish a global standard for sharing disdrometer observations.
 Built on FAIR data principles and Climate & Forecast (CF) conventions, DISDRODB standards facilitate the processing, analysis and visualization of disdrometer data.
 
 ## ℹ️ Software Overview
