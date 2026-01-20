@@ -29,17 +29,17 @@ using `venv <https://docs.python.org/3/library/venv.html>`__ or
 **With conda:**
 
 * Install `mamba <https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html>`_, `miniconda <https://docs.conda.io/en/latest/miniconda.html>`__ or `anaconda <https://docs.anaconda.com/anaconda/install/>`__ if you haven't already installed.
-* Create a new conda environment (e.g., *disdrodb-py311*):
+* Create a new conda environment with one of the latest python version (e.g., python 3.13):
 
 .. code-block:: bash
 
-    conda create --name disdrodb-py311 python=3.11 --no-default-packages
+    conda create --name disdrodb python=3.13
 
 * Activate the environment:
 
 .. code-block:: bash
 
-    conda activate disdrodb-py311
+    conda activate disdrodb
 
 **With venv:**
 
@@ -114,12 +114,12 @@ Create the development environment
 ......................................
 
 We recommend to create a dedicated conda environment for development purposes.
-You can create a conda environment (i.e. with python 3.11) with:
+You can create a conda environment (i.e. with python 3.13) with:
 
 .. code-block:: bash
 
-	conda create --name disdrodb-dev-py311 python=3.11 --no-default-packages
-	conda activate disdrodb-dev-py311
+	conda create --name disdrodb-dev python=3.13
+	conda activate disdrodb-dev
 
 Install the package dependencies
 ............................................

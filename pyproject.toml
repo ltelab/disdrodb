@@ -7,9 +7,9 @@ name = "disdrodb"
 authors = [
 	{name = "Gionata Ghiggi"},
 ]
-description = "disdrodb provides tools to download, standardize, share and analyze global disdrometer data."
+description = "An open-source python software for standardized processing, sharing, and analysis of disdrometer data."
 readme = "README.md"
-keywords = ["python", "disdrometer","parsivel", "drop size distribution"]
+keywords = ["python", "disdrometer","parsivel", "drop size distribution", "radar", "remote sensing", "precipitation", "rainfall"]
 classifiers = [
 	"Development Status :: 5 - Production/Stable",
 	"Intended Audience :: Developers",

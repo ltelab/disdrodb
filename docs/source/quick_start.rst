@@ -179,11 +179,22 @@ Generating these products requires only two simple commands:
    disdrodb_run_l0_station EPFL HYMEX_LTE_SOP3 10 --debugging_mode True --parallel False --verbose True
    disdrodb_run_l1_station EPFL HYMEX_LTE_SOP3 10 --debugging_mode True --parallel False --verbose True
 
-For illustrative purposes, this example processes 3 raw files (``--debugging_mode True``)
+For illustrative purposes, this code snippet here above processes just 3 raw files (``--debugging_mode True``)
 with disabled parallelism (``--parallel False``) and verbose output  (``--verbose True``).
 
+To process all data for a given station uses:
+
+.. code:: bash
+
+   disdrodb_run_l0_station EPFL HYMEX_LTE_SOP3 10 --parallel True --force True
+   disdrodb_run_l1_station EPFL HYMEX_LTE_SOP3 10 --parallel True --force True
+
+
 Please note that parallel (multi)processing is enabled by default (``--parallel True``).
-If you want to keep track of the processing, the ``logs`` directory in the DISDRODB Data Archive
+If you want to keep track of the processing, you can open the Dask Dashboard at
+`http://localhost:8787/status <http://localhost:8787/status>`_.
+
+Alternatively, the ``logs`` directory in the DISDRODB Data Archive
 allows you to check the processing status of each file.
 
 You can open the ``logs`` directory typing the following command in the terminal:

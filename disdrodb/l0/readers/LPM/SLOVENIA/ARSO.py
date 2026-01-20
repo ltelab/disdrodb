@@ -257,6 +257,10 @@ def read_SM05_telegram(
     # time_str = df["time"].str.extract(r"(\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2})")[0]
     df["time"] = pd.to_datetime(time_str, format="%d/%m/%Y %H:%M:%S", errors="coerce")
 
+    # Remove rows where time year is 1999
+    # - Timesteps with 1999-11-30 appears sometimes when sensors fails
+    df = df[df["time"].dt.year != 1999]
+
     # Remove checksum from raw_drop_number
     df["raw_drop_number"] = df["raw_drop_number"].str.rsplit(";", n=2, expand=True)[0]
 
