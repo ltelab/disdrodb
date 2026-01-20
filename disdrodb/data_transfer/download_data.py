@@ -24,6 +24,7 @@ import urllib.parse
 
 import click
 import pooch
+import requests
 import tqdm
 
 from disdrodb.api.path import define_metadata_filepath, define_station_dir
@@ -405,6 +406,8 @@ def build_webserver_wget_command(url: str, cut_dirs: int, dst_dir: str, verbose:
         f"--cut-dirs={cut_dirs}",
         # Downloads just new data without re-downloading existing files
         "--timestamping",  # -N
+        # Specify agent
+        "--user-agent=disdrodb (+https://github.com/ltelab/disdrodb)",
     ]
 
     # Define source and destination directory
@@ -541,15 +544,80 @@ def _download_file_from_url(url: str, dst_dir: str) -> str:
 
     os.makedirs(dst_dir, exist_ok=True)
 
+    # Check if it can be downloaded
+    if not is_programmatic_downloadable(url):
+        raise RuntimeError(
+            f"Cannot downloaded data programmatically from '{url}' right now. "
+            "The server requires a web browser (e.g. WAF / anti-bot protection).",
+        )
+
     # Grab Pooch's logger and remember its current level
     logger = pooch.get_logger()
     orig_level = logger.level
     # Silence INFO messages (including the SHA256 print)
     logger.setLevel(logging.WARNING)
+
     # Define pooch downloader
-    downloader = pooch.HTTPDownloader(progressbar=True)
+    headers = {"User-Agent": "disdrodb (+https://github.com/ltelab/disdrodb"}
+    # "Accept": "*/*"}
+    downloader = pooch.HTTPDownloader(progressbar=True, headers=headers)
     # Download the file
     pooch.retrieve(url=url, known_hash=None, path=dst_dir, fname=dst_filename, downloader=downloader, progressbar=tqdm)
     # Restore the previous logging level
     logger.setLevel(orig_level)
+
+    # Check file has been download
+    # if not os.path.isfile(dst_filepath) or os.path.getsize(dst_filepath) == 0:
+    #     raise RuntimeError(f"URL {url} likely unreachable. Try manually.")
+
     return dst_filepath
+
+
+def is_programmatic_downloadable(url, timeout=5):
+    """Check whether a URL is programmatically downloadable.
+
+    WITHOUT downloading the file.
+
+    Returns
+    -------
+    bool
+        True  -> safe for pooch / requests
+        False -> browser-only / blocked
+    """
+    headers = {
+        # Range prevents full download (0–0 = 1 byte max)
+        "Range": "bytes=0-0",
+        # Explicitly non-browser
+        "User-Agent": "python-downloader/1.0",
+    }
+    try:
+        r = requests.get(
+            url,
+            headers=headers,
+            allow_redirects=True,
+            timeout=timeout,
+            stream=True,
+        )
+    except requests.RequestException:
+        return False
+
+    # --- Hard fail signals ---
+    if r.status_code in (202, 403, 401):
+        return False
+
+    if r.headers.get("x-amzn-waf-action") == "challenge":
+        return False
+
+    content_type = r.headers.get("Content-Type", "").lower()
+    if "text/html" in content_type:
+        return False
+
+    content_length = r.headers.get("Content-Length")
+    if content_length == "0":
+        return False
+
+    # If server honored Range, we are good
+    if r.status_code in (200, 206):
+        return True
+
+    return False
