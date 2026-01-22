@@ -32,6 +32,7 @@ import numpy as np
 import xarray as xr
 from scipy.interpolate import PchipInterpolator, interp1d
 from scipy.special import gamma as gamma_f
+from scipy.special import gammaln
 
 from disdrodb.constants import DIAMETER_DIMENSION
 from disdrodb.utils.warnings import suppress_warnings
@@ -99,6 +100,13 @@ def create_psd(psd_model, parameters):
     psd_class = get_psd_model(psd_model)
     psd = psd_class.from_parameters(parameters)
     return psd
+
+
+def create_psd_from_dataset(ds_params):
+    """Define PSD from DISDRODB L2M product."""
+    if "disdrodb_psd_model" not in ds_params.attrs:
+        raise ValueError("Expecting a DISDRODB L2M product with attribute 'disdrodb_psd_model'.")
+    return create_psd(ds_params.attrs["disdrodb_psd_model"], ds_params)
 
 
 def get_required_parameters(psd_model):
@@ -387,9 +395,10 @@ class GammaPSD(ExponentialPSD):
 
     References
     ----------
-    Ulbrich, C. W., 1985: The Effects of Drop Size Distribution Truncation on
-    Rainfall Integral Parameters and Empirical Relations.
-    J. Appl. Meteor. Climatol., 24, 580-590, https://doi.org/10.1175/1520-0450(1985)024<0580:TEODSD>2.0.CO;2
+    Ulbrich, C. W., 1983.
+    Natural Variations in the Analytical Form of the Raindrop Size Distribution.
+    J. Appl. Meteor. Climatol., 22, 1764-1775.
+    https://doi.org/10.1175/1520-0450(1983)022<1764:NVITAF>2.0.CO;2.
     """
 
     def __init__(self, N0=1.0, mu=0.0, Lambda=1.0):
@@ -445,6 +454,14 @@ class GammaPSD(ExponentialPSD):
         else:
             summary = "" f"{self.name} with N-d parameters \n"
         return summary
+
+    def compute_Dm(mu, Lambda):
+        """Compute Dm from PSD parameters."""
+        return (mu + 4) / Lambda
+
+    def compute_sigma_m(mu, Lambda):
+        """Compute sigma_m from PSD parameters."""
+        return (mu + 4) ** 0.5 / Lambda
 
 
 class NormalizedGammaPSD(XarrayPSD):
@@ -571,12 +588,370 @@ class NormalizedGammaPSD(XarrayPSD):
         return summary
 
 
+class GeneralizedGammaPSD(XarrayPSD):
+    """Generalized Gamma particle size distribution (PSD).
+
+    Callable class to provide a generalized gamma PSD with the given parameters.
+
+    The PSD form is:
+
+    N(D; N_t, Λ, μ, c) = N_t * (c*Λ/Γ(μ+1)) * (Λ*D)^(c(μ+1)-1) * exp(-(Λ*D)^c)
+
+    Where:
+    - N_t: total concentration [m^-3]
+    - Λ: inverse scale parameter [mm^-1]
+    - μ: shape parameter (μ > -1)
+    - c: shape parameter (c ≠ 0)
+
+    Attributes
+    ----------
+        Nt: total concentration parameter
+        Lambda: inverse scale parameter
+        mu: shape parameter
+        c: shape parameter
+
+    Args (call):
+        D: the particle diameter.
+
+    Returns (call):
+        The PSD value for the given diameter.
+
+    References
+    ----------
+    Lee, G. W., I. Zawadzki, W. Szyrmer, D. Sempere-Torres, and R. Uijlenhoet, 2004:
+    A General Approach to Double-Moment Normalization of Drop Size Distributions.
+    J. Appl. Meteor. Climatol., 43, 264-281, https://doi.org/10.1175/1520-0450(2004)043<0264:AGATDN>2.0.CO;2
+    """
+
+    def __init__(self, Nt=1.0, Lambda=1.0, mu=0.0, c=1.0):
+        self.Nt = Nt
+        self.Lambda = Lambda
+        self.mu = mu
+        self.c = c
+        self.parameters = {
+            "Nt": self.Nt,
+            "Lambda": self.Lambda,
+            "mu": self.mu,
+            "c": self.c,
+        }
+        check_input_parameters(self.parameters)
+
+    @property
+    def name(self):
+        """Return the PSD name."""
+        return "GeneralizedGammaPSD"
+
+    @staticmethod
+    def formula(D, Nt, Lambda, mu, c):
+        """Calculates the Generalized Gamma PSD values.
+
+        Parameters
+        ----------
+        D : array-like
+            Particle diameter
+        Nt : float or array-like
+            Total concentration parameter [m^-3]
+        Lambda : float or array-like
+            Inverse scale parameter [???]
+        mu : float or array-like
+            Shape parameter (μ > -1)
+        c : float or array-like
+            Shape parameter (c ≠ 0)
+
+        Returns
+        -------
+        array-like
+            PSD values
+        """
+        # N(D) = N_t * (c*Λ/Γ(μ+1)) * (Λ*D)^(c(μ+1)-1) * exp(-(Λ*D)^c)
+        lambda_d = Lambda * D
+        intercept = Nt * c * Lambda / gamma_f(mu + 1)
+        power_term = lambda_d ** (c * (mu + 1) - 1)
+        exp_term = np.exp(-(lambda_d**c))
+        return intercept * power_term * exp_term
+
+    @staticmethod
+    def from_parameters(parameters):
+        """Initialize GeneralizedGammaPSD from a dictionary or xr.Dataset.
+
+        Args:
+            parameters (dict or xr.Dataset): Parameters to initialize the class.
+                Required: Nt, Lambda, mu, c
+
+        Returns
+        -------
+            GeneralizedGammaPSD: An instance of GeneralizedGammaPSD
+            initialized with the parameters.
+        """
+        Nt = parameters["Nt"]
+        Lambda = parameters["Lambda"]
+        mu = parameters["mu"]
+        c = parameters["c"]
+        return GeneralizedGammaPSD(Nt=Nt, Lambda=Lambda, mu=mu, c=c)
+
+    @staticmethod
+    def required_parameters():
+        """Return the required parameters of the PSD."""
+        return ["Nt", "Lambda", "mu", "c"]
+
+    def parameters_summary(self):
+        """Return a string with the parameter summary."""
+        if self.has_scalar_parameters():
+            summary = "".join(
+                [
+                    f"{self.name}\n",
+                    f"$N_t = {self.Nt:.2f}$\n",
+                    f"$\\lambda = {self.Lambda:.2f}$\n",
+                    f"$\\mu = {self.mu:.2f}$\n",
+                    f"$c = {self.c:.2f}$\n",
+                ],
+            )
+        else:
+            summary = "" f"{self.name} with N-d parameters \n"
+        return summary
+
+
+class NormalizedGeneralizedGammaPSD(XarrayPSD):
+    """Normalized Generalized Gamma particle size distribution (PSD).
+
+    Callable class to provide a normalized generalized gamma PSD with the given
+    parameters.
+
+    The PSD form is:
+
+    N(D; Mi, Mj, μ, c) = N_c' * c * Γ_i^((j+c(μ+1))/(i-j)) *
+                            Γ_j^((-i-c(μ+1))/(i-j)) *
+                            (D/D_c')^(c(μ+1)) *
+                            exp(-(Γ_i/Γ_j)^(c/(i-j)) * (D/D_c')^c)
+    with
+    - N_c' = Mi^((j+1)/(j-i)) * Mj^((i+1)/(i-j))
+    - D_c' = (Mj / Mi)^(1/(j-i))
+
+    where:
+    - Mi = Γ_i (moment parameter i)
+    - Mj = Γ_j (moment parameter j)
+    - μ: shape parameter, with μ > -1
+    - c: shape parameter, c!=0,
+    - N_c': normalized intercept parameter
+    - D_c': characteristic diameter parameter
+
+    Attributes
+    ----------
+        i: moment index i
+        j: moment index j
+        N_c: normalized intercept parameter (computed from i, j, Mi, Mj)
+        D_c: characteristic diameter parameter (computed from i, j, Mi, Mj)
+        c: shape parameter c
+        mu: shape parameter μ
+
+    Args (call):
+        D: the particle diameter.
+
+    Returns (call):
+        The PSD value for the given diameter.
+
+    References
+    ----------
+    Lee, G. W., I. Zawadzki, W. Szyrmer, D. Sempere-Torres, and R. Uijlenhoet, 2004.
+    A General Approach to Double-Moment Normalization of Drop Size Distributions.
+    J. Appl. Meteor. Climatol., 43, 264-281, https://doi.org/10.1175/1520-0450(2004)043<0264:AGATDN>2.0.CO;2.
+    """
+
+    def __init__(self, i=1.0, j=0.0, Nc=1, Dc=1.0, c=1.0, mu=0.0):
+        self.i = i
+        self.j = j
+        self.Nc = Nc
+        self.Dc = Dc
+        self.c = c
+        self.mu = mu
+        self.parameters = {
+            "i": self.i,
+            "j": self.j,
+            "Nc": self.Nc,
+            "Dc": self.Dc,
+            "c": self.c,
+            "mu": self.mu,
+        }
+        check_input_parameters(self.parameters)
+
+    @staticmethod
+    def compute_Nc(i, j, Mi, Mj):
+        """Compute N_c' from i, j, Mi, Mj.
+
+        N_c' = Mi^((j+1)/(j-i)) * Mj^((i+1)/(i-j))
+
+        Parameters
+        ----------
+        i : float or array-like
+            Moment index i
+        j : float or array-like
+            Moment index j
+        Mi : float or array-like
+            Moment parameter Mi (Γ_i)
+        Mj : float or array-like
+            Moment parameter Mj (Γ_j)
+
+        Returns
+        -------
+        float or array-like
+            The normalized intercept parameter N_c' with units m-3 mm-1.
+        """
+        exponent_i = (j + 1) / (j - i)
+        exponent_j = (i + 1) / (i - j)
+        return (Mi**exponent_i) * (Mj**exponent_j)
+
+    @staticmethod
+    def compute_Dc(i, j, Mi, Mj):
+        """Compute D_c' from i, j, Mi, Mj.
+
+        D_c' = (Mj / Mi)^(1/(j-i))
+
+        Parameters
+        ----------
+        i : float or array-like
+            Moment index i
+        j : float or array-like
+            Moment index j
+        Mi : float or array-like
+            Moment parameter Mi (Γ_i)
+        Mj : float or array-like
+            Moment parameter Mj (Γ_j)
+
+        Returns
+        -------
+        float or array-like
+            The characteristic diameter parameter D_c' with units mm.
+        """
+        exponent = 1.0 / (j - i)
+        return (Mj / Mi) ** exponent
+
+    @property
+    def name(self):
+        """Return the PSD name."""
+        return "NormalizedGeneralizedGammaPSD"
+
+    @staticmethod
+    def formula(D, i, j, Nc, Dc, c, mu):
+        """Calculates the Normalized Generalized Gamma PSD values.
+
+        N_c' and D_c' are computed internally from the parameters.
+
+        Parameters
+        ----------
+        D : array-like
+            Particle diameter
+        i : float
+            Moment index i
+        j : float
+            Moment index j
+        Nc : float
+            General characteristic intercept (mm-1 m-3)
+        Dc : float
+            General characteristic diameter (mm)
+        c : float
+            Shape parameter c
+        mu : float
+            Shape parameter μ
+
+        Returns
+        -------
+        array-like
+            PSD values
+        """
+        # Compute x
+        x = D / Dc
+
+        # ---------------------------------------------------------------
+        # Compute lngamma i and j
+        gammaln_i = gammaln(mu + 1 + (i / c))
+        gammaln_j = gammaln(mu + 1 + (j / c))
+
+        # Compute gamma i and j
+        # gamma_i = gamma_f(mu + 1  + i / c)
+        # gamma_j = gamma_f(mu + 1  + j / c)
+
+        # Calculate normalization coefficient
+        # Equation: c * Γ_i^((j+c(μ+1))/(i-j)) * Γ_j^((-i-c(μ+1))/(i-j))
+        pow_i = (j + c * (mu + 1)) / (i - j)
+        pow_j = (-i - c * (mu + 1)) / (i - j)
+        norm_coeff = c * np.exp(pow_i * gammaln_i + pow_j * gammaln_j)
+        # norm_coeff = c * (gamma_i ** pow_i) * (gamma_j ** pow_j)
+
+        # Compute ratio gammas
+        # ratio_gammas = gamma_i / gamma_j
+        ratio_gammas = np.exp(gammaln_i - gammaln_j)
+
+        # Calculate the full PSD formula
+        # N_c' * norm_coeff * (D/D_c')^(c(μ+1)) * exp(-(Γ_i/Γ_j)^(c/(i-j)) * (D/D_c')^c)
+        exponent_power = (ratio_gammas) ** (c / (i - j))
+        power_term = x ** (c * (mu + 1) - 1)
+        exp_term = np.exp(-exponent_power * (x**c))
+        return Nc * norm_coeff * power_term * exp_term
+
+    @staticmethod
+    def from_parameters(parameters):
+        """Initialize NormalizedGeneralizedGammaPSD from a dictionary or xr.Dataset.
+
+        Args:
+            parameters (dict or xr.Dataset): Parameters to initialize the class.
+                Required: i, j, Nc, Dc, c, mu
+
+        Returns
+        -------
+            NormalizedGeneralizedGammaPSD: An instance of NormalizedGeneralizedGammaPSD
+            initialized with the parameters.
+        """
+        if "disdrodb_psd_model_kwargs" in parameters.attrs:
+            model_kwargs = eval(parameters.attrs["disdrodb_psd_model_kwargs"])
+            i = model_kwargs["i"]
+            j = model_kwargs["j"]
+        else:
+            i = parameters["i"]
+            j = parameters["j"]
+        Dc = parameters["Dc"]
+        Nc = parameters["Nc"]
+        c = parameters["c"]
+        mu = parameters["mu"]
+        return NormalizedGeneralizedGammaPSD(i=i, j=j, Nc=Nc, Dc=Dc, c=c, mu=mu)
+
+    @staticmethod
+    def required_parameters():
+        """Return the required parameters of the PSD."""
+        return ["i", "j", "Nc", "Dc", "c", "mu"]
+
+    def parameters_summary(self):
+        """Return a string with the parameter summary."""
+        if self.has_scalar_parameters():
+            summary = "".join(
+                [
+                    f"{self.name}\n",
+                    f"$i = {self.i:.2f}$\n",
+                    f"$j = {self.j:.2f}$\n",
+                    f"$c = {self.c:.2f}$\n",
+                    f"$\\mu = {self.mu:.2f}$\n",
+                    f"$N_c' = {self.Nc:.2f}$\n",
+                    f"$D_c' = {self.Dc:.2f}$\n",
+                ],
+            )
+        else:
+            summary = "" f"{self.name} with N-d parameters \n"
+        return summary
+
+
+####-------------------------------------------------------------------------.
+#### PSD_MODELS_DICT
 PSD_MODELS_DICT = {
     "LognormalPSD": LognormalPSD,
     "ExponentialPSD": ExponentialPSD,
     "GammaPSD": GammaPSD,
+    "GeneralizedGammaPSD": GeneralizedGammaPSD,
     "NormalizedGammaPSD": NormalizedGammaPSD,
+    "NormalizedGeneralizedGammaPSD": NormalizedGeneralizedGammaPSD,
 }
+
+
+####-------------------------------------------------------------------------.
+#### BinnedPSD
 
 
 def define_interpolator(bin_edges, bin_values, interp_method):
