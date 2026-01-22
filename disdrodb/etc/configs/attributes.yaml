@@ -371,6 +371,30 @@ KLDiv:
   description: A distance measure of how the modelled distribution diverges from the observed N(D) one.
   units: ""
   valid_range: [0, inf]
+JSD:
+  long_name: Jensen-Shannon Distance
+  standard_name: jensen_shannon_distance
+  description: Jensen-Shannon distance between observed and modelled N(D).
+  units: ""
+  valid_range: [0, inf]
+WD:
+  long_name: Wasserstein Distance
+  standard_name: wasserstein_distance
+  description: Wasserstein-1 distance between observed and modelled N(D).
+  units: ""
+  valid_range: [0, inf]
+KS:
+  long_name: Kolmogorov-Smirnov Statistic
+  standard_name: kolmogorov_smirnov_statistic
+  description: Kolmogorov-Smirnov test statistic between observed and modelled N(D).
+  units: ""
+  valid_range: [0, 1]
+KS_pvalue:
+  long_name: Kolmogorov-Smirnov Test p-value
+  standard_name: kolmogorov_smirnov_pvalue
+  description: Kolmogorov-Smirnov test p-value for the comparison between observed and modelled N(D).
+  units: ""
+  valid_range: [0, 1]
 air_temperature:
   description: "Air temperature in degrees Celsius (C)"
   long_name: Air temperature

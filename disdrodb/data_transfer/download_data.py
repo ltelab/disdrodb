@@ -617,7 +617,4 @@ def is_programmatic_downloadable(url, timeout=5):
         return False
 
     # If server honored Range, we are good
-    if r.status_code in (200, 206):
-        return True
-
-    return False
+    return r.status_code in (200, 206)

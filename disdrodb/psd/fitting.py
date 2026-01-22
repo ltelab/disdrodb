@@ -31,6 +31,14 @@ from disdrodb.l2.empirical_dsd import (
     get_normalized_intercept_parameter_from_moments,
     get_total_number_concentration,
 )
+from disdrodb.psd.grid_search import (
+    check_censoring,
+    check_target,
+    check_transformation,
+    # check_error_metric,
+    compute_cost_function,
+    normalize_errors,
+)
 from disdrodb.psd.models import (
     ExponentialPSD,
     GammaPSD,
@@ -63,143 +71,6 @@ from disdrodb.utils.warnings import suppress_warnings
 
 # - LogNormal,Exponential, Gamma: Nt
 # --> get_total_number_concentration(drop_number_concentration, diameter_bin_width)
-
-
-####--------------------------------------------------------------------------------------.
-#### Goodness of fit (GOF)
-
-
-def compute_kl_divergence(pk, qk, dim=DIAMETER_DIMENSION):
-    """Compute Kullback-Leibler (KL) divergence.
-
-    It compare two probability distributions.
-    When KL < 0.1 the two distributions are similar.
-    When KL < 0.01 the two distributions are nearly indistinguishable.
-
-    Parameters
-    ----------
-    pk: xarray.DataArray
-        Observed / true / empirical distribution
-    qk: xarray.DataArray
-        Predicted / model / approximating distribution
-
-    Returns
-    -------
-    xarray.DataArray
-        Kullback-Leibler (KL) divergence.
-
-    """
-    # Compute log probability ratio
-    epsilon = 1e-10
-    pk = xr.where(pk == 0, epsilon, pk)
-    qk = xr.where(qk == 0, epsilon, qk)
-    log_prob_ratio = np.log(pk / qk)
-    log_prob_ratio = log_prob_ratio.where(np.isfinite(log_prob_ratio))
-
-    # Compute divergence
-    kl_divergence = (pk * log_prob_ratio).sum(dim=dim, skipna=False)
-    return kl_divergence
-
-
-def compute_gof_stats(obs, pred, dim=DIAMETER_DIMENSION):
-    """
-    Compute various goodness-of-fit (GoF) statistics between obs and predicted values.
-
-    Parameters
-    ----------
-    obs: xarray.DataArray
-        Observations DataArray with at least dimension ``dim``.
-    pred: xarray.DataArray
-        Predictions DataArray with at least dimension ``dim``.
-    dim: str
-        DataArray dimension over which to compute GOF statistics.
-        The default is DIAMETER_DIMENSION.
-
-    Returns
-    -------
-    ds: xarray.Dataset
-        Dataset containing the computed GoF statistics.
-    """
-    from disdrodb.l2.empirical_dsd import get_mode_diameter
-
-    # Retrieve diameter and diameter bin width
-    diameter = obs["diameter_bin_center"]
-    diameter_bin_width = obs["diameter_bin_width"]
-
-    # Compute errors
-    error = obs - pred
-
-    # Compute max obs and pred
-    obs_max = obs.max(dim=dim, skipna=False)
-    pred_max = pred.max(dim=dim, skipna=False)
-
-    # Compute NaN mask
-    mask_nan = np.logical_or(np.isnan(obs_max), np.isnan(pred_max))
-
-    # Compute GOF statistics
-    with suppress_warnings():
-        # Compute Pearson Correlation
-        pearson_r = xr.corr(obs, pred, dim=dim)
-
-        # Compute Mean Absolute Error (MAE)
-        mae = np.abs(error).mean(dim=dim, skipna=False)
-
-        # Compute maximum absolute error
-        max_error = np.abs(error).max(dim=dim, skipna=False)
-        relative_max_error = xr.where(max_error == 0, 0, xr.where(obs_max == 0, np.nan, max_error / obs_max))
-
-        # Compute deviation of N(D) at distribution mode
-        mode_deviation = obs_max - pred_max
-        mode_relative_deviation = xr.where(
-            mode_deviation == 0,
-            0,
-            xr.where(obs_max == 0, np.nan, mode_deviation / obs_max),
-        )
-
-        # Compute diameter difference of the distribution mode
-        diameter_mode_pred = get_mode_diameter(pred, diameter)
-        diameter_mode_obs = get_mode_diameter(obs, diameter)
-        diameter_mode_deviation = diameter_mode_obs - diameter_mode_pred
-
-        # Compute difference in total number concentration
-        total_number_concentration_obs = (obs * diameter_bin_width).sum(dim=dim, skipna=False)
-        total_number_concentration_pred = (pred * diameter_bin_width).sum(dim=dim, skipna=False)
-        total_number_concentration_difference = total_number_concentration_pred - total_number_concentration_obs
-
-        # Compute pdf per bin
-        pk_pdf = obs / total_number_concentration_obs
-        qk_pdf = pred / total_number_concentration_pred
-
-        # Compute probabilities per bin
-        pk = pk_pdf * diameter_bin_width
-        pk = pk / pk.sum(dim=dim, skipna=False)  # this might not be necessary
-        qk = qk_pdf * diameter_bin_width
-        qk = qk / qk.sum(dim=dim, skipna=False)  # this might not be necessary
-
-        # Compute Kullback-Leibler divergence
-        kl_divergence = compute_kl_divergence(pk=pk, qk=qk)
-        kl_divergence = xr.where((error == 0).all(dim=dim), 0, kl_divergence)
-
-    # Create an xarray.Dataset to hold the computed statistics
-    ds = xr.Dataset(
-        {
-            "R2": pearson_r**2,  # Squared Pearson correlation coefficient
-            "MAE": mae,  # Mean Absolute Error
-            "MaxAE": max_error,  # Maximum Absolute Error
-            "RelMaxAE": relative_max_error,  # Relative Maximum Absolute Error
-            "PeakDiff": mode_deviation,  # Difference at distribution peak
-            "RelPeakDiff": mode_relative_deviation,  # Relative difference at peak
-            "DmodeDiff": diameter_mode_deviation,  # Difference in mode diameters
-            "NtDiff": total_number_concentration_difference,
-            "KLDiv": kl_divergence,  # Kullback-Leibler divergence
-        },
-    )
-    # Round
-    ds = ds.round(2)
-    # Mask where input obs or pred is NaN
-    ds = ds.where(~mask_nan)
-    return ds
-
 
 ####--------------------------------------------------------------------------------------.
 #### Maximum Likelihood (ML)
@@ -1072,294 +943,6 @@ def get_exponential_parameters(
 #### - Optimization utilities
 
 
-def _compute_rain_rate(ND, D, dD, V):
-    axis = 1 if ND.ndim == 2 else None
-    rain_rate = np.pi / 6 * np.sum(ND * V * (D / 1000) ** 3 * dD, axis=axis) * 3600 * 1000
-    return rain_rate  # mm/h
-
-
-def _compute_lwc(ND, D, dD, rho_w=1000):
-    axis = 1 if ND.ndim == 2 else None
-    lwc = np.pi / 6.0 * (rho_w * 1000) * np.sum((D / 1000) ** 3 * ND * dD, axis=axis)
-    return lwc  # g/m3
-
-
-def _compute_z(ND, D, dD):
-    axis = 1 if ND.ndim == 2 else None
-    z = np.sum(((D) ** 6 * ND * dD), axis=axis)  # mm⁶·m⁻³
-    Z = 10 * np.log10(z)
-    return Z
-
-
-def _compute_target_variable(
-    target,
-    ND_obs,
-    ND_preds,
-    D,
-    dD,
-    V,
-):
-    # Compute observed and predicted target variables
-    if target == "Z":
-        obs = _compute_z(ND_obs, D, dD)
-        pred = _compute_z(ND_preds, D, dD)
-    elif target == "R":
-        obs = _compute_rain_rate(ND_obs, D, dD, V)
-        pred = _compute_rain_rate(ND_preds, D, dD, V)
-    elif target == "LWC":
-        obs = _compute_lwc(ND_obs, D, dD)
-        pred = _compute_lwc(ND_preds, D, dD)
-    else:  # N(D) or H(x)
-        obs = ND_obs
-        pred = ND_preds
-    return obs, pred
-
-
-def _left_truncate_bins(ND_obs, ND_preds, D, dD, V):
-    if np.all(ND_obs == 0):  # all zeros
-        return None
-    idx = np.argmax(ND_obs > 0)
-    return (
-        ND_obs[idx:],
-        ND_preds[:, idx:],
-        D[idx:],
-        dD[idx:],
-        V[idx:],
-    )
-
-
-def _right_truncate_bins(ND_obs, ND_preds, D, dD, V):
-    if np.all(ND_obs == 0):  # all zeros
-        return None
-    idx = len(ND_obs) - np.argmax(ND_obs[::-1] > 0)
-    return (
-        ND_obs[:idx],
-        ND_preds[:, :idx],
-        D[:idx],
-        dD[:idx],
-        V[:idx],
-    )
-
-
-def _truncate_bin_edges(
-    ND_obs,
-    ND_preds,
-    D,
-    dD,
-    V,
-    left_censored=False,
-    right_censored=False,
-):
-    data = (ND_obs, ND_preds, D, dD, V)
-    if left_censored:
-        data = _left_truncate_bins(*data)
-        if data is None:
-            return None
-    if right_censored:
-        data = _right_truncate_bins(*data)
-        if data is None:
-            return None
-    return data
-
-
-def _apply_transformation(obs, pred, transformation):
-    if transformation == "log":
-        return np.log(obs + 1), np.log(pred + 1)
-    if transformation == "sqrt":
-        return np.sqrt(obs), np.sqrt(pred)
-    # if transformation == "identity":
-    return obs, pred
-
-
-def _compute_kl_divergence(obs, pred, dD):
-    """Compute Kullback-Leibler divergence between observed and predicted N(D).
-
-    Parameters
-    ----------
-    obs : 1D array
-        Observed N(D) values [n_bins]. Unit [#/m3/mm-1]
-    pred : 2D array
-        Predicted N(D) values [n_samples, n_bins]. Unit [#/m3/mm-1]
-    dD : 1D array
-        Bin widths [n_bins] [mm]
-
-    Returns
-    -------
-    np.ndarray
-        KL divergence for each sample [n_samples]
-    """
-    # Convert N(D) to probabilities (normalize by bin width and total)
-    # pdf =  N(D) * dD / sum( N(D) * dD)
-    obs_prob = (obs * dD) / (np.sum(obs * dD) + 1e-12)
-    pred_prob = (pred * dD[None, :]) / (np.sum(pred * dD[None, :], axis=1, keepdims=True) + 1e-12)
-
-    # KL(P||Q) = sum(P * log(P/Q))
-    # Add epsilon to avoid log(0)
-    eps = 1e-12
-    kl = np.sum(obs_prob[None, :] * (np.log(obs_prob[None, :] + eps) - np.log(pred_prob + eps)), axis=1)
-    return kl
-
-
-def _compute_wasserstein_distance(obs, pred, D, dD):
-    """
-    Compute Wasserstein distance (Earth Mover's Distance) between observed and predicted N(D).
-
-    Vectorized implementation for multiple predictions.
-
-    Parameters
-    ----------
-    obs : 1D array
-        Observed N(D) values [n_bins]. Unit [#/m3/mm-1]
-    pred : 2D array
-        Predicted N(D) values [n_samples, n_bins]. Unit [#/m3/mm-1]
-    D : 1D array
-        Bin centers (diameter values) [n_bins] mmm
-    dD : 1D array
-        Bin widths [n_bins] [mm]
-
-    Returns
-    -------
-    np.ndarray
-        Wasserstein distance for each sample [n_samples]
-    """
-    # from scipy.stats import wasserstein_distance
-
-    # wasserstein_distance(
-    #     u_values=D,
-    #     v_values=D,
-    #     u_weights=obs_prob,
-    #     v_weights=pred_prob[0]
-    # )
-
-    # Convert N(D) to probabilities (normalize by bin width and total)
-    # pdf =  N(D) * dD / sum( N(D) * dD)
-    obs_prob = (obs * dD) / (np.sum(obs * dD) + 1e-12)
-    pred_prob = (pred * dD[None, :]) / (np.sum(pred * dD[None, :], axis=1, keepdims=True) + 1e-12)
-
-    # Compute cumulative distributions
-    obs_cdf = np.cumsum(obs_prob)
-    pred_cdf = np.cumsum(pred_prob, axis=1)
-
-    # Wasserstein distance = integral of |CDF_obs - CDF_pred| over D
-    # - Integrate using left Riemann sum (as Scipy wasserstein_distance)
-    obs_cdf_expanded = obs_cdf[None, :]  # [1, n_bins]
-    diff = np.abs(obs_cdf_expanded - pred_cdf)  # [n_samples, n_bins]
-
-    dx = np.diff(D)
-    wd = np.sum(diff[:, :-1] * dx[None, :], axis=1)
-    return wd
-
-
-def compute_errors(obs, pred, error_metric, D=None, dD=None):
-    """Compute errors."""
-    # Handle scalar obs case (from aggregated metrics like Z, R, LWC)
-    if np.isscalar(obs):
-        obs = np.asarray(obs)
-    if obs.size == 1:
-        return np.abs(obs - pred)
-
-    # Compute KL or WD if asked (obs is expanded internally to save computations)
-    if error_metric == "KL":
-        return _compute_kl_divergence(obs, pred, dD=dD)
-    if error_metric == "WD":
-        return _compute_wasserstein_distance(obs, pred, D=D, dD=dD)
-
-    # Broadcast obs to match pred shape if needed (when target is N(D) or H(x))
-    # If obs is 1D and pred is 2D, add dimension to obs
-    if pred.ndim > obs.ndim:
-        obs = obs[None, :]
-
-    # Compute error metrics
-    if error_metric == "MAE":
-        return np.mean(np.abs(obs - pred), axis=1)
-    if error_metric == "relMAE":
-        return np.mean(np.abs(obs - pred) / (np.abs(obs) + 1e-12), axis=1)
-    if error_metric == "MSE":
-        return np.mean((obs - pred) ** 2, axis=1)
-    if error_metric == "RMSE":
-        return np.sqrt(np.mean((obs - pred) ** 2, axis=1))
-    raise NotImplementedError(f"Error metric '{error_metric}' is not implemented.")
-
-
-def normalize_errors(errors, normalize_error):
-    """Normalize errors so to scale minimum errors regions to O(1).
-
-    Scaling by the median value of [p0-p10 region],
-    normalize error in minimum region to ≈ O(1).
-
-    Scaling by p95-p5 make no sense when tails span orders of magnitude.
-    It normalize the spread, not the minimum region.
-    It suppresses the minimum region and amplifies the bad region.
-
-    """
-    if not normalize_error:
-        return errors
-
-    p10 = np.nanpercentile(errors, q=10)
-    scale = np.nanmedian(errors[errors < p10])
-
-    ## Investigate normalization
-    # plt.hist(errors[errors < p10], bins=100)
-    # errors_norm = errors / scale
-    # p_norm10 = np.nanpercentile(errors_norm, q=10)
-    # plt.hist(errors_norm[errors_norm < p_norm10], bins=100)
-
-    # scale = np.diff(np.nanpercentile(errors, q=[1, 99])) + 1e-12
-    errors = errors / scale
-    return errors
-
-
-def _compute_cost_function(
-    ND_obs,
-    ND_preds,
-    D,
-    dD,
-    V,
-    target,
-    transformation,
-    error_metric,
-    censoring,
-):
-    # Check input
-    transformation = check_transformation(transformation)
-    censoring = check_censoring(censoring)
-
-    # Clip N(D) < 1e-3 to 0
-    ND_obs = np.where(ND_obs < 1e-3, 0.0, ND_obs)
-    ND_preds = np.where(ND_preds < 1e-3, 0.0, ND_preds)
-
-    # Truncate if asked
-    left_censored = censoring in {"left", "both"}
-    right_censored = censoring in {"right", "both"}
-    if left_censored or right_censored:
-        truncated = _truncate_bin_edges(
-            ND_obs,
-            ND_preds,
-            D,
-            dD,
-            V,
-            left_censored=left_censored,
-            right_censored=right_censored,
-        )
-        if truncated is None:
-            # Grid search logic expects inf so it can be turned into NaN later
-            return np.full(ND_preds.shape[0], np.inf)
-        ND_obs, ND_preds, D, dD, V = truncated
-
-    # Compute target variable
-    obs, pred = _compute_target_variable(target, ND_obs, ND_preds, D=D, dD=dD, V=V)
-
-    # Apply transformation
-    obs, pred = _apply_transformation(obs, pred, transformation=transformation)
-
-    # Compute errors
-    errors = compute_errors(obs, pred, error_metric=error_metric, D=D, dD=dD)
-
-    # Replace inf with NaN
-    errors[~np.isfinite(errors)] = np.nan
-    return errors
-
-
 def define_param_range(center, step, bounds, factor=2, refinement=20):
     """
     Create a refined parameter search range around a center value, constrained to bounds.
@@ -1417,7 +1000,7 @@ def apply_exponential_gs(
         ND_preds = ExponentialPSD.formula(D=D[None, :], N0=N0_arr[:, None], Lambda=lambda_arr[:, None])
 
         # Compute errors
-        errors = _compute_cost_function(
+        errors = compute_cost_function(
             ND_obs=ND_obs,
             ND_preds=ND_preds,
             D=D,
@@ -1466,7 +1049,7 @@ def _apply_gamma_gs(
         ND_preds = GammaPSD.formula(D=D[None, :], N0=N0, Lambda=lambda_arr[:, None], mu=mu_arr[:, None])
 
         # Compute errors
-        errors = _compute_cost_function(
+        errors = compute_cost_function(
             ND_obs=ND_obs,
             ND_preds=ND_preds,
             D=D,
@@ -1589,7 +1172,7 @@ def _apply_generalized_gamma_gs(
             c=c_arr[:, None],
         )
         # Compute errors
-        errors = _compute_cost_function(
+        errors = compute_cost_function(
             ND_obs=ND_obs,
             ND_preds=ND_preds,
             D=D,
@@ -1692,7 +1275,7 @@ def _apply_lognormal_gs(mu_values, sigma_values, Nt, ND_obs, D, dD, V, target, t
         ND_preds = LognormalPSD.formula(D=D[None, :], Nt=Nt, mu=mu_arr[:, None], sigma=sigma_arr[:, None])
 
         # Compute errors
-        errors = _compute_cost_function(
+        errors = compute_cost_function(
             ND_obs=ND_obs,
             ND_preds=ND_preds,
             D=D,
@@ -1806,7 +1389,7 @@ def apply_normalized_gamma_gs(
         # Compute N(D)
         ND_preds = NormalizedGammaPSD.formula(D=D[None, :], D50=D50, Nw=Nw, mu=mu_arr[:, None])
         # Compute errors
-        errors = _compute_cost_function(
+        errors = compute_cost_function(
             ND_obs=ND_obs / Nw if target == "H(x)" else ND_obs,
             ND_preds=ND_preds / Nw if target == "H(x)" else ND_preds,
             D=D,
@@ -1831,7 +1414,7 @@ def apply_normalized_gamma_gs(
     return np.array([Nw, mu, D50])
 
 
-def get_exponential_parameters_gs(ds, target="ND", transformation="log", error_order=1, censoring="none"):
+def get_exponential_parameters_gs(ds, target="N(D)", transformation="log", error_order=1, censoring="none"):
     """Estimate the parameters of an Exponential distribution using Grid Search."""
     # Compute required variables
     ds["Nt"] = get_total_number_concentration(
@@ -1878,7 +1461,7 @@ def get_exponential_parameters_gs(ds, target="ND", transformation="log", error_o
     return ds_params
 
 
-def get_gamma_parameters_gs(ds, target="ND", transformation="log", error_order=1, censoring="none"):
+def get_gamma_parameters_gs(ds, target="N(D)", transformation="log", error_order=1, censoring="none"):
     """Compute Grid Search to identify mu and Lambda Gamma distribution parameters."""
     # Compute required variables
     ds["Nt"] = get_total_number_concentration(
@@ -1927,7 +1510,7 @@ def get_gamma_parameters_gs(ds, target="ND", transformation="log", error_order=1
 
 def get_generalized_gamma_parameters_gs(
     ds,
-    target="ND",
+    target="N(D)",
     transformation="log",
     error_order=1,
     censoring="none",
@@ -1978,7 +1561,7 @@ def get_generalized_gamma_parameters_gs(
     return ds_params
 
 
-def get_lognormal_parameters_gs(ds, target="ND", transformation="log", error_order=1, censoring="none"):
+def get_lognormal_parameters_gs(ds, target="N(D)", transformation="log", error_order=1, censoring="none"):
     """Compute Grid Search to identify mu and sigma lognormal distribution parameters."""
     # Compute required variables
     ds["Nt"] = get_total_number_concentration(
@@ -2027,7 +1610,7 @@ def get_lognormal_parameters_gs(ds, target="ND", transformation="log", error_ord
 
 def get_normalized_gamma_parameters_gs(
     ds,
-    target="ND",
+    target="N(D)",
     transformation="log",
     error_order=1,
     censoring="none",
@@ -2050,7 +1633,7 @@ def get_normalized_gamma_parameters_gs(
         - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
     target : str, optional
         Target quantity to optimize. Valid options:
-        - ``"ND"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
+        - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
         - ``"R"`` : Rain rate [mm h⁻¹]
         - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
         - ``"LWC"`` : Liquid water content [g m⁻³]
@@ -2218,7 +1801,7 @@ def apply_normalized_generalized_gamma_gs(
             pred = ND_preds / Nc if target == "H(x)" else ND_preds
 
             # Compute errors for this target
-            errors = _compute_cost_function(
+            errors = compute_cost_function(
                 ND_obs=obs,
                 ND_preds=pred,
                 D=D,
@@ -2287,7 +1870,7 @@ def get_normalized_generalized_gamma_parameters_gs(
 
         target : str, optional
             Target quantity to optimize. Valid options:
-            - ``"ND"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
@@ -2843,32 +2426,6 @@ def check_psd_model(psd_model, optimization):
         raise NotImplementedError(msg)
 
 
-def check_target(target):
-    """Check valid target argument."""
-    valid_targets = ["ND", "H(x)", "R", "Z", "LWC"]
-    if target not in valid_targets:
-        raise ValueError(f"Invalid 'target' {target}. Valid targets are {valid_targets}.")
-    return target
-
-
-def check_censoring(censoring):
-    """Check valid censoring argument."""
-    valid_censoring = {"none", "left", "right", "both"}
-    if censoring not in valid_censoring:
-        raise ValueError(f"Invalid 'censoring' {censoring}. Valid targets are {valid_censoring}.")
-    return censoring
-
-
-def check_transformation(transformation):
-    """Check valid transformation argument."""
-    valid_transformation = ["identity", "log", "sqrt"]
-    if transformation not in valid_transformation:
-        raise ValueError(
-            f"Invalid 'transformation' {transformation}. Valid transformations are {valid_transformation}.",
-        )
-    return transformation
-
-
 def check_likelihood(likelihood):
     """Check valid likelihood argument."""
     valid_likelihood = ["multinomial", "poisson"]
@@ -3138,7 +2695,7 @@ def get_ml_parameters(
     return ds_params
 
 
-def get_gs_parameters(ds, psd_model, target="ND", transformation="log", error_order=1, censoring="none"):
+def get_gs_parameters(ds, psd_model, target="N(D)", transformation="log", error_order=1, censoring="none"):
     """Estimate PSD model parameters using Grid Search optimization.
 
     This function estimates particle size distribution (PSD) model parameters
@@ -3161,7 +2718,7 @@ def get_gs_parameters(ds, psd_model, target="ND", transformation="log", error_or
         - ``"ExponentialPSD"`` : Exponential distribution
     target : str, optional
         Target quantity to optimize. Valid options:
-        - ``"ND"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
+        - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
         - ``"R"`` : Rain rate [mm h⁻¹]
         - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
         - ``"LWC"`` : Liquid water content [g m⁻³]

@@ -20,10 +20,8 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from disdrodb.constants import DIAMETER_DIMENSION
 from disdrodb.fall_velocity import get_rain_fall_velocity_from_ds
 from disdrodb.psd.fitting import (
-    _compute_target_variable_error,
     available_mom_methods,
     available_optimization,
     check_likelihood,
@@ -31,10 +29,7 @@ from disdrodb.psd.fitting import (
     check_optimization,
     check_optimizer,
     check_probability_method,
-    check_target,
-    check_transformation,
     check_truncated_likelihood,
-    compute_gof_stats,
     estimate_model_parameters,
     get_exponential_parameters_Zhang2008,
 )
@@ -100,7 +95,7 @@ class TestGSOptimization:
             pytest.skip(f"GS not available for {psd_model}")
 
         optimization_kwargs = {
-            "target": "ND",
+            "target": "N(D)",
             "transformation": transformation,
             "error_order": error_order,
             "censoring": censoring,
@@ -154,7 +149,7 @@ class TestGSOptimization:
         dD = ds["diameter_bin_width"].to_numpy()
         ND_obs = ds["drop_number_concentration"].to_numpy()
         ND_pred = create_psd(psd_model=ds_params.attrs["disdrodb_psd_model"], parameters=ds_params)(D).to_numpy()
-        error = _compute_target_variable_error(target, ND_obs, ND_pred, D, dD, V, relative=True)
+        error = compute_cost_function(target, ND_obs, ND_pred, D, dD, V, relative=True)
         np.testing.assert_allclose(
             error,
             0,
@@ -163,7 +158,7 @@ class TestGSOptimization:
         )
 
     @pytest.mark.parametrize("psd_model", available_psd_models())
-    @pytest.mark.parametrize("target", ["ND", "R", "Z", "LWC"])
+    @pytest.mark.parametrize("target", ["N(D)", "R", "Z", "LWC"])
     def test_gs_with_zeros_nd(self, psd_model, target):
         """Test PSD parameter estimation using Grid Search (GS) when N(D) is all zeros."""
         optimization_kwargs = {
@@ -193,7 +188,7 @@ class TestGSOptimization:
             assert np.isnan(ds_params[var])
 
     @pytest.mark.parametrize("psd_model", available_psd_models())
-    @pytest.mark.parametrize("target", ["ND", "R", "Z", "LWC"])
+    @pytest.mark.parametrize("target", ["N(D)", "R", "Z", "LWC"])
     def test_gs_with_nan_nd(self, psd_model, target):
         """Test PSD parameter estimation using Grid Search (GS) when N(D) has np.nan."""
         optimization_kwargs = {
@@ -224,7 +219,7 @@ class TestGSOptimization:
             assert np.isnan(ds_params[var])
 
     @pytest.mark.parametrize("psd_model", available_psd_models())
-    @pytest.mark.parametrize("target", ["ND", "R", "Z", "LWC"])
+    @pytest.mark.parametrize("target", ["N(D)", "R", "Z", "LWC"])
     def test_gs_with_inf_nd(self, psd_model, target):
         """Test PSD parameter estimation using Grid Search (GS) when N(D) has np.inf."""
         optimization_kwargs = {
@@ -521,34 +516,6 @@ def test_available_optimization(psd_model):
     assert "GS" in optimizations
 
 
-class TestCheckTarget:
-    """Test suite for check_target."""
-
-    @pytest.mark.parametrize("valid", ["ND", "R", "Z", "LWC"])
-    def test_valid_targets(self, valid):
-        """Valid targets should be returned unchanged."""
-        assert check_target(valid) == valid
-
-    def test_invalid_target_raises(self):
-        """Invalid target should raise ValueError."""
-        with pytest.raises(ValueError, match="Invalid 'target'"):
-            check_target("INVALID")
-
-
-class TestCheckTransformation:
-    """Test suite for check_transformation."""
-
-    @pytest.mark.parametrize("valid", ["identity", "log", "sqrt"])
-    def test_valid_transformations(self, valid):
-        """Valid transformations should be returned unchanged."""
-        assert check_transformation(valid) == valid
-
-    def test_invalid_transformation_raises(self):
-        """Invalid transformation should raise ValueError."""
-        with pytest.raises(ValueError, match="Invalid 'transformation'"):
-            check_transformation("INVALID")
-
-
 class TestCheckLikelihood:
     """Test suite for check_likelihood."""
 
@@ -759,271 +726,6 @@ class TestEstimateModelParameters:
                 optimization="ML",
                 optimization_kwargs={"init_method": None},
             )
-
-
-####-------------------------------------------------------------------------------------------------
-
-
-def make_test_data(
-    obs_data: np.ndarray,
-    pred_data: np.ndarray,
-):
-    """
-    Generate obs, pred, and diameter_bin_width DataArrays for GoF tests.
-
-    Parameters
-    ----------
-    obs_data : array_like (time, bins)
-        obs values per time step and bin.
-    pred_data : array_like (time, bins)
-        pred values per time step and bin.
-
-    Returns
-    -------
-    obs : xr.DataArray
-    pred : xr.DataArray
-    diameter_bin_width : xr.DataArray
-    """
-    # Convert inputs
-    obs = np.asarray(obs_data)
-    pred = np.asarray(pred_data)
-    if obs.shape != pred.shape:
-        raise ValueError("obs_data and pred_data must have the same shape")
-
-    n_times, n_bins = obs.shape
-
-    # Common coordinates (invariant across tests)
-    bin_centers = np.arange(1, n_bins + 1, dtype=float)
-    bin_widths = np.ones(n_bins, dtype=float)
-
-    # Build coordinates
-    diameter_bin_center = xr.DataArray(
-        data=bin_centers,
-        dims=[DIAMETER_DIMENSION],
-        name="diameter_bin_center",
-    )
-    diameter_bin_width = xr.DataArray(
-        data=bin_widths,
-        dims=[DIAMETER_DIMENSION],
-        name="diameter_bin_width",
-    )
-    time = xr.DataArray(
-        data=np.arange(n_times),
-        dims=["time"],
-        coords={"time": np.arange(n_times)},
-        name="time",
-    )
-
-    # Create DataArrays
-    obs = xr.DataArray(
-        data=obs,
-        dims=["time", DIAMETER_DIMENSION],
-        coords={
-            "time": time,
-            "diameter_bin_center": diameter_bin_center,
-            "diameter_bin_width": diameter_bin_width,
-        },
-        name="obs_values",
-    )
-    pred = xr.DataArray(
-        data=pred,
-        dims=["time", DIAMETER_DIMENSION],
-        coords={
-            "time": time,
-            "diameter_bin_center": diameter_bin_center,
-            "diameter_bin_width": diameter_bin_width,
-        },
-        name="pred_values",
-    )
-
-    return obs, pred
-
-
-class TestComputeGoFStats:
-    """Test suite for compute_gof_stats function."""
-
-    def test_zero_zero_case(self):
-        """Test that equal (0) observed and predicted values should yield zero errors."""
-        # Generate test inputs
-        data = np.zeros((2, 3))
-        obs, pred = make_test_data(data, data)
-
-        # Compute GoF statistics
-        ds = compute_gof_stats(obs, pred).isel(time=0)
-
-        # Assert values
-        assert ds["MAE"].values == 0
-        assert ds["MaxAE"].values == 0
-        assert ds["PeakDiff"].values == 0
-        assert ds["NtDiff"].values == 0
-        assert ds["RelMaxAE"].values == 0
-        assert ds["RelPeakDiff"].values == 0
-        assert ds["KLDiv"].values == 0
-
-        assert np.isnan(ds["R2"].values)  # standard deviation of arrays with unique values is 0
-        assert np.isnan(ds["DmodeDiff"].values)  # for zero arrays, diameter mode is NaN
-
-    def test_one_one_case(self):
-        """Test that equal observed and predicted values should yield zero errors."""
-        # Generate test inputs
-        data = np.ones((2, 3))
-        obs, pred = make_test_data(data, data)
-
-        # Compute GoF statistics
-        ds = compute_gof_stats(obs, pred).isel(time=0)
-
-        # Assert values
-        assert np.isnan(ds["R2"].values)  # standard deviation of arrays with unique values is 0
-        assert ds["MAE"].values == 0
-        assert ds["MaxAE"].values == 0
-        assert ds["RelMaxAE"].values == 0
-        assert ds["PeakDiff"].values == 0
-        assert ds["RelPeakDiff"].values == 0
-        assert ds["DmodeDiff"].values == 0
-        assert ds["NtDiff"].values == 0
-        assert ds["KLDiv"].values == 0
-
-    def test_one_zero_case(self):
-        """Test the case where observed values are zeros."""
-        # Generate test inputs
-        obs = np.zeros((2, 3))
-        pred = np.ones((2, 3))
-        obs, pred = make_test_data(obs, pred)
-
-        # Compute GoF statistics
-        ds = compute_gof_stats(obs, pred).isel(time=0)
-
-        # Assert values
-        assert np.isnan(ds["R2"].values)  # standard deviation of arrays with unique values is 0
-        assert ds["MAE"].values == 1
-        assert ds["MaxAE"].values == 1
-        assert np.isnan(ds["RelMaxAE"].values)  # division by 0 obs_max
-        assert ds["PeakDiff"].values == -1
-        assert np.isnan(ds["RelPeakDiff"].values)  # division by 0 obs_max
-        assert np.isnan(ds["DmodeDiff"].values)  # for zero arrays, diameter mode is NaN
-        assert ds["NtDiff"].values == 3
-        assert np.isnan(ds["KLDiv"].values)  # pk of zeros arrays is NaN (pk=obs/Nt_obs=0/0)
-
-    def test_zero_one_case(self):
-        """Test the case where predicted values are zeros."""
-        # Generate test inputs
-        obs = np.ones((2, 3))
-        pred = np.zeros((2, 3))
-        obs, pred = make_test_data(obs, pred)
-
-        # Compute GoF statistics
-        ds = compute_gof_stats(obs, pred).isel(time=0)
-
-        # Assert values
-        assert np.isnan(ds["R2"].values)  # standard deviation of arrays with unique values is 0
-        assert ds["MAE"].values == 1
-        assert ds["MaxAE"].values == 1
-        assert ds["RelMaxAE"].values == 1
-        assert ds["PeakDiff"].values == 1
-        assert ds["RelPeakDiff"].values == 1
-        assert np.isnan(ds["DmodeDiff"].values)  # for zero arrays, diameter mode is NaN
-        assert ds["NtDiff"].values == -3
-        assert np.isnan(ds["KLDiv"].values)  # qk of zeros arrays is NaN (qk=pred/Nt_pred=0/0)
-
-    def test_real_case(self):
-        """Test the case where pred values are zeros."""
-        # Generate test inputs
-        obs = np.arange(0, 6).reshape(2, 3)
-        pred = obs + 1
-        obs, pred = make_test_data(obs, pred)
-
-        # Compute GoF statistics
-        ds = compute_gof_stats(obs, pred).isel(time=0)
-
-        # Assert values
-        assert ds["MAE"].values == 1
-        assert ds["MaxAE"].values == 1
-        assert ds["RelMaxAE"].values == 0.5
-
-        assert ds["PeakDiff"].values == -1
-        assert ds["RelPeakDiff"].values == -0.5
-        assert ds["DmodeDiff"].values == 0
-
-        assert ds["NtDiff"].values == 3
-        assert ds["KLDiv"].values == 0.19
-        assert ds["R2"].values == 1
-
-    def test_single_nan_case(self):
-        """Test the case where there are NaN values."""
-        # Generate test inputs
-        obs = np.arange(0, 6, dtype=float).reshape(2, 3)
-        pred = obs + 1
-        pred[0, 2] = np.nan
-
-        obs, pred = make_test_data(obs, pred)
-
-        # Compute GoF statistics
-        ds = compute_gof_stats(obs, pred)
-
-        # Assert values
-        for var in ds.data_vars:
-            assert np.isnan(ds[var].isel(time=0).values)
-
-        # Assert values
-        for var in ds.data_vars:
-            assert not np.isnan(ds[var].isel(time=1).values)
-
-    def test_all_nan_case(self):
-        """Test the case where all values are NaN values."""
-        # Generate test inputs
-        obs = np.zeros((2, 3)) * np.nan
-        pred = np.zeros((2, 3)) * np.nan
-        obs, pred = make_test_data(obs, pred)
-
-        # Compute GoF statistics
-        ds = compute_gof_stats(obs, pred).isel(time=0)
-
-        # Assert values
-        for var in ds.data_vars:
-            assert np.isnan(ds[var].values)
-
-    def test_dask_case(self):
-        """Test that lazy dask computations are allowed."""
-        # Generate test inputs
-        obs = np.arange(0, 6).reshape(2, 3)
-        pred = obs + 1
-        obs, pred = make_test_data(obs, pred)
-        obs = obs.chunk({"time": 1})
-        pred = pred.chunk({"time": 1})
-
-        # Compute GoF statistics
-        ds = compute_gof_stats(obs, pred)
-        for var in ds.data_vars:
-            assert hasattr(ds[var].data, "chunks")
-        ds = ds.compute().isel(time=0)
-
-        # Assert values
-        assert ds["MAE"].values == 1
-        assert ds["MaxAE"].values == 1
-        assert ds["RelMaxAE"].values == 0.5
-
-        assert ds["PeakDiff"].values == -1
-        assert ds["RelPeakDiff"].values == -0.5
-        assert ds["DmodeDiff"].values == 0
-
-        assert ds["NtDiff"].values == 3
-        assert ds["KLDiv"].values == 0.19
-        assert ds["R2"].values == 1
-
-    def test_only_diameter_dimension(self):
-        """Test case where only diameter dimension is present."""
-        # Generate test inputs
-        obs = np.arange(0, 6).reshape(2, 3)
-        pred = obs + 1
-        obs, pred = make_test_data(obs, pred)
-
-        # Remove time dimension
-        obs = obs.isel(time=0)
-        pred = pred.isel(time=0)
-
-        # Compute GoF statistics
-        ds = compute_gof_stats(obs, pred)
-        assert isinstance(ds, xr.Dataset)
 
 
 ####---------------------------------------------------------------------------

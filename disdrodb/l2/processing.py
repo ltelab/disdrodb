@@ -36,7 +36,7 @@ from disdrodb.l2.empirical_dsd import (
     get_rain_rate_from_drop_number,
 )
 from disdrodb.psd import create_psd, estimate_model_parameters
-from disdrodb.psd.fitting import compute_gof_stats
+from disdrodb.psd.gof_metrics import compute_gof_stats
 from disdrodb.utils.decorators import check_pytmatrix_availability
 from disdrodb.utils.manipulations import (
     define_diameter_array,
