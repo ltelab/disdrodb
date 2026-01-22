@@ -117,13 +117,16 @@ def _compute_qc_bins_metrics(arr):
     segment = arr[start_idx : end_idx + 1]
 
     # Compute number of bins with drops
-    total_bins = segment.size
+    total_bins = len(non_zero_indices)
+
+    # Compute number of bins in the segment
+    segment_bins = segment.size
 
     # Compute number of missing bins (zeros)
     n_missing_bins = int(np.sum(segment == 0))
 
     # Compute fraction of bins with missing drops
-    fraction_missing = n_missing_bins / total_bins
+    fraction_missing = n_missing_bins / segment_bins
 
     # Identify longest with with consecutive zeros
     zero_mask = (segment == 0).astype(int)

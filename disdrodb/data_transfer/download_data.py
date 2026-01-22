@@ -585,7 +585,7 @@ def is_programmatic_downloadable(url, timeout=5):
         False -> browser-only / blocked
     """
     headers = {
-        # Range prevents full download (0–0 = 1 byte max)
+        # Range prevents full download (0-0 = 1 byte max)
         "Range": "bytes=0-0",
         # Explicitly non-browser
         "User-Agent": "python-downloader/1.0",

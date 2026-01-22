@@ -42,6 +42,7 @@ def _single_plot_nd_distribution(drop_number_concentration, diameter, diameter_b
         color="lightgray",
         label="Data",
     )
+    ax.set_xlim(diameter[0] - diameter_bin_width[0] / 2, None)
     ax.set_title("Drop number concentration (N(D))")
     ax.set_xlabel("Drop diameter (mm)")
     ax.set_ylabel("N(D) [m-3 mm-1]")
