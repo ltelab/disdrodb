@@ -15,38 +15,41 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Testing grid search utilities."""
-import pytest
+
 import numpy as np
+import pytest
+
 from disdrodb.psd.grid_search import (
-    compute_cost_function,
-    check_target,
-    check_transformation,
+    CENSORING,
+    DISTRIBUTION_TARGETS,
+    ERROR_METRICS,
+    INTEGRAL_TARGETS,
+    TARGETS,
+    TRANSFORMATIONS,
+    apply_transformation,
     check_censoring,
     check_error_metric,
+    check_target,
+    check_transformation,
     check_valid_error_metric,
-    compute_rain_rate,
+    compute_cost_function,
+    compute_errors,
+    compute_jensen_shannon_distance,
+    compute_kl_divergence,
+    compute_kolmogorov_smirnov_distance,
     compute_lwc,
-    compute_z,
+    compute_rain_rate,
     compute_target_variable,
+    compute_wasserstein_distance,
+    compute_z,
     left_truncate_bins,
+    normalize_errors,
     right_truncate_bins,
     truncate_bin_edges,
-    apply_transformation,
-    compute_kl_divergence,
-    compute_jensen_shannon_distance,
-    compute_wasserstein_distance,
-    compute_kolmogorov_smirnov_distance,
-    compute_errors,
-    normalize_errors,
-    TARGETS,
-    DISTRIBUTION_TARGETS,
-    INTEGRAL_TARGETS,
-    TRANSFORMATIONS,
-    ERROR_METRICS,
-    CENSORING,
 )
 
-# TODOs: 
+
+# TODOs:
 # Add to targets also moments M1...M6
 class TestCheckTarget:
     """Test suite for check_target."""
@@ -120,7 +123,7 @@ class TestCheckValidErrorMetric:
             for metric in ERROR_METRICS:
                 with pytest.raises(ValueError, match="error_metric should be 'None'"):
                     check_valid_error_metric(metric, target=target)
-    
+
     def test_none_metric_with_integrals(self):
         """Distribution metrics are not valid for Z, R, LWC targets."""
         for target in INTEGRAL_TARGETS:
@@ -140,7 +143,7 @@ class TestComputeRainRate:
         V = np.array([1.0, 2.0, 3.0])
         result = compute_rain_rate(ND, D, dD, V)
         assert isinstance(result, (float, np.floating))
-        np.testing.assert_allclose(result, 0.36403, atol=1e-4) 
+        np.testing.assert_allclose(result, 0.36403, atol=1e-4)
 
     def test_rain_rate_2d_input(self):
         """Rain rate computation should return per-sample values for 2D arrays."""
@@ -151,7 +154,7 @@ class TestComputeRainRate:
         result = compute_rain_rate(ND, D, dD, V)
         assert result.shape == (2,)
         expected_result = np.array([0.36403205, 0.18201602])
-        np.testing.assert_allclose(result, expected_result, atol=1e-5) 
+        np.testing.assert_allclose(result, expected_result, atol=1e-5)
 
     def test_rain_rate_zero_input(self):
         """Rain rate should be zero for all-zero N(D)."""
@@ -173,7 +176,7 @@ class TestComputeLWC:
         dD = np.array([0.1, 0.1, 0.1])
         result = compute_lwc(ND, D, dD)
         assert isinstance(result, (float, np.floating))
-        np.testing.assert_allclose(result, 0.037633, atol=1e-5) 
+        np.testing.assert_allclose(result, 0.037633, atol=1e-5)
 
     def test_lwc_2d_input(self):
         """LWC computation should return per-sample values for 2D arrays."""
@@ -183,7 +186,7 @@ class TestComputeLWC:
         result = compute_lwc(ND, D, dD)
         assert result.shape == (2,)
         expected_result = np.array([0.03763366, 0.01881683])
-        np.testing.assert_allclose(result, expected_result, atol=1e-5) 
+        np.testing.assert_allclose(result, expected_result, atol=1e-5)
 
     def test_lwc_custom_water_density(self):
         """LWC should scale correctly with custom water density."""
@@ -202,6 +205,7 @@ class TestComputeLWC:
         result = compute_lwc(ND, D, dD)
         assert result == 0.0
 
+
 class TestComputeZ:
     """Test suite for compute_z."""
 
@@ -212,7 +216,7 @@ class TestComputeZ:
         dD = np.array([0.1, 0.1, 0.1])
         result = compute_z(ND, D, dD)
         assert isinstance(result, (float, np.floating))
-        np.testing.assert_allclose(result, 22.8106, atol=1e-3) 
+        np.testing.assert_allclose(result, 22.8106, atol=1e-3)
 
     def test_z_2d_input(self):
         """Z computation should return per-sample values for 2D arrays."""
@@ -222,7 +226,7 @@ class TestComputeZ:
         result = compute_z(ND, D, dD)
         assert result.shape == (2,)
         expected_result = np.array([22.81068894, 19.80038898])
-        np.testing.assert_allclose(result, expected_result, atol=1e-3) 
+        np.testing.assert_allclose(result, expected_result, atol=1e-3)
 
 
 class TestComputeTargetVariable:
@@ -482,11 +486,10 @@ class TestComputeJensenShannonDistance:
         """JS distance should return array with one value per sample."""
         obs = np.array([100, 200, 150])
         pred = np.array([[100, 200, 150], [50, 100, 75], [1000, 2000, 3000]])
-        D = np.array([0.5, 1.0, 1.5])
         dD = np.array([0.1, 0.1, 0.1])
-        js = compute_jensen_shannon_distance(obs, pred, D, dD)
+        js = compute_jensen_shannon_distance(obs, pred, dD)
         assert js.shape == (3,)
-        expected_results = np.array([0. , 0, 0.11984403])
+        expected_results = np.array([0.0, 0, 0.11984403])
         np.testing.assert_allclose(js, expected_results, atol=1e-6)
 
     def test_js_distance_symmetry(self):
@@ -520,22 +523,22 @@ class TestComputeWassersteinDistance:
         dD = np.array([0.1, 0.1, 0.1])
         wd = compute_wasserstein_distance(obs, pred, D, dD)
         assert wd.shape == (3,)
-        expected_result = np.array([0.00000000e+00, 4.18831636e-15, 2.10387263e-15])
+        expected_result = np.array([0.00000000e00, 4.18831636e-15, 2.10387263e-15])
         np.testing.assert_allclose(wd, expected_result, atol=1e-6)
-        
-        # Test bin integration is default 
+
+        # Test bin integration is default
         wd_bin = compute_wasserstein_distance(obs, pred, D, dD, integration="bin")
         np.testing.assert_allclose(wd, wd_bin)
 
     def test_wasserstein_left_riemann_integration(self):
         """Wasserstein distance should support left Riemann integration method."""
         obs = np.array([100, 200, 150])
-        pred = np.array([[100, 200, 150], [50, 100, 75], [1000,2000, 3000]])
+        pred = np.array([[100, 200, 150], [50, 100, 75], [1000, 2000, 3000]])
         D = np.array([0.5, 1.0, 1.5])
         dD = np.array([0.1, 0.1, 0.1])
         wd = compute_wasserstein_distance(obs, pred, D, dD, integration="left_riemann")
         assert wd.shape == (3,)
-        expected_result = np.array([0., 0,  0.111111])
+        expected_result = np.array([0.0, 0, 0.111111])
         np.testing.assert_allclose(wd, expected_result, atol=1e-6)
 
 
@@ -561,17 +564,18 @@ class TestComputeKolmogorovSmirnovDistance:
         assert p.shape == (3,)
         expected_results = np.array([0.0, 0.0, 2.77777778e-01])
         np.testing.assert_allclose(ks, expected_results, atol=1e-6)
-        
-        expected_results = np.array([1, 1, 1]) # TODO
+
+        expected_results = np.array([1, 1, 1])  # TODO
         np.testing.assert_allclose(p, expected_results, atol=1e-6)
-        
+
     def test_ks_distance_bounds(self):
         """KS distance should be between 0 and 1."""
         obs = np.array([100, 200, 150])
         pred = np.random.uniform(50, 250, size=(10, 3))
         dD = np.array([0.1, 0.1, 0.1])
         ks, p = compute_kolmogorov_smirnov_distance(obs, pred, dD)
-        assert np.all(ks >= 0) and np.all(ks <= 1)
+        assert np.all(ks >= 0)
+        assert np.all(ks <= 1)
 
     def test_ks_pvalue_bounds(self):
         """KS p-value should be between 0 and 1."""
@@ -579,7 +583,8 @@ class TestComputeKolmogorovSmirnovDistance:
         pred = np.random.uniform(50, 250, size=(10, 3))
         dD = np.array([0.1, 0.1, 0.1])
         ks, p = compute_kolmogorov_smirnov_distance(obs, pred, dD)
-        assert np.all(p >= 0) and np.all(p <= 1)
+        assert np.all(p >= 0)
+        assert np.all(p <= 1)
 
 
 class TestComputeErrors:
@@ -690,7 +695,8 @@ class TestComputeErrors:
         dD = np.array([0.1, 0.1, 0.1])
         errors = compute_errors(obs, pred, error_metric="KS_pvalue", dD=dD)
         assert errors.shape == (3,)
-        assert np.all(errors >= 0) and np.all(errors <= 1)
+        assert np.all(errors >= 0)
+        assert np.all(errors <= 1)
         # First prediction is identical to obs, so p-value should be high (near 1)
         np.testing.assert_allclose(errors[0], 1.0, atol=1e-6)
 
@@ -749,11 +755,15 @@ class TestComputeCostFunction:
         """Cost function should return array with one error per prediction."""
         ND_obs, ND_preds, D, dD, V = sample_data
         errors = compute_cost_function(
-            ND_obs, ND_preds, D, dD, V,
+            ND_obs,
+            ND_preds,
+            D,
+            dD,
+            V,
             target="N(D)",
             transformation="identity",
             error_metric="MAE",
-            censoring="none"
+            censoring="none",
         )
         assert errors.shape == (3,)
         # First prediction matches obs exactly, second and third differ
@@ -764,11 +774,15 @@ class TestComputeCostFunction:
         """Cost function should return ~0 error for identical prediction."""
         ND_obs, ND_preds, D, dD, V = sample_data
         errors = compute_cost_function(
-            ND_obs, ND_preds[[0]], D, dD, V,  # First prediction matches obs
+            ND_obs,
+            ND_preds[[0]],
+            D,
+            dD,
+            V,  # First prediction matches obs
             target="N(D)",
             transformation="identity",
             error_metric="MAE",
-            censoring="none"
+            censoring="none",
         )
         np.testing.assert_allclose(errors[0], 0.0, atol=1e-10)
 
@@ -777,24 +791,32 @@ class TestComputeCostFunction:
         ND_obs, ND_preds, D, dD, V = sample_data
         for target in DISTRIBUTION_TARGETS:
             errors = compute_cost_function(
-                ND_obs, ND_preds, D, dD, V,
+                ND_obs,
+                ND_preds,
+                D,
+                dD,
+                V,
                 target=target,
                 transformation="identity",
                 error_metric="MAE",
-                censoring="none"
+                censoring="none",
             )
             assert errors.shape == (3,)
             assert np.all(np.isfinite(errors))
-            
+
     def test_cost_function_all_integral_targets(self, sample_data):
         """Cost function should work with all integral target types."""
         ND_obs, ND_preds, D, dD, V = sample_data
         for target in INTEGRAL_TARGETS:
             errors = compute_cost_function(
-                ND_obs, ND_preds, D, dD, V,
+                ND_obs,
+                ND_preds,
+                D,
+                dD,
+                V,
                 target=target,
                 transformation="identity",
-                censoring="none"
+                censoring="none",
             )
             assert errors.shape == (3,)
             assert np.all(np.isfinite(errors))
@@ -804,11 +826,15 @@ class TestComputeCostFunction:
         ND_obs, ND_preds, D, dD, V = sample_data
         for transformation in TRANSFORMATIONS:
             errors = compute_cost_function(
-                ND_obs, ND_preds, D, dD, V,
+                ND_obs,
+                ND_preds,
+                D,
+                dD,
+                V,
                 target="N(D)",
                 transformation=transformation,
                 error_metric="MAE",
-                censoring="none"
+                censoring="none",
             )
             assert errors.shape == (3,)
 
@@ -818,11 +844,15 @@ class TestComputeCostFunction:
         error_metrics = ERROR_METRICS
         for error_metric in error_metrics:
             errors = compute_cost_function(
-                ND_obs, ND_preds, D, dD, V,
+                ND_obs,
+                ND_preds,
+                D,
+                dD,
+                V,
                 target="N(D)",
                 transformation="identity",
                 error_metric=error_metric,
-                censoring="none"
+                censoring="none",
             )
             assert errors.shape == (3,)
             assert np.all(np.isfinite(errors) | np.isnan(errors))
@@ -831,11 +861,15 @@ class TestComputeCostFunction:
         """Cost function with no censoring should not truncate data."""
         ND_obs, ND_preds, D, dD, V = sample_data
         errors = compute_cost_function(
-            ND_obs, ND_preds, D, dD, V,
+            ND_obs,
+            ND_preds,
+            D,
+            dD,
+            V,
             target="N(D)",
             transformation="identity",
             error_metric="MAE",
-            censoring="none"
+            censoring="none",
         )
         assert errors.shape == (3,)
 
@@ -847,11 +881,15 @@ class TestComputeCostFunction:
         dD = np.ones(5) * 0.1
         V = np.ones(5)
         errors = compute_cost_function(
-            ND_obs, ND_preds, D, dD, V,
+            ND_obs,
+            ND_preds,
+            D,
+            dD,
+            V,
             target="N(D)",
             transformation="identity",
             error_metric="MAE",
-            censoring="left"
+            censoring="left",
         )
         assert np.all(np.isinf(errors))
 
@@ -860,11 +898,15 @@ class TestComputeCostFunction:
         ND_obs, ND_preds, D, dD, V = sample_data
         with pytest.raises(ValueError, match="Invalid 'target'"):
             compute_cost_function(
-                ND_obs, ND_preds, D, dD, V,
+                ND_obs,
+                ND_preds,
+                D,
+                dD,
+                V,
                 target="INVALID",
                 transformation="identity",
                 error_metric="MAE",
-                censoring="none"
+                censoring="none",
             )
 
     def test_cost_function_invalid_transformation_raises(self, sample_data):
@@ -872,11 +914,15 @@ class TestComputeCostFunction:
         ND_obs, ND_preds, D, dD, V = sample_data
         with pytest.raises(ValueError, match="Invalid 'transformation'"):
             compute_cost_function(
-                ND_obs, ND_preds, D, dD, V,
+                ND_obs,
+                ND_preds,
+                D,
+                dD,
+                V,
                 target="N(D)",
                 transformation="INVALID",
                 error_metric="MAE",
-                censoring="none"
+                censoring="none",
             )
 
     def test_cost_function_invalid_censoring_raises(self, sample_data):
@@ -884,44 +930,58 @@ class TestComputeCostFunction:
         ND_obs, ND_preds, D, dD, V = sample_data
         with pytest.raises(ValueError, match="Invalid 'censoring'"):
             compute_cost_function(
-                ND_obs, ND_preds, D, dD, V,
+                ND_obs,
+                ND_preds,
+                D,
+                dD,
+                V,
                 target="N(D)",
                 transformation="identity",
                 error_metric="MAE",
-                censoring="INVALID"
+                censoring="INVALID",
             )
-    
+
     def test_cost_function_invalid_error_metric_raises(self, sample_data):
         """Cost function should raise ValueError for invalid error_metric."""
         ND_obs, ND_preds, D, dD, V = sample_data
         with pytest.raises(ValueError, match="Invalid 'error_metric'"):
             compute_cost_function(
-                ND_obs, ND_preds, D, dD, V,
+                ND_obs,
+                ND_preds,
+                D,
+                dD,
+                V,
                 target="N(D)",
                 transformation="identity",
                 error_metric="INVALID",
-                censoring="none"
+                censoring="none",
             )
 
     def test_cost_function_different_error_metrics_produce_different_results(self, sample_data):
         """Different error metrics should produce different error values."""
         ND_obs, ND_preds, D, dD, V = sample_data
         errors_mae = compute_cost_function(
-            ND_obs, ND_preds, D, dD, V,
+            ND_obs,
+            ND_preds,
+            D,
+            dD,
+            V,
             target="N(D)",
             transformation="identity",
             error_metric="MAE",
-            censoring="none"
+            censoring="none",
         )
         errors_mse = compute_cost_function(
-            ND_obs, ND_preds, D, dD, V,
+            ND_obs,
+            ND_preds,
+            D,
+            dD,
+            V,
             target="N(D)",
             transformation="identity",
             error_metric="MSE",
-            censoring="none"
+            censoring="none",
         )
-        
+
         # MAE and MSE should produce different values
         assert not np.allclose(errors_mae, errors_mse)
-
-

@@ -15,12 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Routines for grid search optimization."""
-import numpy as np
 
+import numpy as np
 
 DISTRIBUTION_TARGETS = {"N(D)", "H(x)"}
 MOMENTS = {"M0", "M1", "M2", "M3", "M4", "M5", "M6"}
-INTEGRAL_TARGETS = {"Z", "R", "LWC"} | MOMENTS  
+INTEGRAL_TARGETS = {"Z", "R", "LWC"} | MOMENTS
 TARGETS = DISTRIBUTION_TARGETS | INTEGRAL_TARGETS
 TRANSFORMATIONS = {"identity", "log", "sqrt"}
 ERROR_METRICS = {"SSE", "SAE", "MAE", "MSE", "RMSE", "relMAE", "KL", "WD", "JS", "KS", "KS_pvalue"}
@@ -83,16 +83,16 @@ def check_valid_error_metric(error_metric, target):
     ------
     ValueError
         If error_metric is not valid for the given target.
-    """    
+    """
     if target in {"N(D)", "H(x)"}:
-        return check_error_metric(error_metric) # any metric is valid
-    else: # Integral N(D) target (Z, R, LWC, M1, ..., M6) 
-        if error_metric is not None: 
-            raise ValueError(
-                f"error_metric should be 'None' with target '{target}'."
-                f"Error metrics are only applied to ND or H(x) distribution targets."
-            )
-        return error_metric
+        return check_error_metric(error_metric)  # any metric is valid
+    # Integral N(D) target (Z, R, LWC, M1, ..., M6)
+    if error_metric is not None:
+        raise ValueError(
+            f"error_metric should be 'None' with target '{target}'."
+            f"Error metrics are only applied to ND or H(x) distribution targets.",
+        )
+    return error_metric
 
 
 def compute_rain_rate(ND, D, dD, V):
@@ -163,7 +163,7 @@ def compute_moment(ND, order, D, dD):
         Moment of the specified order [mm^order·m^-3]
     """
     axis = 1 if ND.ndim == 2 else None
-    return np.sum((D ** order * ND * dD), axis=axis)  # mm**order·m⁻³
+    return np.sum((D**order * ND * dD), axis=axis)  # mm**order·m⁻³
 
 
 def compute_z(ND, D, dD):
@@ -226,7 +226,7 @@ def compute_target_variable(
         obs = compute_rain_rate(ND_obs, D=D, dD=dD, V=V)
         pred = compute_rain_rate(ND_preds, D=D, dD=dD, V=V)
     elif target == "LWC":
-        obs = compute_lwc(ND_obs,  D=D, dD=dD)
+        obs = compute_lwc(ND_obs, D=D, dD=dD)
         pred = compute_lwc(ND_preds, D=D, dD=dD)
     elif target in MOMENTS:
         order = int(target[1])
@@ -374,7 +374,6 @@ def apply_transformation(obs, pred, transformation):
     return obs, pred
 
 
-
 def _compute_kl(p_k, q_k, eps=1e-12):
     """Compute Kullback-Leibler divergence.
 
@@ -394,9 +393,9 @@ def _compute_kl(p_k, q_k, eps=1e-12):
     """
     q_safe = np.maximum(q_k, eps)
     kl = np.sum(
-       p_k * np.log(p_k / q_safe),
-       axis=1,
-       where=(p_k > 0), # sum where p > 0
+        p_k * np.log(p_k / q_safe),
+        axis=1,
+        where=(p_k > 0),  # sum where p > 0
     )
     # Clip to 0
     kl = np.maximum(kl, 0.0)
@@ -404,10 +403,10 @@ def _compute_kl(p_k, q_k, eps=1e-12):
     # Set to NaN if all p_k is 0
     row_mass = p_k.sum(axis=1)
     kl = np.where(row_mass > 0, kl, np.nan)
-    return kl 
+    return kl
 
 
-def compute_kl_divergence(obs, pred, dD, eps = 1e-12):
+def compute_kl_divergence(obs, pred, dD, eps=1e-12):
     """Compute Kullback-Leibler divergence between observed and predicted N(D).
 
     Parameters
@@ -430,15 +429,15 @@ def compute_kl_divergence(obs, pred, dD, eps = 1e-12):
     pred_prob = (pred * dD[None, :]) / (np.sum(pred * dD[None, :], axis=1, keepdims=True) + eps)
 
     # KL(P||Q) = sum(P * log(P/Q))
-    kl = _compute_kl(p_k=obs_prob[None, :], 
-                     q_k=pred_prob, 
-                     eps=eps)
+    kl = _compute_kl(p_k=obs_prob[None, :], q_k=pred_prob, eps=eps)
     return kl
 
 
-
-def compute_jensen_shannon_distance(obs, pred, D, dD, eps = 1e-12):
+def compute_jensen_shannon_distance(obs, pred, dD, eps=1e-12):
     """Compute Jensen-Shannon distance between observed and predicted N(D).
+
+    The Jensen-Shannon distance is the square root of the Jensen-Shannon divergence.
+    Values are defined between 0 and np.sqrt(ln(2)) = 0.83256
 
     Vectorized implementation for multiple predictions.
 
@@ -448,44 +447,39 @@ def compute_jensen_shannon_distance(obs, pred, D, dD, eps = 1e-12):
         Observed N(D) values [n_bins]. Unit [#/m3/mm-1]
     pred : 2D array
         Predicted N(D) values [n_samples, n_bins]. Unit [#/m3/mm-1]
-    D : 1D array
-        Diameter bin centers in mm [n_bins]
-        (Not directly used, kept for API consistency)
     dD : 1D array
        Diameter bin width in mm [n_bins]
 
     Returns
     -------
     np.ndarray
-        Jensen–Shannon distance for each sample [n_samples]
+        Jensen-Shannon distance for each sample [n_samples]
     """
     # Convert N(D) to probability distributions
     obs_prob = (obs * dD) / (np.sum(obs * dD) + eps)
-    pred_prob = (pred * dD[None, :]) / (
-        np.sum(pred * dD[None, :], axis=1, keepdims=True) + eps
-    )
+    pred_prob = (pred * dD[None, :]) / (np.sum(pred * dD[None, :], axis=1, keepdims=True) + eps)
 
     # Mixture distribution
     M = 0.5 * (obs_prob[None, :] + pred_prob)
 
-    # Compute KL divergences 
+    # Compute KL divergences
     # - KL(P||M)
-    kl_obs =  _compute_kl(p_k=obs_prob[None, :], q_k=M, eps=eps)
-    
+    kl_obs = _compute_kl(p_k=obs_prob[None, :], q_k=M, eps=eps)
+
     # - KL(Q||M)
-    kl_pred =  _compute_kl(p_k=pred_prob, q_k=M, eps=eps)
+    kl_pred = _compute_kl(p_k=pred_prob, q_k=M, eps=eps)
 
     # Compute Jensen Shannon divergence
-    js_div = 0.5 * (kl_obs + kl_pred) 
-    js_div = np.maximum(js_div, 0.0) # clip tiny negative values to zero (numerical safety)
+    js_div = 0.5 * (kl_obs + kl_pred)
+    js_div = np.maximum(js_div, 0.0)  # clip tiny negative values to zero (numerical safety)
 
-    # Jensen–Shannon distance
+    # Jensen-Shannon distance
     js_distance = np.sqrt(js_div)
     js_distance = np.maximum(js_distance, 0.0)
     return js_distance
 
 
-def compute_wasserstein_distance(obs, pred, D, dD, eps = 1e-12, integration="bin"):
+def compute_wasserstein_distance(obs, pred, D, dD, eps=1e-12, integration="bin"):
     """Compute Wasserstein distance (Earth Mover's Distance) between observed and predicted N(D).
 
     Vectorized implementation for multiple predictions.
@@ -508,7 +502,7 @@ def compute_wasserstein_distance(obs, pred, D, dD, eps = 1e-12, integration="bin
             Interprets N(D) as a piecewise-constant density over bins of width dD
             and integrates the CDF difference over those intervals.
             Assumes the CDF difference is constant within each bin and
-            integrates using the bin widths (dD). 
+            integrates using the bin widths (dD).
 
         - "left_riemann":
             Discrete-support Wasserstein distance.
@@ -516,7 +510,7 @@ def compute_wasserstein_distance(obs, pred, D, dD, eps = 1e-12, integration="bin
             integrates using spacing between support points, consistent with
             scipy.stats.wasserstein_distance.
             Use Left Riemann sum using bin centers.
-    
+
     Returns
     -------
     np.ndarray
@@ -544,21 +538,26 @@ def compute_wasserstein_distance(obs, pred, D, dD, eps = 1e-12, integration="bin
     # - Compute difference between CDFs
     obs_cdf_expanded = obs_cdf[None, :]  # [1, n_bins]
     diff = np.abs(obs_cdf_expanded - pred_cdf)  # [n_samples, n_bins]
-    
+
     if integration == "bin":
         wd = np.sum(diff * dD[None, :], axis=1)
-    else: 
+    else:
         # Integrate using left Riemann sum (as Scipy wasserstein_distance)
         dx = np.diff(D)
         wd = np.sum(diff[:, :-1] * dx[None, :], axis=1)
-    
-    # Clip to 0 
+
+    # Clip to 0
     wd = np.maximum(wd, 0.0)
     return wd
 
 
-def compute_kolmogorov_smirnov_distance(obs, pred, dD, eps = 1e-12):
-    """Compute Kolmogorov–Smirnov (KS) distance between observed and predicted N(D).
+def compute_kolmogorov_smirnov_distance(obs, pred, dD, eps=1e-12):
+    """Compute Kolmogorov-Smirnov (KS) distance between observed and predicted N(D).
+
+    The Kolmogorov-Smirnov (KS) distance is bounded between 0 and 1,
+    where 0 indicates that the two distributions are identical.
+    The associated KS test p-value ranges from 0 to 1,
+    with a value of 1 indicating no evidence against the null hypothesis that the distributions are identical.
 
     Vectorized implementation for multiple predictions.
 
@@ -575,43 +574,49 @@ def compute_kolmogorov_smirnov_distance(obs, pred, dD, eps = 1e-12):
     -------
     np.ndarray
         KS statistic for each sample [n_samples]
-    np.ndarray 
+        If 0, the two distributions are identical.
+    np.ndarray
         KS p-value for each sample [n_samples]
+        A p-value of 0 means “strong evidence against equality.”
+        A p-value of 1 means “no evidence against equality.”
+        Identical distributions show a pvalue of 1.
+        Similar distributions show a pvalue close to 1.
     """
-
     # Convert N(D) to probability mass
     obs_prob = (obs * dD) / (np.sum(obs * dD) + eps)
-    pred_prob = (pred * dD[None, :]) / (
-        np.sum(pred * dD[None, :], axis=1, keepdims=True) + eps
-    )
+    pred_prob = (pred * dD[None, :]) / (np.sum(pred * dD[None, :], axis=1, keepdims=True) + eps)
 
     # Compute CDFs
-    obs_cdf = np.cumsum(obs_prob)                  # (n_bins,)
-    pred_cdf = np.cumsum(pred_prob, axis=1)        # (n_samples, n_bins)
+    obs_cdf = np.cumsum(obs_prob)  # (n_bins,)
+    pred_cdf = np.cumsum(pred_prob, axis=1)  # (n_samples, n_bins)
 
     # KS statistic = max |CDF_obs - CDF_pred|
     ks = np.max(np.abs(pred_cdf - obs_cdf[None, :]), axis=1)
-    
+
     # Compute effective sample sizes (from probabilities)
     n_eff_obs = 1.0 / np.sum(obs_prob**2)
     n_eff_pred = 1.0 / np.sum(pred_prob**2, axis=1)
     n_eff_ks = (n_eff_obs * n_eff_pred) / (n_eff_obs + n_eff_pred)
-    
+
     # Compute KS pvalue (asymptotic approximation)
-    p_value = 2.0 * np.exp(-2.0 * (ks * np.sqrt(n_eff_ks))**2)
+    p_value = 2.0 * np.exp(-2.0 * (ks * np.sqrt(n_eff_ks)) ** 2)
     p_value = np.clip(p_value, 0.0, 1.0)
     return ks, p_value
 
 
-def compute_errors(obs, pred, error_metric, D=None, dD=None):
+def compute_errors(obs, pred, error_metric, D=None, dD=None):  # noqa: PLR0911
     """Compute errors between observed and predicted values.
-    
+
     Parameters
     ----------
     obs : np.ndarray
-        Observed values. Can be scalar, 1D [n_bins], or 2D [1, n_bins].
+        Observed values.
+        Is scalar value if specified target is an integral variable.
+        Is 1D array of size [n_bins] if target is a distribution.
     pred : np.ndarray
         Predicted values. Can be 1D [n_samples] or 2D [n_samples, n_bins].
+        Is 1D when specified target is an integral variable.
+        Is 2D when specified target is a distribution.
     error_metric : str
         Error metric to compute: 'SSE', 'SAE', 'MAE', 'relMAE', 'MSE', 'RMSE',
         'KL', 'WD', 'JS', 'KS', or 'KS_pvalue'.
@@ -619,7 +624,7 @@ def compute_errors(obs, pred, error_metric, D=None, dD=None):
         Diameter bin center in mm [n_bins]. Required for 'WD' metric. Default is None.
     dD : 1D array, optional
         Diameter bin width in mm [n_bins]. Required for distribution metrics. Default is None.
-    
+
     Returns
     -------
     np.ndarray
@@ -637,11 +642,11 @@ def compute_errors(obs, pred, error_metric, D=None, dD=None):
     if error_metric == "WD":
         return compute_wasserstein_distance(obs, pred, D=D, dD=dD)
     if error_metric == "KS":
-        return compute_kolmogorov_smirnov_distance(obs, pred, dD=dD)[0] # select distance
+        return compute_kolmogorov_smirnov_distance(obs, pred, dD=dD)[0]  # select distance
     if error_metric == "KS_pvalue":
-        return compute_kolmogorov_smirnov_distance(obs, pred, dD=dD)[1] # select p_value
+        return compute_kolmogorov_smirnov_distance(obs, pred, dD=dD)[1]  # select p_value
     if error_metric == "JS":
-        return compute_jensen_shannon_distance(obs, pred, D=D, dD=dD)
+        return compute_jensen_shannon_distance(obs, pred, dD=dD)
 
     # Broadcast obs to match pred shape if needed (when target is N(D) or H(x))
     # If obs is 1D and pred is 2D, add dimension to obs
@@ -649,9 +654,9 @@ def compute_errors(obs, pred, error_metric, D=None, dD=None):
         obs = obs[None, :]
 
     # Compute error metrics
-    if error_metric == "SSE": 
-        return np.sum((obs - pred)**2, axis=1)
-    if error_metric == "SAE": 
+    if error_metric == "SSE":
+        return np.sum((obs - pred) ** 2, axis=1)
+    if error_metric == "SAE":
         return np.sum(np.abs(obs - pred), axis=1)
     if error_metric == "MAE":
         return np.mean(np.abs(obs - pred), axis=1)
@@ -666,20 +671,20 @@ def compute_errors(obs, pred, error_metric, D=None, dD=None):
 
 def normalize_errors(errors, normalize_error):
     """Normalize errors to scale minimum error region to O(1).
-    
-    Scaling by the median value of the p0-p10 region normalizes error in 
-    the minimum region to approximately O(1). Scaling by p95-p5 is not used 
-    because when tails span orders of magnitude, it normalizes the spread 
-    rather than the minimum region, suppressing the minimum region and 
+
+    Scaling by the median value of the p0-p10 region normalizes error in
+    the minimum region to approximately O(1). Scaling by p95-p5 is not used
+    because when tails span orders of magnitude, it normalizes the spread
+    rather than the minimum region, suppressing the minimum region and
     amplifying the bad region.
-    
+
     Parameters
     ----------
     errors : np.ndarray
         Error values to normalize
     normalize_error : bool
         If True, normalize errors. If False, return errors unchanged.
-    
+
     Returns
     -------
     np.ndarray
@@ -715,10 +720,10 @@ def compute_cost_function(
     check_arguments=True,
 ):
     """Compute cost function for grid search optimization.
-    
+
     Computes errors between observed and predicted drop size distributions,
     with optional censoring, transformation, and target variable specification.
-    
+
     Parameters
     ----------
     ND_obs : 1D array
@@ -741,7 +746,7 @@ def compute_cost_function(
         Error metric. Required for distribution targets. Default is None.
     check_arguments : bool, optional
         If True, validate input arguments. Default is True.
-    
+
     Returns
     -------
     np.ndarray
