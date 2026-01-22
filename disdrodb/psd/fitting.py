@@ -31,7 +31,14 @@ from disdrodb.l2.empirical_dsd import (
     get_normalized_intercept_parameter_from_moments,
     get_total_number_concentration,
 )
-from disdrodb.psd.models import ExponentialPSD, GammaPSD, LognormalPSD, NormalizedGammaPSD
+from disdrodb.psd.models import (
+    ExponentialPSD,
+    GammaPSD,
+    GeneralizedGammaPSD,
+    LognormalPSD,
+    NormalizedGammaPSD,
+    NormalizedGeneralizedGammaPSD,
+)
 from disdrodb.utils.manipulations import get_diameter_bin_edges
 from disdrodb.utils.warnings import suppress_warnings
 
@@ -60,6 +67,40 @@ from disdrodb.utils.warnings import suppress_warnings
 
 ####--------------------------------------------------------------------------------------.
 #### Goodness of fit (GOF)
+
+
+def compute_kl_divergence(pk, qk, dim=DIAMETER_DIMENSION):
+    """Compute Kullback-Leibler (KL) divergence.
+
+    It compare two probability distributions.
+    When KL < 0.1 the two distributions are similar.
+    When KL < 0.01 the two distributions are nearly indistinguishable.
+
+    Parameters
+    ----------
+    pk: xarray.DataArray
+        Observed / true / empirical distribution
+    qk: xarray.DataArray
+        Predicted / model / approximating distribution
+
+    Returns
+    -------
+    xarray.DataArray
+        Kullback-Leibler (KL) divergence.
+
+    """
+    # Compute log probability ratio
+    epsilon = 1e-10
+    pk = xr.where(pk == 0, epsilon, pk)
+    qk = xr.where(qk == 0, epsilon, qk)
+    log_prob_ratio = np.log(pk / qk)
+    log_prob_ratio = log_prob_ratio.where(np.isfinite(log_prob_ratio))
+
+    # Compute divergence
+    kl_divergence = (pk * log_prob_ratio).sum(dim=dim, skipna=False)
+    return kl_divergence
+
+
 def compute_gof_stats(obs, pred, dim=DIAMETER_DIMENSION):
     """
     Compute various goodness-of-fit (GoF) statistics between obs and predicted values.
@@ -125,26 +166,18 @@ def compute_gof_stats(obs, pred, dim=DIAMETER_DIMENSION):
         total_number_concentration_pred = (pred * diameter_bin_width).sum(dim=dim, skipna=False)
         total_number_concentration_difference = total_number_concentration_pred - total_number_concentration_obs
 
-        # Compute Kullback-Leibler divergence
-        # - Compute pdf per bin
+        # Compute pdf per bin
         pk_pdf = obs / total_number_concentration_obs
         qk_pdf = pred / total_number_concentration_pred
 
-        # - Compute probabilities per bin
+        # Compute probabilities per bin
         pk = pk_pdf * diameter_bin_width
         pk = pk / pk.sum(dim=dim, skipna=False)  # this might not be necessary
         qk = qk_pdf * diameter_bin_width
         qk = qk / qk.sum(dim=dim, skipna=False)  # this might not be necessary
 
-        # - Compute log probability ratio
-        epsilon = 1e-10
-        pk = xr.where(pk == 0, epsilon, pk)
-        qk = xr.where(qk == 0, epsilon, qk)
-        log_prob_ratio = np.log(pk / qk)
-        log_prob_ratio = log_prob_ratio.where(np.isfinite(log_prob_ratio))
-
-        # - Compute divergence
-        kl_divergence = (pk * log_prob_ratio).sum(dim=dim, skipna=False)
+        # Compute Kullback-Leibler divergence
+        kl_divergence = compute_kl_divergence(pk=pk, qk=qk)
         kl_divergence = xr.where((error == 0).all(dim=dim), 0, kl_divergence)
 
     # Create an xarray.Dataset to hold the computed statistics
@@ -1036,6 +1069,7 @@ def get_exponential_parameters(
 
 ####-----------------------------------------------------------------------------------------.
 #### Grid Search (GS)
+#### - Optimization utilities
 
 
 def _compute_rain_rate(ND, D, dD, V):
@@ -1057,7 +1091,14 @@ def _compute_z(ND, D, dD):
     return Z
 
 
-def _compute_target_variable_error(target, ND_obs, ND_preds, D, dD, V, relative=False, eps=1e-12):
+def _compute_target_variable(
+    target,
+    ND_obs,
+    ND_preds,
+    D,
+    dD,
+    V,
+):
     # Compute observed and predicted target variables
     if target == "Z":
         obs = _compute_z(ND_obs, D, dD)
@@ -1065,18 +1106,13 @@ def _compute_target_variable_error(target, ND_obs, ND_preds, D, dD, V, relative=
     elif target == "R":
         obs = _compute_rain_rate(ND_obs, D, dD, V)
         pred = _compute_rain_rate(ND_preds, D, dD, V)
-    else:  # "LWC"
+    elif target == "LWC":
         obs = _compute_lwc(ND_obs, D, dD)
         pred = _compute_lwc(ND_preds, D, dD)
-
-    # Absolute error
-    abs_error = np.abs(obs - pred)
-
-    # Return relative error if requested
-    if relative:
-        return abs_error / (np.abs(obs) + eps)
-
-    return abs_error
+    else:  # N(D) or H(x)
+        obs = ND_obs
+        pred = ND_preds
+    return obs, pred
 
 
 def _left_truncate_bins(ND_obs, ND_preds, D, dD, V):
@@ -1126,6 +1162,153 @@ def _truncate_bin_edges(
     return data
 
 
+def _apply_transformation(obs, pred, transformation):
+    if transformation == "log":
+        return np.log(obs + 1), np.log(pred + 1)
+    if transformation == "sqrt":
+        return np.sqrt(obs), np.sqrt(pred)
+    # if transformation == "identity":
+    return obs, pred
+
+
+def _compute_kl_divergence(obs, pred, dD):
+    """Compute Kullback-Leibler divergence between observed and predicted N(D).
+
+    Parameters
+    ----------
+    obs : 1D array
+        Observed N(D) values [n_bins]. Unit [#/m3/mm-1]
+    pred : 2D array
+        Predicted N(D) values [n_samples, n_bins]. Unit [#/m3/mm-1]
+    dD : 1D array
+        Bin widths [n_bins] [mm]
+
+    Returns
+    -------
+    np.ndarray
+        KL divergence for each sample [n_samples]
+    """
+    # Convert N(D) to probabilities (normalize by bin width and total)
+    # pdf =  N(D) * dD / sum( N(D) * dD)
+    obs_prob = (obs * dD) / (np.sum(obs * dD) + 1e-12)
+    pred_prob = (pred * dD[None, :]) / (np.sum(pred * dD[None, :], axis=1, keepdims=True) + 1e-12)
+
+    # KL(P||Q) = sum(P * log(P/Q))
+    # Add epsilon to avoid log(0)
+    eps = 1e-12
+    kl = np.sum(obs_prob[None, :] * (np.log(obs_prob[None, :] + eps) - np.log(pred_prob + eps)), axis=1)
+    return kl
+
+
+def _compute_wasserstein_distance(obs, pred, D, dD):
+    """
+    Compute Wasserstein distance (Earth Mover's Distance) between observed and predicted N(D).
+
+    Vectorized implementation for multiple predictions.
+
+    Parameters
+    ----------
+    obs : 1D array
+        Observed N(D) values [n_bins]. Unit [#/m3/mm-1]
+    pred : 2D array
+        Predicted N(D) values [n_samples, n_bins]. Unit [#/m3/mm-1]
+    D : 1D array
+        Bin centers (diameter values) [n_bins] mmm
+    dD : 1D array
+        Bin widths [n_bins] [mm]
+
+    Returns
+    -------
+    np.ndarray
+        Wasserstein distance for each sample [n_samples]
+    """
+    # from scipy.stats import wasserstein_distance
+
+    # wasserstein_distance(
+    #     u_values=D,
+    #     v_values=D,
+    #     u_weights=obs_prob,
+    #     v_weights=pred_prob[0]
+    # )
+
+    # Convert N(D) to probabilities (normalize by bin width and total)
+    # pdf =  N(D) * dD / sum( N(D) * dD)
+    obs_prob = (obs * dD) / (np.sum(obs * dD) + 1e-12)
+    pred_prob = (pred * dD[None, :]) / (np.sum(pred * dD[None, :], axis=1, keepdims=True) + 1e-12)
+
+    # Compute cumulative distributions
+    obs_cdf = np.cumsum(obs_prob)
+    pred_cdf = np.cumsum(pred_prob, axis=1)
+
+    # Wasserstein distance = integral of |CDF_obs - CDF_pred| over D
+    # - Integrate using left Riemann sum (as Scipy wasserstein_distance)
+    obs_cdf_expanded = obs_cdf[None, :]  # [1, n_bins]
+    diff = np.abs(obs_cdf_expanded - pred_cdf)  # [n_samples, n_bins]
+
+    dx = np.diff(D)
+    wd = np.sum(diff[:, :-1] * dx[None, :], axis=1)
+    return wd
+
+
+def compute_errors(obs, pred, error_metric, D=None, dD=None):
+    """Compute errors."""
+    # Handle scalar obs case (from aggregated metrics like Z, R, LWC)
+    if np.isscalar(obs):
+        obs = np.asarray(obs)
+    if obs.size == 1:
+        return np.abs(obs - pred)
+
+    # Compute KL or WD if asked (obs is expanded internally to save computations)
+    if error_metric == "KL":
+        return _compute_kl_divergence(obs, pred, dD=dD)
+    if error_metric == "WD":
+        return _compute_wasserstein_distance(obs, pred, D=D, dD=dD)
+
+    # Broadcast obs to match pred shape if needed (when target is N(D) or H(x))
+    # If obs is 1D and pred is 2D, add dimension to obs
+    if pred.ndim > obs.ndim:
+        obs = obs[None, :]
+
+    # Compute error metrics
+    if error_metric == "MAE":
+        return np.mean(np.abs(obs - pred), axis=1)
+    if error_metric == "relMAE":
+        return np.mean(np.abs(obs - pred) / (np.abs(obs) + 1e-12), axis=1)
+    if error_metric == "MSE":
+        return np.mean((obs - pred) ** 2, axis=1)
+    if error_metric == "RMSE":
+        return np.sqrt(np.mean((obs - pred) ** 2, axis=1))
+    raise NotImplementedError(f"Error metric '{error_metric}' is not implemented.")
+
+
+def normalize_errors(errors, normalize_error):
+    """Normalize errors so to scale minimum errors regions to O(1).
+
+    Scaling by the median value of [p0-p10 region],
+    normalize error in minimum region to ≈ O(1).
+
+    Scaling by p95-p5 make no sense when tails span orders of magnitude.
+    It normalize the spread, not the minimum region.
+    It suppresses the minimum region and amplifies the bad region.
+
+    """
+    if not normalize_error:
+        return errors
+
+    p10 = np.nanpercentile(errors, q=10)
+    scale = np.nanmedian(errors[errors < p10])
+
+    ## Investigate normalization
+    # plt.hist(errors[errors < p10], bins=100)
+    # errors_norm = errors / scale
+    # p_norm10 = np.nanpercentile(errors_norm, q=10)
+    # plt.hist(errors_norm[errors_norm < p_norm10], bins=100)
+
+    # scale = np.diff(np.nanpercentile(errors, q=[1, 99])) + 1e-12
+    errors = errors / scale
+    return errors
+
+
 def _compute_cost_function(
     ND_obs,
     ND_preds,
@@ -1134,9 +1317,17 @@ def _compute_cost_function(
     V,
     target,
     transformation,
-    error_order,
+    error_metric,
     censoring,
 ):
+    # Check input
+    transformation = check_transformation(transformation)
+    censoring = check_censoring(censoring)
+
+    # Clip N(D) < 1e-3 to 0
+    ND_obs = np.where(ND_obs < 1e-3, 0.0, ND_obs)
+    ND_preds = np.where(ND_preds < 1e-3, 0.0, ND_preds)
+
     # Truncate if asked
     left_censored = censoring in {"left", "both"}
     right_censored = censoring in {"right", "both"}
@@ -1155,19 +1346,18 @@ def _compute_cost_function(
             return np.full(ND_preds.shape[0], np.inf)
         ND_obs, ND_preds, D, dD, V = truncated
 
-    # Assume ND_obs of shape (D bins) and ND_preds of shape (# params, D bins)
-    if target == "ND":
-        if transformation == "identity":
-            errors = np.mean(np.abs(ND_obs[None, :] - ND_preds) ** error_order, axis=1)
-            return errors
-        if transformation == "log":
-            errors = np.mean(np.abs(np.log(ND_obs[None, :] + 1) - np.log(ND_preds + 1)) ** error_order, axis=1)
-            return errors
-        if transformation == "sqrt":
-            errors = np.mean(np.abs(np.sqrt(ND_obs[None, :]) - np.sqrt(ND_preds)) ** error_order, axis=1)
-            return errors
-    # if target in ["Z", "R", "LWC"]:
-    return _compute_target_variable_error(target, ND_obs, ND_preds, D, dD, V)
+    # Compute target variable
+    obs, pred = _compute_target_variable(target, ND_obs, ND_preds, D=D, dD=dD, V=V)
+
+    # Apply transformation
+    obs, pred = _apply_transformation(obs, pred, transformation=transformation)
+
+    # Compute errors
+    errors = compute_errors(obs, pred, error_metric=error_metric, D=D, dD=dD)
+
+    # Replace inf with NaN
+    errors[~np.isfinite(errors)] = np.nan
+    return errors
 
 
 def define_param_range(center, step, bounds, factor=2, refinement=20):
@@ -1200,6 +1390,9 @@ def define_param_range(center, step, bounds, factor=2, refinement=20):
     return np.arange(lower, upper, new_step)
 
 
+#### - Optimization routines
+
+
 def apply_exponential_gs(
     Nt,
     ND_obs,
@@ -1215,7 +1408,7 @@ def apply_exponential_gs(
 ):
     """Apply Grid Search for the ExponentialPSD distribution."""
     # Define set of mu values
-    lambda_arr = np.arange(0.01, 20, step=0.01)
+    lambda_arr = np.arange(0.01, 10, step=0.01)
 
     # Perform grid search
     with suppress_warnings():
@@ -1359,6 +1552,133 @@ def apply_gamma_gs(
     return np.array([N0, mu, Lambda])
 
 
+def _apply_generalized_gamma_gs(
+    mu_values,
+    c_values,
+    lambda_values,
+    Nt,
+    ND_obs,
+    D,
+    dD,
+    V,
+    target,
+    transformation,
+    error_order,
+    censoring,
+):
+    """Routine for GeneralizedGammaPSD parameters grid search."""
+    # Define combinations of parameters for grid search
+    mu_grid, lambda_grid, c_grid = np.meshgrid(
+        mu_values,
+        lambda_values,
+        c_values,
+        indexing="xy",
+    )
+    mu_arr = mu_grid.ravel()
+    lambda_arr = lambda_grid.ravel()
+    c_arr = c_grid.ravel()
+
+    # Perform grid search
+    with suppress_warnings():
+        # Compute ND
+        ND_preds = GeneralizedGammaPSD.formula(
+            D=D[None, :],
+            Nt=Nt,
+            Lambda=lambda_arr[:, None],
+            mu=mu_arr[:, None],
+            c=c_arr[:, None],
+        )
+        # Compute errors
+        errors = _compute_cost_function(
+            ND_obs=ND_obs,
+            ND_preds=ND_preds,
+            D=D,
+            dD=dD,
+            V=V,
+            target=target,
+            transformation=transformation,
+            error_order=error_order,
+            censoring=censoring,
+        )
+
+    # Replace inf with NaN
+    errors[~np.isfinite(errors)] = np.nan
+
+    # If all invalid, return NaN parameters
+    if np.all(np.isnan(errors)):
+        return np.array([np.nan, np.nan, np.nan])
+
+    # Otherwise, choose the best index
+    best_index = np.nanargmin(errors)
+    return mu_arr[best_index].item(), c_arr[best_index].item(), lambda_arr[best_index].item()
+
+
+def apply_generalized_gamma_gs(
+    Nt,
+    ND_obs,
+    V,
+    # Coords
+    D,
+    dD,
+    # Error options
+    target,
+    transformation,
+    error_order,
+    censoring,
+):
+    """Estimate GeneralizedGammaPSD model parameters using Grid Search."""
+    # Define parameters bounds
+    mu_bounds = (-1, 30)
+    c_bounds = (0, 10)
+    lambda_bounds = (0, 40)
+
+    # Define initial set of parameters
+    mu_step = 0.2
+    lambda_step = 0.5
+    c_step = 0.2
+    mu_values = np.arange(0, 30, step=mu_step)
+    c_values = np.concatenate((np.arange(0.1, 2, step=0.2), np.arange(2, 10, step=0.5)))
+    lambda_values = np.arange(0, 40, step=lambda_step)
+
+    # First round of GS
+    mu, c, Lambda = _apply_generalized_gamma_gs(
+        mu_values=mu_values,
+        c_values=c_values,
+        lambda_values=lambda_values,
+        Nt=Nt,
+        ND_obs=ND_obs,
+        D=D,
+        dD=dD,
+        V=V,
+        target=target,
+        transformation=transformation,
+        error_order=error_order,
+        censoring=censoring,
+    )
+
+    # Second round of GS
+    mu_values = define_param_range(mu, mu_step, bounds=mu_bounds)
+    c_values = define_param_range(c, c_step, bounds=c_bounds)
+    lambda_values = define_param_range(Lambda, lambda_step, bounds=lambda_bounds)
+
+    mu, c, Lambda = _apply_generalized_gamma_gs(
+        mu_values=mu_values,
+        c_values=c_values,
+        lambda_values=lambda_values,
+        Nt=Nt,
+        ND_obs=ND_obs,
+        D=D,
+        dD=dD,
+        V=V,
+        target=target,
+        transformation=transformation,
+        error_order=error_order,
+        censoring=censoring,
+    )
+
+    return np.array([Nt, mu, c, Lambda])
+
+
 def _apply_lognormal_gs(mu_values, sigma_values, Nt, ND_obs, D, dD, V, target, transformation, error_order, censoring):
     """Routine for LognormalPSD parameters grid search."""
     # Define combinations of parameters for grid search
@@ -1483,13 +1803,12 @@ def apply_normalized_gamma_gs(
 
     # Perform grid search
     with suppress_warnings():
-        # Compute ND
+        # Compute N(D)
         ND_preds = NormalizedGammaPSD.formula(D=D[None, :], D50=D50, Nw=Nw, mu=mu_arr[:, None])
-
         # Compute errors
         errors = _compute_cost_function(
-            ND_obs=ND_obs,
-            ND_preds=ND_preds,
+            ND_obs=ND_obs / Nw if target == "H(x)" else ND_obs,
+            ND_preds=ND_preds / Nw if target == "H(x)" else ND_preds,
             D=D,
             dD=dD,
             V=V,
@@ -1514,10 +1833,6 @@ def apply_normalized_gamma_gs(
 
 def get_exponential_parameters_gs(ds, target="ND", transformation="log", error_order=1, censoring="none"):
     """Estimate the parameters of an Exponential distribution using Grid Search."""
-    # "target": ["ND", "LWC", "Z", "R"]
-    # "transformation": "log", "identity", "sqrt",  # only for drop_number_concentration
-    # "error_order": 1,     # MAE/MSE ... only for drop_number_concentration
-
     # Compute required variables
     ds["Nt"] = get_total_number_concentration(
         drop_number_concentration=ds["drop_number_concentration"],
@@ -1565,10 +1880,6 @@ def get_exponential_parameters_gs(ds, target="ND", transformation="log", error_o
 
 def get_gamma_parameters_gs(ds, target="ND", transformation="log", error_order=1, censoring="none"):
     """Compute Grid Search to identify mu and Lambda Gamma distribution parameters."""
-    # "target": ["ND", "LWC", "Z", "R"]
-    # "transformation": "log", "identity", "sqrt",  # only for drop_number_concentration
-    # "error_order": 1,     # MAE/MSE ... only for drop_number_concentration
-
     # Compute required variables
     ds["Nt"] = get_total_number_concentration(
         drop_number_concentration=ds["drop_number_concentration"],
@@ -1614,12 +1925,61 @@ def get_gamma_parameters_gs(ds, target="ND", transformation="log", error_order=1
     return ds_params
 
 
+def get_generalized_gamma_parameters_gs(
+    ds,
+    target="ND",
+    transformation="log",
+    error_order=1,
+    censoring="none",
+):
+    """Compute Grid Search to identify mu, c and Lambda Generalized Gamma PSD parameters."""
+    # Compute required variables
+    ds["Nt"] = get_total_number_concentration(
+        drop_number_concentration=ds["drop_number_concentration"],
+        diameter_bin_width=ds["diameter_bin_width"],
+    )
+
+    # Define kwargs
+    kwargs = {
+        "D": ds["diameter_bin_center"].data,
+        "dD": ds["diameter_bin_width"].data,
+        "target": target,
+        "transformation": transformation,
+        "error_order": error_order,
+        "censoring": censoring,
+    }
+
+    # Fit distribution in parallel
+    da_params = xr.apply_ufunc(
+        apply_generalized_gamma_gs,
+        # Variables varying over time
+        ds["Nt"],
+        ds["drop_number_concentration"],
+        ds["fall_velocity"],
+        # Other options
+        kwargs=kwargs,
+        # Settings
+        input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
+        output_core_dims=[["parameters"]],
+        vectorize=True,
+        dask="parallelized",
+        dask_gufunc_kwargs={"output_sizes": {"parameters": 4}},  # lengths of the new output_core_dims dimensions.
+        output_dtypes=["float64"],
+    )
+
+    # Add parameters coordinates
+    da_params = da_params.assign_coords({"parameters": ["Nt", "mu", "c", "Lambda"]})
+
+    # Create parameters dataset
+    ds_params = da_params.to_dataset(dim="parameters")
+
+    # Add DSD model name to the attribute
+    ds_params.attrs["disdrodb_psd_model"] = "GeneralizedGammaPSD"
+    return ds_params
+
+
 def get_lognormal_parameters_gs(ds, target="ND", transformation="log", error_order=1, censoring="none"):
     """Compute Grid Search to identify mu and sigma lognormal distribution parameters."""
-    # "target": ["ND", "LWC", "Z", "R"]
-    # "transformation": "log", "identity", "sqrt",  # only for drop_number_concentration
-    # "error_order": 1,     # MAE/MSE ... only for drop_number_concentration
-
     # Compute required variables
     ds["Nt"] = get_total_number_concentration(
         drop_number_concentration=ds["drop_number_concentration"],
@@ -1727,10 +2087,6 @@ def get_normalized_gamma_parameters_gs(
     ds_params : xarray.Dataset
         Dataset containing the estimated Normalized Gamma distribution parameters.
     """
-    # "target": ["ND", "LWC", "Z", "R"]
-    # "transformation": "log", "identity", "sqrt",  # only for drop_number_concentration
-    # "error_order": 1,     # MAE/MSE ... only for drop_number_concentration
-
     # Compute required variables
     drop_number_concentration = ds["drop_number_concentration"]
     diameter_bin_width = ds["diameter_bin_width"]
@@ -1792,6 +2148,281 @@ def get_normalized_gamma_parameters_gs(
     # Add DSD model name to the attribute
     ds_params.attrs["disdrodb_psd_model"] = "NormalizedGammaPSD"
     return ds_params
+
+
+def apply_normalized_generalized_gamma_gs(
+    Nc,
+    Dc,
+    ND_obs,
+    V,
+    # PSD options
+    i,
+    j,
+    # Coords
+    D,
+    dD,
+    # Optimization options
+    minimization_objectives,
+    # Parameters
+    mu,
+    c,
+    # Output options
+    return_cost_function=False,
+):
+    """Estimate NormalizedGeneralizedGammaPSD model parameters using Grid Search."""
+    # Thurai 2018: mu [-3, 1], c [0-6]
+
+    # Define combinations of parameters for grid search
+    mu_grid, c_grid = np.meshgrid(
+        mu,
+        c,
+        indexing="xy",
+    )
+    mu_arr = mu_grid.ravel()
+    c_arr = c_grid.ravel()
+
+    # Perform grid search
+    with suppress_warnings():
+
+        # Compute ND
+        ND_preds = NormalizedGeneralizedGammaPSD.formula(
+            D=D[None, :],
+            i=i,
+            j=j,
+            Nc=Nc,
+            Dc=Dc,
+            mu=mu_arr[:, None],
+            c=c_arr[:, None],
+        )
+
+        # Compute weighted error across all targets
+        total_errors = np.zeros(len(mu_arr))
+        total_weight = 0
+
+        for minimization_cfg in minimization_objectives:
+
+            # Extract target configuration
+            target = minimization_cfg["target"]
+            error_metric = minimization_cfg["error_metric"]
+            censoring = minimization_cfg["censoring"]
+            transformation = minimization_cfg["transformation"]
+            if len(minimization_objectives) > 1:
+                weight = minimization_cfg["weight"]
+                normalize_error = True  # minimization_cfg["normalize_errors"]
+            else:
+                weight = 1
+                normalize_error = False  # minimization_cfg["normalize_errors"]
+
+            # Prepare obs/pred for this target
+            obs = ND_obs / Nc if target == "H(x)" else ND_obs
+            pred = ND_preds / Nc if target == "H(x)" else ND_preds
+
+            # Compute errors for this target
+            errors = _compute_cost_function(
+                ND_obs=obs,
+                ND_preds=pred,
+                D=D,
+                dD=dD,
+                V=V,
+                target=target,
+                transformation=transformation,
+                error_metric=error_metric,
+                censoring=censoring,
+            )
+
+            # Normalize errors
+            errors = normalize_errors(errors, normalize_error)
+
+            # Accumulate weighted errors
+            total_errors += weight * errors
+            total_weight += weight
+
+        # Normalize by total weight
+        errors = total_errors / total_weight
+
+    # Replace inf with NaN
+    errors[~np.isfinite(errors)] = np.nan
+
+    # Define best parameters
+    if not np.all(np.isnan(errors)):
+        best_index = np.nanargmin(errors)
+        mu, c = mu_arr[best_index].item(), c_arr[best_index].item()
+        parameters = np.array([Nc, Dc, mu, c])
+    else:
+        parameters = np.array([np.nan, np.nan, np.nan, np.nan])
+
+    # If asked, return cost function
+    if return_cost_function:
+        errors = errors.reshape(mu_grid.shape)
+        return errors, parameters
+    return parameters
+
+
+def get_normalized_generalized_gamma_parameters_gs(
+    ds,
+    i,
+    j,
+    mu=None,
+    c=None,
+    minimization_objectives=None,
+    return_cost_function=False,
+):
+    """Estimate Normalized Generalized Gamma PSD parameters using Grid Search optimization.
+
+    The parameters ``N_c`` and ``Dc`` are computed empirically from the observed DSD
+    moments, while the shape parameters ``mu`` and ``c`` are estimated through
+    grid search by minimizing the error between observed and modeled quantities.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset containing PSD observations. Must include:
+        - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
+        - ``diameter_bin_center`` : Diameter bin centers [mm]
+        - ``diameter_bin_width`` : Diameter bin widths [mm]
+        - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
+    psd_model_kwargs : dict
+        Dictionary with the i and j moment order to use.
+    minimization_objectives: list of dicts
+
+        target : str, optional
+            Target quantity to optimize. Valid options:
+            - ``"ND"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+        transformation : str, optional
+            Transformation applied to the target quantity before computing the error.
+            Valid options:
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation (default)
+            - ``"sqrt"`` : Square root transformation
+        error_order : int, optional
+            Order of the error metric (p-norm):
+            - ``1`` : L1 norm / Mean Absolute Error (MAE) (default)
+            - ``2`` : L2 norm / Mean Squared Error (MSE)
+            Higher orders tend to emphasize larger errors and may stretch the
+            fitted distribution toward higher diameters.
+        censoring : {"none", "left", "right", "both"}, optional
+            Specifies whether the observed particle size distribution (PSD) is
+            treated as censored at the edges of the diameter range due to
+            instrumental sensitivity limits.
+
+            - ``"none"`` : No censoring is applied. All diameter bins are used.
+            - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+              range of diameter bins with non-zero observed concentrations is
+              retained.
+
+    Returns
+    -------
+    ds_params : xarray.Dataset
+        Dataset containing the estimated Normalized Generalized Gamma distribution parameters.
+    """
+    # Compute required variables
+    drop_number_concentration = ds["drop_number_concentration"]
+    diameter_bin_width = ds["diameter_bin_width"]
+    diameter = ds["diameter_bin_center"] / 1000  # conversion from mm to m
+    Mi = get_moment(
+        drop_number_concentration=drop_number_concentration,
+        diameter=diameter,  # m
+        diameter_bin_width=diameter_bin_width,  # mm
+        moment=i,
+    )
+    Mj = get_moment(
+        drop_number_concentration=drop_number_concentration,
+        diameter=diameter,  # m
+        diameter_bin_width=diameter_bin_width,  # mm
+        moment=j,
+    )
+    Dc = NormalizedGeneralizedGammaPSD.compute_Dc(i=i, j=j, Mi=Mi, Mj=Mj)
+    Nc = NormalizedGeneralizedGammaPSD.compute_Nc(i=i, j=j, Mi=Mi, Mj=Mj)
+
+    # Define search space
+    if mu is None:
+        mu = np.arange(-7, 30, step=0.01)
+    if c is None:
+        c = np.arange(0.01, 10, step=0.01)
+
+    # Define kwargs
+    kwargs = {
+        "i": i,
+        "j": j,
+        "D": ds["diameter_bin_center"].data,
+        "dD": ds["diameter_bin_width"].data,
+        "minimization_objectives": minimization_objectives,
+        "return_cost_function": return_cost_function,
+        "mu": mu,
+        "c": c,
+    }
+
+    # Define function to create parameters dataset
+    def _create_parameters_dataset(da_parameters, i, j):
+        # Add parameters coordinates
+        da_parameters = da_parameters.assign_coords({"parameters": ["Nc", "Dc", "mu", "c"]})
+
+        # Create parameters dataset
+        ds_parameters = da_parameters.to_dataset(dim="parameters")
+
+        # Add Nc and Dc
+        ds_parameters["Dc"].attrs["moment_orders"] = f"{i}, {j}"
+        ds_parameters["Nc"].attrs["moment_orders"] = f"{i}, {j}"
+
+        # Add DSD model name to the attribute
+        ds_parameters.attrs["disdrodb_psd_model"] = "NormalizedGeneralizedGammaPSD"
+        ds_parameters.attrs["disdrodb_psd_model_kwargs"] = f"{{'i': {i}, 'j': {j}}}"
+        return ds_parameters
+
+    # Return cost function if asked
+    if return_cost_function:
+        da_cost_function, da_parameters = xr.apply_ufunc(
+            apply_normalized_generalized_gamma_gs,
+            # Variables varying over time
+            Nc,
+            Dc,
+            ds["drop_number_concentration"],
+            ds["fall_velocity"],
+            # Other options
+            kwargs=kwargs,
+            # Settings
+            input_core_dims=[[], [], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
+            output_core_dims=[["c_values", "mu_values"], ["parameters"]],
+            vectorize=True,
+            dask="parallelized",
+            # Lengths of the new output_core_dims dimensions.
+            dask_gufunc_kwargs={"output_sizes": {"mu_values": len(mu), "c_values": len(c), "parameters": 4}},
+            output_dtypes=["float64", "float64", "float64"],
+        )
+        ds_parameters = _create_parameters_dataset(da_parameters, i=i, j=j)
+        ds_parameters["cost_function"] = da_cost_function
+        ds_parameters = ds_parameters.assign_coords({"mu_values": mu, "c_values": c})
+        return ds_parameters
+
+    # Otherwise return just best parameters
+    da_parameters = xr.apply_ufunc(
+        apply_normalized_generalized_gamma_gs,
+        # Variables varying over time
+        Nc,
+        Dc,
+        ds["drop_number_concentration"],
+        ds["fall_velocity"],
+        # Other options
+        kwargs=kwargs,
+        # Settings
+        input_core_dims=[[], [], [], [], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
+        output_core_dims=[["parameters"]],
+        vectorize=True,
+        dask="parallelized",
+        dask_gufunc_kwargs={"output_sizes": {"parameters": 4}},  # lengths of the new output_core_dims dimensions.
+        output_dtypes=["float64"],
+    )
+    ds_parameters = _create_parameters_dataset(da_parameters, i=i, j=j)
+    return ds_parameters
 
 
 ####-----------------------------------------------------------------.
@@ -2175,6 +2806,7 @@ OPTIMIZATION_ROUTINES_DICT = {
         "NormalizedGammaPSD": get_normalized_gamma_parameters_gs,
         "LognormalPSD": get_lognormal_parameters_gs,
         "ExponentialPSD": get_exponential_parameters_gs,
+        "GeneralizedGammaPSD": get_generalized_gamma_parameters_gs,
     },
     "ML": {
         "GammaPSD": get_gamma_parameters,
@@ -2213,7 +2845,7 @@ def check_psd_model(psd_model, optimization):
 
 def check_target(target):
     """Check valid target argument."""
-    valid_targets = ["ND", "R", "Z", "LWC"]
+    valid_targets = ["ND", "H(x)", "R", "Z", "LWC"]
     if target not in valid_targets:
         raise ValueError(f"Invalid 'target' {target}. Valid targets are {valid_targets}.")
     return target
@@ -2232,7 +2864,7 @@ def check_transformation(transformation):
     valid_transformation = ["identity", "log", "sqrt"]
     if transformation not in valid_transformation:
         raise ValueError(
-            f"Invalid 'transformation' {transformation}. Valid transformations are {transformation}.",
+            f"Invalid 'transformation' {transformation}. Valid transformations are {valid_transformation}.",
         )
     return transformation
 
