@@ -28,15 +28,15 @@ from disdrodb.psd.grid_search import (
     TRANSFORMATIONS,
     apply_transformation,
     check_censoring,
-    check_error_metric,
+    check_loss,
     check_target,
     check_transformation,
-    check_valid_error_metric,
-    compute_cost_function,
+    check_valid_loss,
     compute_errors,
     compute_jensen_shannon_distance,
     compute_kl_divergence,
     compute_kolmogorov_smirnov_distance,
+    compute_loss,
     compute_lwc,
     compute_rain_rate,
     compute_target_variable,
@@ -94,41 +94,41 @@ class TestCheckTransformation:
 
 
 class TestCheckErrorMetric:
-    """Test suite for check_error_metric."""
+    """Test suite for check_loss."""
 
     @pytest.mark.parametrize("valid", ERROR_METRICS)
-    def test_valid_error_metrics(self, valid):
+    def test_valid_losss(self, valid):
         """Valid error metrics should be returned unchanged."""
-        assert check_error_metric(valid) == valid
+        assert check_loss(valid) == valid
 
-    def test_invalid_error_metric_raises(self):
+    def test_invalid_loss_raises(self):
         """Invalid error metric should raise ValueError."""
-        with pytest.raises(ValueError, match="Invalid 'error_metric'"):
-            check_error_metric("INVALID_METRIC")
+        with pytest.raises(ValueError, match="Invalid 'loss'"):
+            check_loss("INVALID_METRIC")
 
 
 class TestCheckValidErrorMetric:
-    """Test suite for check_valid_error_metric."""
+    """Test suite for check_valid_loss."""
 
     def test_metrics_with_distributions(self):
         """Distribution metrics should be valid for ND and H(x) targets."""
         for metric in ERROR_METRICS:
             for target in DISTRIBUTION_TARGETS:
-                result = check_valid_error_metric(metric, target=target)
+                result = check_valid_loss(metric, target=target)
                 assert result == metric
 
     def test_dist_metrics_with_integrals_raises(self):
         """Distribution metrics are not valid for Z, R, LWC targets."""
         for target in INTEGRAL_TARGETS:
             for metric in ERROR_METRICS:
-                with pytest.raises(ValueError, match="error_metric should be 'None'"):
-                    check_valid_error_metric(metric, target=target)
+                with pytest.raises(ValueError, match="loss should be 'None'"):
+                    check_valid_loss(metric, target=target)
 
     def test_none_metric_with_integrals(self):
         """Distribution metrics are not valid for Z, R, LWC targets."""
         for target in INTEGRAL_TARGETS:
             for metric in ERROR_METRICS:
-                metric = check_valid_error_metric(error_metric=None, target=target)
+                metric = check_valid_loss(loss=None, target=target)
                 assert metric is None
 
 
@@ -587,7 +587,7 @@ class TestComputeKolmogorovSmirnovDistance:
         assert np.all(p <= 1)
 
 
-class TestComputeErrors:
+class TestComputeLoss:
     """Test suite for compute_errors."""
 
     @pytest.fixture
@@ -602,7 +602,7 @@ class TestComputeErrors:
     def test_error_scalar_obs(self, sample_data):
         """Error computation should handle scalar observations."""
         obs, pred, D, dD = sample_data
-        errors = compute_errors(obs, pred, error_metric="MAE", D=D, dD=dD)
+        errors = compute_errors(obs, pred, loss="MAE", D=D, dD=dD)
         assert errors.shape == pred.shape
         assert np.all(errors >= 0)
 
@@ -610,7 +610,7 @@ class TestComputeErrors:
         """SSE error metric should compute sum of squared errors."""
         obs = np.array([1, 2, 3])
         pred = np.array([[1, 2, 3], [2, 3, 4]])
-        errors = compute_errors(obs, pred, error_metric="SSE")
+        errors = compute_errors(obs, pred, loss="SSE")
         expected = np.array([0, 3])
         np.testing.assert_array_almost_equal(errors, expected)
 
@@ -618,7 +618,7 @@ class TestComputeErrors:
         """SAE error metric should compute sum of absolute errors."""
         obs = np.array([1, 2, 3])
         pred = np.array([[1, 2, 3], [2, 3, 4]])
-        errors = compute_errors(obs, pred, error_metric="SAE")
+        errors = compute_errors(obs, pred, loss="SAE")
         expected = np.array([0, 3])
         np.testing.assert_array_almost_equal(errors, expected)
 
@@ -626,7 +626,7 @@ class TestComputeErrors:
         """MAE error metric should compute mean absolute error."""
         obs = np.array([1, 2, 3])
         pred = np.array([[1, 2, 3], [2, 3, 4]])
-        errors = compute_errors(obs, pred, error_metric="MAE")
+        errors = compute_errors(obs, pred, loss="MAE")
         expected = np.array([0, 1])
         np.testing.assert_array_almost_equal(errors, expected)
 
@@ -634,7 +634,7 @@ class TestComputeErrors:
         """MSE error metric should compute mean squared error."""
         obs = np.array([1, 2, 3])
         pred = np.array([[1, 2, 3], [2, 3, 4]])
-        errors = compute_errors(obs, pred, error_metric="MSE")
+        errors = compute_errors(obs, pred, loss="MSE")
         expected = np.array([0, 1])
         np.testing.assert_array_almost_equal(errors, expected)
 
@@ -642,7 +642,7 @@ class TestComputeErrors:
         """RMSE error metric should compute root mean squared error."""
         obs = np.array([1, 2, 3])
         pred = np.array([[1, 2, 3], [2, 3, 4]])
-        errors = compute_errors(obs, pred, error_metric="RMSE")
+        errors = compute_errors(obs, pred, loss="RMSE")
         expected = np.array([0, 1])
         np.testing.assert_array_almost_equal(errors, expected)
 
@@ -650,7 +650,7 @@ class TestComputeErrors:
         """Relative MAE should handle zero division gracefully."""
         obs = np.array([1, 2, 3])
         pred = np.array([[1, 2, 3], [2, 3, 4]])
-        errors = compute_errors(obs, pred, error_metric="relMAE")
+        errors = compute_errors(obs, pred, loss="relMAE")
         assert errors.shape == (2,)
         assert np.all(np.isfinite(errors))
 
@@ -659,7 +659,7 @@ class TestComputeErrors:
         obs = np.array([100, 200, 150])
         pred = np.array([[100, 200, 150], [50, 100, 75], [1000, 2000, 3000]])
         dD = np.array([0.1, 0.1, 0.1])
-        errors = compute_errors(obs, pred, error_metric="KL", dD=dD)
+        errors = compute_errors(obs, pred, loss="KL", dD=dD)
         assert errors.shape == (3,)
         assert np.all(errors >= 0)
         # First prediction is identical to obs, so error should be ~0
@@ -671,7 +671,7 @@ class TestComputeErrors:
         pred = np.array([[100, 200, 150], [50, 100, 75], [1000, 2000, 3000]])
         D = np.array([0.5, 1.0, 1.5])
         dD = np.array([0.1, 0.1, 0.1])
-        errors = compute_errors(obs, pred, error_metric="WD", D=D, dD=dD)
+        errors = compute_errors(obs, pred, loss="WD", D=D, dD=dD)
         assert errors.shape == (3,)
         assert np.all(errors >= 0)
         # First prediction is identical to obs, so error should be ~0
@@ -682,7 +682,7 @@ class TestComputeErrors:
         obs = np.array([100, 200, 150])
         pred = np.array([[100, 200, 150], [50, 100, 75], [1000, 2000, 3000]])
         dD = np.array([0.1, 0.1, 0.1])
-        errors = compute_errors(obs, pred, error_metric="KS", dD=dD)
+        errors = compute_errors(obs, pred, loss="KS", dD=dD)
         assert errors.shape == (3,)
         assert np.all(errors >= 0)
         # First prediction is identical to obs, so KS should be ~0
@@ -693,7 +693,7 @@ class TestComputeErrors:
         obs = np.array([100, 200, 150])
         pred = np.array([[100, 200, 150], [50, 100, 75], [1000, 2000, 3000]])
         dD = np.array([0.1, 0.1, 0.1])
-        errors = compute_errors(obs, pred, error_metric="KS_pvalue", dD=dD)
+        errors = compute_errors(obs, pred, loss="KS_pvalue", dD=dD)
         assert errors.shape == (3,)
         assert np.all(errors >= 0)
         assert np.all(errors <= 1)
@@ -706,7 +706,7 @@ class TestComputeErrors:
         pred = np.array([[100, 200, 150], [50, 100, 75], [1000, 2000, 3000]])
         D = np.array([0.5, 1.0, 1.5])
         dD = np.array([0.1, 0.1, 0.1])
-        errors = compute_errors(obs, pred, error_metric="JS", D=D, dD=dD)
+        errors = compute_errors(obs, pred, loss="JS", D=D, dD=dD)
         assert errors.shape == (3,)
         assert np.all(errors >= 0)
         # First prediction is identical to obs, so JS distance should be ~0
@@ -717,29 +717,23 @@ class TestComputeErrors:
         obs = np.array([1, 2, 3])
         pred = np.array([[1, 2, 3]])
         with pytest.raises(NotImplementedError):
-            compute_errors(obs, pred, error_metric="INVALID_METRIC")
+            compute_errors(obs, pred, loss="INVALID_METRIC")
 
 
 class TestNormalizeErrors:
     """Test suite for normalize_errors."""
 
-    def test_normalize_errors_disabled(self):
-        """Normalization should return unchanged errors when disabled."""
-        errors = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 1.0, 2.0, 3.0])
-        normalized = normalize_errors(errors, normalize_error=False)
-        np.testing.assert_array_equal(normalized, errors)
-
-    def test_normalize_errors_enabled(self):
+    def test_normalize_errors(self):
         """Normalization should scale errors when enabled."""
         errors = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 1.0, 2.0, 3.0])
-        normalized = normalize_errors(errors, normalize_error=True)
+        normalized = normalize_errors(errors)
         assert normalized.shape == errors.shape
         assert np.all(np.isfinite(normalized))
         assert not np.array_equal(normalized, errors)
 
 
 class TestComputeCostFunction:
-    """Test suite for compute_cost_function."""
+    """Test suite for compute_errors."""
 
     @pytest.fixture
     def sample_data(self):
@@ -754,7 +748,7 @@ class TestComputeCostFunction:
     def test_cost_function_returns_array(self, sample_data):
         """Cost function should return array with one error per prediction."""
         ND_obs, ND_preds, D, dD, V = sample_data
-        errors = compute_cost_function(
+        errors = compute_loss(
             ND_obs,
             ND_preds,
             D,
@@ -762,7 +756,7 @@ class TestComputeCostFunction:
             V,
             target="N(D)",
             transformation="identity",
-            error_metric="MAE",
+            loss="MAE",
             censoring="none",
         )
         assert errors.shape == (3,)
@@ -773,7 +767,7 @@ class TestComputeCostFunction:
     def test_cost_function_identical_prediction(self, sample_data):
         """Cost function should return ~0 error for identical prediction."""
         ND_obs, ND_preds, D, dD, V = sample_data
-        errors = compute_cost_function(
+        errors = compute_loss(
             ND_obs,
             ND_preds[[0]],
             D,
@@ -781,7 +775,7 @@ class TestComputeCostFunction:
             V,  # First prediction matches obs
             target="N(D)",
             transformation="identity",
-            error_metric="MAE",
+            loss="MAE",
             censoring="none",
         )
         np.testing.assert_allclose(errors[0], 0.0, atol=1e-10)
@@ -790,7 +784,7 @@ class TestComputeCostFunction:
         """Cost function should work with all distribution target types."""
         ND_obs, ND_preds, D, dD, V = sample_data
         for target in DISTRIBUTION_TARGETS:
-            errors = compute_cost_function(
+            errors = compute_loss(
                 ND_obs,
                 ND_preds,
                 D,
@@ -798,7 +792,7 @@ class TestComputeCostFunction:
                 V,
                 target=target,
                 transformation="identity",
-                error_metric="MAE",
+                loss="MAE",
                 censoring="none",
             )
             assert errors.shape == (3,)
@@ -808,7 +802,7 @@ class TestComputeCostFunction:
         """Cost function should work with all integral target types."""
         ND_obs, ND_preds, D, dD, V = sample_data
         for target in INTEGRAL_TARGETS:
-            errors = compute_cost_function(
+            errors = compute_loss(
                 ND_obs,
                 ND_preds,
                 D,
@@ -825,7 +819,7 @@ class TestComputeCostFunction:
         """Cost function should work with all transformation types."""
         ND_obs, ND_preds, D, dD, V = sample_data
         for transformation in TRANSFORMATIONS:
-            errors = compute_cost_function(
+            errors = compute_loss(
                 ND_obs,
                 ND_preds,
                 D,
@@ -833,17 +827,17 @@ class TestComputeCostFunction:
                 V,
                 target="N(D)",
                 transformation=transformation,
-                error_metric="MAE",
+                loss="MAE",
                 censoring="none",
             )
             assert errors.shape == (3,)
 
-    def test_cost_function_all_error_metrics(self, sample_data):
+    def test_cost_function_all_losss(self, sample_data):
         """Cost function should work with various error metrics."""
         ND_obs, ND_preds, D, dD, V = sample_data
-        error_metrics = ERROR_METRICS
-        for error_metric in error_metrics:
-            errors = compute_cost_function(
+        losss = ERROR_METRICS
+        for loss in losss:
+            errors = compute_loss(
                 ND_obs,
                 ND_preds,
                 D,
@@ -851,7 +845,7 @@ class TestComputeCostFunction:
                 V,
                 target="N(D)",
                 transformation="identity",
-                error_metric=error_metric,
+                loss=loss,
                 censoring="none",
             )
             assert errors.shape == (3,)
@@ -860,7 +854,7 @@ class TestComputeCostFunction:
     def test_cost_function_censoring_none(self, sample_data):
         """Cost function with no censoring should not truncate data."""
         ND_obs, ND_preds, D, dD, V = sample_data
-        errors = compute_cost_function(
+        errors = compute_loss(
             ND_obs,
             ND_preds,
             D,
@@ -868,7 +862,7 @@ class TestComputeCostFunction:
             V,
             target="N(D)",
             transformation="identity",
-            error_metric="MAE",
+            loss="MAE",
             censoring="none",
         )
         assert errors.shape == (3,)
@@ -880,7 +874,7 @@ class TestComputeCostFunction:
         D = np.arange(5) * 0.1 + 0.5
         dD = np.ones(5) * 0.1
         V = np.ones(5)
-        errors = compute_cost_function(
+        errors = compute_loss(
             ND_obs,
             ND_preds,
             D,
@@ -888,7 +882,7 @@ class TestComputeCostFunction:
             V,
             target="N(D)",
             transformation="identity",
-            error_metric="MAE",
+            loss="MAE",
             censoring="left",
         )
         assert np.all(np.isinf(errors))
@@ -897,7 +891,7 @@ class TestComputeCostFunction:
         """Cost function should raise ValueError for invalid target."""
         ND_obs, ND_preds, D, dD, V = sample_data
         with pytest.raises(ValueError, match="Invalid 'target'"):
-            compute_cost_function(
+            compute_loss(
                 ND_obs,
                 ND_preds,
                 D,
@@ -905,7 +899,7 @@ class TestComputeCostFunction:
                 V,
                 target="INVALID",
                 transformation="identity",
-                error_metric="MAE",
+                loss="MAE",
                 censoring="none",
             )
 
@@ -913,7 +907,7 @@ class TestComputeCostFunction:
         """Cost function should raise ValueError for invalid transformation."""
         ND_obs, ND_preds, D, dD, V = sample_data
         with pytest.raises(ValueError, match="Invalid 'transformation'"):
-            compute_cost_function(
+            compute_loss(
                 ND_obs,
                 ND_preds,
                 D,
@@ -921,7 +915,7 @@ class TestComputeCostFunction:
                 V,
                 target="N(D)",
                 transformation="INVALID",
-                error_metric="MAE",
+                loss="MAE",
                 censoring="none",
             )
 
@@ -929,7 +923,7 @@ class TestComputeCostFunction:
         """Cost function should raise ValueError for invalid censoring."""
         ND_obs, ND_preds, D, dD, V = sample_data
         with pytest.raises(ValueError, match="Invalid 'censoring'"):
-            compute_cost_function(
+            compute_loss(
                 ND_obs,
                 ND_preds,
                 D,
@@ -937,15 +931,15 @@ class TestComputeCostFunction:
                 V,
                 target="N(D)",
                 transformation="identity",
-                error_metric="MAE",
+                loss="MAE",
                 censoring="INVALID",
             )
 
-    def test_cost_function_invalid_error_metric_raises(self, sample_data):
-        """Cost function should raise ValueError for invalid error_metric."""
+    def test_cost_function_invalid_loss_raises(self, sample_data):
+        """Cost function should raise ValueError for invalid loss."""
         ND_obs, ND_preds, D, dD, V = sample_data
-        with pytest.raises(ValueError, match="Invalid 'error_metric'"):
-            compute_cost_function(
+        with pytest.raises(ValueError, match="Invalid 'loss'"):
+            compute_loss(
                 ND_obs,
                 ND_preds,
                 D,
@@ -953,14 +947,14 @@ class TestComputeCostFunction:
                 V,
                 target="N(D)",
                 transformation="identity",
-                error_metric="INVALID",
+                loss="INVALID",
                 censoring="none",
             )
 
-    def test_cost_function_different_error_metrics_produce_different_results(self, sample_data):
+    def test_cost_function_different_losss_produce_different_results(self, sample_data):
         """Different error metrics should produce different error values."""
         ND_obs, ND_preds, D, dD, V = sample_data
-        errors_mae = compute_cost_function(
+        errors_mae = compute_loss(
             ND_obs,
             ND_preds,
             D,
@@ -968,10 +962,10 @@ class TestComputeCostFunction:
             V,
             target="N(D)",
             transformation="identity",
-            error_metric="MAE",
+            loss="MAE",
             censoring="none",
         )
-        errors_mse = compute_cost_function(
+        errors_mse = compute_loss(
             ND_obs,
             ND_preds,
             D,
@@ -979,7 +973,7 @@ class TestComputeCostFunction:
             V,
             target="N(D)",
             transformation="identity",
-            error_metric="MSE",
+            loss="MSE",
             censoring="none",
         )
 

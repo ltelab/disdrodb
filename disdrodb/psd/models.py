@@ -127,13 +127,20 @@ class XarrayPSD(PSD):
     --> https://github.com/ltelab/pytmatrix-lte/blob/880170b4ca62a04e8c843619fa1b8713b9e11894/pytmatrix/psd.py#L321
     """
 
-    def __call__(self, D):
+    def __call__(self, D, zero_below=1e-3):
         """Compute the PSD."""
         D = check_diameter_inputs(D)
         if self.has_xarray_parameters() and not np.isscalar(D):
             D = xr.DataArray(D, dims=DIAMETER_DIMENSION)
         with suppress_warnings():
-            return self.formula(D=D, **self.parameters)
+            nd = self.formula(D=D, **self.parameters)
+
+        # Clip values to ensure non-negative PSD
+        # nd = np.clip(nd, a_min=0, a_max=None)
+
+        if isinstance(nd, xr.DataArray):
+            nd = nd.where(nd >= zero_below, 0) if isinstance(nd, xr.DataArray) else np.where(nd < zero_below, 0, nd)
+        return nd
 
     def has_scalar_parameters(self):
         """Check if the PSD object contains only a single set of parameters."""

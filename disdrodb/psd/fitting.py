@@ -35,8 +35,8 @@ from disdrodb.psd.grid_search import (
     check_censoring,
     check_target,
     check_transformation,
-    # check_error_metric,
-    compute_cost_function,
+    # check_loss,
+    compute_loss,
     normalize_errors,
 )
 from disdrodb.psd.models import (
@@ -1000,7 +1000,7 @@ def apply_exponential_gs(
         ND_preds = ExponentialPSD.formula(D=D[None, :], N0=N0_arr[:, None], Lambda=lambda_arr[:, None])
 
         # Compute errors
-        errors = compute_cost_function(
+        errors = compute_loss(
             ND_obs=ND_obs,
             ND_preds=ND_preds,
             D=D,
@@ -1049,7 +1049,7 @@ def _apply_gamma_gs(
         ND_preds = GammaPSD.formula(D=D[None, :], N0=N0, Lambda=lambda_arr[:, None], mu=mu_arr[:, None])
 
         # Compute errors
-        errors = compute_cost_function(
+        errors = compute_loss(
             ND_obs=ND_obs,
             ND_preds=ND_preds,
             D=D,
@@ -1172,7 +1172,7 @@ def _apply_generalized_gamma_gs(
             c=c_arr[:, None],
         )
         # Compute errors
-        errors = compute_cost_function(
+        errors = compute_loss(
             ND_obs=ND_obs,
             ND_preds=ND_preds,
             D=D,
@@ -1275,7 +1275,7 @@ def _apply_lognormal_gs(mu_values, sigma_values, Nt, ND_obs, D, dD, V, target, t
         ND_preds = LognormalPSD.formula(D=D[None, :], Nt=Nt, mu=mu_arr[:, None], sigma=sigma_arr[:, None])
 
         # Compute errors
-        errors = compute_cost_function(
+        errors = compute_loss(
             ND_obs=ND_obs,
             ND_preds=ND_preds,
             D=D,
@@ -1389,7 +1389,7 @@ def apply_normalized_gamma_gs(
         # Compute N(D)
         ND_preds = NormalizedGammaPSD.formula(D=D[None, :], D50=D50, Nw=Nw, mu=mu_arr[:, None])
         # Compute errors
-        errors = compute_cost_function(
+        errors = compute_loss(
             ND_obs=ND_obs / Nw if target == "H(x)" else ND_obs,
             ND_preds=ND_preds / Nw if target == "H(x)" else ND_preds,
             D=D,
@@ -1738,21 +1738,110 @@ def apply_normalized_generalized_gamma_gs(
     Dc,
     ND_obs,
     V,
-    # PSD options
-    i,
-    j,
     # Coords
     D,
     dD,
-    # Optimization options
-    minimization_objectives,
-    # Parameters
+    # PSD options
+    i,
+    j,
     mu,
     c,
+    # Optimization options
+    objectives,
     # Output options
-    return_cost_function=False,
+    return_loss=False,
 ):
-    """Estimate NormalizedGeneralizedGammaPSD model parameters using Grid Search."""
+    """Estimate NormalizedGeneralizedGammaPSD model parameters using Grid Search.
+
+    This function performs a grid search optimization to find the best parameters
+    (mu, c) for the NormalizedGeneralizedGammaPSD model by minimizing a weighted
+    cost function across one or more objectives.
+
+    Parameters
+    ----------
+    Nc : float
+        Normalized intercept parameter.
+    Dc : float
+        Normalized characteristic diameter parameter.
+    ND_obs : ndarray
+        Observed PSD data [#/mm/m3].
+    V : ndarray
+        Fall velocity [m/s].
+    D : ndarray
+        Diameter bins [mm].
+    dD : ndarray
+        Diameter bin widths [mm].
+    i : int
+        Moment order i of the NormalizedGeneralizedGammaPSD.
+    j : int
+        Moment order j of the NormalizedGeneralizedGammaPSD.
+    mu : int, float or numpy.ndarray
+        mu parameter values to search.
+    c : int, float or numpy.ndarray
+        c parameter values to search.
+    objectives: list of dicts
+        target : str, optional
+            Target quantity to optimize. Valid options:
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
+            - ``"H(x)"`` : Normalized drop number concentration [-]
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
+        transformation : str, optional
+            Transformation applied to the target quantity before computing the loss.
+            Valid options:
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation (default)
+            - ``"sqrt"`` : Square root transformation
+        censoring : str
+            Specifies whether the observed particle size distribution (PSD) is
+            treated as censored at the edges of the diameter range due to
+            instrumental sensitivity limits:
+            - ``"none"`` : No censoring is applied. All diameter bins are used.
+            - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+              range of diameter bins with non-zero observed concentrations is
+              retained.
+        loss : int, optional
+            Loss function.  To be specified only if target is ``"N(D)"`` or ``"N(D)"``.
+            Valid options are:
+            - ``SSE``: Sum of Squared Errors
+            - ``SAE``: Sum of Absolute Errors
+            - ``MAE``: Mean Absolute Error
+            - ``MSE``: Mean Squared Error
+            - ``RMSE``: Root Mean Squared Error
+            - ``relMAE``: Relative Mean Absolute Error
+            - ``KL``: Kullback-Leibler Divergence
+            - ``WD``: Wasserstein Distance
+            - ``JS``: Jensen-Shannon Distance
+            - ``KS``: Kolmogorov-Smirnov Statistic
+        loss_weight: int, optional
+            Weight of this objective when multiple objectives are used.
+            Must be specified if len(objectives) > 1.
+    return_loss : bool, optional
+        If True, return both the loss surface and parameters.
+        Default is False.
+
+    Returns
+    -------
+    parameters : ndarray
+        Best parameters as [Nc, Dc, mu, c].
+        An array of NaN values is returned if no valid solution is found.
+    total_loss : ndarray, optional
+        2D array of total loss values reshaped to (len(mu), len(c)).
+        Only returned if return_loss=True.
+
+    Notes
+    -----
+    - When multiple objectives are provided, losses are normalized and weighted
+    - The best parameters correspond to the minimum total weighted loss
+    """
     # Thurai 2018: mu [-3, 1], c [0-6]
 
     # Define combinations of parameters for grid search
@@ -1778,30 +1867,28 @@ def apply_normalized_generalized_gamma_gs(
             c=c_arr[:, None],
         )
 
-        # Compute weighted error across all targets
-        total_errors = np.zeros(len(mu_arr))
-        total_weight = 0
-
-        for minimization_cfg in minimization_objectives:
-
+        # Compute weighted loss across all targets
+        total_loss = np.zeros(len(mu_arr))
+        total_loss_weights = 0
+        for objective in objectives:
             # Extract target configuration
-            target = minimization_cfg["target"]
-            error_metric = minimization_cfg["error_metric"]
-            censoring = minimization_cfg["censoring"]
-            transformation = minimization_cfg["transformation"]
-            if len(minimization_objectives) > 1:
-                weight = minimization_cfg["weight"]
-                normalize_error = True  # minimization_cfg["normalize_errors"]
+            target = objective["target"]
+            loss = objective.get("loss", None)
+            censoring = objective["censoring"]
+            transformation = objective["transformation"]
+            if len(objectives) > 1:
+                loss_weight = objective["loss_weight"]
+                normalize_loss = True  # objective["normalize_loss"]
             else:
-                weight = 1
-                normalize_error = False  # minimization_cfg["normalize_errors"]
+                loss_weight = 1
+                normalize_loss = False  # objective["normalize_loss"]
 
             # Prepare obs/pred for this target
             obs = ND_obs / Nc if target == "H(x)" else ND_obs
             pred = ND_preds / Nc if target == "H(x)" else ND_preds
 
             # Compute errors for this target
-            errors = compute_cost_function(
+            loss = compute_loss(
                 ND_obs=obs,
                 ND_preds=pred,
                 D=D,
@@ -1809,35 +1896,36 @@ def apply_normalized_generalized_gamma_gs(
                 V=V,
                 target=target,
                 transformation=transformation,
-                error_metric=error_metric,
+                loss=loss,
                 censoring=censoring,
             )
 
-            # Normalize errors
-            errors = normalize_errors(errors, normalize_error)
+            # Normalize loss
+            if normalize_loss:
+                loss = normalize_errors(loss)
 
-            # Accumulate weighted errors
-            total_errors += weight * errors
-            total_weight += weight
+            # Accumulate weighted loss
+            total_loss += loss_weight * loss
+            total_loss_weights += loss_weight
 
         # Normalize by total weight
-        errors = total_errors / total_weight
+        total_loss = total_loss / total_loss_weights
 
     # Replace inf with NaN
-    errors[~np.isfinite(errors)] = np.nan
+    total_loss[~np.isfinite(total_loss)] = np.nan
 
     # Define best parameters
-    if not np.all(np.isnan(errors)):
-        best_index = np.nanargmin(errors)
+    if not np.all(np.isnan(total_loss)):
+        best_index = np.nanargmin(total_loss)
         mu, c = mu_arr[best_index].item(), c_arr[best_index].item()
         parameters = np.array([Nc, Dc, mu, c])
     else:
         parameters = np.array([np.nan, np.nan, np.nan, np.nan])
 
     # If asked, return cost function
-    if return_cost_function:
-        errors = errors.reshape(mu_grid.shape)
-        return errors, parameters
+    if return_loss:
+        total_loss = total_loss.reshape(mu_grid.shape)
+        return total_loss, parameters
     return parameters
 
 
@@ -1847,8 +1935,8 @@ def get_normalized_generalized_gamma_parameters_gs(
     j,
     mu=None,
     c=None,
-    minimization_objectives=None,
-    return_cost_function=False,
+    objectives=None,
+    return_loss=False,
 ):
     """Estimate Normalized Generalized Gamma PSD parameters using Grid Search optimization.
 
@@ -1864,33 +1952,33 @@ def get_normalized_generalized_gamma_parameters_gs(
         - ``diameter_bin_center`` : Diameter bin centers [mm]
         - ``diameter_bin_width`` : Diameter bin widths [mm]
         - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
-    psd_model_kwargs : dict
-        Dictionary with the i and j moment order to use.
-    minimization_objectives: list of dicts
-
+    i : int
+        Moment order i of the NormalizedGeneralizedGammaPSD.
+    j : int
+        Moment order j of the NormalizedGeneralizedGammaPSD.
+    mu : int, float or numpy.ndarray
+        mu parameter values to search.
+    c : int, float or numpy.ndarray
+        c parameter values to search.
+    objectives: list of dicts
         target : str, optional
             Target quantity to optimize. Valid options:
             - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
+            - ``"H(x)"`` : Normalized drop number concentration [-]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
         transformation : str, optional
-            Transformation applied to the target quantity before computing the error.
+            Transformation applied to the target quantity before computing the loss.
             Valid options:
             - ``"identity"`` : No transformation
             - ``"log"`` : Logarithmic transformation (default)
             - ``"sqrt"`` : Square root transformation
-        error_order : int, optional
-            Order of the error metric (p-norm):
-            - ``1`` : L1 norm / Mean Absolute Error (MAE) (default)
-            - ``2`` : L2 norm / Mean Squared Error (MSE)
-            Higher orders tend to emphasize larger errors and may stretch the
-            fitted distribution toward higher diameters.
-        censoring : {"none", "left", "right", "both"}, optional
+        censoring : str
             Specifies whether the observed particle size distribution (PSD) is
             treated as censored at the edges of the diameter range due to
-            instrumental sensitivity limits.
-
+            instrumental sensitivity limits:
             - ``"none"`` : No censoring is applied. All diameter bins are used.
             - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
               the spectrum where the observed number concentration is zero are
@@ -1901,6 +1989,25 @@ def get_normalized_generalized_gamma_parameters_gs(
             - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
               range of diameter bins with non-zero observed concentrations is
               retained.
+        loss : int, optional
+            Loss function.  To be specified only if target is ``"N(D)"`` or ``"N(D)"``.
+            Valid options are:
+            - ``SSE``: Sum of Squared Errors
+            - ``SAE``: Sum of Absolute Errors
+            - ``MAE``: Mean Absolute Error
+            - ``MSE``: Mean Squared Error
+            - ``RMSE``: Root Mean Squared Error
+            - ``relMAE``: Relative Mean Absolute Error
+            - ``KL``: Kullback-Leibler Divergence
+            - ``WD``: Wasserstein Distance
+            - ``JS``: Jensen-Shannon Distance
+            - ``KS``: Kolmogorov-Smirnov Statistic
+        loss_weight: int, optional
+            Weight of this objective when multiple objectives are used.
+            Must be specified if len(objectives) > 1.
+    return_loss : bool, optional
+        If True, return both the loss surface and parameters.
+        Default is False.
 
     Returns
     -------
@@ -1938,8 +2045,8 @@ def get_normalized_generalized_gamma_parameters_gs(
         "j": j,
         "D": ds["diameter_bin_center"].data,
         "dD": ds["diameter_bin_width"].data,
-        "minimization_objectives": minimization_objectives,
-        "return_cost_function": return_cost_function,
+        "objectives": objectives,
+        "return_loss": return_loss,
         "mu": mu,
         "c": c,
     }
@@ -1962,7 +2069,7 @@ def get_normalized_generalized_gamma_parameters_gs(
         return ds_parameters
 
     # Return cost function if asked
-    if return_cost_function:
+    if return_loss:
         da_cost_function, da_parameters = xr.apply_ufunc(
             apply_normalized_generalized_gamma_gs,
             # Variables varying over time

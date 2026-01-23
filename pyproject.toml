@@ -9,16 +9,27 @@ authors = [
 ]
 description = "An open-source python software for standardized processing, sharing, and analysis of disdrometer data."
 readme = "README.md"
-keywords = ["python", "disdrometer","parsivel", "drop size distribution", "radar", "remote sensing", "precipitation", "rainfall"]
+license = "MIT"
+license-files = ["LICENSE"]
 classifiers = [
 	"Development Status :: 5 - Production/Stable",
-	"Intended Audience :: Developers",
-	"Programming Language :: Python :: 3",
-	"Operating System :: Unix",
-	"Operating System :: MacOS :: MacOS X",
-	"Operating System :: Microsoft :: Windows",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Operating System :: OS Independent",
+    "Operating System :: Unix",
+    "Operating System :: Microsoft",
+    "Operating System :: MacOS",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
 ]
-requires-python = ">=3.11"
+keywords = ["python", "disdrometer","parsivel", "drop size distribution", "radar", "remote sensing", "precipitation", "rainfall"]
 dependencies = [
 	"click",
 	"tqdm",
@@ -39,8 +50,8 @@ dependencies = [
     "matplotlib",
 
 ]
+requires-python = ">=3.11"
 dynamic = ["version"]
-license-files = ["LICENSE"]
 
 [project.optional-dependencies]
 dev = [
@@ -58,12 +69,12 @@ dev = [
 ]
 
 [project.urls]
-homepage = "https://github.com/ltelab/disdrodb"
-repository = "https://github.com/ltelab/disdrodb"
-source = "https://github.com/ltelab/disdrodb"
-tracker = "https://github.com/ltelab/disdrodb/issues"
-documentation = "https://disdrodb.readthedocs.io"
-changelog = "https://github.com/ltelab/disdrodb/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/ltelab/disdrodb"
+Documentation = "https://disdrodb.readthedocs.io"
+Repository = "https://github.com/ltelab/disdrodb"
+Source = "https://github.com/ltelab/disdrodb"
+Issues = "https://github.com/ltelab/disdrodb/issues"
+Changelog = "https://github.com/ltelab/disdrodb/blob/main/CHANGELOG.md"
 
 [tool.setuptools_scm]
 write_to = "disdrodb/_version.py"

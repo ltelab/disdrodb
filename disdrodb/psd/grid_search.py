@@ -53,23 +53,23 @@ def check_transformation(transformation):
     return transformation
 
 
-def check_error_metric(error_metric):
-    """Check valid error_metric argument."""
+def check_loss(loss):
+    """Check valid loss argument."""
     valid_metrics = ERROR_METRICS
-    if error_metric not in valid_metrics:
-        raise ValueError(f"Invalid 'error_metric' {error_metric}. Valid error_metrics are {valid_metrics}.")
-    return error_metric
+    if loss not in valid_metrics:
+        raise ValueError(f"Invalid 'loss' {loss}. Valid losss are {valid_metrics}.")
+    return loss
 
 
-def check_valid_error_metric(error_metric, target):
-    """Check if error_metric is valid for the given target.
+def check_valid_loss(loss, target):
+    """Check if loss is valid for the given target.
 
     For distribution targets (ND, H(x)), any error metric is valid.
     For scalar targets (Z, R, LWC), distribution error metrics are not valid.
 
     Parameters
     ----------
-    error_metric : str
+    loss : str
         The error metric to validate.
     target : str
         The target variable type.
@@ -77,22 +77,22 @@ def check_valid_error_metric(error_metric, target):
     Returns
     -------
     str
-        The validated error_metric.
+        The validated loss.
 
     Raises
     ------
     ValueError
-        If error_metric is not valid for the given target.
+        If loss is not valid for the given target.
     """
     if target in {"N(D)", "H(x)"}:
-        return check_error_metric(error_metric)  # any metric is valid
+        return check_loss(loss)  # any metric is valid
     # Integral N(D) target (Z, R, LWC, M1, ..., M6)
-    if error_metric is not None:
+    if loss is not None:
         raise ValueError(
-            f"error_metric should be 'None' with target '{target}'."
+            f"loss should be 'None' with target '{target}'."
             f"Error metrics are only applied to ND or H(x) distribution targets.",
         )
-    return error_metric
+    return loss
 
 
 def compute_rain_rate(ND, D, dD, V):
@@ -604,8 +604,10 @@ def compute_kolmogorov_smirnov_distance(obs, pred, dD, eps=1e-12):
     return ks, p_value
 
 
-def compute_errors(obs, pred, error_metric, D=None, dD=None):  # noqa: PLR0911
-    """Compute errors between observed and predicted values.
+def compute_errors(obs, pred, loss, D=None, dD=None):  # noqa: PLR0911
+    """Compute error between observed and predicted values.
+
+    The function is entirely vectorized and can handle multiple predictions at once.
 
     Parameters
     ----------
@@ -617,7 +619,7 @@ def compute_errors(obs, pred, error_metric, D=None, dD=None):  # noqa: PLR0911
         Predicted values. Can be 1D [n_samples] or 2D [n_samples, n_bins].
         Is 1D when specified target is an integral variable.
         Is 2D when specified target is a distribution.
-    error_metric : str
+    loss : str
         Error metric to compute: 'SSE', 'SAE', 'MAE', 'relMAE', 'MSE', 'RMSE',
         'KL', 'WD', 'JS', 'KS', or 'KS_pvalue'.
     D : 1D array, optional
@@ -637,15 +639,15 @@ def compute_errors(obs, pred, error_metric, D=None, dD=None):  # noqa: PLR0911
         return np.abs(obs - pred)
 
     # Compute KL or WD if asked (obs is expanded internally to save computations)
-    if error_metric == "KL":
+    if loss == "KL":
         return compute_kl_divergence(obs, pred, dD=dD)
-    if error_metric == "WD":
+    if loss == "WD":
         return compute_wasserstein_distance(obs, pred, D=D, dD=dD)
-    if error_metric == "KS":
+    if loss == "KS":
         return compute_kolmogorov_smirnov_distance(obs, pred, dD=dD)[0]  # select distance
-    if error_metric == "KS_pvalue":
+    if loss == "KS_pvalue":
         return compute_kolmogorov_smirnov_distance(obs, pred, dD=dD)[1]  # select p_value
-    if error_metric == "JS":
+    if loss == "JS":
         return compute_jensen_shannon_distance(obs, pred, dD=dD)
 
     # Broadcast obs to match pred shape if needed (when target is N(D) or H(x))
@@ -654,22 +656,22 @@ def compute_errors(obs, pred, error_metric, D=None, dD=None):  # noqa: PLR0911
         obs = obs[None, :]
 
     # Compute error metrics
-    if error_metric == "SSE":
+    if loss == "SSE":
         return np.sum((obs - pred) ** 2, axis=1)
-    if error_metric == "SAE":
+    if loss == "SAE":
         return np.sum(np.abs(obs - pred), axis=1)
-    if error_metric == "MAE":
+    if loss == "MAE":
         return np.mean(np.abs(obs - pred), axis=1)
-    if error_metric == "relMAE":
+    if loss == "relMAE":
         return np.mean(np.abs(obs - pred) / (np.abs(obs) + 1e-12), axis=1)
-    if error_metric == "MSE":
+    if loss == "MSE":
         return np.mean((obs - pred) ** 2, axis=1)
-    if error_metric == "RMSE":
+    if loss == "RMSE":
         return np.sqrt(np.mean((obs - pred) ** 2, axis=1))
-    raise NotImplementedError(f"Error metric '{error_metric}' is not implemented.")
+    raise NotImplementedError(f"Error metric '{loss}' is not implemented.")
 
 
-def normalize_errors(errors, normalize_error):
+def normalize_errors(errors):
     """Normalize errors to scale minimum error region to O(1).
 
     Scaling by the median value of the p0-p10 region normalizes error in
@@ -682,17 +684,12 @@ def normalize_errors(errors, normalize_error):
     ----------
     errors : np.ndarray
         Error values to normalize
-    normalize_error : bool
-        If True, normalize errors. If False, return errors unchanged.
 
     Returns
     -------
     np.ndarray
         Normalized errors (if normalize_error=True) or original errors (if False)
     """
-    if not normalize_error:
-        return errors
-
     p10 = np.nanpercentile(errors, q=10)
     scale = np.nanmedian(errors[errors < p10])
 
@@ -707,7 +704,7 @@ def normalize_errors(errors, normalize_error):
     return errors
 
 
-def compute_cost_function(
+def compute_loss(
     ND_obs,
     ND_preds,
     D,
@@ -716,7 +713,7 @@ def compute_cost_function(
     target,
     censoring,
     transformation,
-    error_metric=None,
+    loss=None,
     check_arguments=True,
 ):
     """Compute cost function for grid search optimization.
@@ -742,7 +739,7 @@ def compute_cost_function(
         Censoring strategy: 'none', 'left', 'right', or 'both'.
     transformation : str
         Transformation: 'identity', 'log', or 'sqrt'.
-    error_metric : str, optional
+    loss : str, optional
         Error metric. Required for distribution targets. Default is None.
     check_arguments : bool, optional
         If True, validate input arguments. Default is True.
@@ -757,7 +754,7 @@ def compute_cost_function(
         target = check_target(target)
         transformation = check_transformation(transformation)
         censoring = check_censoring(censoring)
-        error_metric = check_valid_error_metric(error_metric, target=target)
+        loss = check_valid_loss(loss, target=target)
 
     # Clip N(D) < 1e-3 to 0
     ND_obs = np.where(ND_obs < 1e-3, 0.0, ND_obs)
@@ -788,7 +785,7 @@ def compute_cost_function(
     obs, pred = apply_transformation(obs, pred, transformation=transformation)
 
     # Compute errors
-    errors = compute_errors(obs, pred, error_metric=error_metric, D=D, dD=dD)
+    errors = compute_errors(obs, pred, loss=loss, D=D, dD=dD)
 
     # Replace inf with NaN
     errors[~np.isfinite(errors)] = np.nan

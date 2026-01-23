@@ -149,7 +149,7 @@ class TestGSOptimization:
         dD = ds["diameter_bin_width"].to_numpy()
         ND_obs = ds["drop_number_concentration"].to_numpy()
         ND_pred = create_psd(psd_model=ds_params.attrs["disdrodb_psd_model"], parameters=ds_params)(D).to_numpy()
-        error = compute_cost_function(target, ND_obs, ND_pred, D, dD, V, relative=True)
+        error = compute_errors(target, ND_obs, ND_pred, D, dD, V, relative=True)
         np.testing.assert_allclose(
             error,
             0,
