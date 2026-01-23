@@ -41,6 +41,7 @@ from disdrodb.psd.grid_search import (
     compute_rain_rate,
     compute_target_variable,
     compute_wasserstein_distance,
+    compute_weighted_loss,
     compute_z,
     left_truncate_bins,
     normalize_errors,
@@ -706,7 +707,7 @@ class TestComputeLoss:
         pred = np.array([[100, 200, 150], [50, 100, 75], [1000, 2000, 3000]])
         D = np.array([0.5, 1.0, 1.5])
         dD = np.array([0.1, 0.1, 0.1])
-        errors = compute_errors(obs, pred, loss="JS", D=D, dD=dD)
+        errors = compute_errors(obs, pred, loss="JSD", D=D, dD=dD)
         assert errors.shape == (3,)
         assert np.all(errors >= 0)
         # First prediction is identical to obs, so JS distance should be ~0
@@ -979,3 +980,199 @@ class TestComputeCostFunction:
 
         # MAE and MSE should produce different values
         assert not np.allclose(errors_mae, errors_mse)
+
+
+class TestComputeWeightedLoss:
+    """Test suite for compute_weighted_loss."""
+
+    @pytest.fixture
+    def sample_data(self):
+        """Create sample data for testing."""
+        ND_obs = np.array([100, 200, 150, 50])
+        ND_preds = np.array(
+            [
+                [100, 200, 150, 50],  # identical to obs
+                [110, 210, 160, 55],  # similar to obs
+                [50, 100, 75, 25],  # different from obs
+            ],
+        )
+        D = np.array([0.5, 1.0, 1.5, 2.0])
+        dD = np.array([0.1, 0.1, 0.1, 0.1])
+        V = np.array([1.0, 2.0, 3.0, 4.0])
+        return ND_obs, ND_preds, D, dD, V
+
+    def test_weighted_loss_returns_array(self, sample_data):
+        """Weighted loss should return array with one value per sample."""
+        ND_obs, ND_preds, D, dD, V = sample_data
+        objectives = [
+            {
+                "target": "N(D)",
+                "transformation": "identity",
+                "censoring": "none",
+                "loss": "MAE",
+            },
+        ]
+        result = compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives)
+        assert isinstance(result, np.ndarray)
+        assert result.shape == (3,)
+
+    def test_weighted_loss_identical_prediction(self, sample_data):
+        """Weighted loss should be near zero for identical prediction."""
+        ND_obs, ND_preds, D, dD, V = sample_data
+        objectives = [
+            {
+                "target": "N(D)",
+                "transformation": "identity",
+                "censoring": "none",
+                "loss": "MAE",
+            },
+        ]
+        result = compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives)
+        # First sample is identical to observation
+        assert result[0] < 1e-6
+
+    def test_weighted_loss_single_objective(self, sample_data):
+        """Weighted loss with single objective should work correctly."""
+        ND_obs, ND_preds, D, dD, V = sample_data
+        objectives = [
+            {
+                "target": "N(D)",
+                "transformation": "identity",
+                "censoring": "none",
+                "loss": "SSE",
+            },
+        ]
+        result = compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives)
+        assert result.shape == (3,)
+        assert np.all(result >= 0)  # SSE should be non-negative
+
+    def test_weighted_loss_multiple_objectives(self, sample_data):
+        """Weighted loss with multiple objectives should combine losses."""
+        ND_obs, ND_preds, D, dD, V = sample_data
+        objectives = [
+            {
+                "target": "N(D)",
+                "transformation": "identity",
+                "censoring": "none",
+                "loss": "MAE",
+                "loss_weight": 0.5,
+            },
+            {
+                "target": "Z",
+                "transformation": "log",
+                "censoring": "none",
+                "loss": None,
+                "loss_weight": 0.5,
+            },
+        ]
+        result = compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives)
+        assert result.shape == (3,)
+        # Should contain finite values or NaN
+        assert np.all((np.isfinite(result)) | (np.isnan(result)))
+
+    def test_weighted_loss_different_weights(self, sample_data):
+        """Weighted loss with different weights should affect results."""
+        ND_obs, ND_preds, D, dD, V = sample_data
+        # Test 1: Equal weights
+        objectives_equal = [
+            {
+                "target": "N(D)",
+                "transformation": "identity",
+                "censoring": "none",
+                "loss": "MAE",
+                "loss_weight": 1.0,
+            },
+            {
+                "target": "R",
+                "transformation": "identity",
+                "censoring": "none",
+                "loss": None,
+                "loss_weight": 1.0,
+            },
+        ]
+        result_equal = compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives_equal)
+
+        # Test 2: Unequal weights (first objective has more weight)
+        objectives_unequal = [
+            {
+                "target": "N(D)",
+                "transformation": "identity",
+                "censoring": "none",
+                "loss": "MAE",
+                "loss_weight": 2.0,
+            },
+            {
+                "target": "R",
+                "transformation": "identity",
+                "censoring": "none",
+                "loss": None,
+                "loss_weight": 1.0,
+            },
+        ]
+        result_unequal = compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives_unequal)
+
+        # Results should be different
+        assert not np.allclose(result_equal, result_unequal, rtol=1e-5)
+
+    def test_weighted_loss_with_nc_parameter(self, sample_data):
+        """Weighted loss with Nc parameter should normalize H(x)."""
+        ND_obs, ND_preds, D, dD, V = sample_data
+        Nc = 500.0  # Normalization constant
+        objectives = [
+            {
+                "target": "H(x)",
+                "transformation": "identity",
+                "censoring": "none",
+                "loss": "MAE",
+            },
+        ]
+        # Without Nc
+        result_without_nc = compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives)
+        # With Nc
+        result_with_nc = compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives, Nc=Nc)
+        # Results should be different
+        assert not np.allclose(result_without_nc, result_with_nc, equal_nan=True)
+
+    def test_weighted_loss_all_zeros_returns_nan_for_distance_metrics(self):
+        """Weighted loss should return NaN for all-zero observations for metrics KL, JSD, WD, KS."""
+        ND_obs = np.zeros(4)
+        ND_preds = np.random.uniform(50, 250, size=(3, 4))
+        D = np.array([0.5, 1.0, 1.5, 2.0])
+        dD = np.array([0.1, 0.1, 0.1, 0.1])
+        V = np.array([1.0, 2.0, 3.0, 4.0])
+        for loss in ["KL", "JSD", "WD", "KS"]:
+            objectives = [
+                {
+                    "target": "N(D)",
+                    "transformation": "identity",
+                    "censoring": "none",
+                    "loss": loss,
+                },
+            ]
+            result = compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives)
+            assert np.all(np.isnan(result))
+
+    def test_weighted_loss_single_vs_multiple_objectives(self, sample_data):
+        """Single objective should match compute_loss for non-weighted case."""
+        ND_obs, ND_preds, D, dD, V = sample_data
+        objectives = [
+            {
+                "target": "N(D)",
+                "transformation": "identity",
+                "censoring": "none",
+                "loss": "MAE",
+            },
+        ]
+        result_weighted = compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives)
+        result_direct = compute_loss(
+            ND_obs,
+            ND_preds,
+            D,
+            dD,
+            V,
+            target="N(D)",
+            transformation="identity",
+            censoring="none",
+            loss="MAE",
+        )
+        np.testing.assert_allclose(result_weighted, result_direct, equal_nan=True)

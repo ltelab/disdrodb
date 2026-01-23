@@ -23,7 +23,7 @@ MOMENTS = {"M0", "M1", "M2", "M3", "M4", "M5", "M6"}
 INTEGRAL_TARGETS = {"Z", "R", "LWC"} | MOMENTS
 TARGETS = DISTRIBUTION_TARGETS | INTEGRAL_TARGETS
 TRANSFORMATIONS = {"identity", "log", "sqrt"}
-ERROR_METRICS = {"SSE", "SAE", "MAE", "MSE", "RMSE", "relMAE", "KL", "WD", "JS", "KS", "KS_pvalue"}
+ERROR_METRICS = {"SSE", "SAE", "MAE", "MSE", "RMSE", "relMAE", "KL", "WD", "JSD", "KS", "KS_pvalue"}
 CENSORING = {"none", "left", "right", "both"}
 
 
@@ -400,9 +400,11 @@ def _compute_kl(p_k, q_k, eps=1e-12):
     # Clip to 0
     kl = np.maximum(kl, 0.0)
 
-    # Set to NaN if all p_k is 0
-    row_mass = p_k.sum(axis=1)
-    kl = np.where(row_mass > 0, kl, np.nan)
+    # Set to NaN if probability mass is all 0
+    pk_mass = p_k.sum()
+    qk_mass = q_k.sum(axis=1)
+    kl = np.where(pk_mass > 0, kl, np.nan)
+    kl = np.where(qk_mass > 0, kl, np.nan)
     return kl
 
 
@@ -425,11 +427,11 @@ def compute_kl_divergence(obs, pred, dD, eps=1e-12):
     """
     # Convert N(D) to probabilities (normalize by bin width and total)
     # pdf =  N(D) * dD / sum( N(D) * dD)
-    obs_prob = (obs * dD) / (np.sum(obs * dD) + eps)
-    pred_prob = (pred * dD[None, :]) / (np.sum(pred * dD[None, :], axis=1, keepdims=True) + eps)
+    p_k = (obs * dD) / (np.sum(obs * dD) + eps)
+    q_k = (pred * dD[None, :]) / (np.sum(pred * dD[None, :], axis=1, keepdims=True) + eps)
 
     # KL(P||Q) = sum(P * log(P/Q))
-    kl = _compute_kl(p_k=obs_prob[None, :], q_k=pred_prob, eps=eps)
+    kl = _compute_kl(p_k=p_k[None, :], q_k=q_k, eps=eps)
     return kl
 
 
@@ -548,6 +550,12 @@ def compute_wasserstein_distance(obs, pred, D, dD, eps=1e-12, integration="bin")
 
     # Clip to 0
     wd = np.maximum(wd, 0.0)
+
+    # Set to NaN if probability mass is all 0
+    obs_mass = obs_prob.sum()
+    pred_mass = pred_prob.sum(axis=1)
+    wd = np.where(obs_mass > 0, wd, np.nan)
+    wd = np.where(pred_mass > 0, wd, np.nan)
     return wd
 
 
@@ -601,6 +609,14 @@ def compute_kolmogorov_smirnov_distance(obs, pred, dD, eps=1e-12):
     # Compute KS pvalue (asymptotic approximation)
     p_value = 2.0 * np.exp(-2.0 * (ks * np.sqrt(n_eff_ks)) ** 2)
     p_value = np.clip(p_value, 0.0, 1.0)
+
+    # Set to NaN if probability mass is all 0
+    obs_mass = obs_prob.sum()
+    pred_mass = pred_prob.sum(axis=1)
+    ks = np.where(obs_mass > 0, ks, np.nan)
+    ks = np.where(pred_mass > 0, ks, np.nan)
+    p_value = np.where(obs_mass > 0, p_value, np.nan)
+    p_value = np.where(pred_mass > 0, p_value, np.nan)
     return ks, p_value
 
 
@@ -641,14 +657,14 @@ def compute_errors(obs, pred, loss, D=None, dD=None):  # noqa: PLR0911
     # Compute KL or WD if asked (obs is expanded internally to save computations)
     if loss == "KL":
         return compute_kl_divergence(obs, pred, dD=dD)
+    if loss == "JSD":
+        return compute_jensen_shannon_distance(obs, pred, dD=dD)
     if loss == "WD":
         return compute_wasserstein_distance(obs, pred, D=D, dD=dD)
     if loss == "KS":
         return compute_kolmogorov_smirnov_distance(obs, pred, dD=dD)[0]  # select distance
     if loss == "KS_pvalue":
         return compute_kolmogorov_smirnov_distance(obs, pred, dD=dD)[1]  # select p_value
-    if loss == "JS":
-        return compute_jensen_shannon_distance(obs, pred, dD=dD)
 
     # Broadcast obs to match pred shape if needed (when target is N(D) or H(x))
     # If obs is 1D and pred is 2D, add dimension to obs
@@ -716,9 +732,9 @@ def compute_loss(
     loss=None,
     check_arguments=True,
 ):
-    """Compute cost function for grid search optimization.
+    """Compute loss.
 
-    Computes errors between observed and predicted drop size distributions,
+    Computes loss between observed and predicted drop size distributions,
     with optional censoring, transformation, and target variable specification.
 
     Parameters
@@ -790,3 +806,126 @@ def compute_loss(
     # Replace inf with NaN
     errors[~np.isfinite(errors)] = np.nan
     return errors
+
+
+def compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives, Nc=None):
+    """Compute weighted loss between observed and predicted particle size distributions.
+
+    Parameters
+    ----------
+    ND_obs : 1D array
+        Observed drop size distribution [n_bins] [#/m3/mm-1]
+    ND_preds : 2D array
+        Predicted drop size distributions [n_samples, n_bins] [#/m3/mm-1]
+    D : 1D array
+        Diameter bin centers in mm [n_bins]
+    dD : 1D array
+       Diameter bin width in mm [n_bins]
+    V : 1D array
+        Terminal velocity [n_bins] [m/s]
+    objectives: list of dicts
+        target : str, optional
+            Target quantity to optimize. Valid options:
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
+            - ``"H(x)"`` : Normalized drop number concentration [-]
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
+        transformation : str, optional
+            Transformation applied to the target quantity before computing the loss.
+            Valid options:
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation (default)
+            - ``"sqrt"`` : Square root transformation
+        censoring : str
+            Specifies whether the observed particle size distribution (PSD) is
+            treated as censored at the edges of the diameter range due to
+            instrumental sensitivity limits:
+            - ``"none"`` : No censoring is applied. All diameter bins are used.
+            - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+              range of diameter bins with non-zero observed concentrations is
+              retained.
+        loss : int, optional
+            Loss function.  To be specified only if target is ``"N(D)"`` or ``"H(x)"``.
+            Valid options are:
+            - ``SSE``: Sum of Squared Errors
+            - ``SAE``: Sum of Absolute Errors
+            - ``MAE``: Mean Absolute Error
+            - ``MSE``: Mean Squared Error
+            - ``RMSE``: Root Mean Squared Error
+            - ``relMAE``: Relative Mean Absolute Error
+            - ``KL``: Kullback-Leibler Divergence
+            - ``WD``: Wasserstein Distance
+            - ``JS``: Jensen-Shannon Distance
+            - ``KS``: Kolmogorov-Smirnov Statistic
+        loss_weight: int, optional
+            Weight of this objective when multiple objectives are used.
+            Must be specified if len(objectives) > 1.
+    Nc : float, optional
+        Normalization constant for H(x) target.
+        If provided, N(D) will be divided by Nc.
+
+    Returns
+    -------
+    np.ndarray
+        Computed errors [n_samples]. Values are NaN where computation failed.
+    """
+    # Compute weighted loss across all targets
+    total_loss = np.zeros(ND_preds.shape[0])
+    total_loss_weights = 0
+    for objective in objectives:
+        # Extract target configuration
+        target = objective["target"]
+        loss = objective.get("loss", None)
+        censoring = objective["censoring"]
+        transformation = objective["transformation"]
+        if len(objectives) > 1:
+            loss_weight = objective["loss_weight"]
+            normalize_loss = True  # objective["normalize_loss"]
+        else:
+            loss_weight = 1
+            normalize_loss = False  # objective["normalize_loss"]
+
+        # Prepare observed and predicted variables
+        # - Compute normalized H(x) if Nc provided and target is H(x)
+        if Nc is not None:
+            obs = ND_obs / Nc if target == "H(x)" else ND_obs
+            preds = ND_preds / Nc if target == "H(x)" else ND_preds
+        else:
+            obs = ND_obs
+            preds = ND_preds
+
+        # Compute errors for this target
+        loss_values = compute_loss(
+            ND_obs=obs,
+            ND_preds=preds,
+            D=D,
+            dD=dD,
+            V=V,
+            target=target,
+            transformation=transformation,
+            loss=loss,
+            censoring=censoring,
+        )
+
+        # Normalize loss
+        if normalize_loss:
+            loss_values = normalize_errors(loss_values)
+
+        # Accumulate weighted loss
+        total_loss += loss_weight * loss_values
+        total_loss_weights += loss_weight
+
+    # Normalize by total weight
+    total_loss = total_loss / total_loss_weights
+
+    # Replace inf with NaN
+    total_loss[~np.isfinite(total_loss)] = np.nan
+    return total_loss
