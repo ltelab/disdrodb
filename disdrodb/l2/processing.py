@@ -695,7 +695,7 @@ def generate_l2m(
     psd_model,
     # Fitting options
     optimization=None,
-    optimization_kwargs=None,
+    optimization_settings=None,
     # PSD discretization
     diameter_min=0,
     diameter_max=10,
@@ -735,7 +735,7 @@ def generate_l2m(
     optimization : str, optional
         The fitting optimization procedure. Either "GS" (Grid Search), "ML (Maximum Likelihood)
         or "MOM" (Method of Moments).
-    optimization_kwargs : dict, optional
+    optimization_settings : dict, optional
         Dictionary with arguments to customize the fitting procedure.
     minimum_nbins: int
         Minimum number of bins with drops required to fit the PSD model.
@@ -786,7 +786,7 @@ def generate_l2m(
         ds=ds,
         psd_model=psd_model,
         optimization=optimization,
-        optimization_kwargs=optimization_kwargs,
+        optimization_settings=optimization_settings,
     )
     psd_fitting_attrs = ds_psd_params.attrs
 

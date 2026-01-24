@@ -25,6 +25,7 @@ Source code:
 
 """
 
+import ast
 import importlib
 
 import dask.array
@@ -137,9 +138,7 @@ class XarrayPSD(PSD):
 
         # Clip values to ensure non-negative PSD
         # nd = np.clip(nd, a_min=0, a_max=None)
-
-        if isinstance(nd, xr.DataArray):
-            nd = nd.where(nd >= zero_below, 0) if isinstance(nd, xr.DataArray) else np.where(nd < zero_below, 0, nd)
+        nd = nd.where(nd >= zero_below, 0) if isinstance(nd, xr.DataArray) else np.where(nd < zero_below, 0, nd)
         return nd
 
     def has_scalar_parameters(self):
@@ -462,10 +461,12 @@ class GammaPSD(ExponentialPSD):
             summary = "" f"{self.name} with N-d parameters \n"
         return summary
 
+    @staticmethod
     def compute_Dm(mu, Lambda):
         """Compute Dm from PSD parameters."""
         return (mu + 4) / Lambda
 
+    @staticmethod
     def compute_sigma_m(mu, Lambda):
         """Compute sigma_m from PSD parameters."""
         return (mu + 4) ** 0.5 / Lambda
@@ -908,8 +909,8 @@ class NormalizedGeneralizedGammaPSD(XarrayPSD):
             NormalizedGeneralizedGammaPSD: An instance of NormalizedGeneralizedGammaPSD
             initialized with the parameters.
         """
-        if "disdrodb_psd_model_kwargs" in parameters.attrs:
-            model_kwargs = eval(parameters.attrs["disdrodb_psd_model_kwargs"])
+        if hasattr(parameters, "attrs") and "disdrodb_psd_model_kwargs" in parameters.attrs:
+            model_kwargs = ast.literal_eval(parameters.attrs["disdrodb_psd_model_kwargs"])
             i = model_kwargs["i"]
             j = model_kwargs["j"]
         else:

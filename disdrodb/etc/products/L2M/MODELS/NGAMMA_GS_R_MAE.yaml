@@ -1,6 +1,6 @@
 psd_model: "NormalizedGammaPSD"
 optimization: "GS"
-optimization_kwargs:
+optimization_settings:
   target: "R"
   transformation: "identity"
   error_order: 1

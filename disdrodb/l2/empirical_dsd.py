@@ -155,9 +155,9 @@ def compute_qc_bins_metrics(ds):
     optionally collapses over velocity methods and the velocity dimension, then
     computes four metrics per time step:
 
-      1. Nbins: total number of diameter bins between the first and last non-zero count
-      2. Nbins_missing: number of bins with zero or NaN counts in that interval
-      3. Nbins_missing_fraction: fraction of missing bins (zeros) in the interval
+      1. Nbins: total number of diameter bins with non-zero count
+      2. Nbins_missing: number of bins with zero or NaN counts between the first and last non-zero count
+      3. Nbins_missing_fraction: fraction of missing bins (zeros) between the first and last non-zero count
       4. Nbins_missing_consecutive: maximum length of consecutive missing bins
 
     Parameters

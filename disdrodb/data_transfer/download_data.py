@@ -547,7 +547,7 @@ def _download_file_from_url(url: str, dst_dir: str) -> str:
     # Check if it can be downloaded
     if not is_programmatic_downloadable(url):
         raise RuntimeError(
-            f"Cannot downloaded data programmatically from '{url}' right now. "
+            f"Cannot download data programmatically from '{url}' right now. "
             "The server requires a web browser (e.g. WAF / anti-bot protection).",
         )
 
@@ -558,7 +558,7 @@ def _download_file_from_url(url: str, dst_dir: str) -> str:
     logger.setLevel(logging.WARNING)
 
     # Define pooch downloader
-    headers = {"User-Agent": "disdrodb (+https://github.com/ltelab/disdrodb"}
+    headers = {"User-Agent": "disdrodb (+https://github.com/ltelab/disdrodb)"}
     # "Accept": "*/*"}
     downloader = pooch.HTTPDownloader(progressbar=True, headers=headers)
     # Download the file
@@ -566,7 +566,9 @@ def _download_file_from_url(url: str, dst_dir: str) -> str:
     # Restore the previous logging level
     logger.setLevel(orig_level)
 
-    # Check file has been download
+    # Check file has been downloaded
+    # Note: `pooch.retrieve` will raise an exception if the download fails, so we do not
+    #       perform an additional explicit file existence/size check here.
     # if not os.path.isfile(dst_filepath) or os.path.getsize(dst_filepath) == 0:
     #     raise RuntimeError(f"URL {url} likely unreachable. Try manually.")
 

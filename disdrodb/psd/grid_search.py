@@ -22,9 +22,13 @@ DISTRIBUTION_TARGETS = {"N(D)", "H(x)"}
 MOMENTS = {"M0", "M1", "M2", "M3", "M4", "M5", "M6"}
 INTEGRAL_TARGETS = {"Z", "R", "LWC"} | MOMENTS
 TARGETS = DISTRIBUTION_TARGETS | INTEGRAL_TARGETS
+
 TRANSFORMATIONS = {"identity", "log", "sqrt"}
-ERROR_METRICS = {"SSE", "SAE", "MAE", "MSE", "RMSE", "relMAE", "KL", "WD", "JSD", "KS", "KS_pvalue"}
 CENSORING = {"none", "left", "right", "both"}
+
+DISTRIBUTION_METRICS = {"SSE", "SAE", "MAE", "MSE", "RMSE", "relMAE", "KL", "WD", "JSD", "KS", "KS_pvalue"}
+INTEGRAL_METRICS = {"SE", "AE"}
+ERROR_METRICS = DISTRIBUTION_METRICS | INTEGRAL_METRICS
 
 
 def check_target(target):
@@ -39,7 +43,7 @@ def check_censoring(censoring):
     """Check valid censoring argument."""
     valid_censoring = CENSORING
     if censoring not in valid_censoring:
-        raise ValueError(f"Invalid 'censoring' {censoring}. Valid targets are {valid_censoring}.")
+        raise ValueError(f"Invalid 'censoring' {censoring}. Valid options are {valid_censoring}.")
     return censoring
 
 
@@ -48,16 +52,15 @@ def check_transformation(transformation):
     valid_transformation = TRANSFORMATIONS
     if transformation not in valid_transformation:
         raise ValueError(
-            f"Invalid 'transformation' {transformation}. Valid transformations are {valid_transformation}.",
+            f"Invalid 'transformation' {transformation}. Valid options are {valid_transformation}.",
         )
     return transformation
 
 
-def check_loss(loss):
+def check_loss(loss, valid_metrics=ERROR_METRICS):
     """Check valid loss argument."""
-    valid_metrics = ERROR_METRICS
     if loss not in valid_metrics:
-        raise ValueError(f"Invalid 'loss' {loss}. Valid losss are {valid_metrics}.")
+        raise ValueError(f"Invalid 'loss' {loss}. Valid options are {valid_metrics}.")
     return loss
 
 
@@ -85,14 +88,95 @@ def check_valid_loss(loss, target):
         If loss is not valid for the given target.
     """
     if target in {"N(D)", "H(x)"}:
-        return check_loss(loss)  # any metric is valid
+        return check_loss(loss, valid_metrics=DISTRIBUTION_METRICS)
     # Integral N(D) target (Z, R, LWC, M1, ..., M6)
-    if loss is not None:
+    return check_loss(loss, valid_metrics=INTEGRAL_METRICS)
+
+
+def check_loss_weight(loss_weight):
+    """Check valid loss_weight argument."""
+    if loss_weight <= 0:
+        raise ValueError(f"Invalid 'loss_weight' {loss_weight}. Must be greater than 0.")
+    return loss_weight
+
+
+def check_objective(objective):
+    """Check objective validity."""
+    # Check required keys are present
+    required_keys = {"target", "transformation", "censoring", "loss"}
+    missing_keys = required_keys - set(objective.keys())
+    if missing_keys:
         raise ValueError(
-            f"loss should be 'None' with target '{target}'."
-            f"Error metrics are only applied to ND or H(x) distribution targets.",
+            f"Objective {objective} is missing required keys: {missing_keys}. " f"Required keys are: {required_keys}",
         )
-    return loss
+
+    # Validate target
+    objective["target"] = check_target(objective["target"])
+
+    # Validate transformation
+    objective["transformation"] = check_transformation(objective["transformation"])
+
+    # Validate censoring
+    objective["censoring"] = check_censoring(objective["censoring"])
+
+    # Validate loss and check compatibility with target
+    objective["loss"] = check_loss(objective["loss"])
+    objective["loss"] = check_valid_loss(objective["loss"], objective["target"])
+    return objective
+
+
+def check_objectives(objectives):
+    """Validate and normalize objectives for grid search optimization.
+
+    Parameters
+    ----------
+    objectives : list of dicts
+        List of objective dictionaries, each containing:
+        - 'target' : str, Target variable (N(D), H(x), R, Z, LWC, or M<p>)
+        - 'transformation' : str, Transformation type (identity, log, sqrt)
+        - 'censoring' : str, Censoring type (none, left, right, both)
+        - 'loss' : str, Error metric (SSE, SAE, MAE, MSE, RMSE, etc.)
+        - 'loss_weight' : float, optional, Weight for weighted optimization (auto-set to 1.0 for single objective)
+
+    Returns
+    -------
+    list of dicts
+        Validated and normalized objectives list with loss weights summing to 1.0
+
+    """
+    if objectives is None:
+        return None
+    if not isinstance(objectives, list) or len(objectives) == 0:
+        raise TypeError("'objectives' must be a non-empty list of dictionaries.")
+
+    if not all(isinstance(obj, dict) for obj in objectives):
+        raise TypeError("All items in 'objectives' must be dictionaries.")
+
+    # Validate each objective
+    for objective in objectives:
+        objective = check_objective(objective)
+
+    # Handle loss_weight
+    if len(objectives) == 1:
+        # Single objective: auto-set weight to 1.0 if not provided
+        if "loss_weight" in objectives[0]:
+            raise ValueError(
+                "'loss_weight' should be specified only if multiple objectives are used.",
+            )
+    else:
+        # Multiple objectives: verify all have weights and normalize
+        for objective in objectives:
+            if "loss_weight" not in objective:
+                raise ValueError(
+                    f"Objective {objective} is missing 'loss_weight'. "
+                    f"When using multiple objectives, all must have 'loss_weight' specified.",
+                )
+            objective["loss_weight"] = check_loss_weight(objective["loss_weight"])
+    return objectives
+
+
+####---------------------------------------------------------------------------
+#### Targets
 
 
 def compute_rain_rate(ND, D, dD, V):
@@ -238,6 +322,10 @@ def compute_target_variable(
     return obs, pred
 
 
+####---------------------------------------------------------------------------
+#### Censoring
+
+
 def left_truncate_bins(ND_obs, ND_preds, D, dD, V):
     """Truncate left side of bins (smallest diameters) to first non-zero bin.
 
@@ -349,6 +437,10 @@ def truncate_bin_edges(
     return data
 
 
+####---------------------------------------------------------------------------
+#### Transformation
+
+
 def apply_transformation(obs, pred, transformation):
     """Apply transformation to observed and predicted values.
 
@@ -374,6 +466,8 @@ def apply_transformation(obs, pred, transformation):
     return obs, pred
 
 
+####---------------------------------------------------------------------------
+#### Loss  metrics
 def _compute_kl(p_k, q_k, eps=1e-12):
     """Compute Kullback-Leibler divergence.
 
@@ -620,6 +714,10 @@ def compute_kolmogorov_smirnov_distance(obs, pred, dD, eps=1e-12):
     return ks, p_value
 
 
+####---------------------------------------------------------------------------
+#### Wrappers
+
+
 def compute_errors(obs, pred, loss, D=None, dD=None):  # noqa: PLR0911
     """Compute error between observed and predicted values.
 
@@ -636,8 +734,7 @@ def compute_errors(obs, pred, loss, D=None, dD=None):  # noqa: PLR0911
         Is 1D when specified target is an integral variable.
         Is 2D when specified target is a distribution.
     loss : str
-        Error metric to compute: 'SSE', 'SAE', 'MAE', 'relMAE', 'MSE', 'RMSE',
-        'KL', 'WD', 'JS', 'KS', or 'KS_pvalue'.
+        Error metric to compute. See supported metrics in ERROR_METRICS.
     D : 1D array, optional
         Diameter bin center in mm [n_bins]. Required for 'WD' metric. Default is None.
     dD : 1D array, optional
@@ -648,11 +745,16 @@ def compute_errors(obs, pred, loss, D=None, dD=None):  # noqa: PLR0911
     np.ndarray
         Computed error(s) [n_samples] for most metrics, or [n_samples, n_bins] for element-wise metrics.
     """
-    # Handle scalar obs case (from aggregated metrics like Z, R, LWC)
+    # Handle scalar obs case (from integral targets like Z, R, LWC)
     if np.isscalar(obs):
         obs = np.asarray(obs)
+
+    # Compute SE or AE (for integral targets)
     if obs.size == 1:
-        return np.abs(obs - pred)
+        if loss == "AE":
+            return np.abs(obs - pred)
+        # "SE"
+        return (obs - pred) ** 2
 
     # Compute KL or WD if asked (obs is expanded internally to save computations)
     if loss == "KL":
@@ -699,7 +801,7 @@ def normalize_errors(errors):
     Parameters
     ----------
     errors : np.ndarray
-        Error values to normalize
+        Error values to normalize [n_samples]
 
     Returns
     -------
@@ -707,7 +809,7 @@ def normalize_errors(errors):
         Normalized errors (if normalize_error=True) or original errors (if False)
     """
     p10 = np.nanpercentile(errors, q=10)
-    scale = np.nanmedian(errors[errors < p10])
+    scale = np.nanmedian(errors[errors <= p10])
 
     ## Investigate normalization
     # plt.hist(errors[errors < p10], bins=100)
@@ -716,7 +818,8 @@ def normalize_errors(errors):
     # plt.hist(errors_norm[errors_norm < p_norm10], bins=100)
 
     # scale = np.diff(np.nanpercentile(errors, q=[1, 99])) + 1e-12
-    errors = errors / scale
+    if scale != 0:
+        errors = errors / scale
     return errors
 
 
@@ -729,7 +832,7 @@ def compute_loss(
     target,
     censoring,
     transformation,
-    loss=None,
+    loss,
     check_arguments=True,
 ):
     """Compute loss.
@@ -755,8 +858,22 @@ def compute_loss(
         Censoring strategy: 'none', 'left', 'right', or 'both'.
     transformation : str
         Transformation: 'identity', 'log', or 'sqrt'.
-    loss : str, optional
-        Error metric. Required for distribution targets. Default is None.
+    loss : str
+        Loss function.
+        If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
+        - ``SSE``: Sum of Squared Errors
+        - ``SAE``: Sum of Absolute Errors
+        - ``MAE``: Mean Absolute Error
+        - ``MSE``: Mean Squared Error
+        - ``RMSE``: Root Mean Squared Error
+        - ``relMAE``: Relative Mean Absolute Error
+        - ``KL``: Kullback-Leibler Divergence
+        - ``WD``: Wasserstein Distance
+        - ``JS``: Jensen-Shannon Distance
+        - ``KS``: Kolmogorov-Smirnov Statistic
+        If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+        - ``AE``: Absolute Error
+        - ``SE``: Squared Error
     check_arguments : bool, optional
         If True, validate input arguments. Default is True.
 
@@ -826,7 +943,7 @@ def compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives, Nc=None):
     objectives: list of dicts
         target : str, optional
             Target quantity to optimize. Valid options:
-            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"H(x)"`` : Normalized drop number concentration [-]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
@@ -836,7 +953,7 @@ def compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives, Nc=None):
             Transformation applied to the target quantity before computing the loss.
             Valid options:
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation (default)
+            - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
@@ -853,8 +970,8 @@ def compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives, Nc=None):
               range of diameter bins with non-zero observed concentrations is
               retained.
         loss : int, optional
-            Loss function.  To be specified only if target is ``"N(D)"`` or ``"H(x)"``.
-            Valid options are:
+            Loss function.
+            If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -865,6 +982,9 @@ def compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives, Nc=None):
             - ``WD``: Wasserstein Distance
             - ``JS``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.

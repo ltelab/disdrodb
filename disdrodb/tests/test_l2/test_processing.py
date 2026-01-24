@@ -544,7 +544,7 @@ class TestGenerateL2Model:
         ds_out = generate_l2m(ds, psd_model="NormalizedGammaPSD", optimization="GS")
         assert ds_out.attrs["disdrodb_psd_model"] == "NormalizedGammaPSD"
         assert "disdrodb_psd_optimization" in ds_out.attrs
-        assert "disdrodb_psd_optimization_kwargs" in ds_out.attrs
+        assert "disdrodb_psd_optimization_settings" in ds_out.attrs
 
         # Test raise error
         with pytest.raises(NotImplementedError, match="ML optimization is not available"):
@@ -565,7 +565,7 @@ class TestGenerateL2Model:
         assert "mom_method" in ds_out.dims
         assert ds_out.attrs["disdrodb_psd_model"] == "GammaPSD"
         assert "disdrodb_psd_optimization" in ds_out.attrs
-        assert "disdrodb_psd_optimization_kwargs" in ds_out.attrs
+        assert "disdrodb_psd_optimization_settings" in ds_out.attrs
 
     def test_LognormalPSD_fitting(self):
         """Test LognormalPSD fitting."""
@@ -577,7 +577,7 @@ class TestGenerateL2Model:
 
         assert ds_out.attrs["disdrodb_psd_model"] == "LognormalPSD"
         assert "disdrodb_psd_optimization" in ds_out.attrs
-        assert "disdrodb_psd_optimization_kwargs" in ds_out.attrs
+        assert "disdrodb_psd_optimization_settings" in ds_out.attrs
 
     def test_ExponentialPSD_fitting(self):
         """Test ExponentialPSD fitting."""
@@ -589,7 +589,7 @@ class TestGenerateL2Model:
 
         assert ds_out.attrs["disdrodb_psd_model"] == "ExponentialPSD"
         assert "disdrodb_psd_optimization" in ds_out.attrs
-        assert "disdrodb_psd_optimization_kwargs" in ds_out.attrs
+        assert "disdrodb_psd_optimization_settings" in ds_out.attrs
 
     def test_fitting_without_init_method(self):
         """Test fitting without moment initialization."""
@@ -598,19 +598,19 @@ class TestGenerateL2Model:
             ds,
             psd_model="GammaPSD",
             optimization="ML",
-            optimization_kwargs={"init_method": None},
+            optimization_settings={"init_method": None},
         )
         ds_out = generate_l2m(
             ds,
             psd_model="GammaPSD",
             optimization="ML",
-            optimization_kwargs={"init_method": "None"},
+            optimization_settings={"init_method": "None"},
         )
         ds_out = generate_l2m(
             ds,
             psd_model="GammaPSD",
             optimization="ML",
-            optimization_kwargs={"init_method": ["None"]},
+            optimization_settings={"init_method": ["None"]},
         )
         assert isinstance(ds_out, xr.Dataset)
 
@@ -621,7 +621,7 @@ class TestGenerateL2Model:
             ds,
             psd_model="GammaPSD",
             optimization="ML",
-            optimization_kwargs={"init_method": [None, "M234", "M346"]},
+            optimization_settings={"init_method": [None, "M234", "M346"]},
         )
         assert "init_method" in ds_out.dims
         assert ds_out.sizes["init_method"] == 3

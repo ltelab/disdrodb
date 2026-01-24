@@ -21,14 +21,19 @@ import pytest
 
 from disdrodb.psd.grid_search import (
     CENSORING,
+    DISTRIBUTION_METRICS,
     DISTRIBUTION_TARGETS,
     ERROR_METRICS,
+    INTEGRAL_METRICS,
     INTEGRAL_TARGETS,
     TARGETS,
     TRANSFORMATIONS,
     apply_transformation,
     check_censoring,
     check_loss,
+    check_loss_weight,
+    check_objective,
+    check_objectives,
     check_target,
     check_transformation,
     check_valid_loss,
@@ -48,10 +53,9 @@ from disdrodb.psd.grid_search import (
     right_truncate_bins,
     truncate_bin_edges,
 )
+from disdrodb.utils.warnings import suppress_warnings
 
 
-# TODOs:
-# Add to targets also moments M1...M6
 class TestCheckTarget:
     """Test suite for check_target."""
 
@@ -113,7 +117,7 @@ class TestCheckValidErrorMetric:
 
     def test_metrics_with_distributions(self):
         """Distribution metrics should be valid for ND and H(x) targets."""
-        for metric in ERROR_METRICS:
+        for metric in DISTRIBUTION_METRICS:
             for target in DISTRIBUTION_TARGETS:
                 result = check_valid_loss(metric, target=target)
                 assert result == metric
@@ -121,16 +125,385 @@ class TestCheckValidErrorMetric:
     def test_dist_metrics_with_integrals_raises(self):
         """Distribution metrics are not valid for Z, R, LWC targets."""
         for target in INTEGRAL_TARGETS:
-            for metric in ERROR_METRICS:
-                with pytest.raises(ValueError, match="loss should be 'None'"):
+            for metric in DISTRIBUTION_METRICS:
+                with pytest.raises(ValueError, match="Invalid 'loss'"):
                     check_valid_loss(metric, target=target)
 
     def test_none_metric_with_integrals(self):
         """Distribution metrics are not valid for Z, R, LWC targets."""
         for target in INTEGRAL_TARGETS:
-            for metric in ERROR_METRICS:
-                metric = check_valid_loss(loss=None, target=target)
-                assert metric is None
+            for metric in INTEGRAL_METRICS:
+                metric = check_valid_loss(metric, target=target)
+
+
+class TestCheckLossWeight:
+    """Test suite for check_loss_weight."""
+
+    @pytest.mark.parametrize("valid", [0.1, 0.5, 1.0, 2.0, 10.0])
+    def test_valid_loss_weight(self, valid):
+        """Valid loss weights should be returned unchanged."""
+        assert check_loss_weight(valid) == valid
+
+    def test_zero_loss_weight_raises(self):
+        """Loss weight of 0 should raise ValueError."""
+        with pytest.raises(ValueError, match="greater than 0"):
+            check_loss_weight(0)
+
+    def test_negative_loss_weight_raises(self):
+        """Negative loss weight should raise ValueError."""
+        with pytest.raises(ValueError, match="greater than 0"):
+            check_loss_weight(-0.5)
+
+    def test_very_small_positive_weight(self):
+        """Very small positive weights should be valid."""
+        result = check_loss_weight(1e-10)
+        assert result == 1e-10
+
+
+class TestCheckObjective:
+    """Test suite for check_objective."""
+
+    def test_valid_objective(self):
+        """Valid objective should be validated and returned."""
+        objective = {
+            "target": "N(D)",
+            "transformation": "log",
+            "censoring": "none",
+            "loss": "SSE",
+        }
+        result = check_objective(objective)
+        assert result["target"] == "N(D)"
+        assert result["transformation"] == "log"
+        assert result["censoring"] == "none"
+        assert result["loss"] == "SSE"
+
+    def test_valid_objective_with_all_options(self):
+        """Objective with all valid option values."""
+        objective = {
+            "target": "Z",
+            "transformation": "sqrt",
+            "censoring": "both",
+            "loss": "AE",
+        }
+        result = check_objective(objective)
+        assert result["target"] == "Z"
+        assert result["transformation"] == "sqrt"
+        assert result["censoring"] == "both"
+        assert result["loss"] == "AE"
+
+    @pytest.mark.parametrize(
+        "missing_key",
+        ["target", "transformation", "censoring", "loss"],
+    )
+    def test_missing_required_key_raises(self, missing_key):
+        """Missing required key should raise ValueError."""
+        objective = {
+            "target": "N(D)",
+            "transformation": "log",
+            "censoring": "none",
+            "loss": "MAE",
+        }
+        del objective[missing_key]
+        with pytest.raises(ValueError, match="missing required keys"):
+            check_objective(objective)
+
+    def test_invalid_target_raises(self):
+        """Invalid target should raise ValueError."""
+        objective = {
+            "target": "INVALID",
+            "transformation": "log",
+            "censoring": "none",
+            "loss": "MAE",
+        }
+        with pytest.raises(ValueError, match="Invalid 'target'"):
+            check_objective(objective)
+
+    def test_invalid_transformation_raises(self):
+        """Invalid transformation should raise ValueError."""
+        objective = {
+            "target": "N(D)",
+            "transformation": "invalid_transform",
+            "censoring": "none",
+            "loss": "MAE",
+        }
+        with pytest.raises(ValueError, match="Invalid 'transformation'"):
+            check_objective(objective)
+
+    def test_invalid_censoring_raises(self):
+        """Invalid censoring should raise ValueError."""
+        objective = {
+            "target": "N(D)",
+            "transformation": "log",
+            "censoring": "invalid_censoring",
+            "loss": "MAE",
+        }
+        with pytest.raises(ValueError, match="Invalid 'censoring'"):
+            check_objective(objective)
+
+    def test_invalid_loss_raises(self):
+        """Invalid loss should raise ValueError."""
+        objective = {
+            "target": "N(D)",
+            "transformation": "log",
+            "censoring": "none",
+            "loss": "INVALID_LOSS",
+        }
+        with pytest.raises(ValueError, match="Invalid 'loss'"):
+            check_objective(objective)
+
+    def test_loss_incompatible_with_distribution_target_raises(self):
+        """Distribution loss invalid for scalar target."""
+        objective = {
+            "target": "Z",  # Scalar target
+            "transformation": "log",
+            "censoring": "none",
+            "loss": "KL",  # Distribution metric
+        }
+        with pytest.raises(ValueError):
+            check_objective(objective)
+
+    def test_objective_keys_are_validated(self):
+        """All keys in objective should be validated."""
+        objective = {
+            "target": "R",
+            "transformation": "identity",
+            "censoring": "left",
+            "loss": "AE",
+        }
+        result = check_objective(objective)
+        assert "target" in result
+        assert "transformation" in result
+        assert "censoring" in result
+        assert "loss" in result
+
+
+class TestCheckObjectives:
+    """Test suite for check_objectives."""
+
+    def test_valid_single_objective(self):
+        """Single objective should be validated."""
+        objectives = [
+            {
+                "target": "N(D)",
+                "transformation": "log",
+                "censoring": "none",
+                "loss": "SSE",
+            },
+        ]
+        result = check_objectives(objectives)
+        assert len(result) == 1
+        assert result[0]["target"] == "N(D)"
+
+    def test_single_objective_without_loss_weight(self):
+        """Single objective without loss_weight should be valid."""
+        objectives = [
+            {
+                "target": "N(D)",
+                "transformation": "log",
+                "censoring": "none",
+                "loss": "SSE",
+            },
+        ]
+        result = check_objectives(objectives)
+        assert "loss_weight" not in result[0]
+
+    def test_single_objective_with_loss_weight_raises(self):
+        """Single objective with loss_weight should raise ValueError."""
+        objectives = [
+            {
+                "target": "N(D)",
+                "transformation": "log",
+                "censoring": "none",
+                "loss": "SSE",
+                "loss_weight": 1.0,
+            },
+        ]
+        with pytest.raises(ValueError, match="loss_weight.*only if multiple"):
+            check_objectives(objectives)
+
+    def test_valid_multiple_objectives(self):
+        """Multiple objectives with weights should be validated."""
+        objectives = [
+            {
+                "target": "N(D)",
+                "transformation": "identity",
+                "censoring": "left",
+                "loss": "SSE",
+                "loss_weight": 0.6,
+            },
+            {
+                "target": "LWC",
+                "transformation": "log",
+                "censoring": "both",
+                "loss": "AE",
+                "loss_weight": 0.4,
+            },
+        ]
+        result = check_objectives(objectives)
+        assert len(result) == 2
+        # Weights should be normalized
+        total_weight = sum(obj["loss_weight"] for obj in result)
+        np.testing.assert_allclose(total_weight, 1.0)
+
+    def test_multiple_objectives_without_weights_raises(self):
+        """Multiple objectives missing loss_weight should raise ValueError."""
+        objectives = [
+            {
+                "target": "N(D)",
+                "transformation": "log",
+                "censoring": "none",
+                "loss": "SSE",
+                "loss_weight": 0.6,
+            },
+            {
+                "target": "LWC",
+                "transformation": "log",
+                "censoring": "none",
+                "loss": "AE",
+                # Missing loss_weight
+            },
+        ]
+        with pytest.raises(ValueError, match="loss_weight"):
+            check_objectives(objectives)
+
+    def test_multiple_objectives_weight_are_not_normalized(self):
+        """Weights are not normalized to 1.0."""
+        objectives = [
+            {
+                "target": "N(D)",
+                "transformation": "log",
+                "censoring": "none",
+                "loss": "SSE",
+                "loss_weight": 2.0,
+            },
+            {
+                "target": "LWC",
+                "transformation": "log",
+                "censoring": "none",
+                "loss": "AE",
+                "loss_weight": 2.0,
+            },
+        ]
+        # Check no weight normalization applied
+        result = check_objectives(objectives)
+        assert result[0]["loss_weight"] == 2
+        assert result[1]["loss_weight"] == 2
+
+    def test_empty_objectives_raises(self):
+        """Empty objectives list should raise TypeError."""
+        with pytest.raises(TypeError, match="non-empty list"):
+            check_objectives([])
+
+    def test_none_objectives_do_not_raises(self):
+        """None objectives should return None."""
+        assert check_objectives(None) is None
+
+    def test_objectives_not_list_raises(self):
+        """Non-list objectives should raise TypeError."""
+        with pytest.raises(TypeError, match="non-empty list"):
+            check_objectives(
+                {
+                    "target": "N(D)",
+                    "transformation": "log",
+                    "censoring": "none",
+                    "loss": "SSE",
+                },
+            )
+
+    def test_objectives_not_dicts_raises(self):
+        """Objectives not containing dicts should raise TypeError."""
+        with pytest.raises(TypeError, match="must be dictionaries"):
+            check_objectives([1, 2, 3])
+
+    def test_invalid_objective_in_list_raises(self):
+        """Invalid objective in list should raise ValueError."""
+        objectives = [
+            {
+                "target": "N(D)",
+                "transformation": "log",
+                "censoring": "none",
+                "loss": "SSE",
+            },
+            {
+                "target": "INVALID",  # Invalid target
+                "transformation": "log",
+                "censoring": "none",
+                "loss": "MAE",
+            },
+        ]
+        with pytest.raises(ValueError, match="Invalid 'target'"):
+            check_objectives(objectives)
+
+    def test_multiple_objectives_different_targets(self):
+        """Multiple objectives with different targets should be valid."""
+        objectives = [
+            {
+                "target": "N(D)",
+                "transformation": "log",
+                "censoring": "none",
+                "loss": "MAE",
+                "loss_weight": 0.5,
+            },
+            {
+                "target": "R",
+                "transformation": "log",
+                "censoring": "none",
+                "loss": "AE",
+                "loss_weight": 0.5,
+            },
+        ]
+        result = check_objectives(objectives)
+        assert result[0]["target"] == "N(D)"
+        assert result[1]["target"] == "R"
+
+    def test_objectives_with_all_transformations(self):
+        """Objectives should validate with all transformation types."""
+        for transformation in TRANSFORMATIONS:
+            objectives = [
+                {
+                    "target": "N(D)",
+                    "transformation": transformation,
+                    "censoring": "none",
+                    "loss": "SSE",
+                },
+            ]
+            result = check_objectives(objectives)
+            assert result[0]["transformation"] == transformation
+
+    def test_objectives_with_all_censoring_options(self):
+        """Objectives should validate with all censoring options."""
+        for censoring in CENSORING:
+            objectives = [
+                {
+                    "target": "N(D)",
+                    "transformation": "log",
+                    "censoring": censoring,
+                    "loss": "SSE",
+                },
+            ]
+            result = check_objectives(objectives)
+            assert result[0]["censoring"] == censoring
+
+    def test_invalid_loss_weight_in_objectives_raises(self):
+        """Invalid loss weight should raise ValueError."""
+        objectives = [
+            {
+                "target": "N(D)",
+                "transformation": "log",
+                "censoring": "none",
+                "loss": "SSE",
+                "loss_weight": 0.5,
+            },
+            {
+                "target": "LWC",
+                "transformation": "log",
+                "censoring": "none",
+                "loss": "AE",
+                "loss_weight": -0.5,  # Invalid: negative
+            },
+        ]
+        with pytest.raises(ValueError, match="greater than 0"):
+            check_objectives(objectives)
 
 
 class TestComputeRainRate:
@@ -812,6 +1185,7 @@ class TestComputeCostFunction:
                 target=target,
                 transformation="identity",
                 censoring="none",
+                loss="AE",
             )
             assert errors.shape == (3,)
             assert np.all(np.isfinite(errors))
@@ -833,11 +1207,10 @@ class TestComputeCostFunction:
             )
             assert errors.shape == (3,)
 
-    def test_cost_function_all_losss(self, sample_data):
+    def test_cost_function_all_loss(self, sample_data):
         """Cost function should work with various error metrics."""
         ND_obs, ND_preds, D, dD, V = sample_data
-        losss = ERROR_METRICS
-        for loss in losss:
+        for loss in DISTRIBUTION_METRICS:
             errors = compute_loss(
                 ND_obs,
                 ND_preds,
@@ -845,6 +1218,21 @@ class TestComputeCostFunction:
                 dD,
                 V,
                 target="N(D)",
+                transformation="identity",
+                loss=loss,
+                censoring="none",
+            )
+            assert errors.shape == (3,)
+            assert np.all(np.isfinite(errors) | np.isnan(errors))
+
+        for loss in INTEGRAL_METRICS:
+            errors = compute_loss(
+                ND_obs,
+                ND_preds,
+                D,
+                dD,
+                V,
+                target="R",
                 transformation="identity",
                 loss=loss,
                 censoring="none",
@@ -1054,17 +1442,18 @@ class TestComputeWeightedLoss:
                 "target": "N(D)",
                 "transformation": "identity",
                 "censoring": "none",
-                "loss": "MAE",
+                "loss": "SSE",
                 "loss_weight": 0.5,
             },
             {
                 "target": "Z",
                 "transformation": "log",
                 "censoring": "none",
-                "loss": None,
+                "loss": "AE",
                 "loss_weight": 0.5,
             },
         ]
+
         result = compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives)
         assert result.shape == (3,)
         # Should contain finite values or NaN
@@ -1079,18 +1468,19 @@ class TestComputeWeightedLoss:
                 "target": "N(D)",
                 "transformation": "identity",
                 "censoring": "none",
-                "loss": "MAE",
+                "loss": "SSE",
                 "loss_weight": 1.0,
             },
             {
                 "target": "R",
                 "transformation": "identity",
                 "censoring": "none",
-                "loss": None,
+                "loss": "AE",
                 "loss_weight": 1.0,
             },
         ]
-        result_equal = compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives_equal)
+        with suppress_warnings():
+            result_equal = compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives_equal)
 
         # Test 2: Unequal weights (first objective has more weight)
         objectives_unequal = [
@@ -1098,14 +1488,14 @@ class TestComputeWeightedLoss:
                 "target": "N(D)",
                 "transformation": "identity",
                 "censoring": "none",
-                "loss": "MAE",
+                "loss": "SSE",
                 "loss_weight": 2.0,
             },
             {
                 "target": "R",
                 "transformation": "identity",
                 "censoring": "none",
-                "loss": None,
+                "loss": "AE",
                 "loss_weight": 1.0,
             },
         ]
@@ -1123,7 +1513,7 @@ class TestComputeWeightedLoss:
                 "target": "H(x)",
                 "transformation": "identity",
                 "censoring": "none",
-                "loss": "MAE",
+                "loss": "SSE",
             },
         ]
         # Without Nc
@@ -1149,7 +1539,8 @@ class TestComputeWeightedLoss:
                     "loss": loss,
                 },
             ]
-            result = compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives)
+            with suppress_warnings():
+                result = compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives)
             assert np.all(np.isnan(result))
 
     def test_weighted_loss_single_vs_multiple_objectives(self, sample_data):
@@ -1160,9 +1551,10 @@ class TestComputeWeightedLoss:
                 "target": "N(D)",
                 "transformation": "identity",
                 "censoring": "none",
-                "loss": "MAE",
+                "loss": "SSE",
             },
         ]
+
         result_weighted = compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives)
         result_direct = compute_loss(
             ND_obs,
@@ -1173,6 +1565,6 @@ class TestComputeWeightedLoss:
             target="N(D)",
             transformation="identity",
             censoring="none",
-            loss="MAE",
+            loss="SSE",
         )
         np.testing.assert_allclose(result_weighted, result_direct, equal_nan=True)

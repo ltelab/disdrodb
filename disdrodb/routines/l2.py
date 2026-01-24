@@ -514,12 +514,12 @@ def _generate_l2m(
         radar_options = product_options.get("radar_options")
 
         # Define variables to load
-        optimization_kwargs = l2m_options["optimization_kwargs"]
-        if "init_method" in optimization_kwargs and optimization_kwargs["init_method"] is None:
-            optimization_kwargs["init_method"] = "None"
+        optimization_settings = l2m_options["optimization_settings"]
+        if "init_method" in optimization_settings and optimization_settings["init_method"] is None:
+            optimization_settings["init_method"] = "None"
 
-        if optimization_kwargs.get("init_method", "None") != "None":
-            init_method = optimization_kwargs["init_method"]
+        if optimization_settings.get("init_method", "None") != "None":
+            init_method = optimization_settings["init_method"]
             moments = [f"M{order}" for order in init_method.replace("M", "")] + ["M1"]
         else:
             moments = ["M1"]

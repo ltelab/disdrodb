@@ -8,7 +8,7 @@ from disdrodb.api.checks import check_folder_partitioning, check_temporal_resolu
 from disdrodb.api.configs import available_sensor_names
 from disdrodb.configs import get_products_configs_dir
 from disdrodb.fall_velocity.rain import check_rain_fall_velocity_model
-from disdrodb.psd.fitting import PSD_MODELS, check_optimization, check_optimization_kwargs
+from disdrodb.psd.fitting import PSD_MODELS, check_optimization, check_optimization_settings
 from disdrodb.routines.options import get_l2m_model_settings_files, get_model_options, get_product_options
 from disdrodb.scattering.axis_ratio import check_axis_ratio_model
 from disdrodb.scattering.permittivity import check_permittivity_model
@@ -464,7 +464,7 @@ class L2MModelConfig(CustomBaseModel):
 
     psd_model: str = Field(..., description="PSD model name")
     optimization: str = Field(..., description="Optimization method")
-    optimization_kwargs: dict[str, Any] = Field(..., description="Optimization-specific parameters")
+    optimization_settings: dict[str, Any] = Field(..., description="Optimization-specific parameters")
 
     @field_validator("psd_model")
     @classmethod
@@ -482,11 +482,11 @@ class L2MModelConfig(CustomBaseModel):
         return check_optimization(optimization)
 
     @model_validator(mode="after")
-    def validate_optimization_kwargs(self):
-        """Validate that optimization_kwargs matches the optimization method."""
+    def validate_optimization_settings(self):
+        """Validate that optimization_settings matches the optimization method."""
         # Use the existing validation function
-        check_optimization_kwargs(
-            optimization_kwargs=self.optimization_kwargs,
+        check_optimization_settings(
+            optimization_settings=self.optimization_settings,
             optimization=self.optimization,
             psd_model=self.psd_model,
         )

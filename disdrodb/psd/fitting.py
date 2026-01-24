@@ -16,6 +16,8 @@
 # -----------------------------------------------------------------------------.
 """Routines for PSD fitting."""
 
+import copy
+
 import numpy as np
 import scipy.stats as ss
 import xarray as xr
@@ -32,10 +34,7 @@ from disdrodb.l2.empirical_dsd import (
     get_total_number_concentration,
 )
 from disdrodb.psd.grid_search import (
-    check_censoring,
-    check_target,
-    check_transformation,
-    # check_loss,
+    check_objectives,
     compute_weighted_loss,
 )
 from disdrodb.psd.models import (
@@ -939,40 +938,26 @@ def get_exponential_parameters(
 
 ####-----------------------------------------------------------------------------------------.
 #### Grid Search (GS)
-#### - Optimization utilities
 
 
-def define_param_range(center, step, bounds, factor=2, refinement=20):
-    """
-    Create a refined parameter search range around a center value, constrained to bounds.
-
-    Parameters
-    ----------
-    center : float
-        Center of the range (e.g., current best estimate).
-    step : float
-        Coarse step size used in the first search.
-    bounds : tuple of (float, float)
-        Lower and upper bounds (can include -np.inf, np.inf).
-    factor : float, optional
-        How wide the refined range extends from the center (in multiples of step).
-        Default = 2.
-    refinement : int, optional
-        Factor to refine the step size (smaller step = finer grid).
-        Default = 20.
-
-    Returns
-    -------
-    np.ndarray
-        Array of values constrained to bounds.
-    """
-    lower = max(center - factor * step, bounds[0])
-    upper = min(center + factor * step, bounds[1])
-    new_step = step / refinement
-    return np.arange(lower, upper, new_step)
+DEFAULT_OBJECTIVES = [
+    {
+        "target": "N(D)",
+        "transformation": "identity",
+        "loss": "SSE",
+        "censoring": "none",
+        "loss_weight": 0.8,
+    },
+    {
+        "target": "Z",
+        "transformation": "identity",
+        "loss": "AE",
+        "censoring": "none",
+        "loss_weight": 0.2,
+    },
+]
 
 
-#### - Optimization routines
 def apply_exponential_gs(
     Nt,
     ND_obs,
@@ -1010,8 +995,7 @@ def apply_exponential_gs(
     objectives: list of dicts
         target : str, optional
             Target quantity to optimize. Valid options:
-            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
-            - ``"H(x)"`` : Normalized drop number concentration [-]
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
@@ -1020,7 +1004,7 @@ def apply_exponential_gs(
             Transformation applied to the target quantity before computing the loss.
             Valid options:
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation (default)
+            - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
@@ -1037,8 +1021,8 @@ def apply_exponential_gs(
               range of diameter bins with non-zero observed concentrations is
               retained.
         loss : int, optional
-            Loss function.  To be specified only if target is ``"N(D)"`` or ``"H(x)"``.
-            Valid options are:
+            Loss function.
+            If target is ``"N(D)"``, valid options are:
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -1049,6 +1033,9 @@ def apply_exponential_gs(
             - ``WD``: Wasserstein Distance
             - ``JS``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -1146,8 +1133,7 @@ def apply_gamma_gs(
     objectives: list of dicts
         target : str, optional
             Target quantity to optimize. Valid options:
-            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
-            - ``"H(x)"`` : Normalized drop number concentration [-]
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
@@ -1156,7 +1142,7 @@ def apply_gamma_gs(
             Transformation applied to the target quantity before computing the loss.
             Valid options:
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation (default)
+            - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
@@ -1173,8 +1159,8 @@ def apply_gamma_gs(
               range of diameter bins with non-zero observed concentrations is
               retained.
         loss : int, optional
-            Loss function.  To be specified only if target is ``"N(D)"`` or ``"H(x)"``.
-            Valid options are:
+            Loss function.
+            If target is ``"N(D)"``, valid options are:
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -1185,6 +1171,9 @@ def apply_gamma_gs(
             - ``WD``: Wasserstein Distance
             - ``JS``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -1292,8 +1281,7 @@ def apply_generalized_gamma_gs(
     objectives: list of dicts
         target : str, optional
             Target quantity to optimize. Valid options:
-            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
-            - ``"H(x)"`` : Normalized drop number concentration [-]
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
@@ -1302,7 +1290,7 @@ def apply_generalized_gamma_gs(
             Transformation applied to the target quantity before computing the loss.
             Valid options:
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation (default)
+            - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
@@ -1319,8 +1307,8 @@ def apply_generalized_gamma_gs(
               range of diameter bins with non-zero observed concentrations is
               retained.
         loss : int, optional
-            Loss function.  To be specified only if target is ``"N(D)"`` or ``"H(x)"``.
-            Valid options are:
+            Loss function.
+            If target is ``"N(D)"``, valid options are:
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -1331,6 +1319,9 @@ def apply_generalized_gamma_gs(
             - ``WD``: Wasserstein Distance
             - ``JS``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -1442,8 +1433,7 @@ def apply_lognormal_gs(
     objectives: list of dicts
         target : str, optional
             Target quantity to optimize. Valid options:
-            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
-            - ``"H(x)"`` : Normalized drop number concentration [-]
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
@@ -1452,7 +1442,7 @@ def apply_lognormal_gs(
             Transformation applied to the target quantity before computing the loss.
             Valid options:
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation (default)
+            - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
@@ -1469,8 +1459,8 @@ def apply_lognormal_gs(
               range of diameter bins with non-zero observed concentrations is
               retained.
         loss : int, optional
-            Loss function.  To be specified only if target is ``"N(D)"`` or ``"H(x)"``.
-            Valid options are:
+            Loss function.
+            If target is ``"N(D)"``, valid options are:
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -1481,6 +1471,9 @@ def apply_lognormal_gs(
             - ``WD``: Wasserstein Distance
             - ``JS``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -1583,7 +1576,7 @@ def apply_normalized_gamma_gs(
     objectives: list of dicts
         target : str, optional
             Target quantity to optimize. Valid options:
-            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"H(x)"`` : Normalized drop number concentration [-]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
@@ -1593,7 +1586,7 @@ def apply_normalized_gamma_gs(
             Transformation applied to the target quantity before computing the loss.
             Valid options:
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation (default)
+            - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
@@ -1610,8 +1603,8 @@ def apply_normalized_gamma_gs(
               range of diameter bins with non-zero observed concentrations is
               retained.
         loss : int, optional
-            Loss function.  To be specified only if target is ``"N(D)"`` or ``"H(x)"``.
-            Valid options are:
+            Loss function.
+            If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -1622,6 +1615,9 @@ def apply_normalized_gamma_gs(
             - ``WD``: Wasserstein Distance
             - ``JS``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -1726,7 +1722,7 @@ def apply_normalized_generalized_gamma_gs(
     objectives: list of dicts
         target : str, optional
             Target quantity to optimize. Valid options:
-            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"H(x)"`` : Normalized drop number concentration [-]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
@@ -1736,7 +1732,7 @@ def apply_normalized_generalized_gamma_gs(
             Transformation applied to the target quantity before computing the loss.
             Valid options:
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation (default)
+            - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
@@ -1753,8 +1749,8 @@ def apply_normalized_generalized_gamma_gs(
               range of diameter bins with non-zero observed concentrations is
               retained.
         loss : int, optional
-            Loss function.  To be specified only if target is ``"N(D)"`` or ``"N(D)"``.
-            Valid options are:
+            Loss function.
+            If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -1765,6 +1761,9 @@ def apply_normalized_generalized_gamma_gs(
             - ``WD``: Wasserstein Distance
             - ``JS``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -1862,8 +1861,7 @@ def get_exponential_parameters_gs(
     objectives: list of dicts
         target : str, optional
             Target quantity to optimize. Valid options:
-            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
-            - ``"H(x)"`` : Normalized drop number concentration [-]
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
@@ -1872,7 +1870,7 @@ def get_exponential_parameters_gs(
             Transformation applied to the target quantity before computing the loss.
             Valid options:
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation (default)
+            - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
@@ -1889,8 +1887,8 @@ def get_exponential_parameters_gs(
               range of diameter bins with non-zero observed concentrations is
               retained.
         loss : int, optional
-            Loss function.  To be specified only if target is ``"N(D)"`` or ``"H(x)"``.
-            Valid options are:
+            Loss function.
+            If target is ``"N(D)"``, valid options are:
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -1901,6 +1899,9 @@ def get_exponential_parameters_gs(
             - ``WD``: Wasserstein Distance
             - ``JS``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -1913,6 +1914,13 @@ def get_exponential_parameters_gs(
     ds_params : xarray.Dataset
         Dataset containing the estimated Exponential distribution parameters.
     """
+    # Use default objectives if not specified
+    if objectives is None:
+        objectives = copy.deepcopy(DEFAULT_OBJECTIVES)
+
+    # Check objectives
+    objectives = check_objectives(objectives=objectives)
+
     # Compute required variables
     Nt = get_total_number_concentration(
         drop_number_concentration=ds["drop_number_concentration"],
@@ -2017,8 +2025,7 @@ def get_gamma_parameters_gs(
     objectives: list of dicts
         target : str, optional
             Target quantity to optimize. Valid options:
-            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
-            - ``"H(x)"`` : Normalized drop number concentration [-]
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
@@ -2027,7 +2034,7 @@ def get_gamma_parameters_gs(
             Transformation applied to the target quantity before computing the loss.
             Valid options:
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation (default)
+            - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
@@ -2044,8 +2051,8 @@ def get_gamma_parameters_gs(
               range of diameter bins with non-zero observed concentrations is
               retained.
         loss : int, optional
-            Loss function.  To be specified only if target is ``"N(D)"`` or ``"H(x)"``.
-            Valid options are:
+            Loss function.
+            If target is ``"N(D)"``, valid options are:
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -2056,6 +2063,9 @@ def get_gamma_parameters_gs(
             - ``WD``: Wasserstein Distance
             - ``JS``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -2068,6 +2078,13 @@ def get_gamma_parameters_gs(
     ds_params : xarray.Dataset
         Dataset containing the estimated Gamma distribution parameters.
     """
+    # Use default objectives if not specified
+    if objectives is None:
+        objectives = copy.deepcopy(DEFAULT_OBJECTIVES)
+
+    # Check objectives
+    objectives = check_objectives(objectives=objectives)
+
     # Compute required variables
     Nt = get_total_number_concentration(
         drop_number_concentration=ds["drop_number_concentration"],
@@ -2185,8 +2202,7 @@ def get_generalized_gamma_parameters_gs(
     objectives: list of dicts
         target : str, optional
             Target quantity to optimize. Valid options:
-            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
-            - ``"H(x)"`` : Normalized drop number concentration [-]
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
@@ -2195,7 +2211,7 @@ def get_generalized_gamma_parameters_gs(
             Transformation applied to the target quantity before computing the loss.
             Valid options:
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation (default)
+            - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
@@ -2212,8 +2228,8 @@ def get_generalized_gamma_parameters_gs(
               range of diameter bins with non-zero observed concentrations is
               retained.
         loss : int, optional
-            Loss function.  To be specified only if target is ``"N(D)"`` or ``"H(x)"``.
-            Valid options are:
+            Loss function.
+            If target is ``"N(D)"``, valid options are:
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -2224,6 +2240,9 @@ def get_generalized_gamma_parameters_gs(
             - ``WD``: Wasserstein Distance
             - ``JS``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -2236,6 +2255,13 @@ def get_generalized_gamma_parameters_gs(
     ds_params : xarray.Dataset
         Dataset containing the estimated Generalized Gamma distribution parameters.
     """
+    # Use default objectives if not specified
+    if objectives is None:
+        objectives = copy.deepcopy(DEFAULT_OBJECTIVES)
+
+    # Check objectives
+    objectives = check_objectives(objectives=objectives)
+
     # Compute required variables
     Nt = get_total_number_concentration(
         drop_number_concentration=ds["drop_number_concentration"],
@@ -2248,7 +2274,7 @@ def get_generalized_gamma_parameters_gs(
     if c is None:
         c = np.arange(0, 10, step=0.2)
     if Lambda is None:
-        Lambda = np.arange(0, 40, step=0.1)
+        Lambda = np.arange(0, 20, step=0.2)
 
     # Define kwargs
     kwargs = {
@@ -2353,8 +2379,7 @@ def get_lognormal_parameters_gs(
     objectives: list of dicts
         target : str, optional
             Target quantity to optimize. Valid options:
-            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
-            - ``"H(x)"`` : Normalized drop number concentration [-]
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
@@ -2363,7 +2388,7 @@ def get_lognormal_parameters_gs(
             Transformation applied to the target quantity before computing the loss.
             Valid options:
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation (default)
+            - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
@@ -2380,8 +2405,8 @@ def get_lognormal_parameters_gs(
               range of diameter bins with non-zero observed concentrations is
               retained.
         loss : int, optional
-            Loss function.  To be specified only if target is ``"N(D)"`` or ``"H(x)"``.
-            Valid options are:
+            Loss function.
+            If target is ``"N(D)"``, valid options are:
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -2392,6 +2417,9 @@ def get_lognormal_parameters_gs(
             - ``WD``: Wasserstein Distance
             - ``JS``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -2404,6 +2432,13 @@ def get_lognormal_parameters_gs(
     ds_params : xarray.Dataset
         Dataset containing the estimated Lognormal distribution parameters.
     """
+    # Use default objectives if not specified
+    if objectives is None:
+        objectives = copy.deepcopy(DEFAULT_OBJECTIVES)
+
+    # Check objectives
+    objectives = check_objectives(objectives=objectives)
+
     # Compute required variables
     Nt = get_total_number_concentration(
         drop_number_concentration=ds["drop_number_concentration"],
@@ -2508,7 +2543,7 @@ def get_normalized_gamma_parameters_gs(
     objectives: list of dicts
         target : str, optional
             Target quantity to optimize. Valid options:
-            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"H(x)"`` : Normalized drop number concentration [-]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
@@ -2518,7 +2553,7 @@ def get_normalized_gamma_parameters_gs(
             Transformation applied to the target quantity before computing the loss.
             Valid options:
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation (default)
+            - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
@@ -2535,8 +2570,8 @@ def get_normalized_gamma_parameters_gs(
               range of diameter bins with non-zero observed concentrations is
               retained.
         loss : int, optional
-            Loss function.  To be specified only if target is ``"N(D)"`` or ``"H(x)"``.
-            Valid options are:
+            Loss function.
+            If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -2547,6 +2582,9 @@ def get_normalized_gamma_parameters_gs(
             - ``WD``: Wasserstein Distance
             - ``JS``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -2559,6 +2597,13 @@ def get_normalized_gamma_parameters_gs(
     ds_params : xarray.Dataset
         Dataset containing the estimated Normalized Gamma distribution parameters.
     """
+    # Use default objectives if not specified
+    if objectives is None:
+        objectives = copy.deepcopy(DEFAULT_OBJECTIVES)
+
+    # Check objectives
+    objectives = check_objectives(objectives=objectives)
+
     # Compute required variables
     drop_number_concentration = ds["drop_number_concentration"]
     diameter_bin_width = ds["diameter_bin_width"]
@@ -2688,7 +2733,7 @@ def get_normalized_generalized_gamma_parameters_gs(
     objectives: list of dicts
         target : str, optional
             Target quantity to optimize. Valid options:
-            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"H(x)"`` : Normalized drop number concentration [-]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
@@ -2698,7 +2743,7 @@ def get_normalized_generalized_gamma_parameters_gs(
             Transformation applied to the target quantity before computing the loss.
             Valid options:
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation (default)
+            - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
@@ -2715,8 +2760,8 @@ def get_normalized_generalized_gamma_parameters_gs(
               range of diameter bins with non-zero observed concentrations is
               retained.
         loss : int, optional
-            Loss function.  To be specified only if target is ``"N(D)"`` or ``"N(D)"``.
-            Valid options are:
+            Loss function.
+            If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -2727,6 +2772,9 @@ def get_normalized_generalized_gamma_parameters_gs(
             - ``WD``: Wasserstein Distance
             - ``JS``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -2739,6 +2787,13 @@ def get_normalized_generalized_gamma_parameters_gs(
     ds_params : xarray.Dataset
         Dataset containing the estimated Normalized Generalized Gamma distribution parameters.
     """
+    # Use default objectives if not specified
+    if objectives is None:
+        objectives = copy.deepcopy(DEFAULT_OBJECTIVES)
+
+    # Check objectives
+    objectives = check_objectives(objectives=objectives)
+
     # Compute required variables
     drop_number_concentration = ds["drop_number_concentration"]
     diameter_bin_width = ds["diameter_bin_width"]
@@ -2829,7 +2884,7 @@ def get_normalized_generalized_gamma_parameters_gs(
         # Other options
         kwargs=kwargs,
         # Settings
-        input_core_dims=[[], [], [], [], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
+        input_core_dims=[[], [], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
         output_core_dims=[["parameters"]],
         vectorize=True,
         dask="parallelized",
@@ -3116,10 +3171,40 @@ def _get_exponential_parameters_mom(ds: xr.Dataset, mom_method: str) -> xr.Datas
 
 
 ####--------------------------------------------------------------------------------------.
-#### Routines dictionary
+#### GLOBAL DICTIONARIES
 
-####--------------------------------------------------------------------------------------.
 ATTRS_PARAMS_DICT = {
+    "LognormalPSD": {
+        "Nt": {
+            "standard_name": "number_concentration_of_particles",
+            "units": "m-3",
+            "long_name": "Total Number Concentration",
+        },
+        "mu": {
+            "description": "Mean of the Lognormal PSD",
+            "units": "log(mm)",
+            "long_name": "Mean of the Lognormal PSD",
+        },
+        "sigma": {
+            "standard_name": "Standard Deviation of the Lognormal PSD",
+            "units": "",
+            "long_name": "Standard Deviation of the Lognormal PSD",
+        },
+    },
+    "ExponentialPSD": {
+        "N0": {
+            "description": "Intercept parameter of the Exponential PSD",
+            "standard_name": "particle_size_distribution_intercept",
+            "units": "mm-1 m-3",
+            "long_name": "ExponentialPSD intercept parameter",
+        },
+        "Lambda": {
+            "description": "Slope (rate) parameter of the Exponential PSD",
+            "standard_name": "particle_size_distribution_slope",
+            "units": "mm-1",
+            "long_name": "ExponentialPSD slope parameter",
+        },
+    },
     "GammaPSD": {
         "N0": {
             "description": "Intercept parameter of the Gamma PSD",
@@ -3158,35 +3243,53 @@ ATTRS_PARAMS_DICT = {
             "long_name": "NormalizedGammaPSD Median Volume Drop Diameter",
         },
     },
-    "LognormalPSD": {
+    "GeneralizedGammaPSD": {
         "Nt": {
-            "standard_name": "number_concentration_of_rain_drops_in_air",
+            "standard_name": "number_concentration_of_particles",
             "units": "m-3",
             "long_name": "Total Number Concentration",
         },
-        "mu": {
-            "description": "Mean of the Lognormal PSD",
-            "units": "log(mm)",
-            "long_name": "Mean of the Lognormal PSD",
-        },
-        "sigma": {
-            "standard_name": "Standard Deviation of the Lognormal PSD",
-            "units": "",
-            "long_name": "Standard Deviation of the Lognormal PSD",
-        },
-    },
-    "ExponentialPSD": {
-        "N0": {
-            "description": "Intercept parameter of the Exponential PSD",
-            "standard_name": "particle_size_distribution_intercept",
-            "units": "mm-1 m-3",
-            "long_name": "ExponentialPSD intercept parameter",
-        },
         "Lambda": {
-            "description": "Slope (rate) parameter of the Exponential PSD",
+            "description": "Slope (rate) parameter of the Generalized Gamma PSD",
             "standard_name": "particle_size_distribution_slope",
             "units": "mm-1",
-            "long_name": "ExponentialPSD slope parameter",
+            "long_name": "GeneralizedGammaPSD slope parameter",
+        },
+        "mu": {
+            "description": "Shape parameter of the Generalized Gamma PSD",
+            "standard_name": "particle_size_distribution_shape",
+            "units": "",
+            "long_name": "GeneralizedGammaPSD shape parameter",
+        },
+        "c": {
+            "description": "Shape parameter of the Generalized Gamma PSD",
+            "standard_name": "particle_size_distribution_shape",
+            "units": "",
+            "long_name": "GeneralizedGammaPSD shape parameter c",
+        },
+    },
+    "NormalizedGeneralizedGammaPSD": {
+        "Nc": {
+            "standard_name": "characteristic intercept",
+            "units": "mm-1 m-3",
+            "long_name": "NormalizedGeneralizedGammaPSD Characteristic Intercept Parameter",
+        },
+        "Dc": {
+            "standard_name": "characteristic_diameter",
+            "units": "mm",
+            "long_name": "NormalizedGeneralizedGammaPSD Characteristic Diameter",
+        },
+        "mu": {
+            "description": "Shape parameter of the Normalized Generalized Gamma PSD",
+            "standard_name": "particle_size_distribution_shape",
+            "units": "",
+            "long_name": "NormalizedGeneralizedGammaPSD Shape Parameter",
+        },
+        "c": {
+            "description": "Shape parameter of the Normalized Generalized Gamma PSD",
+            "standard_name": "particle_size_distribution_shape",
+            "units": "",
+            "long_name": "NormalizedGeneralizedGammaPSD Shape Parameter c",
         },
     },
 }
@@ -3222,6 +3325,7 @@ OPTIMIZATION_ROUTINES_DICT = {
         "LognormalPSD": get_lognormal_parameters_gs,
         "ExponentialPSD": get_exponential_parameters_gs,
         "GeneralizedGammaPSD": get_generalized_gamma_parameters_gs,
+        "NormalizedGeneralizedGammaPSD": get_normalized_generalized_gamma_parameters_gs,
     },
     "ML": {
         "GammaPSD": get_gamma_parameters,
@@ -3243,21 +3347,178 @@ def available_optimization(psd_model):
     return [opt for opt in list(OPTIMIZATION_ROUTINES_DICT) if psd_model in OPTIMIZATION_ROUTINES_DICT[opt]]
 
 
+def get_psd_model_parameter_names(psd_model):
+    """Get psd_model parameter names."""
+    return list(ATTRS_PARAMS_DICT[psd_model].keys())
+
+
+def check_psd_parameters(psd_model, parameters):
+    """Check valid psd_model parameters."""
+    valid_params = get_psd_model_parameter_names(psd_model)
+    for param in parameters:
+        if param not in valid_params:
+            raise ValueError(
+                f"Invalid parameter '{param}' for PSD model '{psd_model}'. Valid parameters are {valid_params}.",
+            )
+    return parameters
+
+
 ####--------------------------------------------------------------------------------------.
-#### Argument checkers
+#### CONFIGURATION CHECKERS
+#### - GS
 
 
-def check_psd_model(psd_model, optimization):
-    """Check valid psd_model argument."""
-    valid_psd_models = list(OPTIMIZATION_ROUTINES_DICT[optimization])
-    if psd_model not in valid_psd_models:
-        msg = (
-            f"{optimization} optimization is not available for 'psd_model' {psd_model}. "
-            f"Accepted PSD models are {valid_psd_models}."
-        )
-        raise NotImplementedError(msg)
+def check_fixed_parameters(psd_model, fixed_parameters):
+    """Check valid fixed_parameters argument."""
+    if fixed_parameters is None:
+        if psd_model == "NormalizedGeneralizedGammaPSD":
+            raise ValueError(
+                "For NormalizedGeneralizedGammaPSD fixed_parameters must include 'i' and 'j' moment orders.",
+            )
+        return None
+    if not isinstance(fixed_parameters, dict):
+        raise ValueError("fixed_parameters must be a dictionary.")
+    # Extract list of parameters
+    parameters = set(fixed_parameters.keys())
+    if psd_model == "NormalizedGeneralizedGammaPSD":
+        if "i" not in parameters or "j" not in parameters:
+            raise ValueError(
+                "fixed_parameters for NormalizedGeneralizedGammaPSD must include 'i' and 'j' moment orders.",
+            )
+        parameters = parameters.difference({"i", "j"})
+
+    # Check validity of fixed_parameters name
+    _ = check_psd_parameters(psd_model=psd_model, parameters=parameters)
+
+    # Check value validity
+    for param_name, param_value in fixed_parameters.items():
+        if isinstance(param_value, str):
+            raise ValueError(
+                f"Invalid value for '{param_name}': strings are not allowed.",
+            )
+        if not np.isscalar(param_value):
+            raise ValueError(
+                f"""Invalid value for '{param_name}': expected scalar,
+                , got {type(param_value).__name__}.""",
+            )
+        fixed_parameters[param_name] = float(param_value)
+    return fixed_parameters
 
 
+def check_search_space_parameters(search_space, psd_model):
+    """Check search_space parameters are PSD model parameters."""
+    if search_space is None:
+        return None
+    parameters = list(search_space.keys())
+    _ = check_psd_parameters(psd_model=psd_model, parameters=parameters)
+    return search_space
+
+
+def check_search_space(search_space):
+    """Check valid search_space dictionary."""
+    if search_space is None:
+        return None
+    if not isinstance(search_space, dict):
+        raise ValueError("search_space must be a dictionary.")
+    if len(search_space) == 0:
+        return None
+    # Check validity of each parameter search space specification
+    for param_name, space in search_space.items():
+        if not isinstance(space, dict) or "min" not in space or "max" not in space or "step" not in space:
+            raise ValueError(
+                f"Search space for '{param_name}' must be a dict with 'min', 'max', and 'step' keys. " f"Got: {space}",
+            )
+        # Validate bounds
+        min_val = space["min"]
+        max_val = space["max"]
+        step = space.get("step", None)
+        if min_val >= max_val:
+            raise ValueError(
+                f"Invalid search bounds for '{param_name}': min ({min_val}) >= max ({max_val}). " f"Require min < max.",
+            )
+        if step is None:
+            raise ValueError(
+                f"Search space for '{param_name}' must include 'step' key. Got: {space}",
+            )
+        if step <= 0:
+            raise ValueError(
+                f"Invalid step size for '{param_name}': step ({step}) must be positive.",
+            )
+    return search_space
+
+
+def define_gs_parameters(psd_model, fixed_parameters=None, search_space=None):
+    """Define PSD model parameters for Grid Search optimization routines.
+
+    This function constructs a dictionary of parameter values ready for grid search,
+    converting search space ranges into numpy arrays.
+
+    Parameters
+    ----------
+    fixed_parameters : dict, optional
+        Dictionary with parameter names as keys and scalar values as values.
+        Example: {"mu": 2.0}
+    search_space : dict, optional
+        Dictionary defining search ranges for parameters.
+        Each parameter can have:
+        - 'min' : float, Minimum value
+        - 'max' : float, Maximum value
+        - 'step' : float, Step size for linspace interval
+        Example: {"Lambda": {"min": 0, "max": 10, "step": 0.2}}
+
+    Returns
+    -------
+    dict
+        Dictionary with PSD parameter names as keys and values as:
+        - scalar (int or float)
+        - numpy.ndarray for grid search
+        Empty dict if both inputs are None or empty
+
+    """
+    # Check validity of inputs
+    search_space = check_search_space(search_space=search_space)
+    search_space = check_search_space_parameters(search_space=search_space, psd_model=psd_model)
+    fixed_parameters = check_fixed_parameters(psd_model=psd_model, fixed_parameters=fixed_parameters)
+
+    # Return empty dict if both inputs are empty
+    if (fixed_parameters is None or len(fixed_parameters) == 0) and (search_space is None or len(search_space) == 0):
+        return {}
+
+    # Define parameters dictionary (initialize with None values)
+    required_parameters_dict = {
+        "NormalizedGeneralizedGammaPSD": ["mu", "c", "i", "j"],
+        "NormalizedGammaPSD": ["mu"],
+        "GeneralizedGammaPSD": ["Lambda", "mu", "c"],
+        "LognormalPSD": ["mu", "sigma"],
+        "GammaPSD": ["Lambda", "mu"],
+        "ExponentialPSD": ["Lambda"],
+    }
+    required_parameters = required_parameters_dict[psd_model]
+    parameters = dict.fromkeys(required_parameters)
+
+    # Process fixed_parameters (scalar initial values)
+    if fixed_parameters is not None:
+        for param_name, param_value in fixed_parameters.items():
+            parameters[param_name] = param_value
+
+    # Check if this parameter has a search space range
+    if search_space is not None:
+        for param_name, space in search_space.items():
+            # Extract search space bounds
+            min_val = space["min"]
+            max_val = space["max"]
+            step = space.get("step", None)
+            # Create array of values for this parameter
+            parameters[param_name] = np.arange(min_val, max_val + step, step)
+    else:
+        # Use scalar value
+        parameters[param_name] = param_value
+
+    return parameters
+
+
+# -----------------------------------------------------------------
+#### - ML
 def check_likelihood(likelihood):
     """Check valid likelihood argument."""
     valid_likelihood = ["multinomial", "poisson"]
@@ -3295,6 +3556,8 @@ def check_optimizer(optimizer):
     return optimizer
 
 
+# -----------------------------------------------------------------
+#### - MOM
 def check_mom_methods(mom_methods, psd_model, allow_none=False):
     """Check valid mom_methods arguments."""
     if isinstance(mom_methods, (str, type(None))):
@@ -3311,6 +3574,21 @@ def check_mom_methods(mom_methods, psd_model, allow_none=False):
     return mom_methods
 
 
+# -----------------------------------------------------------------
+#### - WRAPPERS
+
+
+def check_psd_model(psd_model, optimization):
+    """Check valid psd_model argument."""
+    valid_psd_models = list(OPTIMIZATION_ROUTINES_DICT[optimization])
+    if psd_model not in valid_psd_models:
+        msg = (
+            f"{optimization} optimization is not available for 'psd_model' {psd_model}. "
+            f"Accepted PSD models are {valid_psd_models}."
+        )
+        raise NotImplementedError(msg)
+
+
 def check_optimization(optimization):
     """Check valid optimization argument."""
     valid_optimization = list(OPTIMIZATION_ROUTINES_DICT)
@@ -3321,8 +3599,8 @@ def check_optimization(optimization):
     return optimization
 
 
-def check_optimization_kwargs(optimization_kwargs, optimization, psd_model):
-    """Check valid optimization_kwargs."""
+def check_optimization_settings(optimization_settings, optimization, psd_model):
+    """Check valid optimization_settings."""
     dict_arguments = {
         "ML": {
             "init_method": None,
@@ -3332,10 +3610,8 @@ def check_optimization_kwargs(optimization_kwargs, optimization, psd_model):
             "optimizer": check_optimizer,
         },
         "GS": {
-            "target": check_target,
-            "transformation": check_transformation,
-            "error_order": None,
-            "censoring": check_censoring,
+            "objectives": check_objectives,
+            "search_space": check_search_space,
         },
         "MOM": {
             "mom_methods": None,
@@ -3347,35 +3623,45 @@ def check_optimization_kwargs(optimization_kwargs, optimization, psd_model):
     # Retrieve the expected arguments for the given optimization method
     expected_arguments = dict_arguments.get(optimization, {})
 
-    # Check for missing arguments in optimization_kwargs
-    # missing_args = [arg for arg in expected_arguments if arg not in optimization_kwargs]
+    # Check for missing arguments in optimization_settings
+    # missing_args = [arg for arg in expected_arguments if arg not in optimization_settings]
     # if missing_args:
     #     raise ValueError(f"Missing required arguments for {optimization} optimization: {missing_args}")
 
     # Validate arguments values
     _ = [
-        check(optimization_kwargs[arg])
+        check(optimization_settings[arg])
         for arg, check in expected_arguments.items()
-        if callable(check) and arg in optimization_kwargs
+        if callable(check) and arg in optimization_settings
     ]
 
     # Further special checks
-    if optimization == "MOM" and "mom_methods" in optimization_kwargs:
-        _ = check_mom_methods(mom_methods=optimization_kwargs["mom_methods"], psd_model=psd_model)
-    if optimization == "ML" and optimization_kwargs.get("init_method", None) is not None:
-        _ = check_mom_methods(mom_methods=optimization_kwargs["init_method"], psd_model=psd_model, allow_none=True)
+    if optimization == "MOM" and "mom_methods" in optimization_settings:
+        _ = check_mom_methods(mom_methods=optimization_settings["mom_methods"], psd_model=psd_model)
+    if optimization == "ML" and optimization_settings.get("init_method", None) is not None:
+        _ = check_mom_methods(mom_methods=optimization_settings["init_method"], psd_model=psd_model, allow_none=True)
 
 
 ####--------------------------------------------------------------------------------------.
 #### Wrappers for fitting
 
 
-def _finalize_attributes(ds_params, psd_model, optimization, optimization_kwargs):
+def _format_optimization_settings(settings):
+    if isinstance(settings, dict):
+        return ", ".join(f"{k}: {v}" for k, v in settings.items())
+    if isinstance(settings, list):
+        blocks = []
+        for d in settings:
+            opt_str = _format_optimization_settings(d)
+            blocks.append(opt_str)
+        return " | ".join(blocks)
+    raise TypeError("optimization_settings must be dict or list of dicts")
+
+
+def _finalize_attributes(ds_params, psd_model, optimization, optimization_settings):
     ds_params.attrs["disdrodb_psd_model"] = psd_model
     ds_params.attrs["disdrodb_psd_optimization"] = optimization
-    ds_params.attrs["disdrodb_psd_optimization_kwargs"] = ", ".join(
-        [f"{k}: {v}" for k, v in optimization_kwargs.items()],
-    )
+    ds_params.attrs["disdrodb_psd_optimization_settings"] = _format_optimization_settings(optimization_settings)
     return ds_params
 
 
@@ -3418,12 +3704,12 @@ def get_mom_parameters(ds: xr.Dataset, psd_model: str, mom_methods=None) -> xr.D
         ds_params = ds_params.assign_coords({"mom_method": mom_methods})
 
     # Add model attributes
-    optimization_kwargs = {"mom_methods": mom_methods}
+    optimization_settings = {"mom_methods": mom_methods}
     ds_params = _finalize_attributes(
         ds_params=ds_params,
         psd_model=psd_model,
         optimization="MOM",
-        optimization_kwargs=optimization_kwargs,
+        optimization_settings=optimization_settings,
     )
     return ds_params
 
@@ -3509,7 +3795,7 @@ def get_ml_parameters(
         ds_params = ds_params.assign_coords({"init_method": init_method})
 
     # Add model attributes
-    optimization_kwargs = {
+    optimization_settings = {
         "init_method": init_method,
         "probability_method": "probability_method",
         "likelihood": likelihood,
@@ -3520,19 +3806,19 @@ def get_ml_parameters(
         ds_params=ds_params,
         psd_model=psd_model,
         optimization="ML",
-        optimization_kwargs=optimization_kwargs,
+        optimization_settings=optimization_settings,
     )
 
     # Return dataset with parameters
     return ds_params
 
 
-def get_gs_parameters(ds, psd_model, target="N(D)", transformation="log", error_order=1, censoring="none"):
-    """Estimate PSD model parameters using Grid Search optimization.
+def get_gs_parameters(ds, psd_model, fixed_parameters=None, objectives=None, search_space=None, return_loss=False):
+    """Estimate PSD model parameters using Grid Search optimization with multiple objectives.
 
     This function estimates particle size distribution (PSD) model parameters
-    by minimizing the error between observed and modeled PSD quantities through
-    a grid search over the parameter space.
+    by minimizing a weighted combination of errors across multiple objectives through
+    grid search over the parameter space.
 
     Parameters
     ----------
@@ -3541,41 +3827,59 @@ def get_gs_parameters(ds, psd_model, target="N(D)", transformation="log", error_
         - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
         - ``diameter_bin_center`` : Diameter bin centers [mm]
         - ``diameter_bin_width`` : Diameter bin widths [mm]
-        - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
+        - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if any objective targets 'R')
     psd_model : str
         Name of the PSD model to fit. Valid options are:
         - ``"GammaPSD"`` : Gamma distribution
         - ``"NormalizedGammaPSD"`` : Normalized gamma distribution
         - ``"LognormalPSD"`` : Lognormal distribution
         - ``"ExponentialPSD"`` : Exponential distribution
-    target : str, optional
-        Target quantity to optimize. Valid options:
-        - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹] (default)
-        - ``"R"`` : Rain rate [mm h⁻¹]
-        - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
-        - ``"LWC"`` : Liquid water content [g m⁻³]
-    transformation : str, optional
-        Transformation applied to the target quantity before computing the error.
-        Valid options:
-        - ``"identity"`` : No transformation
-        - ``"log"`` : Logarithmic transformation (default)
-        - ``"sqrt"`` : Square root transformation
-    error_order : int, optional
-        Order of the error metric (p-norm). Default is 1 (L1 norm)(MAE).
-        Use 2 for L2 norm (MSEs).
-    censoring : {"none", "left", "right", "both"}, optional
-        Specifies whether the observed PSD is treated as censored at
-        the diameter edges due to instrumental sensitivity limits.
-        - ``"none"`` : No censoring is applied. All diameter bins are used.
-        - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
-          the spectrum where the observed number concentration is zero are
-          removed prior to cost-function evaluation.
-        - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
-          the spectrum where the observed number concentration is zero are
-          removed prior to cost-function evaluation.
-        - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
-          range of diameter bins with non-zero observed concentrations is
-          retained.
+        - ``"NormalizedGeneralizedGammaPSD"`` : Normalized generalized gamma distribution
+    objectives : list of dicts
+        List of optimization objectives. Each objective dict must contain:
+
+        - ``"target"`` : str
+            Target quantity to optimize. Valid options:
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
+            - ``"H(x)"`` : Normalized drop number concentration [-]. Only for Normalized PSD models.
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
+        - ``"transformation"`` : str
+            Transformation applied before computing the error. Valid options:
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation
+            - ``"sqrt"`` : Square root transformation
+        - ``"censoring"`` : str
+            Censoring applied to observed PSD. Valid options:
+            - ``"none"`` : No censoring applied
+            - ``"left"`` : Left-censored (remove leading zero bins)
+            - ``"right"`` : Right-censored (remove trailing zero bins)
+            - ``"both"`` : Both sides censored
+        - ``"loss"`` : str
+            Error metric.
+            For ``"N(D)"`` and ``"H(x)"`` valid options are
+            ``"SSE"``, ``"SAE"``, ``"MAE"``, ``"MSE"``, ``"RMSE"``, ``"relMAE"``
+            ``"KL"``, ``"JSD"``, ``"WD"``, ``"KS"``, ``"KS_pvalue"``.
+            For ``"R"``, ``"Z"``, ``"LWC"``, and ``"M<p>"`` valid options are
+            ``"AE"``, ``"SE"``.
+        - ``"loss_weight"`` : float, optional
+            Weight for this objective in the combined loss (default: 1.0 for single objective).
+            When multiple objectives are provided, weights are normalized to sum to 1.0.
+
+    fixed_parameters : dict, optional
+        Initial parameter values for the PSD model. Keys are parameter names,
+        values are scalars. Example: {"mu": 2.0, "Lambda": 1.5}
+    search_space : dict, optional
+        Search space configuration for parameters. Each parameter can define:
+        - ``"min"`` : float, Minimum value
+        - ``"max"`` : float, Maximum value
+        - ``"step"`` : float, Step size for parameter grid
+
+        Example:
+            {"mu": {"min": 0, "max": 10, "step": 0.2},
+             "Lambda": {"min": 0.1, "max": 5, "step": 0.1}}
 
     Returns
     -------
@@ -3583,58 +3887,98 @@ def get_gs_parameters(ds, psd_model, target="N(D)", transformation="log", error_
         Dataset containing the estimated PSD model parameters.
         Variables depend on the selected ``psd_model``:
         - ``GammaPSD`` : ``N0``, ``mu``, ``Lambda``
-        - ``NormalizedGammaPSD`` : ``Nw``, ``mu``, ``Dm``
+        - ``NormalizedGammaPSD`` : ``Nw``, ``mu``, ``D50``
         - ``LognormalPSD`` : ``Nt``, ``mu``, ``sigma``
         - ``ExponentialPSD`` : ``N0``, ``Lambda``
+        - ``NormalizedGeneralizedGammaPSD`` : ``Nc``, ``Dc``, ``mu``, ``c``
 
-        Each parameter variable includes attributes describing the parameter
-        name, units, and optimization metadata.
+        Each parameter variable includes attributes with name, units, and description.
+        Dataset attributes contain optimization metadata.
+
+    Raises
+    ------
+    ValueError
+        If objectives structure is invalid or fixed_parameters/search_space bounds are invalid
+    NotImplementedError
+        If psd_model is not supported for GS optimization
 
     Notes
     -----
     Grid search optimization explores a predefined parameter space to find
-    the combination that minimizes the specified error metric. This method
-    is more robust than gradient-based methods but can be computationally
-    expensive for high-dimensional parameter spaces.
+    the combination that minimizes the specified loss across all objectives.
+    When multiple objectives are provided, losses are combined using normalized weights.
 
     If ``drop_number_concentration`` values are all zeros or contain
     non-finite values, the output PSD parameters are set to NaN.
+
+    Examples
+    --------
+    Single objective optimization:
+
+        >>> objectives = [{
+        ...     "target": "N(D)",
+        ...     "transformation": "log",
+        ...     "censoring": "none",
+        ...     "loss": "MAE"
+        ... }]
+        >>> ds_params = get_gs_parameters(ds, psd_model="GammaPSD", objectives=objectives)
+
+    Multi-objective optimization:
+
+        >>> objectives = [
+        ...     {
+        ...         "target": "N(D)",
+        ...         "transformation": "identity",
+        ...         "censoring": "left",
+        ...         "loss": "MAE",
+        ...         "loss_weight": 0.6
+        ...     },
+        ...     {
+        ...         "target": "LWC",
+        ...         "transformation": "log",
+        ...         "censoring": "both",
+        ...         "loss": "AE",
+        ...         "loss_weight": 0.4
+        ...     }
+        ... ]
+        >>> search_space = {
+        ...     "mu": {"min": 0, "max": 10, "step": 0.2},
+        ...     "Lambda": {"min": 0.1, "max": 5, "step": 0.1}
+        ... }
+        >>> ds_params = get_gs_parameters(
+        ...     ds, psd_model="GammaPSD", search_space=search_space
+        ... )
     """
-    # Check valid psd_model
+    # Validate inputs
     check_psd_model(psd_model, optimization="GS")
+    objectives = check_objectives(objectives)
+    if objectives is None:
+        objectives = DEFAULT_OBJECTIVES
 
-    # Check valid target
-    target = check_target(target)
+    # Define PSD model parameters (scalars or arrays for grid search)
+    parameters = define_gs_parameters(
+        psd_model=psd_model,
+        fixed_parameters=fixed_parameters,
+        search_space=search_space,
+    )
 
-    # Check valid censoring
-    censoring = check_censoring(censoring)
-
-    # Check valid transformation
-    transformation = check_transformation(transformation)
-
-    # Check fall velocity is available if target R
+    # Ensure fall velocity is available if any objective needs it (e.g., R target)
     if "fall_velocity" not in ds:
         ds["fall_velocity"] = get_rain_fall_velocity_from_ds(ds)
 
-    # Retrieve estimation function
+    # Retrieve model-specific grid search function
     func = OPTIMIZATION_ROUTINES_DICT["GS"][psd_model]
 
-    # Estimate parameters
-    ds_params = func(ds, target=target, transformation=transformation, error_order=error_order)
+    # Call model-specific function with unpacked parameters, objectives, and return_loss=False
+    ds_params = func(ds, **parameters, objectives=objectives, return_loss=return_loss)
 
-    # Add model attributes
-    optimization_kwargs = {
-        "target": target,
-        "transformation": transformation,
-        "error_order": error_order,
-    }
+    # Finalize dataset attributes with optimization metadata
     ds_params = _finalize_attributes(
         ds_params=ds_params,
         psd_model=psd_model,
         optimization="GS",
-        optimization_kwargs=optimization_kwargs,
+        optimization_settings=objectives,
     )
-    # Return dataset with parameters
     return ds_params
 
 
@@ -3661,7 +4005,7 @@ def estimate_model_parameters(
     ds,
     psd_model,
     optimization,
-    optimization_kwargs=None,
+    optimization_settings=None,
 ):
     """Estimate particle size distribution model parameters.
 
@@ -3699,7 +4043,7 @@ def estimate_model_parameters(
         - ``"ML"`` : Maximum Likelihood estimation
         - ``"MOM"`` : Method of Moments
         - ``"GS"`` : Grid Search
-    optimization_kwargs : dict, optional
+    optimization_settings : dict, optional
         Dictionary of keyword arguments specific to the chosen optimization method.
 
         For ``optimization="ML"``:
@@ -3712,10 +4056,58 @@ def estimate_model_parameters(
 
         For ``optimization="GS"``:
 
-        - ``target`` : str, Target quantity to optimize ('ND', 'R', 'Z', 'LWC', default: 'ND')
-        - ``transformation`` : str, Error transformation ('identity', 'log', 'sqrt', default: 'log')
-        - ``error_order`` : int, Error metric order (default: 1)
-        - ``censoring`` : str, Censoring type ('none', 'left', 'right', 'both', default: 'none')
+        - ``fixed_parameters`` : dict, optional
+            Allows to specify PSD model parameters to fixed value(s).
+            For example for psd_model=GammaPSD one can use fixed_parameters={"mu": 3}
+            For psd_model=NormalizedGeneralizedGammaPSD, it's mandatory to
+            specify i and j moment order with: fixed_parameters={"i": 3, "j": 4}
+        - ``objectives``:  dict, optional
+            List of optimization objectives. If None (default), use DEFAULT_OBJECTIVES.
+            Each objective dict must contain:
+
+               - ``"target"`` : str
+                   Target quantity to optimize. Valid options:
+                   - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
+                   - ``"H(x)"`` : Normalized drop number concentration [-]. Only for Normalized PSD models.
+                   - ``"R"`` : Rain rate [mm h⁻¹]
+                   - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+                   - ``"LWC"`` : Liquid water content [g m⁻³]
+                   - ``"M<p>"`` : Moment of order p
+               - ``"transformation"`` : str
+                   Transformation applied before computing the error. Valid options:
+                   - ``"identity"`` : No transformation
+                   - ``"log"`` : Logarithmic transformation
+                   - ``"sqrt"`` : Square root transformation
+               - ``"censoring"`` : str
+                   Censoring applied to observed PSD. Valid options:
+                   - ``"none"`` : No censoring applied
+                   - ``"left"`` : Left-censored (remove leading zero bins)
+                   - ``"right"`` : Right-censored (remove trailing zero bins)
+                   - ``"both"`` : Both sides censored
+               - ``"loss"`` : str
+                   Error metric.
+                   For ``"N(D)"`` and ``"H(x)"`` valid options are
+                   ``"SSE"``, ``"SAE"``, ``"MAE"``, ``"MSE"``, ``"RMSE"``, ``"relMAE"``
+                   ``"KL"``, ``"JSD"``, ``"WD"``, ``"KS"``, ``"KS_pvalue"``.
+                   For ``"R"``, ``"Z"``, ``"LWC"``, and ``"M<p>"`` valid options are
+                   ``"AE"``, ``"SE"``.
+               - ``"loss_weight"`` : float, optional
+                   Weight for this objective in the combined loss (default: 1.0 for single objective).
+                   When multiple objectives are provided, weights are normalized to sum to 1.0.
+
+
+        - ``search_space``, dict, optional
+           Search space configuration for parameters. If None (default), use reasonable defaults.
+
+           Each parameter can define:
+
+           - ``"min"`` : float, Minimum value
+           - ``"max"`` : float, Maximum value
+           - ``"step"`` : float, Step size for parameter grid
+
+           Example:
+               {"mu": {"min": 0, "max": 10, "step": 0.2},
+                "Lambda": {"min": 0.1, "max": 5, "step": 0.1}}
 
         For ``optimization="MOM"``:
 
@@ -3739,13 +4131,16 @@ def estimate_model_parameters(
 
         - ``disdrodb_psd_model`` : The fitted PSD model name
         - ``disdrodb_psd_optimization`` : The optimization method used
-        - ``disdrodb_psd_optimization_kwargs`` : String representation of kwargs
+        - ``disdrodb_psd_optimization_settings`` : String representation of kwargs
     """
     # Check inputs arguments
-    optimization_kwargs = {} if optimization_kwargs is None else optimization_kwargs
+    optimization_settings = {} if optimization_settings is None else optimization_settings
     optimization = check_optimization(optimization)
-    check_optimization_kwargs(optimization_kwargs=optimization_kwargs, optimization=optimization, psd_model=psd_model)
-
+    check_optimization_settings(
+        optimization_settings=optimization_settings,
+        optimization=optimization,
+        psd_model=psd_model,
+    )
     # Check N(D)
     # --> If all 0, set to np.nan
     # --> If any is not finite --> set to np.nan
@@ -3762,7 +4157,7 @@ def estimate_model_parameters(
     func = dict_func[optimization]
 
     # Retrieve parameters
-    ds_params = func(ds, psd_model=psd_model, **optimization_kwargs)
+    ds_params = func(ds, psd_model=psd_model, **optimization_settings)
 
     # Add parameters attributes (and units)
     for var, attrs in ATTRS_PARAMS_DICT[psd_model].items():

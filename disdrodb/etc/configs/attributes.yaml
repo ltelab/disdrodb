@@ -138,20 +138,20 @@ Nremoved:
   long_name: Total number of discarded drops
   units: ""
 Nbins:
-  description: Number of diameter bins with drops
-  long_name: Number of diameter bins with drops
+  description: Number of diameter bins with non-zero particle counts
+  long_name: Number of diameter bins with non-zero particle counts
   units: ""
 Nbins_missing:
-  description: Number of diameter bins with no drops
-  long_name: Number of diameter bins with no drops
+  description: Number of diameter bins with zero particle counts between the first and last non-zero bins
+  long_name: Number of diameter bins with zero particle counts
   units: ""
 Nbins_missing_fraction:
-  description: Fraction of diameter bins with no drops
-  long_name: Fraction of diameter bins with no drops
+  description: Fraction of diameter bins with zero particle counts between the first and last non-zero bins
+  long_name: Fraction of diameter bins with zero particle counts
   units: ""
 Nbins_missing_consecutive:
-  description: Maximum number of consecutive diameter bins with no drops
-  long_name: Maximum number of consecutive diameter bins with no drops
+  description: Maximum number of consecutive diameter bins with zero particle counts between the first and last non-zero bins
+  long_name: Maximum number of consecutive diameter bins with zero particle counts
   units: ""
 drop_number_concentration:
   description: Number concentration of drops per diameter class per unit volume
