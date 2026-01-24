@@ -1,7 +1,9 @@
 psd_model: "GammaPSD"
 optimization: "GS"
 optimization_settings:
-  target: "N(D)"
-  transformation: "identity"
-  error_order: 1
-  censoring: left
+  objectives:
+    - target: "N(D)"
+      transformation: "identity"
+      censoring: "none"
+      loss: "SSE"
+

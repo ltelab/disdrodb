@@ -119,10 +119,17 @@ GAMMA_GS_CONFIG = {
     "psd_model": "GammaPSD",
     "optimization": "GS",
     "optimization_settings": {
-        "target": "N(D)",
-        "transformation": "identity",
-        "error_order": 1,
-        "censoring": "none",
+        "objectives": [
+            {"target": "N(D)",
+            "censoring": "none",
+            "transformation": "identity",
+            "loss": "SSE",
+            },
+        ],
+        "search_space": {
+            "mu": {"min": 0, "max": 2, "step": 0.1}
+        },
+        "fixed_parameters": {"Lambda": 10},
     },
 }
 
