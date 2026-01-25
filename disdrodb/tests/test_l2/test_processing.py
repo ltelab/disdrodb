@@ -26,6 +26,7 @@ from disdrodb.fall_velocity import available_rain_fall_velocity_models
 from disdrodb.l2.processing import check_l2e_input_dataset, define_rain_spectrum_mask, generate_l2e, generate_l2m
 from disdrodb.scattering import RADAR_OPTIONS
 from disdrodb.tests.fake_datasets import create_template_dataset, create_template_l2e_dataset
+from disdrodb.utils.warnings import suppress_warnings
 
 
 def create_test_dataset():
@@ -519,7 +520,8 @@ class TestGenerateL2Model:
         assert hasattr(ds_out["KLDiv"].data, "chunks")
 
         # Test it can compute without error
-        ds_out = ds_out.compute()
+        with suppress_warnings():
+            ds_out = ds_out.compute()
         assert isinstance(ds_out, xr.Dataset)
 
         # Test equaliy with in-memory computing

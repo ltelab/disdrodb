@@ -162,10 +162,11 @@ def _print_df_summary(df, indices, columns, print_column_names):
     df_summary = df_summary.loc[summary_stats]
     # Print summary stats
     for i, column in zip(indices, columns, strict=True):
-        tmp_df = df_summary[[column]]
-        tmp_df.columns = [""]
-        _print_column_index(i, column_name=column, print_column_names=print_column_names)
-        _print_value(tmp_df)
+        if column in df_summary:
+            tmp_df = df_summary[[column]]
+            tmp_df.columns = [""]
+            _print_column_index(i, column_name=column, print_column_names=print_column_names)
+            _print_value(tmp_df)
 
 
 def print_df_summary_stats(
@@ -192,19 +193,18 @@ def print_df_summary_stats(
     """
     # Define columns of interest
     _, columns_of_interest = _get_selected_column_names(df, column_indices)
-    # Remove columns of dtype object or string
-    indices_to_remove = np.where((df.dtypes == type(object)) | (df.dtypes == str))  # noqa
-    indices = np.arange(0, len(df.columns))
-    indices = indices[np.isin(indices, indices_to_remove, invert=True)]
-    columns = df.columns[indices]
+    # Select only numeric columns (remove columns of dtype object or string)
+    columns = df.select_dtypes(include="number").columns
+    indices = df.columns.get_indexer(columns)
     if len(columns) == 0:
         raise ValueError("No numeric columns in the dataframe.")
     # Select only columns of interest
-    idx_of_interest = np.where(np.isin(columns, columns_of_interest))[0]
-    if len(idx_of_interest) == 0:
+    mask = columns.isin(columns_of_interest)
+    columns = columns[mask]
+    indices = indices[mask]
+    if len(columns) == 0:
         raise ValueError("No numeric columns at the specified column_indices.")
-    columns = columns[idx_of_interest]
-    indices = indices[idx_of_interest]
+
     # Print summary stats
     _print_df_summary(df=df, indices=indices, columns=columns, print_column_names=print_column_names)
 

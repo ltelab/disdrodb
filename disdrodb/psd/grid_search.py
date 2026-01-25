@@ -141,8 +141,7 @@ def check_objectives(objectives):
     Returns
     -------
     list of dicts
-        Validated and normalized objectives list with loss weights summing to 1.0
-
+        Validated objectives. Loss weights are not normalized.
     """
     if objectives is None:
         return None
@@ -153,8 +152,8 @@ def check_objectives(objectives):
         raise TypeError("All items in 'objectives' must be dictionaries.")
 
     # Validate each objective
-    for objective in objectives:
-        objective = check_objective(objective)
+    for idx, objective in enumerate(objectives):
+        objectives[idx] = check_objective(objective)
 
     # Handle loss_weight
     if len(objectives) == 1:
@@ -285,7 +284,7 @@ def compute_target_variable(
     Parameters
     ----------
     target : str
-        Target variable type. Can be 'Z', 'R', 'LWC', moments ('M0'-'M6'), 'ND', or 'H(x)'.
+        Target variable type. Can be 'Z', 'R', 'LWC', moments ('M0'-'M6'), 'N(D)', or 'H(x)'.
     ND_obs : 1D array
         Observed drop size distribution [#/m3/mm-1] [n_bins]
     ND_preds : 2D array
@@ -853,7 +852,7 @@ def compute_loss(
     V : 1D array
         Terminal velocity [n_bins] [m/s]
     target : str
-        Target variable: 'Z', 'R', 'LWC', moments ('M0'-'M6'), 'ND', or 'H(x)'.
+        Target variable: 'Z', 'R', 'LWC', moments ('M0'-'M6'), 'N(D)', or 'H(x)'.
     censoring : str
         Censoring strategy: 'none', 'left', 'right', or 'both'.
     transformation : str
@@ -869,7 +868,7 @@ def compute_loss(
         - ``relMAE``: Relative Mean Absolute Error
         - ``KL``: Kullback-Leibler Divergence
         - ``WD``: Wasserstein Distance
-        - ``JS``: Jensen-Shannon Distance
+        - ``JSD``: Jensen-Shannon Distance
         - ``KS``: Kolmogorov-Smirnov Statistic
         If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
         - ``AE``: Absolute Error
@@ -980,7 +979,7 @@ def compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives, Nc=None):
             - ``relMAE``: Relative Mean Absolute Error
             - ``KL``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
-            - ``JS``: Jensen-Shannon Distance
+            - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
             - ``AE``: Absolute Error

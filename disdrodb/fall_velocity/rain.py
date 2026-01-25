@@ -58,6 +58,33 @@ def get_fall_velocity_atlas_1973(diameter):
     return fall_velocity
 
 
+def get_fall_velocity_lhermitte1988(diameter):
+    """
+    Compute the fall velocity of raindrops using the Lhermitte et al. (1988) relationship.
+
+    Parameters
+    ----------
+    diameter : array-like
+        Diameter of the raindrops in millimeters.
+
+    Returns
+    -------
+    fall_velocity : array-like
+        Fall velocities corresponding to the input diameters, in meters per second.
+
+    References
+    ----------
+    Roger M. Lhermitte, 1988.
+    Observation of rain at vertical incidence with a 94 GHz Doppler radar: An insight on Mie scattering.
+    Geophysical Research Letter, 15(10), 1125-1128.
+    https://doi.org/10.1029/GL015i010p01125
+    """
+    fall_velocity = 9.25 * (1 - np.exp(-(0.068 * diameter**2 + 0.488 * diameter)))  # Ladino 2025
+    # fall_velocity = 9.25 * (1 - np.exp(-(6.8 * (diameter*10)**2 + 4.88*(diameter*10)))) # Lhermitte 1988 formula wrong
+    fall_velocity = fall_velocity.clip(min=0, max=None)
+    return fall_velocity
+
+
 def get_fall_velocity_brandes_2002(diameter):
     """
     Compute the fall velocity of raindrops using the Brandes et al. (2002) relationship.
@@ -395,8 +422,9 @@ def retrieve_raindrop_beard_fall_velocity(
 RAIN_FALL_VELOCITY_MODELS = {
     "Atlas1973": get_fall_velocity_atlas_1973,
     "Beard1976": retrieve_raindrop_beard_fall_velocity,
-    "Brandes2002": get_fall_velocity_brandes_2002,
     "Uplinger1981": get_fall_velocity_uplinger_1981,
+    "Lhermitte1988": get_fall_velocity_lhermitte1988,
+    "Brandes2002": get_fall_velocity_brandes_2002,
     "VanDijk2002": get_fall_velocity_van_dijk_2002,
 }
 

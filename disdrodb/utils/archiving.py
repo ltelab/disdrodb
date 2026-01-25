@@ -81,7 +81,7 @@ def generate_time_blocks(
     # Mapping from our custom freq to pandas frequency codes
     freq_map = {
         "hour": "h",
-        "day": "d",
+        "day": "D",
         "month": "M",
         "quarter": "Q",
         "year": "Y",

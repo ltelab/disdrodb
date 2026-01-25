@@ -1031,7 +1031,7 @@ def apply_exponential_gs(
             - ``relMAE``: Relative Mean Absolute Error
             - ``KL``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
-            - ``JS``: Jensen-Shannon Distance
+            - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
             - ``AE``: Absolute Error
@@ -1174,7 +1174,7 @@ def apply_gamma_gs(
             - ``relMAE``: Relative Mean Absolute Error
             - ``KL``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
-            - ``JS``: Jensen-Shannon Distance
+            - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
             - ``AE``: Absolute Error
@@ -1327,7 +1327,7 @@ def apply_generalized_gamma_gs(
             - ``relMAE``: Relative Mean Absolute Error
             - ``KL``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
-            - ``JS``: Jensen-Shannon Distance
+            - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
             - ``AE``: Absolute Error
@@ -1484,7 +1484,7 @@ def apply_lognormal_gs(
             - ``relMAE``: Relative Mean Absolute Error
             - ``KL``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
-            - ``JS``: Jensen-Shannon Distance
+            - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
             - ``AE``: Absolute Error
@@ -1633,7 +1633,7 @@ def apply_normalized_gamma_gs(
             - ``relMAE``: Relative Mean Absolute Error
             - ``KL``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
-            - ``JS``: Jensen-Shannon Distance
+            - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
             - ``AE``: Absolute Error
@@ -1785,7 +1785,7 @@ def apply_normalized_generalized_gamma_gs(
             - ``relMAE``: Relative Mean Absolute Error
             - ``KL``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
-            - ``JS``: Jensen-Shannon Distance
+            - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
             - ``AE``: Absolute Error
@@ -1929,7 +1929,7 @@ def get_exponential_parameters_gs(
             - ``relMAE``: Relative Mean Absolute Error
             - ``KL``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
-            - ``JS``: Jensen-Shannon Distance
+            - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
             - ``AE``: Absolute Error
@@ -2093,7 +2093,7 @@ def get_gamma_parameters_gs(
             - ``relMAE``: Relative Mean Absolute Error
             - ``KL``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
-            - ``JS``: Jensen-Shannon Distance
+            - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
             - ``AE``: Absolute Error
@@ -2270,7 +2270,7 @@ def get_generalized_gamma_parameters_gs(
             - ``relMAE``: Relative Mean Absolute Error
             - ``KL``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
-            - ``JS``: Jensen-Shannon Distance
+            - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
             - ``AE``: Absolute Error
@@ -2447,7 +2447,7 @@ def get_lognormal_parameters_gs(
             - ``relMAE``: Relative Mean Absolute Error
             - ``KL``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
-            - ``JS``: Jensen-Shannon Distance
+            - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
             - ``AE``: Absolute Error
@@ -2612,7 +2612,7 @@ def get_normalized_gamma_parameters_gs(
             - ``relMAE``: Relative Mean Absolute Error
             - ``KL``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
-            - ``JS``: Jensen-Shannon Distance
+            - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
             - ``AE``: Absolute Error
@@ -2802,7 +2802,7 @@ def get_normalized_generalized_gamma_parameters_gs(
             - ``relMAE``: Relative Mean Absolute Error
             - ``KL``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
-            - ``JS``: Jensen-Shannon Distance
+            - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
             - ``AE``: Absolute Error

@@ -102,7 +102,7 @@ class TestCheckErrorMetric:
     """Test suite for check_loss."""
 
     @pytest.mark.parametrize("valid", ERROR_METRICS)
-    def test_valid_losss(self, valid):
+    def test_valid_loss(self, valid):
         """Valid error metrics should be returned unchanged."""
         assert check_loss(valid) == valid
 

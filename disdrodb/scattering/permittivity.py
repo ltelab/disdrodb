@@ -19,6 +19,8 @@
 import numpy as np
 import xarray as xr
 
+from disdrodb.utils.warnings import suppress_warnings
+
 # Definitions
 # - Complex_refractive_index: m
 # - Complex dielectric constant = complex relative permittivity: eps
@@ -380,7 +382,8 @@ def get_rain_refractive_index_ellison2007(temperature, frequency):
     eps = eps_real + 1j * eps_imag
 
     # Compute the refractive index
-    m = np.sqrt(eps)
+    with suppress_warnings():
+        m = np.sqrt(eps)  # on windows sqrt of eps=np.complex128(nan+nanj) raise warning
     return m
 
 

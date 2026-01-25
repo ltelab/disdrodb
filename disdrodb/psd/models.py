@@ -729,7 +729,7 @@ class NormalizedGeneralizedGammaPSD(XarrayPSD):
 
     N(D; Mi, Mj, μ, c) = N_c' * c * Γ_i^((j+c(μ+1))/(i-j)) *
                             Γ_j^((-i-c(μ+1))/(i-j)) *
-                            (D/D_c')^(c(μ+1)) *
+                            (D/D_c')^(c(μ+1)-1) *
                             exp(-(Γ_i/Γ_j)^(c/(i-j)) * (D/D_c')^c)
     with
     - N_c' = Mi^((j+1)/(j-i)) * Mj^((i+1)/(i-j))

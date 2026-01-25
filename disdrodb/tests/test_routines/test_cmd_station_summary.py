@@ -49,6 +49,12 @@ TEMPORAL_RESOLUTION = "1MIN"
 # parallel=False
 # VERBOSE=True
 # os.environ["PYTEST_CURRENT_TEST"] = "1"
+# data_source=DATA_SOURCE
+# campaign_name=CAMPAIGN_NAME
+# station_name=STATION_NAME
+# temporal_resolution=TEMPORAL_RESOLUTION
+# parallel=PARALLEL
+# data_archive_dir=test_data_archive_dir
 
 
 @pytest.mark.parametrize("cli", [True, False])

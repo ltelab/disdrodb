@@ -146,7 +146,7 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
     full_index = pd.Index(intervals, name=f"{column}_binned")
 
     # Define grouping object
-    df_grouped = df.groupby([f"{column}_binned"], observed=False)
+    df_grouped = df.groupby([f"{column}_binned"], observed=True)
 
     # Compute statistics for specified variables
     variables_stats = []
@@ -311,7 +311,7 @@ def compute_2d_histogram(
     full_index = pd.MultiIndex.from_product([x_intervals, y_intervals], names=[f"{x}_binned", f"{y}_binned"])
 
     # Define grouping object
-    df_grouped = df.groupby([f"{x}_binned", f"{y}_binned"], observed=False)
+    df_grouped = df.groupby([f"{x}_binned", f"{y}_binned"], observed=True)
 
     # Compute statistics for specified variables
     variables_stats = []

@@ -27,6 +27,7 @@ from disdrodb.psd.gof_metrics import (
     compute_kolmogorov_smirnov_distance,
     compute_wasserstein_distance,
 )
+from disdrodb.utils.warnings import suppress_warnings
 
 
 def make_test_data(
@@ -308,7 +309,8 @@ class TestComputeGoFStats:
         ds = compute_gof_stats(obs, pred)
         for var in ds.data_vars:
             assert hasattr(ds[var].data, "chunks")
-        ds = ds.compute().isel(time=0)
+        with suppress_warnings():
+            ds = ds.compute().isel(time=0)
 
         # Assert values
         assert ds["MAE"].values == 1

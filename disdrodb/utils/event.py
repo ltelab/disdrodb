@@ -141,7 +141,7 @@ def remove_isolated_timesteps(timesteps, neighbor_min_size, neighbor_time_interv
     """
     # Sort timesteps
     timesteps = np.array(timesteps)
-    timesteps.sort()
+    timesteps = np.sort(timesteps)
 
     # Do nothing if neighbor_min_size is 0
     if neighbor_min_size == 0:
@@ -198,7 +198,7 @@ def group_timesteps_into_events(timesteps, event_max_time_gap):
         return []
 
     # Ensure timesteps are sorted
-    timesteps.sort()
+    timesteps = np.sort(timesteps)
 
     # Compute differences between consecutive timesteps
     diffs = np.diff(timesteps)

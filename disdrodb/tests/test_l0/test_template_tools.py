@@ -19,6 +19,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from packaging.version import Version
 
 from disdrodb.l0.template_tools import (
     _get_possible_keys,
@@ -254,7 +255,10 @@ class Test_Print_Df_With_Any_Nan_Rows:
         print_df_with_any_nan_rows(df)
         out, _ = capfd.readouterr()
         assert "Column 0 ( A ):\n      [nan]" in out
-        assert "Column 1 ( B ):\n      [None]" in out
+        if Version(pd.__version__) >= Version("3.0"):
+            assert "Column 1 ( B ):\n      [nan]" in out
+        else:
+            assert "Column 1 ( B ):\n      [None]" in out
         assert "Column 2 ( C ):\n      [nan]" in out
         assert "Column 3 ( D ):\n      [3]" in out
 

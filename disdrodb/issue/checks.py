@@ -176,7 +176,7 @@ def _get_issue_timesteps(issue_dict):
     # Check validity
     timesteps = check_timesteps(timesteps)
     # Sort
-    timesteps.sort()
+    timesteps = np.sort(timesteps)
     return timesteps
 
 

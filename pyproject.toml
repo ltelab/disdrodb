@@ -9,7 +9,7 @@ authors = [
 ]
 description = "An open-source python software for standardized processing, sharing, and analysis of disdrometer data."
 readme = "README.md"
-license = "MIT"
+license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
 classifiers = [
 	"Development Status :: 5 - Production/Stable",

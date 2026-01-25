@@ -276,6 +276,67 @@ def get_axis_ratio_thurai_2007(diameter):
     return axis_ratio
 
 
+def get_axis_ratio_chang_2009(diameter):
+    """
+    Compute the axis ratio of raindrops using the Chang et al. (2009) model.
+
+    Parameters
+    ----------
+    diameter : array-like
+        Diameter of the raindrops in millimeters.
+
+    Returns
+    -------
+    axis_ratio : array-like
+        Calculated axis ratios corresponding to the input diameters.
+
+    References
+    ----------
+    Chang, W. Y., T. C. C. Wang, and P. L. Lin, 2009.
+    Characteristics of the Raindrop Size Distribution and Drop Shape Relation
+    in Typhoon Systems in the Western Pacific from the 2D Video Disdrometer and NCU C-Band Polarimetric Radar.
+    Journal of Atmospheric and Oceanic Technology, 26, 1973-1993.
+    https://doi.org/10.1175/2009JTECHA1236.1, 2009.
+    """
+    axis_ratio = (
+        0.98287 + 4.2514e-2 * diameter - 3.3439e-2 * diameter**2 + 4.3402e-3 * diameter**3 - 1.9223e-4 * diameter**4
+    )
+    return axis_ratio
+
+
+# def get_axis_ratio_wen_2018(diameter):
+#     """
+#     Compute the axis ratio of raindrops using the Wen et al. (2018) relationship.
+
+#     Parameters
+#     ----------
+#     diameter : array-like
+#         Diameter of the raindrops in millimeters.
+
+#     Returns
+#     -------
+#     axis_ratio : array-like
+#         Calculated axis ratios corresponding to the input diameters.
+
+#     References
+#     ----------
+#     Wen, L., Zhao, K., Chen, G., Wang, M., Zhou, B., Huang, H., Hu, D., Lee, W., and Hu, H., 2018.
+#     Drop Size Distribution Characteristics of Seven Typhoons in China.
+#     Journal of Geophysical Research: Atmospheres, 123, 6529-6548.
+#     https://doi.org/10.1029/2017JD027950
+#     """
+#     # NOTE: Formula in the paper does not correspond to illustration in paper figure.
+#     #       The formula specified is incorrect !
+#     axis_ratio = (
+#         0.9946
+#         + 2.745e-2 * diameter
+#         - 1.868e-2 * diameter**2
+#         + 1.159e-3 * diameter**3
+#         - 2.143e-4 * diameter**4
+#     )
+#     return axis_ratio
+
+
 AXIS_RATIO_MODELS = {
     "Thurai2005": get_axis_ratio_thurai_2005,
     "Thurai2007": get_axis_ratio_thurai_2007,
@@ -284,6 +345,8 @@ AXIS_RATIO_MODELS = {
     "Pruppacher1970": get_axis_ratio_pruppacher_1970,
     "Beard1987": get_axis_ratio_beard_1987,
     "Andsager1999": get_axis_ratio_andsager_1999,
+    "Chang2009": get_axis_ratio_chang_2009,
+    # "Wen2018": get_axis_ratio_wen_2018,
 }
 
 
@@ -308,7 +371,7 @@ def get_axis_ratio_model(model):
     model : str
         The model to use for calculating the axis ratio. Available models are:
         'Thurai2005', 'Thurai2007', 'Parsivel', 'Brandes2002',
-        'Pruppacher1970', 'Beard1987', 'Andsager1999'.
+        'Pruppacher1970', 'Beard1987', 'Andsager1999', 'Chang2009', 'Wen2018'.
 
     Returns
     -------
@@ -340,7 +403,7 @@ def get_axis_ratio(diameter, model):
     model : str
         The axis ratio model to use for calculating the axis ratio. Available models are:
         'Thurai2005', 'Thurai2007', 'Parsivel', 'Brandes2002',
-        'Pruppacher1970', 'Beard1987', 'Andsager1999'.
+        'Pruppacher1970', 'Beard1987', 'Andsager1999', 'Chang2009', 'Wen2018'.
 
     Returns
     -------

@@ -182,7 +182,7 @@ Generating these products requires only two simple commands:
 For illustrative purposes, this code snippet here above processes just 3 raw files (``--debugging_mode True``)
 with disabled parallelism (``--parallel False``) and verbose output  (``--verbose True``).
 
-To process all data for a given station uses:
+To process all data for a given station use:
 
 .. code:: bash
 
