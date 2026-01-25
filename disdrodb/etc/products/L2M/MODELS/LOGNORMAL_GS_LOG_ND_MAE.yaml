@@ -6,5 +6,3 @@ optimization_settings:
       transformation: "log"
       censoring: "none"
       loss: "SSE"
-
-

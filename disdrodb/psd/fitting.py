@@ -1057,6 +1057,11 @@ def apply_exponential_gs(
     - When multiple objectives are provided, losses are normalized and weighted
     - The best parameters correspond to the minimum total weighted loss
     """
+    # Ensure input is numpy array
+    Nt = np.asarray(Nt)
+    ND_obs = np.asarray(ND_obs)
+    V = np.asarray(V)
+
     # Convert lambda to array if needed
     if not isinstance(Lambda, np.ndarray):
         Lambda = np.atleast_1d(Lambda)
@@ -1195,6 +1200,11 @@ def apply_gamma_gs(
     - When multiple objectives are provided, losses are normalized and weighted
     - The best parameters correspond to the minimum total weighted loss
     """
+    # Ensure input is numpy array
+    Nt = np.asarray(Nt)
+    ND_obs = np.asarray(ND_obs)
+    V = np.asarray(V)
+
     # Define combinations of parameters for grid search
     mu_grid, Lambda_grid = np.meshgrid(
         mu,
@@ -1343,6 +1353,11 @@ def apply_generalized_gamma_gs(
     - When multiple objectives are provided, losses are normalized and weighted
     - The best parameters correspond to the minimum total weighted loss
     """
+    # Ensure input is numpy array
+    Nt = np.asarray(Nt)
+    ND_obs = np.asarray(ND_obs)
+    V = np.asarray(V)
+
     # Define combinations of parameters for grid search
     mu_grid, Lambda_grid, c_grid = np.meshgrid(
         mu,
@@ -1495,6 +1510,11 @@ def apply_lognormal_gs(
     - When multiple objectives are provided, losses are normalized and weighted
     - The best parameters correspond to the minimum total weighted loss
     """
+    # Ensure input is numpy array
+    Nt = np.asarray(Nt)
+    ND_obs = np.asarray(ND_obs)
+    V = np.asarray(V)
+
     # Define combinations of parameters for grid search
     mu_grid, sigma_grid = np.meshgrid(
         mu,
@@ -1639,6 +1659,12 @@ def apply_normalized_gamma_gs(
     - When multiple objectives are provided, losses are normalized and weighted
     - The best parameters correspond to the minimum total weighted loss
     """
+    # Ensure input is numpy array
+    Nw = np.asarray(Nw)
+    D50 = np.asarray(D50)
+    ND_obs = np.asarray(ND_obs)
+    V = np.asarray(V)
+
     # Convert mu to array if needed
     mu_arr = np.atleast_1d(mu) if not isinstance(mu, np.ndarray) else mu
 
@@ -1787,6 +1813,12 @@ def apply_normalized_generalized_gamma_gs(
     """
     # Thurai 2018: mu [-3, 1], c [0-6]
 
+    # Ensure input is numpy array
+    Nc = np.asarray(Nc)
+    Dc = np.asarray(Dc)
+    ND_obs = np.asarray(ND_obs)
+    V = np.asarray(V)
+
     # Define combinations of parameters for grid search
     mu_grid, c_grid = np.meshgrid(
         mu,
@@ -1933,8 +1965,8 @@ def get_exponential_parameters_gs(
 
     # Define kwargs
     kwargs = {
-        "D": ds["diameter_bin_center"].data,
-        "dD": ds["diameter_bin_width"].data,
+        "D": ds["diameter_bin_center"].to_numpy(),
+        "dD": ds["diameter_bin_width"].to_numpy(),
         "objectives": objectives,
         "return_loss": return_loss,
         "Lambda": Lambda,
@@ -2099,8 +2131,8 @@ def get_gamma_parameters_gs(
 
     # Define kwargs
     kwargs = {
-        "D": ds["diameter_bin_center"].data,
-        "dD": ds["diameter_bin_width"].data,
+        "D": ds["diameter_bin_center"].to_numpy(),
+        "dD": ds["diameter_bin_width"].to_numpy(),
         "objectives": objectives,
         "return_loss": return_loss,
         "mu": mu,
@@ -2278,8 +2310,8 @@ def get_generalized_gamma_parameters_gs(
 
     # Define kwargs
     kwargs = {
-        "D": ds["diameter_bin_center"].data,
-        "dD": ds["diameter_bin_width"].data,
+        "D": ds["diameter_bin_center"].to_numpy(),
+        "dD": ds["diameter_bin_width"].to_numpy(),
         "objectives": objectives,
         "return_loss": return_loss,
         "mu": mu,
@@ -2453,8 +2485,8 @@ def get_lognormal_parameters_gs(
 
     # Define kwargs
     kwargs = {
-        "D": ds["diameter_bin_center"].data,
-        "dD": ds["diameter_bin_width"].data,
+        "D": ds["diameter_bin_center"].to_numpy(),
+        "dD": ds["diameter_bin_width"].to_numpy(),
         "objectives": objectives,
         "return_loss": return_loss,
         "mu": mu,
@@ -2633,8 +2665,8 @@ def get_normalized_gamma_parameters_gs(
 
     # Define kwargs
     kwargs = {
-        "D": ds["diameter_bin_center"].data,
-        "dD": ds["diameter_bin_width"].data,
+        "D": ds["diameter_bin_center"].to_numpy(),
+        "dD": ds["diameter_bin_width"].to_numpy(),
         "objectives": objectives,
         "return_loss": return_loss,
         "mu": mu,
@@ -2823,8 +2855,8 @@ def get_normalized_generalized_gamma_parameters_gs(
     kwargs = {
         "i": i,
         "j": j,
-        "D": ds["diameter_bin_center"].data,
-        "dD": ds["diameter_bin_width"].data,
+        "D": ds["diameter_bin_center"].to_numpy(),
+        "dD": ds["diameter_bin_width"].to_numpy(),
         "objectives": objectives,
         "return_loss": return_loss,
         "mu": mu,

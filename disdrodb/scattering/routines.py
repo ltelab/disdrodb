@@ -549,7 +549,7 @@ def _estimate_empirical_radar_parameters(
     scatterer,
 ):
     # Assign PSD model to the scatterer object
-    scatterer.psd = BinnedPSD(bin_edges, drop_number_concentration)
+    scatterer.psd = BinnedPSD(bin_edges, np.asarray(drop_number_concentration))
 
     # Get radar variables
     return _try_compute_radar_variables(scatterer)
@@ -562,7 +562,7 @@ def _estimate_model_radar_parameters(
     scatterer,
 ):
     # Assign PSD model to the scatterer object
-    parameters = dict(zip(psd_parameters_names, parameters, strict=True))
+    parameters = dict(zip(psd_parameters_names, np.asarray(parameters), strict=True))
     scatterer.psd = create_psd(psd_model, parameters)
 
     # Get radar variables

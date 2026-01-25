@@ -120,14 +120,15 @@ GAMMA_GS_CONFIG = {
     "optimization": "GS",
     "optimization_settings": {
         "objectives": [
-            {"target": "N(D)",
-            "censoring": "none",
-            "transformation": "identity",
-            "loss": "SSE",
+            {
+                "target": "N(D)",
+                "censoring": "none",
+                "transformation": "identity",
+                "loss": "SSE",
             },
         ],
         "search_space": {
-            "mu": {"min": 0, "max": 2, "step": 0.1}
+            "mu": {"min": 0, "max": 2, "step": 0.1},
         },
         "fixed_parameters": {"Lambda": 10},
     },

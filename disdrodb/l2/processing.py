@@ -642,10 +642,12 @@ def generate_l2e(
 def _get_default_optimization(psd_model):
     """PSD model defaults."""
     defaults = {
-        "ExponentialPSD": "ML",
-        "GammaPSD": "ML",
-        "LognormalPSD": "ML",
+        "ExponentialPSD": "GS",
+        "GammaPSD": "GS",
+        "LognormalPSD": "GS",
         "NormalizedGammaPSD": "GS",
+        "GeneralizedGammaPSD": "GS",
+        "NormalizedGeneralizedGammaPSD": "GS",
     }
     optimization = defaults[psd_model]
     return optimization

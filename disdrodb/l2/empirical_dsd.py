@@ -106,7 +106,7 @@ def count_bins_with_drops(ds):
 
 def _compute_qc_bins_metrics(arr):
     # Find indices of non-zero elements
-    arr = arr.copy()
+    arr = np.asarray(arr).copy()
     arr[np.isnan(arr)] = 0
     non_zero_indices = np.nonzero(arr)[0]
     if non_zero_indices.size == 0:

@@ -6,4 +6,3 @@ optimization_settings:
       transformation: "identity"
       censoring: "none"
       loss: "SSE"
-

@@ -490,7 +490,11 @@ class TestGenerateL2Model:
     def test_with_in_memory_numpy_array(self, psd_model):
         """Test L2M product generation with in-memory numpy data."""
         ds = create_template_l2e_dataset()
-        ds_out = generate_l2m(ds, psd_model=psd_model)
+        if psd_model == "NormalizedGeneralizedGammaPSD":
+            optimization_settings = {"fixed_parameters": {"i": 3, "j": 4}}
+        else:
+            optimization_settings = None
+        ds_out = generate_l2m(ds, psd_model=psd_model, optimization_settings=optimization_settings)
         assert isinstance(ds_out, xr.Dataset)
 
     @pytest.mark.parametrize(
@@ -501,7 +505,14 @@ class TestGenerateL2Model:
         """Test L2M product generation with lazy dask array data."""
         ds = create_template_l2e_dataset()
         ds_lazy = ds.chunk({"time": 1})
-        ds_out = generate_l2m(ds_lazy, psd_model=psd_model)
+
+        if psd_model == "NormalizedGeneralizedGammaPSD":
+            optimization_settings = {"fixed_parameters": {"i": 3, "j": 4}}
+        else:
+            optimization_settings = None
+
+        ds_out = generate_l2m(ds_lazy, psd_model=psd_model, optimization_settings=optimization_settings)
+
         # Test it returns dask arrays
         assert isinstance(ds_out, xr.Dataset)
         assert hasattr(ds_out["R"].data, "chunks")
@@ -512,7 +523,7 @@ class TestGenerateL2Model:
         assert isinstance(ds_out, xr.Dataset)
 
         # Test equaliy with in-memory computing
-        ds_out1 = generate_l2m(ds, psd_model=psd_model)
+        ds_out1 = generate_l2m(ds, psd_model=psd_model, optimization_settings=optimization_settings)
         xr.testing.assert_allclose(ds_out, ds_out1)
 
     def test_without_time_dimension(self):
