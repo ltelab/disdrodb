@@ -843,6 +843,20 @@ def generate_l2m(
         "drop_number_concentration",
         "fall_velocity",
         "N",
+        # L0C QC
+        "qc_time",
+        # L1 flags and variables
+        "qc_resampling",
+        "n_margin_fallers",
+        "n_splashing",
+        "flag_graupel",
+        "flag_hail",
+        "flag_spikes",
+        "flag_splashing",
+        "flag_wind_artefacts",
+        # L2E drop statistics
+        "Dmin",
+        "Dmax",
         *METEOROLOGICAL_VARIABLES,
     ]
     variables = [var for var in variables if var in ds]

@@ -26,7 +26,7 @@ TARGETS = DISTRIBUTION_TARGETS | INTEGRAL_TARGETS
 TRANSFORMATIONS = {"identity", "log", "sqrt"}
 CENSORING = {"none", "left", "right", "both"}
 
-DISTRIBUTION_METRICS = {"SSE", "SAE", "MAE", "MSE", "RMSE", "relMAE", "KL", "WD", "JSD", "KS", "KS_pvalue"}
+DISTRIBUTION_METRICS = {"SSE", "SAE", "MAE", "MSE", "RMSE", "relMAE", "KLDiv", "WD", "JSD", "KS"}
 INTEGRAL_METRICS = {"SE", "AE"}
 ERROR_METRICS = DISTRIBUTION_METRICS | INTEGRAL_METRICS
 
@@ -267,7 +267,7 @@ def compute_z(ND, D, dD):
         Radar reflectivity [dBZ]
     """
     z = compute_moment(ND, order=6, D=D, dD=dD)  # mm⁶·m⁻³
-    Z = 10 * np.log10(z)
+    Z = 10 * np.log10(np.where(z > 0, z, np.nan))
     return Z
 
 
@@ -659,6 +659,16 @@ def compute_kolmogorov_smirnov_distance(obs, pred, dD, eps=1e-12):
     where 0 indicates that the two distributions are identical.
     The associated KS test p-value ranges from 0 to 1,
     with a value of 1 indicating no evidence against the null hypothesis that the distributions are identical.
+    When the p value is smaller than the significance level (e.g. < 0.05) the model is rejected.
+
+    If model parameters are estimated from the same data to which the model is compared,
+    the standard KS p-values are invalid.
+    The solution is to use a parametric bootstrap:
+    1. Fit model to your data
+    2. Simulate many datasets from that fitted gamma
+    3. Refit gamma for each simulated dataset
+    4. Compute KS statistic each time
+    5. Compare your observed KS statistic to the bootstrap distribution
 
     Vectorized implementation for multiple predictions.
 
@@ -756,7 +766,7 @@ def compute_errors(obs, pred, loss, D=None, dD=None):  # noqa: PLR0911
         return (obs - pred) ** 2
 
     # Compute KL or WD if asked (obs is expanded internally to save computations)
-    if loss == "KL":
+    if loss == "KLDiv":
         return compute_kl_divergence(obs, pred, dD=dD)
     if loss == "JSD":
         return compute_jensen_shannon_distance(obs, pred, dD=dD)
@@ -764,8 +774,8 @@ def compute_errors(obs, pred, loss, D=None, dD=None):  # noqa: PLR0911
         return compute_wasserstein_distance(obs, pred, D=D, dD=dD)
     if loss == "KS":
         return compute_kolmogorov_smirnov_distance(obs, pred, dD=dD)[0]  # select distance
-    if loss == "KS_pvalue":
-        return compute_kolmogorov_smirnov_distance(obs, pred, dD=dD)[1]  # select p_value
+    # if loss == "KS_pvalue":
+    #     return compute_kolmogorov_smirnov_distance(obs, pred, dD=dD)[1]  # select p_value
 
     # Broadcast obs to match pred shape if needed (when target is N(D) or H(x))
     # If obs is 1D and pred is 2D, add dimension to obs
@@ -866,7 +876,7 @@ def compute_loss(
         - ``MSE``: Mean Squared Error
         - ``RMSE``: Root Mean Squared Error
         - ``relMAE``: Relative Mean Absolute Error
-        - ``KL``: Kullback-Leibler Divergence
+        - ``KLDiv``: Kullback-Leibler Divergence
         - ``WD``: Wasserstein Distance
         - ``JSD``: Jensen-Shannon Distance
         - ``KS``: Kolmogorov-Smirnov Statistic
@@ -977,7 +987,7 @@ def compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives, Nc=None):
             - ``MSE``: Mean Squared Error
             - ``RMSE``: Root Mean Squared Error
             - ``relMAE``: Relative Mean Absolute Error
-            - ``KL``: Kullback-Leibler Divergence
+            - ``KLDiv``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic

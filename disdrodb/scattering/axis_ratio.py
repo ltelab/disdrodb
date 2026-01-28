@@ -324,9 +324,14 @@ def get_axis_ratio_chang_2009(diameter):
 #     Drop Size Distribution Characteristics of Seven Typhoons in China.
 #     Journal of Geophysical Research: Atmospheres, 123, 6529-6548.
 #     https://doi.org/10.1029/2017JD027950
+
+#     Notes
+#     ------
+#     The polynomial formula presented in Wen et al., 2018
+#     does not correspond to the illustration in figure 9 of the manuscript.
+#     The resulting axis-ratio parameterization appears to be incorrect and
+#     therefore is not made available in disdrodb.
 #     """
-#     # NOTE: Formula in the paper does not correspond to illustration in paper figure.
-#     #       The formula specified is incorrect !
 #     axis_ratio = (
 #         0.9946
 #         + 2.745e-2 * diameter
@@ -371,7 +376,7 @@ def get_axis_ratio_model(model):
     model : str
         The model to use for calculating the axis ratio. Available models are:
         'Thurai2005', 'Thurai2007', 'Parsivel', 'Brandes2002',
-        'Pruppacher1970', 'Beard1987', 'Andsager1999', 'Chang2009', 'Wen2018'.
+        'Pruppacher1970', 'Beard1987', 'Andsager1999', 'Chang2009'.
 
     Returns
     -------
@@ -403,7 +408,7 @@ def get_axis_ratio(diameter, model):
     model : str
         The axis ratio model to use for calculating the axis ratio. Available models are:
         'Thurai2005', 'Thurai2007', 'Parsivel', 'Brandes2002',
-        'Pruppacher1970', 'Beard1987', 'Andsager1999', 'Chang2009', 'Wen2018'.
+        'Pruppacher1970', 'Beard1987', 'Andsager1999', 'Chang2009'.
 
     Returns
     -------

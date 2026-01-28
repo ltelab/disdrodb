@@ -695,8 +695,10 @@ def get_equivalent_reflectivity_factor(drop_number_concentration, diameter, diam
         dim=DIAMETER_DIMENSION,
         skipna=False,
     )
+    # Set to NaN where z <= 0
     invalid_mask = z > 0
     z = z.where(invalid_mask)
+
     # Compute equivalent reflectivity factor in dBZ
     # - np.log10(np.nan) returns -Inf !
     # --> We mask again after the log
@@ -744,8 +746,11 @@ def get_equivalent_reflectivity_spectrum(drop_number_concentration, diameter):
     """
     # Compute reflectivity in mm⁶·m⁻³
     z = drop_number_concentration * ((diameter * 1000) ** 6)
+
+    # Set to NaN where z <= 0
     invalid_mask = z > 0
     z = z.where(invalid_mask)
+
     # Compute equivalent reflectivity factor in dBZ
     # - np.log10(np.nan) returns -Inf !
     # --> We mask again after the log
@@ -933,6 +938,8 @@ def get_min_max_diameter(drop_counts):
     max_drop_diameter : xarray.DataArray
         Maximum diameter where drop_counts is non-zero, for each time step.
     """
+    # TODO: maybe use lower bound for minimum, and upper bound for maximum
+
     # Create a boolean mask where drop_counts is non-zero
     non_zero_mask = drop_counts > 0
 

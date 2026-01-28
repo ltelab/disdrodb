@@ -837,7 +837,7 @@ def classify_raw_spectrum(
     # ------------------------------------------------------------------------
     #### Define QC splashing, strong_wind, margin_fallers, spikes
     # FUTURE: flag_spikes can be used for non hydrometeor classification,
-    # --> But caution because observing the below show true rainfall signature
+    # --> But caution because observing the below code show some true rainfall signature
     # --> raw_spectrum.isel(time=(flag_spikes == 0) & (precipitation_type == 0)).disdrodb.plot_spectrum()
 
     flag_splashing = xr.where((precipitation_type == 0) & (fraction_splash >= 0.1), 1, 0)

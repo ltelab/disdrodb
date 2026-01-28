@@ -3739,12 +3739,14 @@ def define_filename(prefix, extension, data_source, campaign_name, station_name,
     """Define filename for summary files."""
     if extension in ["png", "jpeg"]:
         filename = f"Figure.{prefix}.{data_source}.{campaign_name}.{station_name}.{temporal_resolution}.{extension}"
-    if extension in ["csv", "pdf", "yaml", "yml"]:
+    elif extension in ["csv", "pdf", "yaml", "yml"]:
         filename = f"Table.{prefix}.{data_source}.{campaign_name}.{station_name}.{temporal_resolution}.{extension}"
-    if extension in ["nc"]:
+    elif extension in ["nc"]:
         filename = f"Dataset.{prefix}.{data_source}.{campaign_name}.{station_name}.{temporal_resolution}.{extension}"
-    if extension in ["parquet"]:
+    elif extension in ["parquet"]:
         filename = f"Dataframe.{prefix}.{data_source}.{campaign_name}.{station_name}.{temporal_resolution}.{extension}"
+    else:
+        raise NotImplementedError(f"Standardized filename not implemented for extension {extension}.")
     return filename
 
 

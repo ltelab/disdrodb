@@ -103,6 +103,12 @@ def create_psd(psd_model, parameters):
     return psd
 
 
+def get_required_parameters(psd_model):
+    """Retrieve the list of parameters required by a PSD model."""
+    psd_class = get_psd_model(psd_model)
+    return psd_class.required_parameters()
+
+
 def create_psd_from_dataset(ds_params):
     """Define PSD from DISDRODB L2M product."""
     if "disdrodb_psd_model" not in ds_params.attrs:
@@ -110,15 +116,71 @@ def create_psd_from_dataset(ds_params):
     return create_psd(ds_params.attrs["disdrodb_psd_model"], ds_params)
 
 
-def get_required_parameters(psd_model):
-    """Retrieve the list of parameters required by a PSD model."""
-    psd_class = get_psd_model(psd_model)
-    return psd_class.required_parameters()
+def get_parameters_from_dataset(ds):
+    """Extract PSD parameters from DISDRODB L2M dataset."""
+    if "disdrodb_psd_model" not in ds.attrs:
+        raise ValueError("Expecting a DISDRODB L2M product with attribute 'disdrodb_psd_model'.")
+    psd_model = ds.attrs["disdrodb_psd_model"]
+    # Retrieve psd parameters list
+    required_parameters = get_required_parameters(psd_model)
+    required_parameters = set(required_parameters) - {"i", "j"}
+    return ds[required_parameters]
 
 
 def is_scalar(value):
     """Determines if the input value is a scalar."""
     return isinstance(value, (float, int)) or (isinstance(value, (np.ndarray, xr.DataArray)) and value.size == 1)
+
+
+def compute_Nc(i, j, Mi, Mj):
+    """Compute Double Moment Normalization N_c' from i, j, Mi, Mj.
+
+    N_c' = Mi^((j+1)/(j-i)) * Mj^((i+1)/(i-j))
+
+    Parameters
+    ----------
+    i : float or array-like
+        Moment index i
+    j : float or array-like
+        Moment index j
+    Mi : float or array-like
+        Moment parameter Mi (Γ_i)
+    Mj : float or array-like
+        Moment parameter Mj (Γ_j)
+
+    Returns
+    -------
+    float or array-like
+        The normalized intercept parameter N_c' with units m-3 mm-1.
+    """
+    exponent_i = (j + 1) / (j - i)
+    exponent_j = (i + 1) / (i - j)
+    return (Mi**exponent_i) * (Mj**exponent_j)
+
+
+def compute_Dc(i, j, Mi, Mj):
+    """Compute Double Moment Normalization D_c' from i, j, Mi, Mj.
+
+    D_c' = (Mj / Mi)^(1/(j-i))
+
+    Parameters
+    ----------
+    i : float or array-like
+        Moment index i
+    j : float or array-like
+        Moment index j
+    Mi : float or array-like
+        Moment parameter Mi (Γ_i)
+    Mj : float or array-like
+        Moment parameter Mj (Γ_j)
+
+    Returns
+    -------
+    float or array-like
+        The characteristic diameter parameter D_c' with units mm.
+    """
+    exponent = 1.0 / (j - i)
+    return (Mj / Mi) ** exponent
 
 
 class XarrayPSD(PSD):
@@ -136,8 +198,7 @@ class XarrayPSD(PSD):
         with suppress_warnings():
             nd = self.formula(D=D, **self.parameters)
 
-        # Clip values to ensure non-negative PSD
-        # nd = np.clip(nd, a_min=0, a_max=None)
+        # Clip values to ensure non-negative PSD (and set values < zero_below to 0)
         nd = nd.where(nd >= zero_below, 0) if isinstance(nd, xr.DataArray) else np.where(nd < zero_below, 0, nd)
         return nd
 
@@ -804,9 +865,7 @@ class NormalizedGeneralizedGammaPSD(XarrayPSD):
         float or array-like
             The normalized intercept parameter N_c' with units m-3 mm-1.
         """
-        exponent_i = (j + 1) / (j - i)
-        exponent_j = (i + 1) / (i - j)
-        return (Mi**exponent_i) * (Mj**exponent_j)
+        return compute_Nc(i=i, j=j, Mi=Mi, Mj=Mj)
 
     @staticmethod
     def compute_Dc(i, j, Mi, Mj):
@@ -830,8 +889,7 @@ class NormalizedGeneralizedGammaPSD(XarrayPSD):
         float or array-like
             The characteristic diameter parameter D_c' with units mm.
         """
-        exponent = 1.0 / (j - i)
-        return (Mj / Mi) ** exponent
+        return compute_Dc(i=i, j=j, Mi=Mi, Mj=Mj)
 
     @property
     def name(self):

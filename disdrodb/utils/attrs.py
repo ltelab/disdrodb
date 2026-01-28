@@ -20,6 +20,7 @@ import os
 
 from disdrodb.api.checks import get_current_utc_time
 from disdrodb.constants import ARCHIVE_VERSION, CONVENTIONS, COORDINATES, SOFTWARE_VERSION
+from disdrodb.utils.warnings import suppress_warnings
 from disdrodb.utils.yaml import read_yaml
 
 ####---------------------------------------------------------------------.
@@ -96,7 +97,8 @@ def update_disdrodb_attrs(ds, product: str):
     if "time" in ds.dims:
         encoding = ds["time"].encoding
         ds["time"] = ds["time"].dt.floor("s")  # ensure no sub-second values
-        ds["time"] = ds["time"].astype("datetime64[s]")
+        with suppress_warnings():
+            ds["time"] = ds["time"].astype("datetime64[s]")
         ds["time"].encoding = encoding  # otherwise time encoding get lost !
 
         attrs["time_coverage_start"] = str(ds["time"].data[0])

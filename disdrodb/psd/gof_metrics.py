@@ -30,6 +30,8 @@ def compute_kl_divergence(pk, qk, dim, eps=1e-12):
     When KL < 0.1 the two distributions are similar.
     When KL < 0.01 the two distributions are nearly indistinguishable.
 
+    Note that when qk is 0 but pk > 0 at some bin, KL divergence explodes.
+
     Parameters
     ----------
     pk : xarray.DataArray
@@ -51,14 +53,15 @@ def compute_kl_divergence(pk, qk, dim, eps=1e-12):
     pk_mass = pk.sum(dim=dim)
     qk_mass = qk.sum(dim=dim)
 
-    # Regularize probability to avoid division by zero
+    # Regularize probability to avoid division by zero (or log of 0)
     qk_regularized = xr.where(qk == 0, eps, qk)
+    pk_regularized = xr.where(pk == 0, eps, pk)
 
     # Compute log probability ratio
-    log_prob_ratio = np.log(pk / qk_regularized)
+    log_prob_ratio = np.log(pk_regularized / qk_regularized)
 
     # Compute divergence (zero out where pk=0)
-    kl = (pk * log_prob_ratio).where(pk > 0, other=0.0).sum(dim=dim, skipna=False)
+    kl = (pk * log_prob_ratio).sum(dim=dim, skipna=False)
 
     # Clip tiny negative values due to numerical noise
     kl = xr.where(kl >= 0.0, kl, 0.0)
@@ -185,12 +188,22 @@ def compute_wasserstein_distance(
 
 
 def compute_kolmogorov_smirnov_distance(pk, qk, dim):
-    """Compute Kolmogorov-Smirnov (KS) distance and p-value.
+    """Compute Kolmogorov-Smirnov (KS) distance.
 
     The Kolmogorov-Smirnov (KS) distance is bounded between 0 and 1,
     where 0 indicates that the two distributions are identical.
     The associated KS test p-value ranges from 0 to 1,
     with a value of 1 indicating no evidence against the null hypothesis that the distributions are identical.
+    When the p value is smaller than the significance level (e.g. < 0.05) the model is rejected.
+
+    If model parameters are estimated from the same data to which the model is compared,
+    the standard KS p-values are invalid.
+    The solution is to use a parametric bootstrap:
+    1. Fit model to your data
+    2. Simulate many datasets from that fitted gamma
+    3. Refit gamma for each simulated dataset
+    4. Compute KS statistic each time
+    5. Compare your observed KS statistic to the bootstrap distribution
 
     Parameters
     ----------
@@ -277,7 +290,6 @@ def compute_gof_stats(obs, pred, dim=DIAMETER_DIMENSION):
         - JSD: Jensen-Shannon distance
         - WD: Wasserstein-1 distance
         - KS: Kolmogorov-Smirnov statistic
-        - KS_pvalue: Kolmogorov-Smirnov Test p-value
     """
     # TODO: add censoring option (by setting values to np.nan?)
     from disdrodb.l2.empirical_dsd import get_mode_diameter
@@ -351,7 +363,7 @@ def compute_gof_stats(obs, pred, dim=DIAMETER_DIMENSION):
         wd = compute_wasserstein_distance(pk=pk, qk=qk, D=diameter, dD=diameter_bin_width, dim=dim)
 
         # Compute Kolmogorov-Smirnov distance
-        ks_stat, ks_p_value = compute_kolmogorov_smirnov_distance(pk=pk, qk=qk, dim=dim)
+        ks_stat, ks_pvalue = compute_kolmogorov_smirnov_distance(pk=pk, qk=qk, dim=dim)
 
     # Create an xarray.Dataset to hold the computed statistics
     ds = xr.Dataset(
@@ -368,7 +380,7 @@ def compute_gof_stats(obs, pred, dim=DIAMETER_DIMENSION):
             "JSD": js_distance,  # Jensen-Shannon distance
             "WD": wd,  # Wasserstein-1 distance
             "KS": ks_stat,  # Kolmogorov-Smirnov statistic
-            "KS_pvalue": ks_p_value,  # Kolmogorov-Smirnov Test p-value
+            # "KS_pvalue": ks_p_value,  # Kolmogorov-Smirnov Test p-value
         },
     )
     # Round

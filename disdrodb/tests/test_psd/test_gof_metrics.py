@@ -137,7 +137,7 @@ class TestComputeGoFStats:
         assert np.isnan(ds["JSD"].values)
         assert np.isnan(ds["WD"].values)
         assert np.isnan(ds["KS"].values)
-        assert np.isnan(ds["KS_pvalue"].values)
+        #  assert np.isnan(ds["KS_pvalue"].values)
         assert np.isnan(ds["R2"].values)
         assert np.isnan(ds["DmodeDiff"].values)
 
@@ -162,7 +162,7 @@ class TestComputeGoFStats:
         assert ds["JSD"].values == 0
         assert ds["WD"].values == 0
         assert ds["KS"].values == 0
-        assert ds["KS_pvalue"].values == 1
+        # assert ds["KS_pvalue"].values == 1
 
     def test_equal_with_variance_case(self):
         """Test equal constant values between observed and predicted values.
@@ -185,7 +185,7 @@ class TestComputeGoFStats:
         assert ds["JSD"].values == 0
         assert ds["WD"].values == 0
         assert ds["KS"].values == 0
-        assert ds["KS_pvalue"].values == 1
+        # assert ds["KS_pvalue"].values == 1
 
     def test_one_zero_case(self):
         """Test case where observed values are zero."""
@@ -205,7 +205,7 @@ class TestComputeGoFStats:
         assert np.isnan(ds["JSD"].values)
         assert np.isnan(ds["WD"].values)
         assert np.isnan(ds["KS"].values)
-        assert np.isnan(ds["KS_pvalue"].values)
+        # assert np.isnan(ds["KS_pvalue"].values)
 
     def test_zero_one_case(self):
         """Test case where predicted values are zero."""
@@ -225,7 +225,7 @@ class TestComputeGoFStats:
         assert np.isnan(ds["JSD"].values)
         assert np.isnan(ds["WD"].values)
         assert np.isnan(ds["KS"].values)
-        assert np.isnan(ds["KS_pvalue"].values)
+        # assert np.isnan(ds["KS_pvalue"].values)
 
     def test_real_case(self):
         """Test realistic case with varied observed and predicted values.
@@ -249,7 +249,7 @@ class TestComputeGoFStats:
         assert ds["JSD"].values == 0.25
         assert ds["WD"].values == 0.33
         assert ds["KS"].values == 0.17
-        assert ds["KS_pvalue"].values == 1
+        # assert ds["KS_pvalue"].values == 1
 
     def test_single_nan_case(self):
         """Test handling of NaN values in predictions.
@@ -327,7 +327,7 @@ class TestComputeGoFStats:
         assert ds["JSD"].values == 0.25
         assert ds["WD"].values == 0.33
         assert ds["KS"].values == 0.17
-        assert ds["KS_pvalue"].values == 1
+        # assert ds["KS_pvalue"].values == 1
 
     def test_only_diameter_dimension(self):
         """Test compute_gof_stats with only diameter dimension (no time).

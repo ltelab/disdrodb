@@ -257,7 +257,7 @@ class TestCheckObjective:
             "target": "Z",  # Scalar target
             "transformation": "log",
             "censoring": "none",
-            "loss": "KL",  # Distribution metric
+            "loss": "KLDiv",  # Distribution metric
         }
         with pytest.raises(ValueError):
             check_objective(objective)
@@ -794,16 +794,20 @@ class TestApplyTransformation:
         obs = np.array([0, 1, 10])
         pred = np.array([[0, 1, 10]])
         obs_t, pred_t = apply_transformation(obs, pred, "log")
-        expected_obs = np.log(np.array([1, 2, 11]))
+        expected_obs = np.log(obs + 1)
+        expected_pred = np.log(pred + 1)
         np.testing.assert_array_almost_equal(obs_t, expected_obs)
+        np.testing.assert_array_almost_equal(pred_t, expected_pred)
 
     def test_sqrt_transformation(self):
         """Sqrt transformation should apply square root."""
         obs = np.array([0, 1, 4, 9])
         pred = np.array([[0, 1, 4, 9]])
         obs_t, pred_t = apply_transformation(obs, pred, "sqrt")
-        expected_obs = np.sqrt(np.array([0, 1, 4, 9]))
+        expected_obs = np.sqrt(obs)
+        expected_pred = np.sqrt(pred)
         np.testing.assert_array_almost_equal(obs_t, expected_obs)
+        np.testing.assert_array_almost_equal(pred_t, expected_pred)
 
     def test_transformation_preserves_shape(self):
         """Transformation should preserve array shapes."""
@@ -1033,7 +1037,7 @@ class TestComputeLoss:
         obs = np.array([100, 200, 150])
         pred = np.array([[100, 200, 150], [50, 100, 75], [1000, 2000, 3000]])
         dD = np.array([0.1, 0.1, 0.1])
-        errors = compute_errors(obs, pred, loss="KL", dD=dD)
+        errors = compute_errors(obs, pred, loss="KLDiv", dD=dD)
         assert errors.shape == (3,)
         assert np.all(errors >= 0)
         # First prediction is identical to obs, so error should be ~0
@@ -1062,17 +1066,17 @@ class TestComputeLoss:
         # First prediction is identical to obs, so KS should be ~0
         np.testing.assert_allclose(errors[0], 0.0, atol=1e-10)
 
-    def test_error_ks_pvalue(self):
-        """KS p-value error metric should work."""
-        obs = np.array([100, 200, 150])
-        pred = np.array([[100, 200, 150], [50, 100, 75], [1000, 2000, 3000]])
-        dD = np.array([0.1, 0.1, 0.1])
-        errors = compute_errors(obs, pred, loss="KS_pvalue", dD=dD)
-        assert errors.shape == (3,)
-        assert np.all(errors >= 0)
-        assert np.all(errors <= 1)
-        # First prediction is identical to obs, so p-value should be high (near 1)
-        np.testing.assert_allclose(errors[0], 1.0, atol=1e-6)
+    # def test_error_ks_pvalue(self):
+    #     """KS p-value error metric should work."""
+    #     obs = np.array([100, 200, 150])
+    #     pred = np.array([[100, 200, 150], [50, 100, 75], [1000, 2000, 3000]])
+    #     dD = np.array([0.1, 0.1, 0.1])
+    #     errors = compute_errors(obs, pred, loss="KS_pvalue", dD=dD)
+    #     assert errors.shape == (3,)
+    #     assert np.all(errors >= 0)
+    #     assert np.all(errors <= 1)
+    #     # First prediction is identical to obs, so p-value should be high (near 1)
+    #     np.testing.assert_allclose(errors[0], 1.0, atol=1e-6)
 
     def test_error_js_distance(self):
         """JS distance error metric should work."""
@@ -1530,7 +1534,7 @@ class TestComputeWeightedLoss:
         D = np.array([0.5, 1.0, 1.5, 2.0])
         dD = np.array([0.1, 0.1, 0.1, 0.1])
         V = np.array([1.0, 2.0, 3.0, 4.0])
-        for loss in ["KL", "JSD", "WD", "KS"]:
+        for loss in ["KLDiv", "JSD", "WD", "KS"]:
             objectives = [
                 {
                     "target": "N(D)",

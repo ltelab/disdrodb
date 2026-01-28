@@ -97,6 +97,18 @@ n_large_hail:
   units: "1"
   description: "Count of hail particles larger than 8 mm in diameter."
   valid_min: 0
+n_margin_fallers:
+  long_name: "number of margin fallers"
+  standard_name: "number_of_margin_fallers"
+  units: "1"
+  description: "Count of particles falling at velocities significantly above the expected terminal velocity for their diameter. These may indicate measurement artifacts or non-hydrometeor particles."
+  valid_min: 0
+n_splashing:
+  long_name: "number of splashing drops"
+  standard_name: "number_of_splashing_drops"
+  units: "1"
+  description: "Count of splashing drops detected. Splashing drops are identified as particles with diameter between 0 and 6 mm and velocity <= 0.6 m/s."
+  valid_min: 0
 drop_number:
   description: Counts of drops per diameter and velocity class
   long_name: Drop counts per diameter and velocity class
@@ -411,3 +423,21 @@ wind_direction:
   description: "Wind direction in degrees (0-360)"
   long_name: Wind direction
   units: "degrees"
+flag_splashing:
+  long_name: "Splashing detection flag"
+  standard_name: "flag_splashing"
+  units: "1"
+  description: "Quality control flag indicating the presence of splashing drops. Flag is set to 1 when fraction_splashing (n_splashing/n_particles) exceeds 0.1 during no precipitation periods. Splashing drops are identified as particles with diameter_lower >= 0.0 mm, diameter_upper <= 6 mm, and velocity_upper <= 0.6 m/s."
+  valid_min: 0
+  valid_max: 1
+  flag_values: [0, 1]
+  flag_meanings: "no_splashing splashing_detected"
+flag_wind_artefacts:
+  long_name: "Wind artefacts detection flag"
+  standard_name: "flag_wind_artefacts"
+  units: "1"
+  description: "Quality control flag for strong wind artefacts in heavy rainfall. Wind artefacts are detected using criteria from Friedrich et al. (2013): particles with diameter_lower >= 5 mm and velocity_upper < 1 m/s."
+  valid_min: 0
+  valid_max: 1
+  flag_values: [0, 1]
+  flag_meanings: "no_wind_artefacts wind_artefacts_detected"

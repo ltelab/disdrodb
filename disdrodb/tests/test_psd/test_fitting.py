@@ -93,7 +93,7 @@ class TestGSOptimization:
     """Test PSD parameter estimation using Grid Search (GS)."""
 
     @pytest.mark.parametrize(("psd_model", "parameters", "optimizations"), CASES)
-    @pytest.mark.parametrize("transformation", TRANSFORMATIONS)
+    @pytest.mark.parametrize("transformation", list(TRANSFORMATIONS))
     # @pytest.mark.parametrize("loss", ["SSE", "MAE", "WD"]) # speed up tests by removing loss
     # @pytest.mark.parametrize("censoring", CENSORING) # speed up tests by removing censoring variations
     def test_gs_on_nd(self, psd_model, parameters, optimizations, transformation):

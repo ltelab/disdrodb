@@ -281,6 +281,24 @@ class TestL2MModelConfig:
         with pytest.raises(ValueError):
             L2MModelConfig(**data)
 
+    def test_invalid_fixed_parameters(self):
+        """Test invalid fixed_parameters when defined as list."""
+        data = copy.deepcopy(GAMMA_GS_CONFIG)
+        # Test this pass
+        _ = L2MModelConfig(**data)
+        # Now modify fixed parameters as a list
+        # User might specify:
+        # fixed_parameters:
+        # - i: 3
+        # - j: 4
+        # instead of
+        # fixed_parameters:
+        #   i: 3
+        #   j: 4
+        data["optimization_settings"]["fixed_parameters"] = [{"Lambda": 10}]
+        with pytest.raises(ValueError):
+            L2MModelConfig(**data)
+
 
 ####-------------------------------------------------------------------------.
 class TestTemporalResolutionsValidationMixin:

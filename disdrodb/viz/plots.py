@@ -32,8 +32,9 @@ from disdrodb.utils.time import ensure_sample_interval_in_seconds, regularize_da
 #### N(D) visualizations
 
 
-def _single_plot_nd_distribution(drop_number_concentration, diameter, diameter_bin_width):
-    fig, ax = plt.subplots(1, 1)
+def _single_plot_nd_distribution(drop_number_concentration, diameter, diameter_bin_width, ax=None, yscale="linear"):
+    if ax is None:
+        fig, ax = plt.subplots(1, 1)
     ax.bar(
         diameter,
         drop_number_concentration,
@@ -46,6 +47,7 @@ def _single_plot_nd_distribution(drop_number_concentration, diameter, diameter_b
     ax.set_title("Drop number concentration (N(D))")
     ax.set_xlabel("Drop diameter (mm)")
     ax.set_ylabel("N(D) [m-3 mm-1]")
+    ax.set_yscale(yscale)
     return ax
 
 
@@ -70,7 +72,7 @@ def _get_nd_variable(xr_obj, variable):
     return xr_obj
 
 
-def plot_nd(xr_obj, variable="drop_number_concentration", cmap=None, norm=None):
+def plot_nd(xr_obj, variable="drop_number_concentration", cmap=None, norm=None, yscale="linear", ax=None):
     """Plot drop number concentration N(D) timeseries."""
     da_nd = _get_nd_variable(xr_obj, variable=variable)
 
@@ -80,6 +82,8 @@ def plot_nd(xr_obj, variable="drop_number_concentration", cmap=None, norm=None):
             drop_number_concentration=da_nd.isel(velocity_method=0, missing_dims="ignore"),
             diameter=xr_obj["diameter_bin_center"],
             diameter_bin_width=xr_obj["diameter_bin_width"],
+            yscale=yscale,
+            ax=ax,
         )
         return ax
 
@@ -99,7 +103,7 @@ def plot_nd(xr_obj, variable="drop_number_concentration", cmap=None, norm=None):
 
     # Plot N(D)
     cbar_kwargs = {"label": "N(D) [m-3 mm-1]"}
-    p = da_nd.plot.pcolormesh(x="time", norm=norm, cmap=cmap, extend="max", cbar_kwargs=cbar_kwargs)
+    p = da_nd.plot.pcolormesh(x="time", norm=norm, cmap=cmap, extend="max", cbar_kwargs=cbar_kwargs, ax=ax)
     p.axes.set_title("Drop number concentration N(D)")
     p.axes.set_ylabel("Drop diameter (mm)")
     return p

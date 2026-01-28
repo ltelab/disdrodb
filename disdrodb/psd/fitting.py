@@ -1029,7 +1029,7 @@ def apply_exponential_gs(
             - ``MSE``: Mean Squared Error
             - ``RMSE``: Root Mean Squared Error
             - ``relMAE``: Relative Mean Absolute Error
-            - ``KL``: Kullback-Leibler Divergence
+            - ``KLDiv``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
@@ -1172,7 +1172,7 @@ def apply_gamma_gs(
             - ``MSE``: Mean Squared Error
             - ``RMSE``: Root Mean Squared Error
             - ``relMAE``: Relative Mean Absolute Error
-            - ``KL``: Kullback-Leibler Divergence
+            - ``KLDiv``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
@@ -1325,7 +1325,7 @@ def apply_generalized_gamma_gs(
             - ``MSE``: Mean Squared Error
             - ``RMSE``: Root Mean Squared Error
             - ``relMAE``: Relative Mean Absolute Error
-            - ``KL``: Kullback-Leibler Divergence
+            - ``KLDiv``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
@@ -1482,7 +1482,7 @@ def apply_lognormal_gs(
             - ``MSE``: Mean Squared Error
             - ``RMSE``: Root Mean Squared Error
             - ``relMAE``: Relative Mean Absolute Error
-            - ``KL``: Kullback-Leibler Divergence
+            - ``KLDiv``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
@@ -1631,7 +1631,7 @@ def apply_normalized_gamma_gs(
             - ``MSE``: Mean Squared Error
             - ``RMSE``: Root Mean Squared Error
             - ``relMAE``: Relative Mean Absolute Error
-            - ``KL``: Kullback-Leibler Divergence
+            - ``KLDiv``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
@@ -1783,7 +1783,7 @@ def apply_normalized_generalized_gamma_gs(
             - ``MSE``: Mean Squared Error
             - ``RMSE``: Root Mean Squared Error
             - ``relMAE``: Relative Mean Absolute Error
-            - ``KL``: Kullback-Leibler Divergence
+            - ``KLDiv``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
@@ -1927,7 +1927,7 @@ def get_exponential_parameters_gs(
             - ``MSE``: Mean Squared Error
             - ``RMSE``: Root Mean Squared Error
             - ``relMAE``: Relative Mean Absolute Error
-            - ``KL``: Kullback-Leibler Divergence
+            - ``KLDiv``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
@@ -2091,7 +2091,7 @@ def get_gamma_parameters_gs(
             - ``MSE``: Mean Squared Error
             - ``RMSE``: Root Mean Squared Error
             - ``relMAE``: Relative Mean Absolute Error
-            - ``KL``: Kullback-Leibler Divergence
+            - ``KLDiv``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
@@ -2268,7 +2268,7 @@ def get_generalized_gamma_parameters_gs(
             - ``MSE``: Mean Squared Error
             - ``RMSE``: Root Mean Squared Error
             - ``relMAE``: Relative Mean Absolute Error
-            - ``KL``: Kullback-Leibler Divergence
+            - ``KLDiv``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
@@ -2302,7 +2302,7 @@ def get_generalized_gamma_parameters_gs(
 
     # Define search space
     if mu is None:
-        mu = np.arange(0, 30, step=0.1)
+        mu = np.arange(0, 10, step=0.2)
     if c is None:
         c = np.arange(0, 10, step=0.2)
     if Lambda is None:
@@ -2445,7 +2445,7 @@ def get_lognormal_parameters_gs(
             - ``MSE``: Mean Squared Error
             - ``RMSE``: Root Mean Squared Error
             - ``relMAE``: Relative Mean Absolute Error
-            - ``KL``: Kullback-Leibler Divergence
+            - ``KLDiv``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
@@ -2610,7 +2610,7 @@ def get_normalized_gamma_parameters_gs(
             - ``MSE``: Mean Squared Error
             - ``RMSE``: Root Mean Squared Error
             - ``relMAE``: Relative Mean Absolute Error
-            - ``KL``: Kullback-Leibler Divergence
+            - ``KLDiv``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
@@ -2800,7 +2800,7 @@ def get_normalized_generalized_gamma_parameters_gs(
             - ``MSE``: Mean Squared Error
             - ``RMSE``: Root Mean Squared Error
             - ``relMAE``: Relative Mean Absolute Error
-            - ``KL``: Kullback-Leibler Divergence
+            - ``KLDiv``: Kullback-Leibler Divergence
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
@@ -2847,9 +2847,10 @@ def get_normalized_generalized_gamma_parameters_gs(
 
     # Define search space
     if mu is None:
-        mu = np.arange(-7, 30, step=0.01)
+        mu = np.arange(-6, 10, step=0.1)
+        # mu = np.arange(-7, 30, step=0.01)
     if c is None:
-        c = np.arange(0.01, 10, step=0.01)
+        c = np.arange(0.01, 10, step=0.1)
 
     # Define kwargs
     kwargs = {
@@ -3410,8 +3411,11 @@ def check_fixed_parameters(psd_model, fixed_parameters):
         return None
     if not isinstance(fixed_parameters, dict):
         raise ValueError("fixed_parameters must be a dictionary.")
+
     # Extract list of parameters
     parameters = set(fixed_parameters.keys())
+
+    # Check for NormalizedGeneralizedGammaPSD i and j are provided
     if psd_model == "NormalizedGeneralizedGammaPSD":
         if "i" not in parameters or "j" not in parameters:
             raise ValueError(
@@ -3419,7 +3423,7 @@ def check_fixed_parameters(psd_model, fixed_parameters):
             )
         parameters = parameters.difference({"i", "j"})
 
-    # Check validity of fixed_parameters name
+    # Check validity of fixed_parameters keys (only PSD parameters are allowed)
     _ = check_psd_parameters(psd_model=psd_model, parameters=parameters)
 
     # Check value validity
@@ -3651,6 +3655,13 @@ def check_optimization_settings(optimization_settings, optimization, psd_model):
     }
     optimization = check_optimization(optimization)
     check_psd_model(psd_model=psd_model, optimization=optimization)
+
+    # Check fixed parameters validity for optimization="GS"
+    if optimization == "GS":
+        optimization_settings["fixed_parameters"] = check_fixed_parameters(
+            psd_model=psd_model,
+            fixed_parameters=optimization_settings.get("fixed_parameters", None),
+        )
 
     # Retrieve the expected arguments for the given optimization method
     expected_arguments = dict_arguments.get(optimization, {})
@@ -3893,7 +3904,7 @@ def get_gs_parameters(ds, psd_model, fixed_parameters=None, objectives=None, sea
             Error metric.
             For ``"N(D)"`` and ``"H(x)"`` valid options are
             ``"SSE"``, ``"SAE"``, ``"MAE"``, ``"MSE"``, ``"RMSE"``, ``"relMAE"``
-            ``"KL"``, ``"JSD"``, ``"WD"``, ``"KS"``, ``"KS_pvalue"``.
+            ``"KLDiv"``, ``"JSD"``, ``"WD"``, ``"KS"``.
             For ``"R"``, ``"Z"``, ``"LWC"``, and ``"M<p>"`` valid options are
             ``"AE"``, ``"SE"``.
         - ``"loss_weight"`` : float, optional
@@ -4120,7 +4131,7 @@ def estimate_model_parameters(
                    Error metric.
                    For ``"N(D)"`` and ``"H(x)"`` valid options are
                    ``"SSE"``, ``"SAE"``, ``"MAE"``, ``"MSE"``, ``"RMSE"``, ``"relMAE"``
-                   ``"KL"``, ``"JSD"``, ``"WD"``, ``"KS"``, ``"KS_pvalue"``.
+                   ``"KLDiv"``, ``"JSD"``, ``"WD"``, ``"KS"``.
                    For ``"R"``, ``"Z"``, ``"LWC"``, and ``"M<p>"`` valid options are
                    ``"AE"``, ``"SE"``.
                - ``"loss_weight"`` : float, optional

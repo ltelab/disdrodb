@@ -592,31 +592,33 @@ def is_programmatic_downloadable(url, timeout=5):
         # Explicitly non-browser
         "User-Agent": "python-downloader/1.0",
     }
+    # Open stream and close it after check terminated
     try:
-        r = requests.get(
+        with requests.get(
             url,
             headers=headers,
             allow_redirects=True,
             timeout=timeout,
             stream=True,
-        )
+        ) as r:
+
+            # --- Hard fail signals ---
+            if r.status_code in (202, 403, 401):
+                return False
+
+            if r.headers.get("x-amzn-waf-action") == "challenge":
+                return False
+
+            content_type = r.headers.get("Content-Type", "").lower()
+            if "text/html" in content_type:
+                return False
+
+            content_length = r.headers.get("Content-Length")
+            if content_length == "0":
+                return False
+
+            # If server honored Range, we are good
+            return r.status_code in (200, 206)
+
     except requests.RequestException:
         return False
-
-    # --- Hard fail signals ---
-    if r.status_code in (202, 403, 401):
-        return False
-
-    if r.headers.get("x-amzn-waf-action") == "challenge":
-        return False
-
-    content_type = r.headers.get("Content-Type", "").lower()
-    if "text/html" in content_type:
-        return False
-
-    content_length = r.headers.get("Content-Length")
-    if content_length == "0":
-        return False
-
-    # If server honored Range, we are good
-    return r.status_code in (200, 206)
