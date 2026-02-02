@@ -69,14 +69,14 @@ def update_disdrodb_attrs(ds, product: str):
 
     Parameters
     ----------
-    ds : xarray dataset.
+    ds : xarray.Dataset
         Dataset
     product: str
         DISDRODB product.
 
     Returns
     -------
-    xarray dataset
+    xarray.Dataset
         Dataset.
     """
     attrs = ds.attrs.copy()

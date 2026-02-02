@@ -35,16 +35,17 @@ logger = logging.getLogger(__name__)
 
 
 def seconds_to_temporal_resolution(seconds):
-    """
-    Convert a duration in seconds to a readable string format (e.g., "1H30", "1D2H").
+    """Convert a duration in seconds to a readable string format (e.g., "1H30", "1D2H").
 
     Parameters
     ----------
-    - seconds (int): The time duration in seconds.
+    seconds: int
+        The time duration in seconds.
 
     Returns
     -------
-    - str: The duration as a string in a format like "30S", "1MIN30S", "1H30MIN", or "1D2H".
+    str:
+        The duration as a string in a format like "30S", "1MIN30S", "1H30MIN", or "1D2H".
     """
     timedelta = pd.Timedelta(seconds=seconds)
     components = timedelta.components

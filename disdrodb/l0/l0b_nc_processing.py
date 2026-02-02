@@ -186,7 +186,7 @@ def replace_custom_nan_flags(ds, dict_nan_flags, logger=None, verbose=False):
 
     Parameters
     ----------
-    df  : xarray.Dataset
+    df : xarray.Dataset
         Input xarray dataset
     dict_nan_flags : dict
         Dictionary with nan flags value to set as ``np.nan``.
@@ -221,7 +221,7 @@ def replace_nan_flags(ds, sensor_name, verbose, logger=None):
 
     Parameters
     ----------
-    ds  : xarray.Dataset
+    ds : xarray.Dataset
         Input xarray dataset
     dict_nan_flags : dict
         Dictionary with nan flags value to set as np.nan
@@ -245,7 +245,7 @@ def set_nan_outside_data_range(ds, sensor_name, verbose, logger=None):
 
     Parameters
     ----------
-    ds  : xarray.Dataset
+    ds : xarray.Dataset
         Input xarray dataset
     sensor_name : str
         Name of the sensor.
@@ -283,7 +283,7 @@ def set_nan_invalid_values(ds, sensor_name, verbose, logger=None):
 
     Parameters
     ----------
-    ds  : xarray.Dataset
+    ds : xarray.Dataset
         Input xarray dataset
     sensor_name : str
         Name of the sensor.

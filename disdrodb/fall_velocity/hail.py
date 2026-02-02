@@ -229,7 +229,7 @@ def get_hail_fall_velocity(diameter, model, ds_env=None, minimum_diameter=4):
     model : str
         The model to use for calculating the hail fall velocity. Must be one of the following:
        'Laurie1960', 'Knight1983LD', 'Knight1983HD', 'Heymsfield2014', 'Heymsfield2018', 'Fehlmann2020'.
-    ds_env : xr.Dataset, optional
+    ds_env : xarray.Dataset, optional
         A dataset containing the following environmental variables:
         - 'altitude' (m)
         - 'latitude' (°)
@@ -241,7 +241,7 @@ def get_hail_fall_velocity(diameter, model, ds_env=None, minimum_diameter=4):
 
     Returns
     -------
-    fall_velocity : xr.DataArray
+    fall_velocity : xarray.DataArray
         The calculated hail fall velocities per diameter.
 
     """

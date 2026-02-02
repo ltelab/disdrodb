@@ -335,7 +335,7 @@ def filter_dataset_by_time(ds, start_time=None, end_time=None):
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds : xarray.Dataset
         Dataset with a `time` coordinate.
     start_time : np.datetime64 or None
         Inclusive start bound. If None, no lower bound is applied.
@@ -344,7 +344,7 @@ def filter_dataset_by_time(ds, start_time=None, end_time=None):
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Subset dataset with the same ordering of timesteps (duplicates preserved).
     """
     time = ds["time"].to_numpy()

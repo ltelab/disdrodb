@@ -325,7 +325,7 @@ def retrieve_raindrop_beard_fall_velocity(
     ----------
     diameter : array-like
         Diameter of the raindrops in millimeters.
-    ds_env : xr.Dataset
+    ds_env : xarray.Dataset
         A dataset containing the following environmental variables:
         - 'altitude' :  Altitude in meters (m).
         - 'latitude' :  Latitude in degrees.
@@ -476,7 +476,7 @@ def get_rain_fall_velocity(diameter, model, ds_env=None):
     model : str
         The model to use for calculating the raindrop fall velocity. Must be one of the following:
         'Atlas1973', 'Beard1976', 'Brandes2002', 'Uplinger1981', 'VanDijk2002'.
-    ds_env : xr.Dataset, optional
+    ds_env : xarray.Dataset, optional
         Only required if model is 'Beard1976'.
         A dataset containing the following environmental variables:
         - 'altitude' (m)
@@ -489,7 +489,7 @@ def get_rain_fall_velocity(diameter, model, ds_env=None):
 
     Returns
     -------
-    fall_velocity : xr.DataArray
+    fall_velocity : xarray.DataArray
         The calculated raindrop fall velocities per diameter.
 
     Notes
@@ -560,7 +560,7 @@ def get_rain_fall_velocity_from_ds(ds, ds_env=None, model="Beard1976", diameter=
     model : str, optional
         Model to compute rain drop fall velocity.
         The default model is ``"Beard1976"``.
-    ds_env : xr.Dataset, optional
+    ds_env : xarray.Dataset, optional
         Only required if model is 'Beard1976'.
         A dataset containing the following environmental variables:
         - 'temperature' : Temperature in degrees Kelvin (K).

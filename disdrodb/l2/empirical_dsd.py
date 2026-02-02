@@ -162,7 +162,7 @@ def compute_qc_bins_metrics(ds):
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds : xarray.Dataset
         Input dataset containing one of the following variables:
         'drop_counts', 'drop_number_concentration', or 'drop_number'.
         If a 'velocity_method' dimension exists, only the first method is used.
@@ -170,7 +170,7 @@ def compute_qc_bins_metrics(ds):
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Dataset with a new 'metric' dimension of size 4 and coordinates:
         ['Nbins', 'Nbins_missing', 'Nbins_missing_fraction', 'Nbins_missing_consecutive'],
         indexed by 'time'.
@@ -1728,9 +1728,9 @@ def compute_integral_parameters(
 
     Parameters
     ----------
-    drop_number_concentration : xr.DataArray
+    drop_number_concentration : xarray.DataArray
         Drop number concentration in each diameter bin [#/m3/mm].
-    velocity : xr.DataArray
+    velocity : xarray.DataArray
         Fall velocity of drops in each diameter bin [m/s].
         The presence of a velocity_method dimension enable to compute the parameters
         with different velocity estimates.
@@ -1883,9 +1883,9 @@ def compute_spectrum_parameters(
 
     Parameters
     ----------
-    drop_number_concentration : xr.DataArray
+    drop_number_concentration : xarray.DataArray
         Drop number concentration in each diameter bin [#/m3/mm].
-    velocity : xr.DataArray
+    velocity : xarray.DataArray
         Fall velocity of drops in each diameter bin [m/s].
         The presence of a velocity_method dimension enable to compute the parameters
         with different velocity estimates.

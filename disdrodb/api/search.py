@@ -359,6 +359,7 @@ def available_stations(
               in the local DISDRODB Data Archive
             - if available_data is True, return stations where product data exists in the
               in the local DISDRODB Data Archive.
+
         The default is is False.
 
     return_tuple : bool, optional

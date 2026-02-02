@@ -667,8 +667,7 @@ def get_gamma_parameters(
     truncated_likelihood=True,
     optimizer="Nelder-Mead",
 ):
-    """
-    Estimate gamma distribution parameters for drop size distribution (DSD) data.
+    """Estimate gamma distribution parameters for drop size distribution (DSD) data.
 
     Parameters
     ----------
@@ -698,9 +697,11 @@ def get_gamma_parameters(
     -------
     xarray.Dataset
         Dataset containing the estimated gamma distribution parameters:
+
         - ``N0``: Intercept parameter.
         - ``mu``: Shape parameter.
         - ``Lambda``: Scale parameter.
+
         The dataset will also have an attribute ``disdrodb_psd_model`` set to ``GammaPSD``.
 
     Notes

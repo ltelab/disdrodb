@@ -144,7 +144,7 @@ def qc_spikes_isolated_precip(hydrometeor_type, sample_interval):
 
     Parameters
     ----------
-    hydrometeor_type: xr.DataArray
+    hydrometeor_type: xarray.DataArray
         Hydrometeor type classification array with a ``time`` coordinate.
         Precipitation presence is defined where ``hydrometeor_type>= 1``.
     sample_interval : float or int
@@ -153,7 +153,7 @@ def qc_spikes_isolated_precip(hydrometeor_type, sample_interval):
 
     Returns
     -------
-    flag_spikes : xr.DataArray of int
+    flag_spikes : xarray.DataArray of int
         Binary QC flag array (same dimensions as input) with:
             * 0 : no spike detected
             * 1 : isolated precipitation spike
