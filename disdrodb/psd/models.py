@@ -897,8 +897,60 @@ class NormalizedGeneralizedGammaPSD(XarrayPSD):
         return "NormalizedGeneralizedGammaPSD"
 
     @staticmethod
+    def normalized_formula(x, i, j, c, mu):
+        """Calculates N(D)/Nc from x=D/Dc.
+
+        This formula is useful to fit a single normalized PSD shape to data
+        in the double normalization framework.
+
+        Parameters
+        ----------
+        x : array-like
+            Normalized particle diameter: x = D/Dc
+        i : float
+            Moment index i
+        j : float
+            Moment index j
+        c : float
+            Shape parameter c
+        mu : float
+            Shape parameter μ
+
+        Returns
+        -------
+        array-like
+            N(D)/Nc values
+        """
+        # ---------------------------------------------------------------
+        # Compute lngamma i and j
+        gammaln_i = gammaln(mu + 1 + (i / c))
+        gammaln_j = gammaln(mu + 1 + (j / c))
+
+        # Compute gamma i and j
+        # gamma_i = gamma_f(mu + 1  + i / c)
+        # gamma_j = gamma_f(mu + 1  + j / c)
+
+        # Calculate normalization coefficient
+        # Equation: c * Γ_i^((j+c(μ+1))/(i-j)) * Γ_j^((-i-c(μ+1))/(i-j))
+        pow_i = (j + c * (mu + 1)) / (i - j)
+        pow_j = (-i - c * (mu + 1)) / (i - j)
+        norm_coeff = c * np.exp(pow_i * gammaln_i + pow_j * gammaln_j)
+        # norm_coeff = c * (gamma_i ** pow_i) * (gamma_j ** pow_j)
+
+        # Compute ratio gammas
+        # ratio_gammas = gamma_i / gamma_j
+        ratio_gammas = np.exp(gammaln_i - gammaln_j)
+
+        # Calculate the full PSD formula
+        # N_c' * norm_coeff * (D/D_c')^(c(μ+1)) * exp(-(Γ_i/Γ_j)^(c/(i-j)) * (D/D_c')^c)
+        exponent_power = (ratio_gammas) ** (c / (i - j))
+        power_term = x ** (c * (mu + 1) - 1)
+        exp_term = np.exp(-exponent_power * (x**c))
+        return norm_coeff * power_term * exp_term
+
+    @staticmethod
     def formula(D, i, j, Nc, Dc, c, mu):
-        """Calculates the Normalized Generalized Gamma PSD values.
+        """Calculates the Normalized Generalized Gamma PSD N(D) values.
 
         N_c' and D_c' are computed internally from the parameters.
 
@@ -927,32 +979,14 @@ class NormalizedGeneralizedGammaPSD(XarrayPSD):
         # Compute x
         x = D / Dc
 
-        # ---------------------------------------------------------------
-        # Compute lngamma i and j
-        gammaln_i = gammaln(mu + 1 + (i / c))
-        gammaln_j = gammaln(mu + 1 + (j / c))
-
-        # Compute gamma i and j
-        # gamma_i = gamma_f(mu + 1  + i / c)
-        # gamma_j = gamma_f(mu + 1  + j / c)
-
-        # Calculate normalization coefficient
-        # Equation: c * Γ_i^((j+c(μ+1))/(i-j)) * Γ_j^((-i-c(μ+1))/(i-j))
-        pow_i = (j + c * (mu + 1)) / (i - j)
-        pow_j = (-i - c * (mu + 1)) / (i - j)
-        norm_coeff = c * np.exp(pow_i * gammaln_i + pow_j * gammaln_j)
-        # norm_coeff = c * (gamma_i ** pow_i) * (gamma_j ** pow_j)
-
-        # Compute ratio gammas
-        # ratio_gammas = gamma_i / gamma_j
-        ratio_gammas = np.exp(gammaln_i - gammaln_j)
-
-        # Calculate the full PSD formula
-        # N_c' * norm_coeff * (D/D_c')^(c(μ+1)) * exp(-(Γ_i/Γ_j)^(c/(i-j)) * (D/D_c')^c)
-        exponent_power = (ratio_gammas) ** (c / (i - j))
-        power_term = x ** (c * (mu + 1) - 1)
-        exp_term = np.exp(-exponent_power * (x**c))
-        return Nc * norm_coeff * power_term * exp_term
+        norm_nd = NormalizedGeneralizedGammaPSD.normalized_formula(
+            x=x,
+            i=i,
+            j=j,
+            c=c,
+            mu=mu,
+        )
+        return Nc * norm_nd
 
     @staticmethod
     def from_parameters(parameters):

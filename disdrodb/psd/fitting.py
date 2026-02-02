@@ -35,6 +35,7 @@ from disdrodb.l2.empirical_dsd import (
 )
 from disdrodb.psd.grid_search import (
     check_objectives,
+    check_transformation,
     compute_weighted_loss,
 )
 from disdrodb.psd.models import (
@@ -1093,7 +1094,7 @@ def apply_exponential_gs(
 
     # If asked, return cost function
     if return_loss:
-        return total_loss, parameters
+        return parameters, total_loss
 
     return parameters
 
@@ -1243,7 +1244,7 @@ def apply_gamma_gs(
     # If asked, return cost function
     if return_loss:
         total_loss = total_loss.reshape(mu_grid.shape)
-        return total_loss, parameters
+        return parameters, total_loss
 
     return parameters
 
@@ -1403,7 +1404,7 @@ def apply_generalized_gamma_gs(
     # If asked, return cost function
     if return_loss:
         total_loss = total_loss.reshape(mu_grid.shape)
-        return total_loss, parameters
+        return parameters, total_loss
 
     return parameters
 
@@ -1551,7 +1552,7 @@ def apply_lognormal_gs(
     # If asked, return cost function
     if return_loss:
         total_loss = total_loss.reshape(mu_grid.shape)
-        return total_loss, parameters
+        return parameters, total_loss
 
     return parameters
 
@@ -1694,7 +1695,7 @@ def apply_normalized_gamma_gs(
 
     # If asked, return cost function
     if return_loss:
-        return total_loss, parameters
+        return parameters, total_loss
 
     return parameters
 
@@ -1864,7 +1865,7 @@ def apply_normalized_generalized_gamma_gs(
     # If asked, return cost function
     if return_loss:
         total_loss = total_loss.reshape(mu_grid.shape)
-        return total_loss, parameters
+        return parameters, total_loss
     return parameters
 
 
@@ -1986,7 +1987,7 @@ def get_exponential_parameters_gs(
 
     # Return cost function if asked
     if return_loss:
-        da_cost_function, da_parameters = xr.apply_ufunc(
+        da_parameters, da_cost_function = xr.apply_ufunc(
             apply_exponential_gs,
             # Variables varying over time
             Nt,
@@ -1996,7 +1997,7 @@ def get_exponential_parameters_gs(
             kwargs=kwargs,
             # Settings
             input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
-            output_core_dims=[["Lambda_values"], ["parameters"]],
+            output_core_dims=[["parameters"], ["Lambda_values"]],
             vectorize=True,
             dask="parallelized",
             # Lengths of the new output_core_dims dimensions.
@@ -2160,7 +2161,7 @@ def get_gamma_parameters_gs(
             "parameters": 3,
         }
         # Compute cost function and parameters
-        da_cost_function, da_parameters = xr.apply_ufunc(
+        da_parameters, da_cost_function = xr.apply_ufunc(
             apply_gamma_gs,
             # Variables varying over time
             Nt,
@@ -2170,7 +2171,7 @@ def get_gamma_parameters_gs(
             kwargs=kwargs,
             # Settings
             input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
-            output_core_dims=[["Lambda_values", "mu_values"], ["parameters"]],
+            output_core_dims=[["parameters"], ["Lambda_values", "mu_values"]],
             vectorize=True,
             dask="parallelized",
             # Lengths of the new output_core_dims dimensions.
@@ -2341,7 +2342,7 @@ def get_generalized_gamma_parameters_gs(
             "parameters": 4,
         }
         # Compute
-        da_cost_function, da_parameters = xr.apply_ufunc(
+        da_parameters, da_cost_function = xr.apply_ufunc(
             apply_generalized_gamma_gs,
             # Variables varying over time
             Nt,
@@ -2351,7 +2352,7 @@ def get_generalized_gamma_parameters_gs(
             kwargs=kwargs,
             # Settings
             input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
-            output_core_dims=[["Lambda_values", "mu_values", "c_values"], ["parameters"]],
+            output_core_dims=[["parameters"], ["Lambda_values", "mu_values", "c_values"]],
             vectorize=True,
             dask="parallelized",
             dask_gufunc_kwargs={"output_sizes": output_dict_size},
@@ -2507,7 +2508,7 @@ def get_lognormal_parameters_gs(
 
     # Return cost function if asked
     if return_loss:
-        da_cost_function, da_parameters = xr.apply_ufunc(
+        da_parameters, da_cost_function = xr.apply_ufunc(
             apply_lognormal_gs,
             # Variables varying over time
             Nt,
@@ -2517,7 +2518,7 @@ def get_lognormal_parameters_gs(
             kwargs=kwargs,
             # Settings
             input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
-            output_core_dims=[["sigma_values", "mu_values"], ["parameters"]],
+            output_core_dims=[["parameters"], ["sigma_values", "mu_values"]],
             vectorize=True,
             dask="parallelized",
             # Lengths of the new output_core_dims dimensions.
@@ -2686,7 +2687,7 @@ def get_normalized_gamma_parameters_gs(
 
     # Return cost function if asked
     if return_loss:
-        da_cost_function, da_parameters = xr.apply_ufunc(
+        da_parameters, da_cost_function = xr.apply_ufunc(
             apply_normalized_gamma_gs,
             # Variables varying over time
             Nw,
@@ -2697,7 +2698,7 @@ def get_normalized_gamma_parameters_gs(
             kwargs=kwargs,
             # Settings
             input_core_dims=[[], [], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
-            output_core_dims=[["mu_values"], ["parameters"]],
+            output_core_dims=[["parameters"], ["mu_values"]],
             vectorize=True,
             dask="parallelized",
             # Lengths of the new output_core_dims dimensions.
@@ -2883,7 +2884,7 @@ def get_normalized_generalized_gamma_parameters_gs(
 
     # Return cost function if asked
     if return_loss:
-        da_cost_function, da_parameters = xr.apply_ufunc(
+        da_parameters, da_cost_function = xr.apply_ufunc(
             apply_normalized_generalized_gamma_gs,
             # Variables varying over time
             Nc,
@@ -2894,7 +2895,7 @@ def get_normalized_generalized_gamma_parameters_gs(
             kwargs=kwargs,
             # Settings
             input_core_dims=[[], [], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
-            output_core_dims=[["c_values", "mu_values"], ["parameters"]],
+            output_core_dims=[["parameters"], ["c_values", "mu_values"]],
             vectorize=True,
             dask="parallelized",
             # Lengths of the new output_core_dims dimensions.
@@ -2926,6 +2927,142 @@ def get_normalized_generalized_gamma_parameters_gs(
     )
     ds_parameters = _create_parameters_dataset(da_parameters, i=i, j=j)
     return ds_parameters
+
+
+def fit_ngg_on_normalized_space(
+    x,
+    ND_norm,
+    # PSD parameters
+    i,
+    j,
+    mu=None,
+    c=None,
+    # Optimization options
+    transformation="log",
+    loss="SSE",
+    # Output options
+    return_loss=False,
+):
+    """Fit a NormalizedGeneralizedGammaPSD model in normalized space.
+
+    This function performs a grid search optimization to find the best parameters
+    (mu, c) for the NormalizedGeneralizedGammaPSD model by minimizing a cost function.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        Normalized diameter parameter (D/Dc) [-].
+    ND_norm : numpy.ndarray
+        Observed normalized PSD data (N(D)/Nc [-].
+    i : int
+        Moment order i of the NormalizedGeneralizedGammaPSD.
+    j : int
+        Moment order j of the NormalizedGeneralizedGammaPSD.
+    mu : int, float or numpy.ndarray
+        mu parameter values to search.
+    c : int, float or numpy.ndarray
+        c parameter values to search.
+    transformation : str, optional
+        Transformation applied to the target quantity before computing the loss.
+        The default is ``"log"``.
+        Valid options:
+        - ``"identity"`` : No transformation
+        - ``"log"`` : Logarithmic transformation
+        - ``"sqrt"`` : Square root transformation
+    loss : int, optional
+        Loss function. The default is ``SSE``.
+        Valid options are:
+        - ``SSE``: Sum of Squared Errors
+        - ``SAE``: Sum of Absolute Errors
+        - ``MAE``: Mean Absolute Error
+        - ``MSE``: Mean Squared Error
+        - ``RMSE``: Root Mean Squared Error
+        - ``relMAE``: Relative Mean Absolute Error
+    return_loss : bool, optional
+        If True, return both the loss surface and parameters.
+        Default is False.
+
+    Returns
+    -------
+    parameters : ndarray
+        Best parameters [mu, c].
+        An array of NaN values is returned if no valid solution is found.
+    total_loss : ndarray, optional
+        2D array of total loss values reshaped to (len(mu), len(c)).
+        Only returned if return_loss=True.
+
+    """
+    # Ensure input is numpy array
+    x = np.asarray(x)
+    ND_norm = np.asarray(ND_norm)
+
+    # Define search space
+    if mu is None:
+        mu = np.arange(-6, 20, step=0.1)
+    if c is None:
+        c = np.arange(0.01, 20, step=0.1)
+
+    # Define combinations of parameters for grid search
+    mu_grid, c_grid = np.meshgrid(
+        mu,
+        c,
+        indexing="xy",
+    )
+    mu_arr = mu_grid.ravel()
+    c_arr = c_grid.ravel()
+
+    # Define objectives
+    transformation = check_transformation(transformation)
+    valid_loss = ["SSE", "SAE", "MAE", "MSE", "RMSE", "relMAE"]
+    if loss not in valid_loss:
+        raise ValueError(f"Invalid loss {loss}. Valid loss are {valid_loss}")
+
+    objectives = [
+        {
+            "target": "N(D)",  # dummy. Do not change
+            "censoring": "none",  # dummy. Do not change
+            "transformation": transformation,
+            "loss": loss,
+        },
+    ]
+
+    # Perform grid search
+    with suppress_warnings():
+
+        # Compute N(D)/Nc
+        ND_norm_preds = NormalizedGeneralizedGammaPSD.normalized_formula(
+            x=x[None, :],
+            i=i,
+            j=j,
+            mu=mu_arr[:, None],
+            c=c_arr[:, None],
+        )
+
+        # Compute loss
+        total_loss = compute_weighted_loss(
+            ND_obs=ND_norm,
+            ND_preds=ND_norm_preds,
+            D=x,
+            dD=None,
+            V=None,
+            objectives=objectives,
+        )
+
+    # Define best parameters
+    if not np.all(np.isnan(total_loss)):
+        best_index = np.nanargmin(total_loss)
+        mu_best, c_best = mu_arr[best_index].item(), c_arr[best_index].item()
+        parameters = np.array([mu_best, c_best])
+    else:
+        parameters = np.array([np.nan, np.nan])
+
+    # If asked, return cost function
+    if return_loss:
+        total_loss = total_loss.reshape(mu_grid.shape)
+        total_loss = xr.DataArray(total_loss, dims=["c_values", "mu_values"])
+        total_loss = total_loss.assign_coords({"mu_values": mu, "c_values": c})
+        return parameters, total_loss
+    return parameters
 
 
 ####-----------------------------------------------------------------.
