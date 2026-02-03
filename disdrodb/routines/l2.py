@@ -761,7 +761,7 @@ def run_l2m_station(
         # -----------------------------------------------------------------.
         # Loop over distributions to fit
         # model_name = "GAMMA_ML"
-        # model_name = "LOGNORMAL_GS_ND_MAE"
+        # model_name = "LOGNORMAL_GS_ND_SSE"
         # model_options =  l2m_options["models"][model_name]
         # Retrieve list of models to fit
         models = global_product_options.pop("models")

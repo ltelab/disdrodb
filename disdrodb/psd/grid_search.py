@@ -1002,7 +1002,7 @@ def compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives, Nc=None):
 
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
-            Must be specified if len(objectives) > 1.
+            Must be specified if more than one objective is specified.
     Nc : float, optional
         Normalization constant for H(x) target.
         If provided, N(D) will be divided by Nc.

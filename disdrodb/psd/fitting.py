@@ -1071,7 +1071,7 @@ def apply_exponential_gs(
 
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
-            Must be specified if len(objectives) > 1.
+            Must be specified if more than one objective is specified.
     return_loss : bool, optional
         If True, return both the loss surface and parameters.
         Default is False.
@@ -1224,7 +1224,7 @@ def apply_gamma_gs(
 
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
-            Must be specified if len(objectives) > 1.
+            Must be specified if more than one objective is specified.
     return_loss : bool, optional
         If True, return both the loss surface and parameters.
         Default is False.
@@ -1387,7 +1387,7 @@ def apply_generalized_gamma_gs(
 
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
-            Must be specified if len(objectives) > 1.
+            Must be specified if more than one objective is specified.
     return_loss : bool, optional
         If True, return both the loss surface and parameters.
         Default is False.
@@ -1554,7 +1554,7 @@ def apply_lognormal_gs(
 
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
-            Must be specified if len(objectives) > 1.
+            Must be specified if more than one objective is specified.
     return_loss : bool, optional
         If True, return both the loss surface and parameters.
         Default is False.
@@ -1713,7 +1713,7 @@ def apply_normalized_gamma_gs(
 
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
-            Must be specified if len(objectives) > 1.
+            Must be specified if more than one objective is specified.
     return_loss : bool, optional
         If True, return both the loss surface and parameters.
         Default is False.
@@ -1875,7 +1875,7 @@ def apply_normalized_generalized_gamma_gs(
 
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
-            Must be specified if len(objectives) > 1.
+            Must be specified if more than one objective is specified.
     return_loss : bool, optional
         If True, return both the loss surface and parameters.
         Default is False.
@@ -2031,7 +2031,7 @@ def get_exponential_parameters_gs(
 
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
-            Must be specified if len(objectives) > 1.
+            Must be specified if more than one objective is specified.
     return_loss : bool, optional
         If True, return both the loss surface and parameters.
         Default is False.
@@ -2207,7 +2207,7 @@ def get_gamma_parameters_gs(
 
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
-            Must be specified if len(objectives) > 1.
+            Must be specified if more than one objective is specified.
     return_loss : bool, optional
         If True, return both the loss surface and parameters.
         Default is False.
@@ -2232,9 +2232,9 @@ def get_gamma_parameters_gs(
 
     # Define search space
     if mu is None:
-        mu = np.arange(0, 40, step=0.1)
+        mu = np.arange(0, 15, step=0.1)
     if Lambda is None:
-        Lambda = np.arange(0, 60, step=0.1)
+        Lambda = np.arange(0, 30, step=0.1)
 
     # Define kwargs
     kwargs = {
@@ -2396,7 +2396,7 @@ def get_generalized_gamma_parameters_gs(
 
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
-            Must be specified if len(objectives) > 1.
+            Must be specified if more than one objective is specified.
     return_loss : bool, optional
         If True, return both the loss surface and parameters.
         Default is False.
@@ -2585,7 +2585,7 @@ def get_lognormal_parameters_gs(
 
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
-            Must be specified if len(objectives) > 1.
+            Must be specified if more than one objective is specified.
     return_loss : bool, optional
         If True, return both the loss surface and parameters.
         Default is False.
@@ -2762,7 +2762,7 @@ def get_normalized_gamma_parameters_gs(
 
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
-            Must be specified if len(objectives) > 1.
+            Must be specified if more than one objective is specified.
     return_loss : bool, optional
         If True, return both the loss surface and parameters.
         Default is False.
@@ -2964,7 +2964,7 @@ def get_normalized_generalized_gamma_parameters_gs(
 
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
-            Must be specified if len(objectives) > 1.
+            Must be specified if more than one objective is specified.
     return_loss : bool, optional
         If True, return both the loss surface and parameters.
         Default is False.
@@ -4069,11 +4069,13 @@ def get_ml_parameters(
     ds : xarray.Dataset
         Input dataset containing drop number concentration data and diameter information.
         It must include the following variables:
+
         - ``drop_number_concentration``: The number concentration of drops.
         - ``diameter_bin_width``": The width of each diameter bin.
         - ``diameter_bin_lower``: The lower bounds of the diameter bins.
         - ``diameter_bin_upper``: The upper bounds of the diameter bins.
         - ``diameter_bin_center``: The center values of the diameter bins.
+
     psd_model : str
         The PSD model to fit. See ``available_psd_models()``.
     init_method: str or list
@@ -4162,46 +4164,58 @@ def get_gs_parameters(ds, psd_model, fixed_parameters=None, objectives=None, sea
     ----------
     ds : xarray.Dataset
         Input dataset containing PSD observations. Must include:
+
         - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
         - ``diameter_bin_center`` : Diameter bin centers [mm]
         - ``diameter_bin_width`` : Diameter bin widths [mm]
         - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if any objective targets 'R')
+
     psd_model : str
         Name of the PSD model to fit. Valid options are:
+
         - ``"GammaPSD"`` : Gamma distribution
         - ``"NormalizedGammaPSD"`` : Normalized gamma distribution
         - ``"LognormalPSD"`` : Lognormal distribution
         - ``"ExponentialPSD"`` : Exponential distribution
         - ``"NormalizedGeneralizedGammaPSD"`` : Normalized generalized gamma distribution
+
     objectives : list of dict
         List of optimization objectives. Each objective dict must contain:
 
         - ``"target"`` : str
             Target quantity to optimize. Valid options:
+
             - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"H(x)"`` : Normalized drop number concentration [-]. Only for Normalized PSD models.
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
             - ``"M<p>"`` : Moment of order p
+
         - ``"transformation"`` : str
             Transformation applied before computing the error. Valid options:
+
             - ``"identity"`` : No transformation
             - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
+
         - ``"censoring"`` : str
             Censoring applied to observed PSD. Valid options:
+
             - ``"none"`` : No censoring applied
             - ``"left"`` : Left-censored (remove leading zero bins)
             - ``"right"`` : Right-censored (remove trailing zero bins)
             - ``"both"`` : Both sides censored
+
         - ``"loss"`` : str
             Error metric.
-            For ``"N(D)"`` and ``"H(x)"`` valid options are
-            ``"SSE"``, ``"SAE"``, ``"MAE"``, ``"MSE"``, ``"RMSE"``, ``"relMAE"``
+            For ``"N(D)"`` and ``"H(x)"`` valid options are ``"SSE"``, ``"SAE"``,
+            ``"MAE"``, ``"MSE"``, ``"RMSE"``, ``"relMAE"``
             ``"KLDiv"``, ``"JSD"``, ``"WD"``, ``"KS"``.
+
             For ``"R"``, ``"Z"``, ``"LWC"``, and ``"M<p>"`` valid options are
             ``"AE"``, ``"SE"``.
+
         - ``"loss_weight"`` : float, optional
             Weight for this objective in the combined loss (default: 1.0 for single objective).
             When multiple objectives are provided, weights are normalized to sum to 1.0.
@@ -4211,19 +4225,19 @@ def get_gs_parameters(ds, psd_model, fixed_parameters=None, objectives=None, sea
         values are scalars. Example: {"mu": 2.0, "Lambda": 1.5}
     search_space : dict, optional
         Search space configuration for parameters. Each parameter can define:
+
         - ``"min"`` : float, Minimum value
         - ``"max"`` : float, Maximum value
         - ``"step"`` : float, Step size for parameter grid
 
-        Example:
-            {"mu": {"min": 0, "max": 10, "step": 0.2},
-             "Lambda": {"min": 0.1, "max": 5, "step": 0.1}}
+        Example: {"mu": {"min": 0, "max": 10, "step": 0.2}}
 
     Returns
     -------
     ds_params : xarray.Dataset
         Dataset containing the estimated PSD model parameters.
         Variables depend on the selected ``psd_model``:
+
         - ``GammaPSD`` : ``N0``, ``mu``, ``Lambda``
         - ``NormalizedGammaPSD`` : ``Nw``, ``mu``, ``D50``
         - ``LognormalPSD`` : ``Nt``, ``mu``, ``sigma``

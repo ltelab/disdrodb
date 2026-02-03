@@ -599,7 +599,7 @@ def check_timesteps_regularity(ds, sample_interval, verbose=False, logger=None):
 #### Wrapper
 
 
-def _finalize_l0c_dataset(ds, sample_interval, sensor_name, verbose=True, logger=None):
+def finalize_l0c_dataset(ds, sample_interval, sensor_name, verbose=True, logger=None):
     """Finalize a L0C dataset with unique sampling interval.
 
     It adds the sampling_interval coordinate and it regularizes the timesteps for trailing seconds.
@@ -761,7 +761,7 @@ def create_l0c_datasets(
     # - Add and ensure sample_interval coordinate has just 1 value (not varying with time)
     # - Regularize timesteps for trailing seconds
     dict_ds = {
-        sample_interval: _finalize_l0c_dataset(
+        sample_interval: finalize_l0c_dataset(
             ds=ds,
             sample_interval=sample_interval,
             sensor_name=sensor_name,

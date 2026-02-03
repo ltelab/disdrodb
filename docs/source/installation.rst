@@ -204,11 +204,10 @@ You can install Tectonic using conda:
 
    conda install -c conda-forge tectonic
 
+.. _pytmatrix_installation:
 
 T-Matrix Radar Simulations
 ............................
-
-.. _pytmatrix_installation:
 
 To simulate radar polarimetric variables in the DISDRODB L2E and L2M products, you must install the pyTMatrix package.
 The original pyTMatrix can be difficult to install on recent Python versions.

@@ -847,6 +847,15 @@ def open_readers_directory():
     open_file_explorer(readers_directory)
 
 
+def open_products_options():
+    """Open the disdrodb product options directory."""
+    from disdrodb.configs import get_products_configs_dir
+
+    products_configs_dir = get_products_configs_dir()
+
+    open_file_explorer(products_configs_dir)
+
+
 def open_metadata_archive(
     metadata_archive_dir=None,
 ):

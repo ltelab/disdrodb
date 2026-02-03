@@ -123,9 +123,10 @@ Documentation
    quick_start
    products
    products_configuration
+   archive_processing
+   advanced_tutorials
    metadata_archive
    metadata
-   processing
    readers
    sensor_configs
    contribute_data

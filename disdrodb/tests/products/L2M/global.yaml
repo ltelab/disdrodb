@@ -1,5 +1,5 @@
 temporal_resolutions: ["10MIN"]
-models: ["GAMMA_ML", "NGAMMA_GS_LOG_ND_MAE"]
+models: ["GAMMA_ML", "NGAMMA_GS_LOG_ND_SSE"]
 archive_options:
   strategy: time_block
   strategy_options:

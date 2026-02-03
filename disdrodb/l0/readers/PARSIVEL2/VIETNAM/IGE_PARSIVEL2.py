@@ -17,12 +17,10 @@
 # -----------------------------------------------------------------------------.
 import os
 
-import numpy as np
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
-from disdrodb.utils.logger import log_error
 
 
 def reader_parsivel(filepath, logger):
@@ -115,7 +113,7 @@ def reader_parsivel(filepath, logger):
         "sensor_temperature_trasmitter",
         "V_Batt_Min",
     ]
-    
+
     ##------------------------------------------------------------------------.
     #### Assign column names
     df.columns = column_names
