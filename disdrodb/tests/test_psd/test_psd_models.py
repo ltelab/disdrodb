@@ -26,8 +26,10 @@ from disdrodb.psd.models import (
     BinnedPSD,
     ExponentialPSD,
     GammaPSD,
+    GeneralizedGammaPSD,
     LognormalPSD,
     NormalizedGammaPSD,
+    NormalizedGeneralizedGammaPSD,
     available_psd_models,
     check_psd_model,
     create_psd,
@@ -43,7 +45,14 @@ class TestPSDUtilityFunctions:
     def test_available_psd_models(self):
         """Check the list of available PSD models."""
         models = available_psd_models()
-        expected_models = ["LognormalPSD", "ExponentialPSD", "GammaPSD", "NormalizedGammaPSD"]
+        expected_models = [
+            "LognormalPSD",
+            "ExponentialPSD",
+            "GammaPSD",
+            "NormalizedGammaPSD",
+            "GeneralizedGammaPSD",
+            "NormalizedGeneralizedGammaPSD",
+        ]
         assert set(models) == set(expected_models), "Mismatch in available PSD models."
 
     def test_check_psd_model(self):
@@ -237,7 +246,7 @@ class TestLognormalPSD:
     def test_required_parameters(self):
         """Check the required parameters list."""
         req = LognormalPSD.required_parameters()
-        assert req == ["Nt", "mu", "sigma"], "Incorrect required parameters."
+        assert set(req) == {"Nt", "mu", "sigma"}, "Incorrect required parameters."
 
     def test_parameters_summary(self):
         """Check parameters summary handling."""
@@ -376,7 +385,7 @@ class TestGammaPSD:
     def test_required_parameters(self):
         """Check the required parameters list."""
         req = GammaPSD.required_parameters()
-        assert req == ["N0", "mu", "Lambda"], "Incorrect required parameters."
+        assert set(req) == {"N0", "mu", "Lambda"}, "Incorrect required parameters."
 
     def test_parameters_summary(self):
         """Check parameters summary handling."""
@@ -430,19 +439,19 @@ class TestExponentialPSD:
 
     def test_exponential_xarray_parameters(self):
         """Check PSD with xarray parameters inputs produce valid PSD values."""
-        N0 = xr.DataArray([1.0, 2.0], dims="time")
+        N0 = xr.DataArray([10.0, 20.0], dims="time")
         Lambda = xr.DataArray([2.0, 3.0], dims="time")
         psd = ExponentialPSD(N0=N0, Lambda=Lambda)
         # Check input scalar
         output = psd(1.0)
         assert isinstance(output, xr.DataArray)
         assert output.sizes == {"time": 2}
-        np.testing.assert_allclose(output.to_numpy(), np.array([0.13533528, 0.09957414]), atol=1e-5)
+        np.testing.assert_allclose(output.to_numpy(), np.array([1.353353, 0.995741]), atol=1e-5)
         # Check input numpy array diameters
         D = [1.0, 2.0, 3.0]
         output = psd(D)
         assert output.sizes == {"time": 2, DIAMETER_DIMENSION: 3}
-        expected_array = np.array([[0.13533528, 0.01831564, 0.00247875], [0.09957414, 0.0049575, 0.00024682]])
+        expected_array = np.array([[1.353353, 0.183156, 0.024788], [0.995741, 0.049575, 0.002468]])
         np.testing.assert_allclose(output.to_numpy(), expected_array, atol=1e-5)
         # Check input dask array diameters
         D = dask.array.from_array([1.0, 2.0, 3.0])
@@ -503,7 +512,7 @@ class TestExponentialPSD:
     def test_required_parameters(self):
         """Check the required parameters list."""
         req = ExponentialPSD.required_parameters()
-        assert req == ["N0", "Lambda"], "Incorrect required parameters."
+        assert set(req) == {"N0", "Lambda"}, "Incorrect required parameters."
 
     def test_parameters_summary(self):
         """Check parameters summary handling."""
@@ -543,22 +552,22 @@ class TestNormalizedGammaPSD:
 
     def test_normalizedgamma_scalar_parameters(self):
         """Check PSD with scalar parameters inputs produce valid PSD values."""
-        psd = NormalizedGammaPSD(Nw=1.0, D50=2.0, mu=1.0)
+        psd = NormalizedGammaPSD(Nw=100.0, D50=2.0, mu=1.0)
         # Check input scalar
-        np.testing.assert_allclose(psd(1.0), 0.14816736025935, atol=1e-5)
+        np.testing.assert_allclose(psd(1.0), 14.816736, atol=1e-5)
         # Check input numpy array
-        np.testing.assert_allclose(psd(np.array([1.0, 2.0])), [0.14816736, 0.02868831], atol=1e-5)
+        np.testing.assert_allclose(psd(np.array([1.0, 2.0])), [14.816736, 2.868831], atol=1e-5)
         # Check input dask array
-        np.testing.assert_allclose(psd(dask.array.from_array([1.0, 2.0])), [0.14816736, 0.02868831], atol=1e-5)
+        np.testing.assert_allclose(psd(dask.array.from_array([1.0, 2.0])), [14.816736, 2.868831], atol=1e-5)
         # Check input xarray
         D = xr.DataArray([1.0, 2.0], dims=[DIAMETER_DIMENSION])
         output = psd(D)
         assert isinstance(output, xr.DataArray)
-        np.testing.assert_allclose(output.to_numpy(), [0.14816736, 0.02868831], atol=1e-5)
+        np.testing.assert_allclose(output.to_numpy(), [14.816736, 2.868831], atol=1e-5)
 
     def test_normalizedgamma_xarray_parameters(self):
         """Check PSD with xarray parameters inputs produce valid PSD values."""
-        Nw = xr.DataArray([1.0, 2.0], dims="time")
+        Nw = xr.DataArray([100.0, 200.0], dims="time")
         D50 = xr.DataArray([1.0, 2.0], dims="time")
         mu = xr.DataArray([1.0, 2.0], dims="time")
         psd = NormalizedGammaPSD(Nw=Nw, D50=D50, mu=mu)
@@ -566,13 +575,13 @@ class TestNormalizedGammaPSD:
         output = psd(1.0)
         assert isinstance(output, xr.DataArray)
         assert output.sizes == {"time": 2}
-        np.testing.assert_allclose(output.to_numpy(), np.array([0.02868831, 0.26887427]), atol=1e-5)
+        np.testing.assert_allclose(output.to_numpy(), np.array([2.868831, 26.887427]), atol=1e-5)
         # Check input numpy array diameters
         D = [1.0, 2.0, 3.0]
         output = psd(D)
         assert output.sizes == {"time": 2, DIAMETER_DIMENSION: 3}
         expected_array = np.array(
-            [[2.86883073e-02, 5.37749096e-04, 7.55989420e-06], [2.68874273e-01, 6.31516037e-02, 8.34338042e-03]],
+            [[2.868831, 0.053775, 0.0], [26.887427, 6.31516, 0.834338]],
         )
         np.testing.assert_allclose(output.to_numpy(), expected_array, atol=1e-5)
         # Check input dask array diameters
@@ -639,7 +648,7 @@ class TestNormalizedGammaPSD:
     def test_required_parameters(self):
         """Check the required parameters list."""
         req = NormalizedGammaPSD.required_parameters()
-        assert req == ["Nw", "D50", "mu"], "Incorrect required parameters."
+        assert set(req) == {"Nw", "D50", "mu"}, "Incorrect required parameters."
 
     def test_parameters_summary(self):
         """Check parameters summary handling."""
@@ -673,6 +682,403 @@ class TestNormalizedGammaPSD:
         )
         assert psd1 == psd2, "Identical PSDs should be equal."
         assert psd1 == psd4, "Identical PSDs should be equal."  # D50 scalar vs D50 xarray with equal values
+        assert psd1 != psd3, "Different PSDs should not be equal."
+        assert psd1 != None, "Comparison against None should return False."  # noqa: E711
+
+
+class TestGeneralizedGammaPSD:
+    """Test suite for the GeneralizedGammaPSD class."""
+
+    def test_generalized_gamma_scalar_parameters(self):
+        """Check PSD with scalar parameters inputs produce valid PSD values."""
+        psd = GeneralizedGammaPSD(Nt=800.0, mu=0.0, c=1.0, Lambda=1.0)
+        # Check input scalar
+        output = psd(1.0)
+        assert isinstance(output, np.ndarray)
+        assert output.size == 1
+        np.testing.assert_allclose(output, 294.30355294, atol=1e-5)
+
+        # Check input numpy array
+        output = psd(np.array([1.0, 2.0]))
+        assert isinstance(output, np.ndarray)
+        assert output.shape == (2,)
+        np.testing.assert_allclose(output, [294.30355294, 108.26822659], atol=1e-5)
+
+        # Check input dask array
+        output = psd(dask.array.from_array([1.0, 2.0]))
+        assert hasattr(output, "compute")
+        np.testing.assert_allclose(output.compute(), [294.30355294, 108.26822659], atol=1e-5)
+
+        # Check input xarray
+        D = xr.DataArray([1.0, 2.0], dims=[DIAMETER_DIMENSION])
+        output = psd(D)
+        assert isinstance(output, xr.DataArray)
+        np.testing.assert_allclose(output.to_numpy(), [294.30355294, 108.26822659], atol=1e-5)
+
+    def test_generalized_gamma_xarray_parameters(self):
+        """Check PSD with xarray parameters inputs produce valid PSD values."""
+        Nt = xr.DataArray([800.0, 1000.0], dims="time")
+        mu = xr.DataArray([0.0, 1.0], dims="time")
+        c = xr.DataArray([1.0, 1.5], dims="time")
+        Lambda = xr.DataArray([1.0, 1.5], dims="time")
+        psd = GeneralizedGammaPSD(Nt=Nt, mu=mu, c=c, Lambda=Lambda)
+
+        # Check input scalar
+        output = psd(1.0)
+        assert isinstance(output, xr.DataArray)
+        assert output.sizes == {"time": 2}
+        np.testing.assert_allclose(output.to_numpy(), np.array([294.30355294, 806.33428673]), atol=1e-5)
+
+        # Check input numpy array diameters
+        D = [1.0, 2.0, 3.0]
+        output = psd(D)
+        assert output.sizes == {"time": 2, DIAMETER_DIMENSION: 3}
+        expected_array = np.array([[294.30355294, 108.26822659, 39.82965469], [806.33428673, 112.14107197, 3.25730036]])
+        np.testing.assert_allclose(output.to_numpy(), expected_array, atol=1e-5)
+
+        # Check input dask array diameters
+        D = dask.array.from_array([1.0, 2.0, 3.0])
+        output = psd(D)
+        assert output.sizes == {"time": 2, DIAMETER_DIMENSION: 3}
+        np.testing.assert_allclose(output.compute(), expected_array, atol=1e-5)
+
+        # Check input xarray
+        D = xr.DataArray([1.0, 2.0, 3.0], dims=[DIAMETER_DIMENSION])
+        output = psd(D)
+        assert isinstance(output, xr.DataArray)
+        assert output.sizes == {"time": 2, DIAMETER_DIMENSION: 3}
+        np.testing.assert_allclose(output.to_numpy(), expected_array, atol=1e-5)
+
+    def test_generalized_gamma_model_accept_only_scalar_or_xarray_parameters(self):
+        """Check numpy array inputs parameters are not allowed."""
+        with pytest.raises(TypeError):
+            GeneralizedGammaPSD(Nt=[1.0, 2.0], mu=0, c=1, Lambda=1)
+        with pytest.raises(TypeError):
+            GeneralizedGammaPSD(Nt=np.array([1.0, 2.0]), mu=0, c=1, Lambda=1)
+        # Check mixture of scalar and DataArray is allowed
+        psd = GeneralizedGammaPSD(
+            Nt=xr.DataArray([1.0, 2.0], dims="time"),
+            mu=0,
+            c=xr.DataArray([1.0, 1.5], dims="time"),
+            Lambda=1,
+        )
+        assert isinstance(psd, GeneralizedGammaPSD)
+
+    def test_generalized_gamma_raise_error_invalid_diameter_array(self):
+        """Check invalid input diameter arrays."""
+        psd = GeneralizedGammaPSD(Nt=1.0, mu=0.0, c=1.0, Lambda=1.0)
+        # String input is not accepted
+        with pytest.raises(TypeError):
+            psd("string")
+        # None input is not accepted
+        with pytest.raises(TypeError):
+            psd(None)
+        # Empty is not accepted
+        with pytest.raises(ValueError):
+            psd([])
+        # 2-dimensional diameter array are not accepted
+        with pytest.raises(ValueError):
+            psd(np.ones((2, 2)))
+
+    def test_name(self):
+        """Check the 'name' property."""
+        psd = GeneralizedGammaPSD(Nt=1.0, mu=0.0, c=1.0, Lambda=1.0)
+        assert psd.name == "GeneralizedGammaPSD"
+
+    def test_formula_method(self):
+        """Check the formula directly."""
+        value = GeneralizedGammaPSD.formula(D=1.0, Nt=1.0, mu=0.0, c=1.0, Lambda=1.0)
+        assert isinstance(value, float)
+
+    def test_from_parameters(self):
+        """Check PSD creation from parameters."""
+        params = {"Nt": 800.0, "mu": 0.0, "c": 1.0, "Lambda": 1.0}
+        psd = GeneralizedGammaPSD.from_parameters(params)
+        assert psd.Nt == 800.0
+        assert psd.mu == 0.0
+        assert psd.c == 1.0
+        assert psd.Lambda == 1.0
+        assert psd.parameters == params
+
+    def test_required_parameters(self):
+        """Check the required parameters list."""
+        req = GeneralizedGammaPSD.required_parameters()
+        assert set(req) == {"Nt", "mu", "c", "Lambda"}, "Incorrect required parameters."
+
+    def test_parameters_summary(self):
+        """Check parameters summary handling."""
+        psd = GeneralizedGammaPSD(Nt=800.0, mu=0.5, c=1.0, Lambda=1.5)
+        summary = psd.parameters_summary()
+        assert isinstance(summary, str)
+        assert "GeneralizedGammaPSD" in summary, "Name missing in summary."
+
+        # Xarray case
+        psd = GeneralizedGammaPSD(
+            Nt=xr.DataArray([800.0, 900.0], dims="time"),
+            mu=0.0,
+            c=1.0,
+            Lambda=1.0,
+        )
+        summary = psd.parameters_summary()
+        assert isinstance(summary, str)
+        assert summary == "GeneralizedGammaPSD with N-d parameters \n"
+
+    def test_eq(self):
+        """Check equality of two PSD objects."""
+        # Scalar
+        psd1 = GeneralizedGammaPSD(Nt=800.0, mu=0.0, c=1.0, Lambda=1.0)
+        psd2 = GeneralizedGammaPSD(Nt=800.0, mu=0.0, c=1.0, Lambda=1.0)
+        psd3 = GeneralizedGammaPSD(Nt=900.0, mu=0.0, c=1.0, Lambda=1.0)
+        assert psd1 == psd2, "Identical PSDs should be equal."
+        assert psd1 != psd3, "Different PSDs should not be equal."
+        # Xarray
+        psd1 = GeneralizedGammaPSD(
+            Nt=xr.DataArray([800.0, 800.0], dims="time"),
+            mu=0.0,
+            c=1.0,
+            Lambda=1.0,
+        )
+        psd2 = GeneralizedGammaPSD(
+            Nt=xr.DataArray([800.0, 800.0], dims="time"),
+            mu=0.0,
+            c=1.0,
+            Lambda=1.0,
+        )
+        psd3 = GeneralizedGammaPSD(
+            Nt=xr.DataArray([800.0, 900.0], dims="time"),
+            mu=0.0,
+            c=1.0,
+            Lambda=1.0,
+        )
+        psd4 = GeneralizedGammaPSD(
+            Nt=xr.DataArray([800.0, 800.0], dims="time"),
+            mu=xr.DataArray([0.0, 0.0], dims="time"),
+            c=1.0,
+            Lambda=1.0,
+        )
+        assert psd1 == psd2, "Identical PSDs should be equal."
+        assert psd1 == psd4, "Identical PSDs should be equal."  # mu scalar vs mu xarray with equal values
+        assert psd1 != psd3, "Different PSDs should not be equal."
+        assert psd1 != None, "Comparison against None should return False."  # noqa: E711
+
+
+class TestNormalizedGeneralizedGammaPSD:
+    """Test suite for the NormalizedGeneralizedGammaPSD class."""
+
+    def test_ngg_scalar_parameters(self):
+        """Check PSD with scalar parameters inputs produce valid PSD values."""
+        psd = NormalizedGeneralizedGammaPSD(i=3, j=4, Nc=250.0, Dc=3.0, mu=0.0, c=1.0)
+        # Check input scalar
+        output = psd(1.0)
+        assert isinstance(output, np.ndarray)
+        assert output.size == 1
+        np.testing.assert_allclose(output, 2811.70280657, atol=1e-5)
+
+        # Check input numpy array
+        output = psd(np.array([1.0, 2.0]))
+        assert isinstance(output, np.ndarray)
+        assert output.shape == (2,)
+        np.testing.assert_allclose(output, [2811.70280657, 741.15681304], atol=1e-5)
+
+        # Check input dask array
+        output = psd(dask.array.from_array([1.0, 2.0]))
+        assert hasattr(output, "compute")
+        np.testing.assert_allclose(output.compute(), [2811.70280657, 741.15681304], atol=1e-5)
+
+        # Check input xarray
+        D = xr.DataArray([1.0, 2.0], dims=[DIAMETER_DIMENSION])
+        output = psd(D)
+        assert isinstance(output, xr.DataArray)
+        np.testing.assert_allclose(output.to_numpy(), [2811.70280657, 741.15681304], atol=1e-5)
+
+    def test_ngg_xarray_parameters(self):
+        """Check PSD with xarray parameters inputs produce valid PSD values."""
+        Nc = xr.DataArray([250.0, 350.0], dims="time")
+        Dc = xr.DataArray([2.0, 3.0], dims="time")
+        mu = xr.DataArray([0.0, 1.0], dims="time")
+        c = xr.DataArray([1.0, 1.5], dims="time")
+        psd = NormalizedGeneralizedGammaPSD(i=3, j=4, Nc=Nc, Dc=Dc, mu=mu, c=c)
+
+        # Check input scalar
+        output = psd(1.0)
+        assert isinstance(output, xr.DataArray)
+        assert output.sizes == {"time": 2}
+        np.testing.assert_allclose(output.to_numpy(), np.array([1443.57635452, 1009.00304456]), atol=1e-5)
+
+        # Check input numpy array diameters
+        D = [1.0, 2.0, 3.0]
+        output = psd(D)
+        assert output.sizes == {"time": 2, DIAMETER_DIMENSION: 3}
+        expected_array = np.array(
+            [[1443.57635452, 195.36681481, 26.44002322], [1009.00304456, 1045.26809327, 408.91195954]],
+        )
+        np.testing.assert_allclose(output.to_numpy(), expected_array, atol=1e-5)
+
+        # Check input dask array diameters
+        D = dask.array.from_array([1.0, 2.0, 3.0])
+        output = psd(D)
+        assert output.sizes == {"time": 2, DIAMETER_DIMENSION: 3}
+        np.testing.assert_allclose(output.compute(), expected_array, atol=1e-5)
+
+        # Check input xarray
+        D = xr.DataArray([1.0, 2.0, 3.0], dims=[DIAMETER_DIMENSION])
+        output = psd(D)
+        assert isinstance(output, xr.DataArray)
+        assert output.sizes == {"time": 2, DIAMETER_DIMENSION: 3}
+        np.testing.assert_allclose(output.to_numpy(), expected_array, atol=1e-5)
+
+    def test_ngg_model_accept_only_scalar_or_xarray_parameters(self):
+        """Check numpy array inputs parameters are not allowed."""
+        with pytest.raises(TypeError):
+            NormalizedGeneralizedGammaPSD(
+                i=3,
+                j=4,
+                Nc=[1.0, 2.0],
+                Dc=3,
+                mu=0,
+                c=1,
+            )
+        with pytest.raises(TypeError):
+            NormalizedGeneralizedGammaPSD(
+                i=3,
+                j=4,
+                Nc=np.array([1.0, 2.0]),
+                Dc=3,
+                mu=0,
+                c=1,
+            )
+        # Check mixture of scalar and DataArray is allowed
+        psd = NormalizedGeneralizedGammaPSD(
+            i=3,
+            j=4,
+            Nc=xr.DataArray([250.0, 350.0], dims="time"),
+            Dc=3,
+            mu=xr.DataArray([0.0, 1.0], dims="time"),
+            c=1,
+        )
+        assert isinstance(psd, NormalizedGeneralizedGammaPSD)
+
+    def test_ngg_raise_error_invalid_diameter_array(self):
+        """Check invalid input diameter arrays."""
+        psd = NormalizedGeneralizedGammaPSD(i=3, j=4, Nc=1.0, Dc=1.0, mu=0.0, c=1.0)
+        # String input is not accepted
+        with pytest.raises(TypeError):
+            psd("string")
+        # None input is not accepted
+        with pytest.raises(TypeError):
+            psd(None)
+        # Empty is not accepted
+        with pytest.raises(ValueError):
+            psd([])
+        # 2-dimensional diameter array are not accepted
+        with pytest.raises(ValueError):
+            psd(np.ones((2, 2)))
+
+    def test_name(self):
+        """Check the 'name' property."""
+        psd = NormalizedGeneralizedGammaPSD(i=3, j=4, Nc=1.0, Dc=1.0, mu=0.0, c=1.0)
+        assert psd.name == "NormalizedGeneralizedGammaPSD"
+
+    def test_formula_method(self):
+        """Check the formula directly."""
+        value = NormalizedGeneralizedGammaPSD.formula(
+            D=1.0,
+            i=3,
+            j=4,
+            Nc=1.0,
+            Dc=1.0,
+            mu=0.0,
+            c=1.0,
+        )
+        assert isinstance(value, float)
+
+    def test_from_parameters(self):
+        """Check PSD creation from parameters."""
+        params = {"i": 3, "j": 4, "Nc": 250.0, "Dc": 3.0, "mu": 0.0, "c": 1.0}
+        psd = NormalizedGeneralizedGammaPSD.from_parameters(params)
+        assert psd.i == 3
+        assert psd.j == 4
+        assert psd.Nc == 250.0
+        assert psd.Dc == 3.0
+        assert psd.mu == 0.0
+        assert psd.c == 1.0
+        assert psd.parameters == params
+
+    def test_required_parameters(self):
+        """Check the required parameters list."""
+        req = NormalizedGeneralizedGammaPSD.required_parameters()
+        assert set(req) == {"i", "j", "Nc", "Dc", "mu", "c"}, "Incorrect required parameters."
+
+    def test_parameters_summary(self):
+        """Check parameters summary handling."""
+        psd = NormalizedGeneralizedGammaPSD(
+            i=3,
+            j=4,
+            Nc=250.0,
+            Dc=2.5,
+            mu=0.5,
+            c=1.5,
+        )
+        summary = psd.parameters_summary()
+        assert isinstance(summary, str)
+        assert "NormalizedGeneralizedGammaPSD" in summary, "Name missing in summary."
+
+        # Xarray case
+        psd = NormalizedGeneralizedGammaPSD(
+            i=3,
+            j=4,
+            Nc=xr.DataArray([250.0, 350.0], dims="time"),
+            Dc=3.0,
+            mu=0.0,
+            c=1.0,
+        )
+        summary = psd.parameters_summary()
+        assert isinstance(summary, str)
+        assert summary == "NormalizedGeneralizedGammaPSD with N-d parameters \n"
+
+    def test_eq(self):
+        """Check equality of two PSD objects."""
+        # Scalar
+        psd1 = NormalizedGeneralizedGammaPSD(i=3, j=4, Nc=250.0, Dc=3.0, mu=0.0, c=1.0)
+        psd2 = NormalizedGeneralizedGammaPSD(i=3, j=4, Nc=250.0, Dc=3.0, mu=0.0, c=1.0)
+        psd3 = NormalizedGeneralizedGammaPSD(i=3, j=4, Nc=300.0, Dc=3.0, mu=0.0, c=1.0)
+        assert psd1 == psd2, "Identical PSDs should be equal."
+        assert psd1 != psd3, "Different PSDs should not be equal."
+        # Xarray
+        psd1 = NormalizedGeneralizedGammaPSD(
+            i=3,
+            j=4,
+            Nc=xr.DataArray([250.0, 250.0], dims="time"),
+            Dc=3.0,
+            mu=0.0,
+            c=1.0,
+        )
+        psd2 = NormalizedGeneralizedGammaPSD(
+            i=3,
+            j=4,
+            Nc=xr.DataArray([250.0, 250.0], dims="time"),
+            Dc=3.0,
+            mu=0.0,
+            c=1.0,
+        )
+        psd3 = NormalizedGeneralizedGammaPSD(
+            i=3,
+            j=4,
+            Nc=xr.DataArray([250.0, 300.0], dims="time"),
+            Dc=3.0,
+            mu=0.0,
+            c=1.0,
+        )
+        psd4 = NormalizedGeneralizedGammaPSD(
+            i=3,
+            j=4,
+            Nc=xr.DataArray([250.0, 250.0], dims="time"),
+            Dc=xr.DataArray([3.0, 3.0], dims="time"),
+            mu=0.0,
+            c=1.0,
+        )
+        assert psd1 == psd2, "Identical PSDs should be equal."
+        assert psd1 == psd4, "Identical PSDs should be equal."  # Dc scalar vs Dc xarray with equal values
         assert psd1 != psd3, "Different PSDs should not be equal."
         assert psd1 != None, "Comparison against None should return False."  # noqa: E711
 

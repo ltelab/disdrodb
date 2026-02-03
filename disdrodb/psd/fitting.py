@@ -16,6 +16,8 @@
 # -----------------------------------------------------------------------------.
 """Routines for PSD fitting."""
 
+import copy
+
 import numpy as np
 import scipy.stats as ss
 import xarray as xr
@@ -31,7 +33,19 @@ from disdrodb.l2.empirical_dsd import (
     get_normalized_intercept_parameter_from_moments,
     get_total_number_concentration,
 )
-from disdrodb.psd.models import ExponentialPSD, GammaPSD, LognormalPSD, NormalizedGammaPSD
+from disdrodb.psd.grid_search import (
+    check_objectives,
+    check_transformation,
+    compute_weighted_loss,
+)
+from disdrodb.psd.models import (
+    ExponentialPSD,
+    GammaPSD,
+    GeneralizedGammaPSD,
+    LognormalPSD,
+    NormalizedGammaPSD,
+    NormalizedGeneralizedGammaPSD,
+)
 from disdrodb.utils.manipulations import get_diameter_bin_edges
 from disdrodb.utils.warnings import suppress_warnings
 
@@ -57,117 +71,6 @@ from disdrodb.utils.warnings import suppress_warnings
 # - LogNormal,Exponential, Gamma: Nt
 # --> get_total_number_concentration(drop_number_concentration, diameter_bin_width)
 
-
-####--------------------------------------------------------------------------------------.
-#### Goodness of fit (GOF)
-def compute_gof_stats(obs, pred, dim=DIAMETER_DIMENSION):
-    """
-    Compute various goodness-of-fit (GoF) statistics between obs and predicted values.
-
-    Parameters
-    ----------
-    obs: xarray.DataArray
-        Observations DataArray with at least dimension ``dim``.
-    pred: xarray.DataArray
-        Predictions DataArray with at least dimension ``dim``.
-    dim: str
-        DataArray dimension over which to compute GOF statistics.
-        The default is DIAMETER_DIMENSION.
-
-    Returns
-    -------
-    ds: xarray.Dataset
-        Dataset containing the computed GoF statistics.
-    """
-    from disdrodb.l2.empirical_dsd import get_mode_diameter
-
-    # Retrieve diameter and diameter bin width
-    diameter = obs["diameter_bin_center"]
-    diameter_bin_width = obs["diameter_bin_width"]
-
-    # Compute errors
-    error = obs - pred
-
-    # Compute max obs and pred
-    obs_max = obs.max(dim=dim, skipna=False)
-    pred_max = pred.max(dim=dim, skipna=False)
-
-    # Compute NaN mask
-    mask_nan = np.logical_or(np.isnan(obs_max), np.isnan(pred_max))
-
-    # Compute GOF statistics
-    with suppress_warnings():
-        # Compute Pearson Correlation
-        pearson_r = xr.corr(obs, pred, dim=dim)
-
-        # Compute Mean Absolute Error (MAE)
-        mae = np.abs(error).mean(dim=dim, skipna=False)
-
-        # Compute maximum absolute error
-        max_error = np.abs(error).max(dim=dim, skipna=False)
-        relative_max_error = xr.where(max_error == 0, 0, xr.where(obs_max == 0, np.nan, max_error / obs_max))
-
-        # Compute deviation of N(D) at distribution mode
-        mode_deviation = obs_max - pred_max
-        mode_relative_deviation = xr.where(
-            mode_deviation == 0,
-            0,
-            xr.where(obs_max == 0, np.nan, mode_deviation / obs_max),
-        )
-
-        # Compute diameter difference of the distribution mode
-        diameter_mode_pred = get_mode_diameter(pred, diameter)
-        diameter_mode_obs = get_mode_diameter(obs, diameter)
-        diameter_mode_deviation = diameter_mode_obs - diameter_mode_pred
-
-        # Compute difference in total number concentration
-        total_number_concentration_obs = (obs * diameter_bin_width).sum(dim=dim, skipna=False)
-        total_number_concentration_pred = (pred * diameter_bin_width).sum(dim=dim, skipna=False)
-        total_number_concentration_difference = total_number_concentration_pred - total_number_concentration_obs
-
-        # Compute Kullback-Leibler divergence
-        # - Compute pdf per bin
-        pk_pdf = obs / total_number_concentration_obs
-        qk_pdf = pred / total_number_concentration_pred
-
-        # - Compute probabilities per bin
-        pk = pk_pdf * diameter_bin_width
-        pk = pk / pk.sum(dim=dim, skipna=False)  # this might not be necessary
-        qk = qk_pdf * diameter_bin_width
-        qk = qk / qk.sum(dim=dim, skipna=False)  # this might not be necessary
-
-        # - Compute log probability ratio
-        epsilon = 1e-10
-        pk = xr.where(pk == 0, epsilon, pk)
-        qk = xr.where(qk == 0, epsilon, qk)
-        log_prob_ratio = np.log(pk / qk)
-        log_prob_ratio = log_prob_ratio.where(np.isfinite(log_prob_ratio))
-
-        # - Compute divergence
-        kl_divergence = (pk * log_prob_ratio).sum(dim=dim, skipna=False)
-        kl_divergence = xr.where((error == 0).all(dim=dim), 0, kl_divergence)
-
-    # Create an xarray.Dataset to hold the computed statistics
-    ds = xr.Dataset(
-        {
-            "R2": pearson_r**2,  # Squared Pearson correlation coefficient
-            "MAE": mae,  # Mean Absolute Error
-            "MaxAE": max_error,  # Maximum Absolute Error
-            "RelMaxAE": relative_max_error,  # Relative Maximum Absolute Error
-            "PeakDiff": mode_deviation,  # Difference at distribution peak
-            "RelPeakDiff": mode_relative_deviation,  # Relative difference at peak
-            "DmodeDiff": diameter_mode_deviation,  # Difference in mode diameters
-            "NtDiff": total_number_concentration_difference,
-            "KLDiv": kl_divergence,  # Kullback-Leibler divergence
-        },
-    )
-    # Round
-    ds = ds.round(2)
-    # Mask where input obs or pred is NaN
-    ds = ds.where(~mask_nan)
-    return ds
-
-
 ####--------------------------------------------------------------------------------------.
 #### Maximum Likelihood (ML)
 
@@ -186,8 +89,9 @@ def get_expected_probabilities(params, cdf_func, pdf_func, bin_edges, probabilit
         Probability density function (PDF) that takes a value and parameters as inputs.
     bin_edges : array-like
         Edges of the bins for which to compute the probabilities.
-    probability_method : {'cdf', 'pdf'}
-        Method to compute the probabilities. If 'cdf', use the CDF to compute probabilities.
+    probability_method : str
+        Method to compute the probabilities. Valid values are 'cdf' and 'pdf'.
+        If 'cdf', use the CDF to compute probabilities.
         If 'pdf', integrate the PDF over each bin range.
     normalized : bool, optional
         If True, normalize the probabilities to sum to 1. Default is False.
@@ -365,7 +269,7 @@ def estimate_lognormal_parameters(
 
     References
     ----------
-    .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.lognorm.html#scipy.stats.lognorm
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.lognorm.html#scipy.stats.lognorm
     """
     # Definite initial guess for the parameters
     scale = np.exp(mu)  # mu = np.log(scale)
@@ -477,12 +381,13 @@ def estimate_exponential_parameters(
     Notes
     -----
     The exponential distribution is defined as:
-        N(D) = N0 * exp(-Lambda * D) = Nt * Lambda * exp(-Lambda * D)
+
+    N(D) = N0 * exp(-Lambda * D) = Nt * Lambda * exp(-Lambda * D)
     where Lambda = 1 / scale and N0 = Nt * Lambda.
 
     References
     ----------
-    .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.expon.html
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.expon.html
     """
     # Definite initial guess for parameters
     scale = 1 / Lambda
@@ -558,8 +463,7 @@ def estimate_gamma_parameters(
     output_dictionary=True,
     optimizer="Nelder-Mead",
 ):
-    """
-    Estimate the parameters of a gamma distribution given histogram data.
+    r"""Estimate the parameters of a gamma distribution given histogram data.
 
     Parameters
     ----------
@@ -598,13 +502,29 @@ def estimate_gamma_parameters(
     Notes
     -----
     The gamma distribution is defined as:
-        N(D) = N0 * D**mu * exp(-Lambda*D)
-    where Lambda = 1/scale, and mu = a - 1 with ``a`` being the shape parameter of the gamma distribution.
-    N0 is defined as N0 = Nt*Lambda**(mu+1)/gamma(mu+1).
+
+    .. math::
+
+    N(D) = N_0 \, D^{\mu} \, \exp(-\Lambda D)
+
+    where:
+
+    - :math:`D` is the particle diameter,
+    - :math:`\Lambda = 1 / \text{scale}` is the slope parameter,
+    - :math:`\mu = a - 1` is the shape parameter, with :math:`a` the gamma distribution shape parameter.
+
+    The intercept parameter :math:`N_0` is defined as:
+
+    .. math::
+
+    N_0 = N_t \, \frac{\Lambda^{\mu + 1}}{\Gamma(\mu + 1)}
+
+    where :math:`N_t` is the total number concentration and
+    :math:`\Gamma(\cdot)` denotes the gamma function.
 
     References
     ----------
-    .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gamma.html
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gamma.html
 
     """
     # Define initial guess for parameters
@@ -764,20 +684,20 @@ def get_gamma_parameters(
     truncated_likelihood=True,
     optimizer="Nelder-Mead",
 ):
-    """
-    Estimate gamma distribution parameters for drop size distribution (DSD) data.
+    """Estimate gamma distribution parameters for drop size distribution (DSD) data.
 
     Parameters
     ----------
     ds : xarray.Dataset
         Input dataset containing drop size distribution data. It must include the following variables:
+
         - ``drop_number_concentration``: The number concentration of drops.
         - ``diameter_bin_width``": The width of each diameter bin.
         - ``diameter_bin_lower``: The lower bounds of the diameter bins.
         - ``diameter_bin_upper``: The upper bounds of the diameter bins.
         - ``diameter_bin_center``: The center values of the diameter bins.
-        - The moments M0...M6 variables required to compute the initial parameters
-          with the specified mom_method.
+        - The moments M0...M6 variables required to compute the initial parameters with the specified mom_method.
+
     init_method: str or list
         The method(s) of moments used to initialize the gamma parameters.
         If None (or 'None'), the scale parameter is set to 1 and mu to 0 (a=1).
@@ -795,9 +715,11 @@ def get_gamma_parameters(
     -------
     xarray.Dataset
         Dataset containing the estimated gamma distribution parameters:
+
         - ``N0``: Intercept parameter.
         - ``mu``: Shape parameter.
         - ``Lambda``: Scale parameter.
+
         The dataset will also have an attribute ``disdrodb_psd_model`` set to ``GammaPSD``.
 
     Notes
@@ -872,12 +794,14 @@ def get_lognormal_parameters(
     Parameters
     ----------
     ds : xarray.Dataset
-    Input dataset containing drop size distribution data. It must include the following variables:
-    - ``drop_number_concentration``: The number concentration of drops.
-    - ``diameter_bin_width``": The width of each diameter bin.
-    - ``diameter_bin_lower``: The lower bounds of the diameter bins.
-    - ``diameter_bin_upper``: The upper bounds of the diameter bins.
-    - ``diameter_bin_center``: The center values of the diameter bins.
+        Input dataset containing drop size distribution data. It must include the following variables:
+
+        - ``drop_number_concentration``: The number concentration of drops.
+        - ``diameter_bin_width``: The width of each diameter bin.
+        - ``diameter_bin_lower``: The lower bounds of the diameter bins.
+        - ``diameter_bin_upper``: The upper bounds of the diameter bins.
+        - ``diameter_bin_center``: The center values of the diameter bins.
+
     probability_method : str, optional
         Method to compute probabilities. The default value is ``cdf``.
     likelihood : str, optional
@@ -891,9 +815,11 @@ def get_lognormal_parameters(
     -------
     xarray.Dataset
         Dataset containing the estimated lognormal distribution parameters:
+
         - ``Nt``: Total number concentration.
         - ``mu``: Mean of the lognormal distribution.
         - ``sigma``: Standard deviation of the lognormal distribution.
+
         The resulting dataset will have an attribute ``disdrodb_psd_model`` set to ``LognormalPSD``.
 
     Notes
@@ -1038,91 +964,22 @@ def get_exponential_parameters(
 #### Grid Search (GS)
 
 
-def _compute_rain_rate(ND, D, dD, V):
-    axis = 1 if ND.ndim == 2 else None
-    rain_rate = np.pi / 6 * np.sum(ND * V * (D / 1000) ** 3 * dD, axis=axis) * 3600 * 1000
-    return rain_rate  # mm/h
-
-
-def _compute_lwc(ND, D, dD, rho_w=1000):
-    axis = 1 if ND.ndim == 2 else None
-    lwc = np.pi / 6.0 * (rho_w * 1000) * np.sum((D / 1000) ** 3 * ND * dD, axis=axis)
-    return lwc  # g/m3
-
-
-def _compute_z(ND, D, dD):
-    axis = 1 if ND.ndim == 2 else None
-    z = np.sum(((D) ** 6 * ND * dD), axis=axis)  # mm⁶·m⁻³
-    Z = 10 * np.log10(z)
-    return Z
-
-
-def _compute_target_variable_error(target, ND_obs, ND_preds, D, dD, V, relative=False, eps=1e-12):
-    # Compute observed and predicted target variables
-    if target == "Z":
-        obs = _compute_z(ND_obs, D, dD)
-        pred = _compute_z(ND_preds, D, dD)
-    elif target == "R":
-        obs = _compute_rain_rate(ND_obs, D, dD, V)
-        pred = _compute_rain_rate(ND_preds, D, dD, V)
-    else:  # "LWC"
-        obs = _compute_lwc(ND_obs, D, dD)
-        pred = _compute_lwc(ND_preds, D, dD)
-
-    # Absolute error
-    abs_error = np.abs(obs - pred)
-
-    # Return relative error if requested
-    if relative:
-        return abs_error / (np.abs(obs) + eps)
-
-    return abs_error
-
-
-def _compute_cost_function(ND_obs, ND_preds, D, dD, V, target, transformation, error_order):
-    # Assume ND_obs of shape (D bins) and ND_preds of shape (# params, D bins)
-    if target == "ND":
-        if transformation == "identity":
-            errors = np.mean(np.abs(ND_obs[None, :] - ND_preds) ** error_order, axis=1)
-            return errors
-        if transformation == "log":
-            errors = np.mean(np.abs(np.log(ND_obs[None, :] + 1) - np.log(ND_preds + 1)) ** error_order, axis=1)
-            return errors
-        if transformation == "sqrt":
-            errors = np.mean(np.abs(np.sqrt(ND_obs[None, :]) - np.sqrt(ND_preds)) ** error_order, axis=1)
-            return errors
-    # if target in ["Z", "R", "LWC"]:
-    return _compute_target_variable_error(target, ND_obs, ND_preds, D, dD, V)
-
-
-def define_param_range(center, step, bounds, factor=2, refinement=20):
-    """
-    Create a refined parameter search range around a center value, constrained to bounds.
-
-    Parameters
-    ----------
-    center : float
-        Center of the range (e.g., current best estimate).
-    step : float
-        Coarse step size used in the first search.
-    bounds : tuple of (float, float)
-        Lower and upper bounds (can include -np.inf, np.inf).
-    factor : float, optional
-        How wide the refined range extends from the center (in multiples of step).
-        Default = 2.
-    refinement : int, optional
-        Factor to refine the step size (smaller step = finer grid).
-        Default = 20.
-
-    Returns
-    -------
-    np.ndarray
-        Array of values constrained to bounds.
-    """
-    lower = max(center - factor * step, bounds[0])
-    upper = min(center + factor * step, bounds[1])
-    new_step = step / refinement
-    return np.arange(lower, upper, new_step)
+DEFAULT_OBJECTIVES = [
+    {
+        "target": "N(D)",
+        "transformation": "identity",
+        "loss": "SSE",
+        "censoring": "none",
+        "loss_weight": 0.8,
+    },
+    {
+        "target": "Z",
+        "transformation": "identity",
+        "loss": "AE",
+        "censoring": "none",
+        "loss_weight": 0.2,
+    },
+]
 
 
 def apply_exponential_gs(
@@ -1132,79 +989,146 @@ def apply_exponential_gs(
     # Coords
     D,
     dD,
-    # Error options
-    target,
-    transformation,
-    error_order,
+    # PSD parameters
+    Lambda,
+    # Optimization options
+    objectives,
+    # Output options
+    return_loss=False,
 ):
-    """Apply Grid Search for the ExponentialPSD distribution."""
-    # Define set of mu values
-    lambda_arr = np.arange(0.01, 20, step=0.01)
+    """Estimate ExponentialPSD model parameters using Grid Search.
+
+    This function performs a grid search optimization to find the best parameters
+    (N0, Lambda) for the ExponentialPSD model by minimizing a weighted
+    cost function across one or more objectives.
+
+    Parameters
+    ----------
+    Nt : float
+        Total number concentration.
+    ND_obs : numpy.ndarray
+        Observed PSD data [#/mm/m3].
+    V : numpy.ndarray
+        Fall velocity [m/s].
+    D : numpy.ndarray
+        Diameter bins [mm].
+    dD : numpy.ndarray
+        Diameter bin widths [mm].
+    Lambda : int, float or numpy.ndarray
+        Lambda parameter values to search.
+    objectives: list of dict
+        target : str, optional
+            Target quantity to optimize. Valid options:
+
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
+
+        transformation : str, optional
+            Transformation applied to the target quantity before computing the loss.
+            Valid options:
+
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation
+            - ``"sqrt"`` : Square root transformation
+
+        censoring : str
+            Specifies whether the observed particle size distribution (PSD) is
+            treated as censored at the edges of the diameter range due to
+            instrumental sensitivity limits:
+
+            - ``"none"`` : No censoring is applied. All diameter bins are used.
+            - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+              range of diameter bins with non-zero observed concentrations is
+              retained.
+
+        loss : int, optional
+            Loss function.
+            If target is ``"N(D)"``, valid options are:
+
+            - ``SSE``: Sum of Squared Errors
+            - ``SAE``: Sum of Absolute Errors
+            - ``MAE``: Mean Absolute Error
+            - ``MSE``: Mean Squared Error
+            - ``RMSE``: Root Mean Squared Error
+            - ``relMAE``: Relative Mean Absolute Error
+            - ``KLDiv``: Kullback-Leibler Divergence
+            - ``WD``: Wasserstein Distance
+            - ``JSD``: Jensen-Shannon Distance
+            - ``KS``: Kolmogorov-Smirnov Statistic
+
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
+
+        loss_weight: int, optional
+            Weight of this objective when multiple objectives are used.
+            Must be specified if more than one objective is specified.
+    return_loss : bool, optional
+        If True, return both the loss surface and parameters.
+        Default is False.
+
+    Returns
+    -------
+    parameters : numpy.ndarray
+        Best parameters as [N0, Lambda].
+        An array of NaN values is returned if no valid solution is found.
+    total_loss : numpy.ndarray, optional
+        1D array of total loss values.
+        Only returned if return_loss=True.
+
+    Notes
+    -----
+    When multiple objectives are provided, losses are normalized and weighted.
+    The best parameters correspond to the minimum total weighted loss.
+    """
+    # Ensure input is numpy array
+    Nt = np.asarray(Nt)
+    ND_obs = np.asarray(ND_obs)
+    V = np.asarray(V)
+
+    # Convert lambda to array if needed
+    if not isinstance(Lambda, np.ndarray):
+        Lambda = np.atleast_1d(Lambda)
 
     # Perform grid search
     with suppress_warnings():
-        # Compute ND
-        N0_arr = Nt * lambda_arr
-        ND_preds = ExponentialPSD.formula(D=D[None, :], N0=N0_arr[:, None], Lambda=lambda_arr[:, None])
+        # Compute N(D)
+        N0_arr = Nt * Lambda
+        ND_preds = ExponentialPSD.formula(D=D[None, :], N0=N0_arr[:, None], Lambda=Lambda[:, None])
 
-        # Compute errors
-        errors = _compute_cost_function(
+        # Compute loss
+        total_loss = compute_weighted_loss(
             ND_obs=ND_obs,
             ND_preds=ND_preds,
             D=D,
             dD=dD,
             V=V,
-            target=target,
-            transformation=transformation,
-            error_order=error_order,
-        )
-    # Replace inf with NaN
-    errors[~np.isfinite(errors)] = np.nan
-
-    # If all invalid, return NaN parameters
-    if np.all(np.isnan(errors)):
-        return np.array([np.nan, np.nan])
-
-    # Otherwise, choose the best index
-    best_index = np.nanargmin(errors)
-    return np.array([N0_arr[best_index].item(), lambda_arr[best_index].item()])
-
-
-def _apply_gamma_gs(mu_values, lambda_values, Nt, ND_obs, D, dD, V, target, transformation, error_order):
-    """Routine for GammaPSD parameters grid search."""
-    # Define combinations of parameters for grid search
-    combo = np.meshgrid(mu_values, lambda_values, indexing="xy")
-    mu_arr = combo[0].ravel()
-    lambda_arr = combo[1].ravel()
-
-    # Perform grid search
-    with suppress_warnings():
-        # Compute ND
-        N0 = np.exp(np.log(Nt) + (mu_arr[:, None] + 1) * np.log(lambda_arr[:, None]) - gammaln(mu_arr[:, None] + 1))
-        ND_preds = GammaPSD.formula(D=D[None, :], N0=N0, Lambda=lambda_arr[:, None], mu=mu_arr[:, None])
-
-        # Compute errors
-        errors = _compute_cost_function(
-            ND_obs=ND_obs,
-            ND_preds=ND_preds,
-            D=D,
-            dD=dD,
-            V=V,
-            target=target,
-            transformation=transformation,
-            error_order=error_order,
+            objectives=objectives,
         )
 
-    # Replace inf with NaN
-    errors[~np.isfinite(errors)] = np.nan
+    # Define best parameters
+    if not np.all(np.isnan(total_loss)):
+        best_index = np.nanargmin(total_loss)
+        N0 = N0_arr[best_index].item()
+        Lambda_best = Lambda[best_index].item()
+        parameters = np.array([N0, Lambda_best])
+    else:
+        parameters = np.array([np.nan, np.nan])
 
-    # If all invalid, return NaN parameters
-    if np.all(np.isnan(errors)):
-        return np.array([np.nan, np.nan, np.nan])
+    # If asked, return cost function
+    if return_loss:
+        return parameters, total_loss
 
-    # Otherwise, choose the best index
-    best_index = np.nanargmin(errors)
-    return N0[best_index].item(), mu_arr[best_index].item(), lambda_arr[best_index].item()
+    return parameters
 
 
 def apply_gamma_gs(
@@ -1214,92 +1138,327 @@ def apply_gamma_gs(
     # Coords
     D,
     dD,
-    # Error options
-    target,
-    transformation,
-    error_order,
+    # PSD parameters
+    mu,
+    Lambda,
+    # Optimization options
+    objectives,
+    # Output options
+    return_loss=False,
 ):
-    """Estimate GammaPSD model parameters using Grid Search."""
-    # Define parameters bounds
-    mu_bounds = (-1, 40)
-    lambda_bounds = (0, 60)
+    """Estimate GammaPSD model parameters using Grid Search.
 
-    # Define initial set of parameters
-    mu_step = 0.25
-    lambda_step = 0.5
-    mu_values = np.arange(0, 40, step=mu_step)
-    lambda_values = np.arange(0, 60, step=lambda_step)
+    This function performs a grid search optimization to find the best parameters
+    (mu, Lambda) for the GammaPSD model by minimizing a weighted
+    cost function across one or more objectives.
 
-    # First round of GS
-    N0, mu, Lambda = _apply_gamma_gs(
-        mu_values=mu_values,
-        lambda_values=lambda_values,
-        Nt=Nt,
-        ND_obs=ND_obs,
-        D=D,
-        dD=dD,
-        V=V,
-        target=target,
-        transformation=transformation,
-        error_order=error_order,
-    )
-    if np.isnan(N0):  # if np.nan, return immediately
-        return np.array([N0, mu, Lambda])
+    Parameters
+    ----------
+    Nt : float
+        Total number concentration.
+    ND_obs : numpy.ndarray
+        Observed PSD data [#/mm/m3].
+    V : numpy.ndarray
+        Fall velocity [m/s].
+    D : numpy.ndarray
+        Diameter bins [mm].
+    dD : numpy.ndarray
+        Diameter bin widths [mm].
+    mu : int, float or numpy.ndarray
+        mu parameter values to search.
+    Lambda : int, float or numpy.ndarray
+        Lambda parameter values to search.
+    objectives: list of dict
+        target : str, optional
+            Target quantity to optimize. Valid options:
 
-    # Second round of GS
-    mu_values = define_param_range(mu, mu_step, bounds=mu_bounds)
-    lambda_values = define_param_range(Lambda, lambda_step, bounds=lambda_bounds)
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
 
-    N0, mu, Lambda = _apply_gamma_gs(
-        mu_values=mu_values,
-        lambda_values=lambda_values,
-        Nt=Nt,
-        ND_obs=ND_obs,
-        D=D,
-        dD=dD,
-        V=V,
-        target=target,
-        transformation=transformation,
-        error_order=error_order,
-    )
+        transformation : str, optional
+            Transformation applied to the target quantity before computing the loss.
+            Valid options:
 
-    return np.array([N0, mu, Lambda])
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation
+            - ``"sqrt"`` : Square root transformation
 
+        censoring : str
+            Specifies whether the observed particle size distribution (PSD) is
+            treated as censored at the edges of the diameter range due to
+            instrumental sensitivity limits:
 
-def _apply_lognormal_gs(mu_values, sigma_values, Nt, ND_obs, D, dD, V, target, transformation, error_order):
-    """Routine for LognormalPSD parameters grid search."""
+            - ``"none"`` : No censoring is applied. All diameter bins are used.
+            - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+              range of diameter bins with non-zero observed concentrations is
+              retained.
+
+        loss : int, optional
+            Loss function.
+            If target is ``"N(D)"``, valid options are:
+
+            - ``SSE``: Sum of Squared Errors
+            - ``SAE``: Sum of Absolute Errors
+            - ``MAE``: Mean Absolute Error
+            - ``MSE``: Mean Squared Error
+            - ``RMSE``: Root Mean Squared Error
+            - ``relMAE``: Relative Mean Absolute Error
+            - ``KLDiv``: Kullback-Leibler Divergence
+            - ``WD``: Wasserstein Distance
+            - ``JSD``: Jensen-Shannon Distance
+            - ``KS``: Kolmogorov-Smirnov Statistic
+
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
+
+        loss_weight: int, optional
+            Weight of this objective when multiple objectives are used.
+            Must be specified if more than one objective is specified.
+    return_loss : bool, optional
+        If True, return both the loss surface and parameters.
+        Default is False.
+
+    Returns
+    -------
+    parameters : numpy.ndarray
+        Best parameters as [N0, Lambda, mu].
+        An array of NaN values is returned if no valid solution is found.
+    total_loss : numpy.ndarray, optional
+        2D array of total loss values reshaped to (len(mu), len(Lambda)).
+        Only returned if return_loss=True.
+
+    Notes
+    -----
+    When multiple objectives are provided, losses are normalized and weighted
+    The best parameters correspond to the minimum total weighted loss.
+    """
+    # Ensure input is numpy array
+    Nt = np.asarray(Nt)
+    ND_obs = np.asarray(ND_obs)
+    V = np.asarray(V)
+
     # Define combinations of parameters for grid search
-    combo = np.meshgrid(mu_values, sigma_values, indexing="xy")
-    mu_arr = combo[0].ravel()
-    sigma_arr = combo[1].ravel()
+    mu_grid, Lambda_grid = np.meshgrid(
+        mu,
+        Lambda,
+        indexing="xy",
+    )
+    mu_arr = mu_grid.ravel()
+    Lambda_arr = Lambda_grid.ravel()
 
     # Perform grid search
     with suppress_warnings():
-        # Compute ND
-        ND_preds = LognormalPSD.formula(D=D[None, :], Nt=Nt, mu=mu_arr[:, None], sigma=sigma_arr[:, None])
+        # Compute N(D)
+        N0 = np.exp(np.log(Nt) + (mu_arr[:, None] + 1) * np.log(Lambda_arr[:, None]) - gammaln(mu_arr[:, None] + 1))
+        ND_preds = GammaPSD.formula(D=D[None, :], N0=N0, Lambda=Lambda_arr[:, None], mu=mu_arr[:, None])
 
-        # Compute errors
-        errors = _compute_cost_function(
+        # Compute loss
+        total_loss = compute_weighted_loss(
             ND_obs=ND_obs,
             ND_preds=ND_preds,
             D=D,
             dD=dD,
             V=V,
-            target=target,
-            transformation=transformation,
-            error_order=error_order,
+            objectives=objectives,
         )
 
-    # Replace inf with NaN
-    errors[~np.isfinite(errors)] = np.nan
+    # Define best parameters
+    if not np.all(np.isnan(total_loss)):
+        best_index = np.nanargmin(total_loss)
+        N0_best = N0[best_index].item()
+        mu_best = mu_arr[best_index].item()
+        Lambda_best = Lambda_arr[best_index].item()
+        parameters = np.array([N0_best, Lambda_best, mu_best])
+    else:
+        parameters = np.array([np.nan, np.nan, np.nan])
 
-    # If all invalid, return NaN parameters
-    if np.all(np.isnan(errors)):
-        return np.array([np.nan, np.nan, np.nan])
+    # If asked, return cost function
+    if return_loss:
+        total_loss = total_loss.reshape(mu_grid.shape)
+        return parameters, total_loss
 
-    # Otherwise, choose the best index
-    best_index = np.nanargmin(errors)
-    return Nt, mu_arr[best_index].item(), sigma_arr[best_index].item()
+    return parameters
+
+
+def apply_generalized_gamma_gs(
+    Nt,
+    ND_obs,
+    V,
+    # Coords
+    D,
+    dD,
+    # PSD parameters
+    mu,
+    c,
+    Lambda,
+    # Optimization options
+    objectives,
+    # Output options
+    return_loss=False,
+):
+    """Estimate GeneralizedGammaPSD model parameters using Grid Search.
+
+    This function performs a grid search optimization to find the best parameters
+    (mu, c, Lambda) for the GeneralizedGammaPSD model by minimizing a weighted
+    cost function across one or more objectives.
+
+    Parameters
+    ----------
+    Nt : float
+        Total number concentration.
+    ND_obs : numpy.ndarray
+        Observed PSD data [#/mm/m3].
+    V : numpy.ndarray
+        Fall velocity [m/s].
+    D : numpy.ndarray
+        Diameter bins [mm].
+    dD : numpy.ndarray
+        Diameter bin widths [mm].
+    mu : int, float or numpy.ndarray
+        mu parameter values to search.
+    c : int, float or numpy.ndarray
+        c parameter values to search.
+    Lambda : int, float or numpy.ndarray
+        Lambda parameter values to search.
+    objectives: list of dict
+        target : str, optional
+            Target quantity to optimize. Valid options:
+
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
+
+        transformation : str, optional
+            Transformation applied to the target quantity before computing the loss.
+            Valid options:
+
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation
+            - ``"sqrt"`` : Square root transformation
+
+        censoring : str
+            Specifies whether the observed particle size distribution (PSD) is
+            treated as censored at the edges of the diameter range due to
+            instrumental sensitivity limits:
+
+            - ``"none"`` : No censoring is applied. All diameter bins are used.
+            - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+              range of diameter bins with non-zero observed concentrations is
+              retained.
+
+        loss : int, optional
+            Loss function.
+            If target is ``"N(D)"``, valid options are:
+
+            - ``SSE``: Sum of Squared Errors
+            - ``SAE``: Sum of Absolute Errors
+            - ``MAE``: Mean Absolute Error
+            - ``MSE``: Mean Squared Error
+            - ``RMSE``: Root Mean Squared Error
+            - ``relMAE``: Relative Mean Absolute Error
+            - ``KLDiv``: Kullback-Leibler Divergence
+            - ``WD``: Wasserstein Distance
+            - ``JSD``: Jensen-Shannon Distance
+            - ``KS``: Kolmogorov-Smirnov Statistic
+
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
+
+        loss_weight: int, optional
+            Weight of this objective when multiple objectives are used.
+            Must be specified if more than one objective is specified.
+    return_loss : bool, optional
+        If True, return both the loss surface and parameters.
+        Default is False.
+
+    Returns
+    -------
+    parameters : numpy.ndarray
+        Best parameters as [Lambda, mu, c].
+        An array of NaN values is returned if no valid solution is found.
+    total_loss : numpy.ndarray, optional
+        3D array of total loss values reshaped to (len(mu), len(Lambda), len(c)).
+        Only returned if return_loss=True.
+
+    Notes
+    -----
+    When multiple objectives are provided, losses are normalized and weighted.
+    The best parameters correspond to the minimum total weighted loss.
+    """
+    # Ensure input is numpy array
+    Nt = np.asarray(Nt)
+    ND_obs = np.asarray(ND_obs)
+    V = np.asarray(V)
+
+    # Define combinations of parameters for grid search
+    mu_grid, Lambda_grid, c_grid = np.meshgrid(
+        mu,
+        Lambda,
+        c,
+        indexing="xy",
+    )
+    mu_arr = mu_grid.ravel()
+    Lambda_arr = Lambda_grid.ravel()
+    c_arr = c_grid.ravel()
+
+    # Perform grid search
+    with suppress_warnings():
+        # Compute N(D)
+        ND_preds = GeneralizedGammaPSD.formula(
+            D=D[None, :],
+            Nt=Nt,
+            Lambda=Lambda_arr[:, None],
+            mu=mu_arr[:, None],
+            c=c_arr[:, None],
+        )
+
+        # Compute loss
+        total_loss = compute_weighted_loss(
+            ND_obs=ND_obs,
+            ND_preds=ND_preds,
+            D=D,
+            dD=dD,
+            V=V,
+            objectives=objectives,
+        )
+
+    # Define best parameters
+    if not np.all(np.isnan(total_loss)):
+        best_index = np.nanargmin(total_loss)
+        mu_best = mu_arr[best_index].item()
+        c_best = c_arr[best_index].item()
+        Lambda_best = Lambda_arr[best_index].item()
+        parameters = np.array([Nt, Lambda_best, mu_best, c_best])
+    else:
+        parameters = np.array([np.nan, np.nan, np.nan, np.nan])
+
+    # If asked, return cost function
+    if return_loss:
+        total_loss = total_loss.reshape(mu_grid.shape)
+        return parameters, total_loss
+
+    return parameters
 
 
 def apply_lognormal_gs(
@@ -1309,61 +1468,155 @@ def apply_lognormal_gs(
     # Coords
     D,
     dD,
-    # Error options
-    target,
-    transformation,
-    error_order,
+    # PSD parameters
+    mu,
+    sigma,
+    # Optimization options
+    objectives,
+    # Output options
+    return_loss=False,
 ):
-    """Estimate LognormalPSD model parameters using Grid Search."""
-    # Define parameters bounds
-    sigma_bounds = (0, np.inf)  # > 0
-    scale_bounds = (0, np.inf)  # > 0
-    # mu_bounds = (- np.inf, np.inf) # mu = np.log(scale)
+    """Estimate LognormalPSD model parameters using Grid Search.
 
-    # Define initial set of parameters
-    # --> Typically sigma between 0 and 3
-    # --> Typically mu between -2 and 2
-    scale_step = 0.2
-    sigma_step = 0.2
-    scale_values = np.arange(scale_step, 20, step=scale_step)
-    mu_values = np.log(scale_values)
-    sigma_values = np.arange(0, 3, step=sigma_step)
+    This function performs a grid search optimization to find the best parameters
+    (mu, sigma) for the LognormalPSD model by minimizing a weighted
+    cost function across one or more objectives.
 
-    # First round of GS
-    Nt, mu, sigma = _apply_lognormal_gs(
-        mu_values=mu_values,
-        sigma_values=sigma_values,
-        Nt=Nt,
-        ND_obs=ND_obs,
-        D=D,
-        dD=dD,
-        V=V,
-        target=target,
-        transformation=transformation,
-        error_order=error_order,
+    Parameters
+    ----------
+    Nt : float
+        Total number concentration.
+    ND_obs : numpy.ndarray
+        Observed PSD data [#/mm/m3].
+    V : numpy.ndarray
+        Fall velocity [m/s].
+    D : numpy.ndarray
+        Diameter bins [mm].
+    dD : numpy.ndarray
+        Diameter bin widths [mm].
+    mu : int, float or numpy.ndarray
+        mu parameter values to search.
+    sigma : int, float or numpy.ndarray
+        sigma parameter values to search.
+    objectives: list of dict
+        target : str, optional
+            Target quantity to optimize. Valid options:
+
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
+
+        transformation : str, optional
+            Transformation applied to the target quantity before computing the loss.
+            Valid options:
+
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation
+            - ``"sqrt"`` : Square root transformation
+
+        censoring : str
+            Specifies whether the observed particle size distribution (PSD) is
+            treated as censored at the edges of the diameter range due to
+            instrumental sensitivity limits:
+
+            - ``"none"`` : No censoring is applied. All diameter bins are used.
+            - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+              range of diameter bins with non-zero observed concentrations is
+              retained.
+
+        loss : int, optional
+            Loss function.
+            If target is ``"N(D)"``, valid options are:
+
+            - ``SSE``: Sum of Squared Errors
+            - ``SAE``: Sum of Absolute Errors
+            - ``MAE``: Mean Absolute Error
+            - ``MSE``: Mean Squared Error
+            - ``RMSE``: Root Mean Squared Error
+            - ``relMAE``: Relative Mean Absolute Error
+            - ``KLDiv``: Kullback-Leibler Divergence
+            - ``WD``: Wasserstein Distance
+            - ``JSD``: Jensen-Shannon Distance
+            - ``KS``: Kolmogorov-Smirnov Statistic
+
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
+
+        loss_weight: int, optional
+            Weight of this objective when multiple objectives are used.
+            Must be specified if more than one objective is specified.
+    return_loss : bool, optional
+        If True, return both the loss surface and parameters.
+        Default is False.
+
+    Returns
+    -------
+    parameters : numpy.ndarray
+        Best parameters as [mu, sigma].
+        An array of NaN values is returned if no valid solution is found.
+    total_loss : numpy.ndarray, optional
+        2D array of total loss values reshaped to (len(mu), len(sigma)).
+        Only returned if return_loss=True.
+
+    Notes
+    -----
+    When multiple objectives are provided, losses are normalized and weighted.
+    The best parameters correspond to the minimum total weighted loss
+    """
+    # Ensure input is numpy array
+    Nt = np.asarray(Nt)
+    ND_obs = np.asarray(ND_obs)
+    V = np.asarray(V)
+
+    # Define combinations of parameters for grid search
+    mu_grid, sigma_grid = np.meshgrid(
+        mu,
+        sigma,
+        indexing="xy",
     )
-    if np.isnan(mu):  # if np.nan, return immediately
-        return np.array([Nt, mu, sigma])
+    mu_arr = mu_grid.ravel()
+    sigma_arr = sigma_grid.ravel()
 
-    # Second round of GS
-    sigma_values = define_param_range(sigma, sigma_step, bounds=sigma_bounds)
-    scale_values = define_param_range(np.exp(mu), scale_step, bounds=scale_bounds)
+    # Perform grid search
     with suppress_warnings():
-        mu_values = np.log(scale_values)
-    Nt, mu, sigma = _apply_lognormal_gs(
-        mu_values=mu_values,
-        sigma_values=sigma_values,
-        Nt=Nt,
-        ND_obs=ND_obs,
-        D=D,
-        dD=dD,
-        V=V,
-        target=target,
-        transformation=transformation,
-        error_order=error_order,
-    )
+        # Compute N(D)
+        ND_preds = LognormalPSD.formula(D=D[None, :], Nt=Nt, mu=mu_arr[:, None], sigma=sigma_arr[:, None])
 
-    return np.array([Nt, mu, sigma])
+        # Compute loss
+        total_loss = compute_weighted_loss(
+            ND_obs=ND_obs,
+            ND_preds=ND_preds,
+            D=D,
+            dD=dD,
+            V=V,
+            objectives=objectives,
+        )
+
+    # Define best parameters
+    if not np.all(np.isnan(total_loss)):
+        best_index = np.nanargmin(total_loss)
+        mu_best = mu_arr[best_index].item()
+        sigma_best = sigma_arr[best_index].item()
+        parameters = np.array([Nt, mu_best, sigma_best])
+    else:
+        parameters = np.array([np.nan, np.nan, np.nan])
+
+    # If asked, return cost function
+    if return_loss:
+        total_loss = total_loss.reshape(mu_grid.shape)
+        return parameters, total_loss
+
+    return parameters
 
 
 def apply_normalized_gamma_gs(
@@ -1374,71 +1627,487 @@ def apply_normalized_gamma_gs(
     # Coords
     D,
     dD,
-    # Error options
-    target,
-    transformation,
-    error_order,
+    # PSD parameters
+    mu,
+    # Optimization options
+    objectives,
+    # Output options
+    return_loss=False,
 ):
-    """Estimate NormalizedGammaPSD model parameters using Grid Search."""
-    # Define set of mu values
-    mu_arr = np.arange(-4, 30, step=0.01)
+    """Estimate NormalizedGammaPSD model parameters using Grid Search.
+
+    This function performs a grid search optimization to find the best parameter
+    (mu) for the NormalizedGammaPSD model by minimizing a weighted
+    cost function across one or more objectives.
+
+    Parameters
+    ----------
+    Nw : float
+        Normalized intercept parameter.
+    D50 : float
+        Median volume diameter parameter.
+    ND_obs : numpy.ndarray
+        Observed PSD data [#/mm/m3].
+    V : numpy.ndarray
+        Fall velocity [m/s].
+    D : numpy.ndarray
+        Diameter bins [mm].
+    dD : numpy.ndarray
+        Diameter bin widths [mm].
+    mu : int, float or numpy.ndarray
+        mu parameter values to search.
+    objectives: list of dict
+        target : str, optional
+            Target quantity to optimize. Valid options:
+
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
+            - ``"H(x)"`` : Normalized drop number concentration [-]
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
+
+        transformation : str, optional
+            Transformation applied to the target quantity before computing the loss.
+            Valid options:
+
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation
+            - ``"sqrt"`` : Square root transformation
+
+        censoring : str
+            Specifies whether the observed particle size distribution (PSD) is
+            treated as censored at the edges of the diameter range due to
+            instrumental sensitivity limits:
+
+            - ``"none"`` : No censoring is applied. All diameter bins are used.
+            - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+              range of diameter bins with non-zero observed concentrations is
+              retained.
+
+        loss : int, optional
+            Loss function.
+            If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
+
+            - ``SSE``: Sum of Squared Errors
+            - ``SAE``: Sum of Absolute Errors
+            - ``MAE``: Mean Absolute Error
+            - ``MSE``: Mean Squared Error
+            - ``RMSE``: Root Mean Squared Error
+            - ``relMAE``: Relative Mean Absolute Error
+            - ``KLDiv``: Kullback-Leibler Divergence
+            - ``WD``: Wasserstein Distance
+            - ``JSD``: Jensen-Shannon Distance
+            - ``KS``: Kolmogorov-Smirnov Statistic
+
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
+
+        loss_weight: int, optional
+            Weight of this objective when multiple objectives are used.
+            Must be specified if more than one objective is specified.
+    return_loss : bool, optional
+        If True, return both the loss surface and parameters.
+        Default is False.
+
+    Returns
+    -------
+    parameters : numpy.ndarray
+        Best parameters as [Nw, mu, D50].
+        An array of NaN values is returned if no valid solution is found.
+    total_loss : numpy.ndarray, optional
+        1D array of total loss values.
+        Only returned if return_loss=True.
+
+    Notes
+    -----
+    When multiple objectives are provided, losses are normalized and weighted.
+    The best parameters correspond to the minimum total weighted loss
+    """
+    # Ensure input is numpy array
+    Nw = np.asarray(Nw)
+    D50 = np.asarray(D50)
+    ND_obs = np.asarray(ND_obs)
+    V = np.asarray(V)
+
+    # Convert mu to array if needed
+    mu_arr = np.atleast_1d(mu) if not isinstance(mu, np.ndarray) else mu
 
     # Perform grid search
     with suppress_warnings():
-        # Compute ND
+        # Compute N(D)
         ND_preds = NormalizedGammaPSD.formula(D=D[None, :], D50=D50, Nw=Nw, mu=mu_arr[:, None])
 
-        # Compute errors
-        errors = _compute_cost_function(
+        # Compute loss
+        total_loss = compute_weighted_loss(
             ND_obs=ND_obs,
             ND_preds=ND_preds,
             D=D,
             dD=dD,
             V=V,
-            target=target,
-            transformation=transformation,
-            error_order=error_order,
+            objectives=objectives,
+            Nc=Nw,
         )
 
-    # Replace inf with NaN
-    errors[~np.isfinite(errors)] = np.nan
+    # Define best parameters
+    if not np.all(np.isnan(total_loss)):
+        best_index = np.nanargmin(total_loss)
+        mu_best = mu_arr[best_index].item()
+        parameters = np.array([Nw, D50, mu_best])
+    else:
+        parameters = np.array([np.nan, np.nan, np.nan])
 
-    # If all invalid, return NaN parameters
-    if np.all(np.isnan(errors)):
-        return np.array([np.nan, np.nan, np.nan])
+    # If asked, return cost function
+    if return_loss:
+        return parameters, total_loss
 
-    # Otherwise, choose the best index
-    best_index = np.nanargmin(errors)
-    mu = mu_arr[best_index]
-    return np.array([Nw, mu, D50])
+    return parameters
 
 
-def get_exponential_parameters_gs(ds, target="ND", transformation="log", error_order=1):
-    """Estimate the parameters of an Exponential distribution using Grid Search."""
-    # "target": ["ND", "LWC", "Z", "R"]
-    # "transformation": "log", "identity", "sqrt",  # only for drop_number_concentration
-    # "error_order": 1,     # MAE/MSE ... only for drop_number_concentration
+def apply_normalized_generalized_gamma_gs(
+    Nc,
+    Dc,
+    ND_obs,
+    V,
+    # Coords
+    D,
+    dD,
+    # PSD parameters
+    i,
+    j,
+    mu,
+    c,
+    # Optimization options
+    objectives,
+    # Output options
+    return_loss=False,
+):
+    """Estimate NormalizedGeneralizedGammaPSD model parameters using Grid Search.
+
+    This function performs a grid search optimization to find the best parameters
+    (mu, c) for the NormalizedGeneralizedGammaPSD model by minimizing a weighted
+    cost function across one or more objectives.
+
+    Parameters
+    ----------
+    Nc : float
+        Normalized intercept parameter.
+    Dc : float
+        Normalized characteristic diameter parameter.
+    ND_obs : numpy.ndarray
+        Observed PSD data [#/mm/m3].
+    V : numpy.ndarray
+        Fall velocity [m/s].
+    D : numpy.ndarray
+        Diameter bins [mm].
+    dD : numpy.ndarray
+        Diameter bin widths [mm].
+    i : int
+        Moment order i of the NormalizedGeneralizedGammaPSD.
+    j : int
+        Moment order j of the NormalizedGeneralizedGammaPSD.
+    mu : int, float or numpy.ndarray
+        mu parameter values to search.
+    c : int, float or numpy.ndarray
+        c parameter values to search.
+    objectives: list of dict
+        target : str, optional
+            Target quantity to optimize. Valid options:
+
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
+            - ``"H(x)"`` : Normalized drop number concentration [-]
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
+
+        transformation : str, optional
+            Transformation applied to the target quantity before computing the loss.
+            Valid options:
+
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation
+            - ``"sqrt"`` : Square root transformation
+
+        censoring : str
+            Specifies whether the observed particle size distribution (PSD) is
+            treated as censored at the edges of the diameter range due to
+            instrumental sensitivity limits:
+
+            - ``"none"`` : No censoring is applied. All diameter bins are used.
+            - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+              range of diameter bins with non-zero observed concentrations is
+              retained.
+
+        loss : int, optional
+            Loss function.
+            If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
+
+            - ``SSE``: Sum of Squared Errors
+            - ``SAE``: Sum of Absolute Errors
+            - ``MAE``: Mean Absolute Error
+            - ``MSE``: Mean Squared Error
+            - ``RMSE``: Root Mean Squared Error
+            - ``relMAE``: Relative Mean Absolute Error
+            - ``KLDiv``: Kullback-Leibler Divergence
+            - ``WD``: Wasserstein Distance
+            - ``JSD``: Jensen-Shannon Distance
+            - ``KS``: Kolmogorov-Smirnov Statistic
+
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
+
+        loss_weight: int, optional
+            Weight of this objective when multiple objectives are used.
+            Must be specified if more than one objective is specified.
+    return_loss : bool, optional
+        If True, return both the loss surface and parameters.
+        Default is False.
+
+    Returns
+    -------
+    parameters : numpy.ndarray
+        Best parameters as [Nc, Dc, mu, c].
+        An array of NaN values is returned if no valid solution is found.
+    total_loss : numpy.ndarray, optional
+        2D array of total loss values reshaped to (len(mu), len(c)).
+        Only returned if return_loss=True.
+
+    Notes
+    -----
+    When multiple objectives are provided, losses are normalized and weighted.
+    The best parameters correspond to the minimum total weighted loss.
+    """
+    # Thurai 2018: mu [-3, 1], c [0-6]
+
+    # Ensure input is numpy array
+    Nc = np.asarray(Nc)
+    Dc = np.asarray(Dc)
+    ND_obs = np.asarray(ND_obs)
+    V = np.asarray(V)
+
+    # Define combinations of parameters for grid search
+    mu_grid, c_grid = np.meshgrid(
+        mu,
+        c,
+        indexing="xy",
+    )
+    mu_arr = mu_grid.ravel()
+    c_arr = c_grid.ravel()
+
+    # Perform grid search
+    with suppress_warnings():
+
+        # Compute N(D)
+        ND_preds = NormalizedGeneralizedGammaPSD.formula(
+            D=D[None, :],
+            i=i,
+            j=j,
+            Nc=Nc,
+            Dc=Dc,
+            mu=mu_arr[:, None],
+            c=c_arr[:, None],
+        )
+
+        # Compute loss
+        total_loss = compute_weighted_loss(
+            ND_obs=ND_obs,
+            ND_preds=ND_preds,
+            D=D,
+            dD=dD,
+            V=V,
+            objectives=objectives,
+            Nc=Nc,
+        )
+
+    # Define best parameters
+    if not np.all(np.isnan(total_loss)):
+        best_index = np.nanargmin(total_loss)
+        mu, c = mu_arr[best_index].item(), c_arr[best_index].item()
+        parameters = np.array([Nc, Dc, mu, c])
+    else:
+        parameters = np.array([np.nan, np.nan, np.nan, np.nan])
+
+    # If asked, return cost function
+    if return_loss:
+        total_loss = total_loss.reshape(mu_grid.shape)
+        return parameters, total_loss
+    return parameters
+
+
+def get_exponential_parameters_gs(
+    ds,
+    Lambda=None,
+    objectives=None,
+    return_loss=False,
+):
+    """Estimate Exponential PSD parameters using Grid Search optimization.
+
+    The parameter ``N_t`` is computed empirically from the observed DSD,
+    while the shape parameter ``Lambda`` is estimated through
+    grid search by minimizing the error between observed and modeled quantities.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset containing PSD observations. Must include:
+
+        - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
+        - ``diameter_bin_center`` : Diameter bin centers [mm]
+        - ``diameter_bin_width`` : Diameter bin widths [mm]
+        - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
+
+    Lambda : int, float or numpy.ndarray
+        Lambda parameter values to search.
+    objectives: list of dict
+        target : str, optional
+            Target quantity to optimize. Valid options:
+
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
+
+        transformation : str, optional
+            Transformation applied to the target quantity before computing the loss.
+            Valid options:
+
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation
+            - ``"sqrt"`` : Square root transformation
+
+        censoring : str
+            Specifies whether the observed particle size distribution (PSD) is
+            treated as censored at the edges of the diameter range due to
+            instrumental sensitivity limits:
+
+            - ``"none"`` : No censoring is applied. All diameter bins are used.
+            - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+              range of diameter bins with non-zero observed concentrations is
+              retained.
+
+        loss : int, optional
+            Loss function.
+            If target is ``"N(D)"``, valid options are:
+
+            - ``SSE``: Sum of Squared Errors
+            - ``SAE``: Sum of Absolute Errors
+            - ``MAE``: Mean Absolute Error
+            - ``MSE``: Mean Squared Error
+            - ``RMSE``: Root Mean Squared Error
+            - ``relMAE``: Relative Mean Absolute Error
+            - ``KLDiv``: Kullback-Leibler Divergence
+            - ``WD``: Wasserstein Distance
+            - ``JSD``: Jensen-Shannon Distance
+            - ``KS``: Kolmogorov-Smirnov Statistic
+
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
+
+        loss_weight: int, optional
+            Weight of this objective when multiple objectives are used.
+            Must be specified if more than one objective is specified.
+    return_loss : bool, optional
+        If True, return both the loss surface and parameters.
+        Default is False.
+
+    Returns
+    -------
+    ds_params : xarray.Dataset
+        Dataset containing the estimated Exponential distribution parameters.
+    """
+    # Use default objectives if not specified
+    if objectives is None:
+        objectives = copy.deepcopy(DEFAULT_OBJECTIVES)
+
+    # Check objectives
+    objectives = check_objectives(objectives=objectives)
 
     # Compute required variables
-    ds["Nt"] = get_total_number_concentration(
+    Nt = get_total_number_concentration(
         drop_number_concentration=ds["drop_number_concentration"],
         diameter_bin_width=ds["diameter_bin_width"],
     )
 
+    # Define search space
+    if Lambda is None:
+        Lambda = np.arange(0.01, 10, step=0.01)
+
     # Define kwargs
     kwargs = {
-        "D": ds["diameter_bin_center"].data,
-        "dD": ds["diameter_bin_width"].data,
-        "target": target,
-        "transformation": transformation,
-        "error_order": error_order,
+        "D": ds["diameter_bin_center"].to_numpy(),
+        "dD": ds["diameter_bin_width"].to_numpy(),
+        "objectives": objectives,
+        "return_loss": return_loss,
+        "Lambda": Lambda,
     }
 
-    # Fit distribution in parallel
-    da_params = xr.apply_ufunc(
+    # Define function to create parameters dataset
+    def _create_parameters_dataset(da_parameters):
+        # Add parameters coordinates
+        da_parameters = da_parameters.assign_coords({"parameters": ["N0", "Lambda"]})
+
+        # Create parameters dataset
+        ds_parameters = da_parameters.to_dataset(dim="parameters")
+
+        # Add DSD model name to the attribute
+        ds_parameters.attrs["disdrodb_psd_model"] = "ExponentialPSD"
+        return ds_parameters
+
+    # Return cost function if asked
+    if return_loss:
+        da_parameters, da_cost_function = xr.apply_ufunc(
+            apply_exponential_gs,
+            # Variables varying over time
+            Nt,
+            ds["drop_number_concentration"],
+            ds["fall_velocity"],
+            # Other options
+            kwargs=kwargs,
+            # Settings
+            input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
+            output_core_dims=[["parameters"], ["Lambda_values"]],
+            vectorize=True,
+            dask="parallelized",
+            # Lengths of the new output_core_dims dimensions.
+            dask_gufunc_kwargs={"output_sizes": {"Lambda_values": len(Lambda), "parameters": 2}},
+            output_dtypes=["float64", "float64"],
+        )
+        ds_parameters = _create_parameters_dataset(da_parameters)
+        ds_parameters["cost_function"] = da_cost_function
+        ds_parameters = ds_parameters.assign_coords({"Lambda_values": Lambda})
+        return ds_parameters
+
+    # Otherwise return just best parameters
+    da_parameters = xr.apply_ufunc(
         apply_exponential_gs,
         # Variables varying over time
-        ds["Nt"],
+        Nt,
         ds["drop_number_concentration"],
         ds["fall_velocity"],
         # Other options
@@ -1451,146 +2120,664 @@ def get_exponential_parameters_gs(ds, target="ND", transformation="log", error_o
         dask_gufunc_kwargs={"output_sizes": {"parameters": 2}},  # lengths of the new output_core_dims dimensions.
         output_dtypes=["float64"],
     )
-
-    # Add parameters coordinates
-    da_params = da_params.assign_coords({"parameters": ["N0", "Lambda"]})
-
-    # Create parameters dataset
-    ds_params = da_params.to_dataset(dim="parameters")
-
-    # Add DSD model name to the attribute
-    ds_params.attrs["disdrodb_psd_model"] = "ExponentialPSD"
-    return ds_params
+    ds_parameters = _create_parameters_dataset(da_parameters)
+    return ds_parameters
 
 
-def get_gamma_parameters_gs(ds, target="ND", transformation="log", error_order=1):
-    """Compute Grid Search to identify mu and Lambda Gamma distribution parameters."""
-    # "target": ["ND", "LWC", "Z", "R"]
-    # "transformation": "log", "identity", "sqrt",  # only for drop_number_concentration
-    # "error_order": 1,     # MAE/MSE ... only for drop_number_concentration
+def get_gamma_parameters_gs(
+    ds,
+    mu=None,
+    Lambda=None,
+    objectives=None,
+    return_loss=False,
+):
+    """Estimate Gamma PSD parameters using Grid Search optimization.
 
-    # Compute required variables
-    ds["Nt"] = get_total_number_concentration(
-        drop_number_concentration=ds["drop_number_concentration"],
-        diameter_bin_width=ds["diameter_bin_width"],
-    )
-
-    # Define kwargs
-    kwargs = {
-        "D": ds["diameter_bin_center"].data,
-        "dD": ds["diameter_bin_width"].data,
-        "target": target,
-        "transformation": transformation,
-        "error_order": error_order,
-    }
-
-    # Fit distribution in parallel
-    da_params = xr.apply_ufunc(
-        apply_gamma_gs,
-        # Variables varying over time
-        ds["Nt"],
-        ds["drop_number_concentration"],
-        ds["fall_velocity"],
-        # Other options
-        kwargs=kwargs,
-        # Settings
-        input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
-        output_core_dims=[["parameters"]],
-        vectorize=True,
-        dask="parallelized",
-        dask_gufunc_kwargs={"output_sizes": {"parameters": 3}},  # lengths of the new output_core_dims dimensions.
-        output_dtypes=["float64"],
-    )
-
-    # Add parameters coordinates
-    da_params = da_params.assign_coords({"parameters": ["N0", "mu", "Lambda"]})
-
-    # Create parameters dataset
-    ds_params = da_params.to_dataset(dim="parameters")
-
-    # Add DSD model name to the attribute
-    ds_params.attrs["disdrodb_psd_model"] = "GammaPSD"
-    return ds_params
-
-
-def get_lognormal_parameters_gs(ds, target="ND", transformation="log", error_order=1):
-    """Compute Grid Search to identify mu and sigma lognormal distribution parameters."""
-    # "target": ["ND", "LWC", "Z", "R"]
-    # "transformation": "log", "identity", "sqrt",  # only for drop_number_concentration
-    # "error_order": 1,     # MAE/MSE ... only for drop_number_concentration
-
-    # Compute required variables
-    ds["Nt"] = get_total_number_concentration(
-        drop_number_concentration=ds["drop_number_concentration"],
-        diameter_bin_width=ds["diameter_bin_width"],
-    )
-
-    # Define kwargs
-    kwargs = {
-        "D": ds["diameter_bin_center"].data,
-        "dD": ds["diameter_bin_width"].data,
-        "target": target,
-        "transformation": transformation,
-        "error_order": error_order,
-    }
-
-    # Fit distribution in parallel
-    da_params = xr.apply_ufunc(
-        apply_lognormal_gs,
-        # Variables varying over time
-        ds["Nt"],
-        ds["drop_number_concentration"],
-        ds["fall_velocity"],
-        # Other options
-        kwargs=kwargs,
-        # Settings
-        input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
-        output_core_dims=[["parameters"]],
-        vectorize=True,
-        dask="parallelized",
-        dask_gufunc_kwargs={"output_sizes": {"parameters": 3}},  # lengths of the new output_core_dims dimensions.
-        output_dtypes=["float64"],
-    )
-
-    # Add parameters coordinates
-    da_params = da_params.assign_coords({"parameters": ["Nt", "mu", "sigma"]})
-
-    # Create parameters dataset
-    ds_params = da_params.to_dataset(dim="parameters")
-
-    # Add DSD model name to the attribute
-    ds_params.attrs["disdrodb_psd_model"] = "LognormalPSD"
-    return ds_params
-
-
-def get_normalized_gamma_parameters_gs(ds, target="ND", transformation="log", error_order=1):
-    r"""Estimate $\mu$ of a Normalized Gamma distribution using Grid Search.
-
-    The D50 and Nw parameters of the Normalized Gamma distribution are derived empirically from the obs DSD.
-    $\mu$ is derived by minimizing the errors between the obs DSD and modelled Normalized Gamma distribution.
+    The parameter ``N_t`` is computed empirically from the observed DSD,
+    while the shape parameters ``mu`` and ``Lambda`` are estimated through
+    grid search by minimizing the error between observed and modeled quantities.
 
     Parameters
     ----------
-    Nd : array_like
-        A drop size distribution
-    D50: optional, float
-        Median drop diameter in mm. If none is given, it will be estimated.
-    Nw: optional, float
-        Normalized Intercept Parameter. If none is given, it will be estimated.
-    order: optional, float
-        Order to which square the error when computing the sum of errors.
-        Order = 2 is equivalent to minimize the mean squared error (MSE) (L2 norm). The default is 2.
-        Order = 1 is equivalent to minimize the mean absolute error (MAE) (L1 norm).
-        Higher orders typically stretch higher the gamma distribution.
+    ds : xarray.Dataset
+        Input dataset containing PSD observations. Must include:
+
+        - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
+        - ``diameter_bin_center`` : Diameter bin centers [mm]
+        - ``diameter_bin_width`` : Diameter bin widths [mm]
+        - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
+
+    mu : int, float or numpy.ndarray
+        mu parameter values to search.
+    Lambda : int, float or numpy.ndarray
+        Lambda parameter values to search.
+    objectives: list of dict
+        target : str, optional
+            Target quantity to optimize. Valid options:
+
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
+
+        transformation : str, optional
+            Transformation applied to the target quantity before computing the loss.
+            Valid options:
+
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation
+            - ``"sqrt"`` : Square root transformation
+
+        censoring : str
+            Specifies whether the observed particle size distribution (PSD) is
+            treated as censored at the edges of the diameter range due to
+            instrumental sensitivity limits:
+
+            - ``"none"`` : No censoring is applied. All diameter bins are used.
+            - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+              range of diameter bins with non-zero observed concentrations is
+              retained.
+
+        loss : int, optional
+            Loss function.
+            If target is ``"N(D)"``, valid options are:
+
+            - ``SSE``: Sum of Squared Errors
+            - ``SAE``: Sum of Absolute Errors
+            - ``MAE``: Mean Absolute Error
+            - ``MSE``: Mean Squared Error
+            - ``RMSE``: Root Mean Squared Error
+            - ``relMAE``: Relative Mean Absolute Error
+            - ``KLDiv``: Kullback-Leibler Divergence
+            - ``WD``: Wasserstein Distance
+            - ``JSD``: Jensen-Shannon Distance
+            - ``KS``: Kolmogorov-Smirnov Statistic
+
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
+
+        loss_weight: int, optional
+            Weight of this objective when multiple objectives are used.
+            Must be specified if more than one objective is specified.
+    return_loss : bool, optional
+        If True, return both the loss surface and parameters.
+        Default is False.
+
+    Returns
+    -------
+    ds_params : xarray.Dataset
+        Dataset containing the estimated Gamma distribution parameters.
+    """
+    # Use default objectives if not specified
+    if objectives is None:
+        objectives = copy.deepcopy(DEFAULT_OBJECTIVES)
+
+    # Check objectives
+    objectives = check_objectives(objectives=objectives)
+
+    # Compute required variables
+    Nt = get_total_number_concentration(
+        drop_number_concentration=ds["drop_number_concentration"],
+        diameter_bin_width=ds["diameter_bin_width"],
+    )
+
+    # Define search space
+    if mu is None:
+        mu = np.arange(0, 15, step=0.1)
+    if Lambda is None:
+        Lambda = np.arange(0, 30, step=0.1)
+
+    # Define kwargs
+    kwargs = {
+        "D": ds["diameter_bin_center"].to_numpy(),
+        "dD": ds["diameter_bin_width"].to_numpy(),
+        "objectives": objectives,
+        "return_loss": return_loss,
+        "mu": mu,
+        "Lambda": Lambda,
+    }
+
+    # Define function to create parameters dataset
+    def _create_parameters_dataset(da_parameters):
+        # Add parameters coordinates
+        da_parameters = da_parameters.assign_coords({"parameters": ["N0", "Lambda", "mu"]})
+
+        # Create parameters dataset
+        ds_parameters = da_parameters.to_dataset(dim="parameters")
+
+        # Add DSD model name to the attribute
+        ds_parameters.attrs["disdrodb_psd_model"] = "GammaPSD"
+        return ds_parameters
+
+    # Return cost function if asked
+    if return_loss:
+        # Define lengths of the new output_core_dims dimensions.
+        output_dict_size = {
+            "mu_values": len(mu),
+            "Lambda_values": len(Lambda),
+            "parameters": 3,
+        }
+        # Compute cost function and parameters
+        da_parameters, da_cost_function = xr.apply_ufunc(
+            apply_gamma_gs,
+            # Variables varying over time
+            Nt,
+            ds["drop_number_concentration"],
+            ds["fall_velocity"],
+            # Other options
+            kwargs=kwargs,
+            # Settings
+            input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
+            output_core_dims=[["parameters"], ["Lambda_values", "mu_values"]],
+            vectorize=True,
+            dask="parallelized",
+            # Lengths of the new output_core_dims dimensions.
+            dask_gufunc_kwargs={"output_sizes": output_dict_size},
+            output_dtypes=["float64", "float64"],
+        )
+        ds_parameters = _create_parameters_dataset(da_parameters)
+        ds_parameters["cost_function"] = da_cost_function
+        ds_parameters = ds_parameters.assign_coords({"mu_values": mu, "Lambda_values": Lambda})
+        return ds_parameters
+
+    # Otherwise return just best parameters
+    da_parameters = xr.apply_ufunc(
+        apply_gamma_gs,
+        # Variables varying over time
+        Nt,
+        ds["drop_number_concentration"],
+        ds["fall_velocity"],
+        # Other options
+        kwargs=kwargs,
+        # Settings
+        input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
+        output_core_dims=[["parameters"]],
+        vectorize=True,
+        dask="parallelized",
+        dask_gufunc_kwargs={"output_sizes": {"parameters": 3}},  # lengths of the new output_core_dims dimensions.
+        output_dtypes=["float64"],
+    )
+    ds_parameters = _create_parameters_dataset(da_parameters)
+    return ds_parameters
+
+
+def get_generalized_gamma_parameters_gs(
+    ds,
+    mu=None,
+    c=None,
+    Lambda=None,
+    objectives=None,
+    return_loss=False,
+):
+    """Estimate Generalized Gamma PSD parameters using Grid Search optimization.
+
+    The parameter ``N_t`` is computed empirically from the observed DSD,
+    while the shape parameters ``mu``, ``c``, and ``Lambda`` are estimated through
+    grid search by minimizing the error between observed and modeled quantities.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset containing PSD observations. Must include:
+
+        - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
+        - ``diameter_bin_center`` : Diameter bin centers [mm]
+        - ``diameter_bin_width`` : Diameter bin widths [mm]
+        - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
+
+    mu : int, float or numpy.ndarray
+        mu parameter values to search.
+    c : int, float or numpy.ndarray
+        c parameter values to search.
+    Lambda : int, float or numpy.ndarray
+        Lambda parameter values to search.
+    objectives: list of dict
+        target : str, optional
+            Target quantity to optimize. Valid options:
+
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
+
+        transformation : str, optional
+            Transformation applied to the target quantity before computing the loss.
+            Valid options:
+
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation
+            - ``"sqrt"`` : Square root transformation
+
+        censoring : str
+            Specifies whether the observed particle size distribution (PSD) is
+            treated as censored at the edges of the diameter range due to
+            instrumental sensitivity limits:
+
+            - ``"none"`` : No censoring is applied. All diameter bins are used.
+            - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+              range of diameter bins with non-zero observed concentrations is
+              retained.
+
+        loss : int, optional
+            Loss function.
+            If target is ``"N(D)"``, valid options are:
+
+            - ``SSE``: Sum of Squared Errors
+            - ``SAE``: Sum of Absolute Errors
+            - ``MAE``: Mean Absolute Error
+            - ``MSE``: Mean Squared Error
+            - ``RMSE``: Root Mean Squared Error
+            - ``relMAE``: Relative Mean Absolute Error
+            - ``KLDiv``: Kullback-Leibler Divergence
+            - ``WD``: Wasserstein Distance
+            - ``JSD``: Jensen-Shannon Distance
+            - ``KS``: Kolmogorov-Smirnov Statistic
+
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
+
+        loss_weight: int, optional
+            Weight of this objective when multiple objectives are used.
+            Must be specified if more than one objective is specified.
+    return_loss : bool, optional
+        If True, return both the loss surface and parameters.
+        Default is False.
+
+    Returns
+    -------
+    ds_params : xarray.Dataset
+        Dataset containing the estimated Generalized Gamma distribution parameters.
+    """
+    # Use default objectives if not specified
+    if objectives is None:
+        objectives = copy.deepcopy(DEFAULT_OBJECTIVES)
+
+    # Check objectives
+    objectives = check_objectives(objectives=objectives)
+
+    # Compute required variables
+    Nt = get_total_number_concentration(
+        drop_number_concentration=ds["drop_number_concentration"],
+        diameter_bin_width=ds["diameter_bin_width"],
+    )
+
+    # Define search space
+    if mu is None:
+        mu = np.arange(0, 10, step=0.2)
+    if c is None:
+        c = np.arange(0, 10, step=0.2)
+    if Lambda is None:
+        Lambda = np.arange(0, 20, step=0.2)
+
+    # Define kwargs
+    kwargs = {
+        "D": ds["diameter_bin_center"].to_numpy(),
+        "dD": ds["diameter_bin_width"].to_numpy(),
+        "objectives": objectives,
+        "return_loss": return_loss,
+        "mu": mu,
+        "c": c,
+        "Lambda": Lambda,
+    }
+
+    # Define function to create parameters dataset
+    def _create_parameters_dataset(da_parameters):
+        # Add parameters coordinates
+        da_parameters = da_parameters.assign_coords({"parameters": ["Nt", "Lambda", "mu", "c"]})
+
+        # Create parameters dataset
+        ds_parameters = da_parameters.to_dataset(dim="parameters")
+
+        # Add DSD model name to the attribute
+        ds_parameters.attrs["disdrodb_psd_model"] = "GeneralizedGammaPSD"
+        return ds_parameters
+
+    # Return cost function if asked
+    if return_loss:
+        # Define lengths of the new output_core_dims dimensions.
+        output_dict_size = {
+            "mu_values": len(mu),
+            "Lambda_values": len(Lambda),
+            "c_values": len(c),
+            "parameters": 4,
+        }
+        # Compute
+        da_parameters, da_cost_function = xr.apply_ufunc(
+            apply_generalized_gamma_gs,
+            # Variables varying over time
+            Nt,
+            ds["drop_number_concentration"],
+            ds["fall_velocity"],
+            # Other options
+            kwargs=kwargs,
+            # Settings
+            input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
+            output_core_dims=[["parameters"], ["Lambda_values", "mu_values", "c_values"]],
+            vectorize=True,
+            dask="parallelized",
+            dask_gufunc_kwargs={"output_sizes": output_dict_size},
+            output_dtypes=["float64", "float64"],
+        )
+        ds_parameters = _create_parameters_dataset(da_parameters)
+        ds_parameters["cost_function"] = da_cost_function
+        ds_parameters = ds_parameters.assign_coords({"mu_values": mu, "Lambda_values": Lambda, "c_values": c})
+        return ds_parameters
+
+    # Otherwise return just best parameters
+    da_parameters = xr.apply_ufunc(
+        apply_generalized_gamma_gs,
+        # Variables varying over time
+        Nt,
+        ds["drop_number_concentration"],
+        ds["fall_velocity"],
+        # Other options
+        kwargs=kwargs,
+        # Settings
+        input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
+        output_core_dims=[["parameters"]],
+        vectorize=True,
+        dask="parallelized",
+        dask_gufunc_kwargs={"output_sizes": {"parameters": 4}},  # lengths of the new output_core_dims dimensions.
+        output_dtypes=["float64"],
+    )
+    ds_parameters = _create_parameters_dataset(da_parameters)
+    return ds_parameters
+
+
+def get_lognormal_parameters_gs(
+    ds,
+    mu=None,
+    sigma=None,
+    objectives=None,
+    return_loss=False,
+):
+    """Estimate Lognormal PSD parameters using Grid Search optimization.
+
+    The parameter ``N_t`` is computed empirically from the observed DSD,
+    while the shape parameters ``mu`` and ``sigma`` are estimated through
+    grid search by minimizing the error between observed and modeled quantities.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset containing PSD observations. Must include:
+
+        - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
+        - ``diameter_bin_center`` : Diameter bin centers [mm]
+        - ``diameter_bin_width`` : Diameter bin widths [mm]
+        - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
+
+    mu : int, float or numpy.ndarray
+        mu parameter values to search.
+    sigma : int, float or numpy.ndarray
+        sigma parameter values to search.
+    objectives: list of dict
+        target : str, optional
+            Target quantity to optimize. Valid options:
+
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
+
+        transformation : str, optional
+            Transformation applied to the target quantity before computing the loss.
+            Valid options:
+
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation
+            - ``"sqrt"`` : Square root transformation
+
+        censoring : str
+            Specifies whether the observed particle size distribution (PSD) is
+            treated as censored at the edges of the diameter range due to
+            instrumental sensitivity limits:
+
+            - ``"none"`` : No censoring is applied. All diameter bins are used.
+            - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+              range of diameter bins with non-zero observed concentrations is
+              retained.
+
+        loss : int, optional
+            Loss function.
+            If target is ``"N(D)"``, valid options are:
+
+            - ``SSE``: Sum of Squared Errors
+            - ``SAE``: Sum of Absolute Errors
+            - ``MAE``: Mean Absolute Error
+            - ``MSE``: Mean Squared Error
+            - ``RMSE``: Root Mean Squared Error
+            - ``relMAE``: Relative Mean Absolute Error
+            - ``KLDiv``: Kullback-Leibler Divergence
+            - ``WD``: Wasserstein Distance
+            - ``JSD``: Jensen-Shannon Distance
+            - ``KS``: Kolmogorov-Smirnov Statistic
+
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
+
+        loss_weight: int, optional
+            Weight of this objective when multiple objectives are used.
+            Must be specified if more than one objective is specified.
+    return_loss : bool, optional
+        If True, return both the loss surface and parameters.
+        Default is False.
+
+    Returns
+    -------
+    ds_params : xarray.Dataset
+        Dataset containing the estimated Lognormal distribution parameters.
+    """
+    # Use default objectives if not specified
+    if objectives is None:
+        objectives = copy.deepcopy(DEFAULT_OBJECTIVES)
+
+    # Check objectives
+    objectives = check_objectives(objectives=objectives)
+
+    # Compute required variables
+    Nt = get_total_number_concentration(
+        drop_number_concentration=ds["drop_number_concentration"],
+        diameter_bin_width=ds["diameter_bin_width"],
+    )
+
+    # Define search space
+    if mu is None:
+        mu = np.arange(-4, 1, step=0.1)
+    if sigma is None:
+        sigma = np.arange(0, 3, step=0.2)
+
+    # Define kwargs
+    kwargs = {
+        "D": ds["diameter_bin_center"].to_numpy(),
+        "dD": ds["diameter_bin_width"].to_numpy(),
+        "objectives": objectives,
+        "return_loss": return_loss,
+        "mu": mu,
+        "sigma": sigma,
+    }
+
+    # Define function to create parameters dataset
+    def _create_parameters_dataset(da_parameters):
+        # Add parameters coordinates
+        da_parameters = da_parameters.assign_coords({"parameters": ["Nt", "mu", "sigma"]})
+
+        # Create parameters dataset
+        ds_parameters = da_parameters.to_dataset(dim="parameters")
+
+        # Add DSD model name to the attribute
+        ds_parameters.attrs["disdrodb_psd_model"] = "LognormalPSD"
+        return ds_parameters
+
+    # Return cost function if asked
+    if return_loss:
+        da_parameters, da_cost_function = xr.apply_ufunc(
+            apply_lognormal_gs,
+            # Variables varying over time
+            Nt,
+            ds["drop_number_concentration"],
+            ds["fall_velocity"],
+            # Other options
+            kwargs=kwargs,
+            # Settings
+            input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
+            output_core_dims=[["parameters"], ["sigma_values", "mu_values"]],
+            vectorize=True,
+            dask="parallelized",
+            # Lengths of the new output_core_dims dimensions.
+            dask_gufunc_kwargs={"output_sizes": {"mu_values": len(mu), "sigma_values": len(sigma), "parameters": 3}},
+            output_dtypes=["float64", "float64"],
+        )
+        ds_parameters = _create_parameters_dataset(da_parameters)
+        ds_parameters["cost_function"] = da_cost_function
+        ds_parameters = ds_parameters.assign_coords({"mu_values": mu, "sigma_values": sigma})
+        return ds_parameters
+
+    # Otherwise return just best parameters
+    da_parameters = xr.apply_ufunc(
+        apply_lognormal_gs,
+        # Variables varying over time
+        Nt,
+        ds["drop_number_concentration"],
+        ds["fall_velocity"],
+        # Other options
+        kwargs=kwargs,
+        # Settings
+        input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
+        output_core_dims=[["parameters"]],
+        vectorize=True,
+        dask="parallelized",
+        dask_gufunc_kwargs={"output_sizes": {"parameters": 3}},  # lengths of the new output_core_dims dimensions.
+        output_dtypes=["float64"],
+    )
+    ds_parameters = _create_parameters_dataset(da_parameters)
+    return ds_parameters
+
+
+def get_normalized_gamma_parameters_gs(
+    ds,
+    mu=None,
+    objectives=None,
+    return_loss=False,
+):
+    """Estimate Normalized Gamma PSD parameters using Grid Search optimization.
+
+    The parameters ``N_w`` and ``D50`` are computed empirically from the observed DSD
+    moments, while the shape parameter ``mu`` is estimated through
+    grid search by minimizing the error between observed and modeled quantities.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset containing PSD observations. Must include:
+
+        - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
+        - ``diameter_bin_center`` : Diameter bin centers [mm]
+        - ``diameter_bin_width`` : Diameter bin widths [mm]
+        - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
+
+    mu : int, float or numpy.ndarray
+        mu parameter values to search.
+    objectives: list of dict
+        target : str, optional
+            Target quantity to optimize. Valid options:
+
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
+            - ``"H(x)"`` : Normalized drop number concentration [-]
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
+
+        transformation : str, optional
+            Transformation applied to the target quantity before computing the loss.
+            Valid options:
+
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation
+            - ``"sqrt"`` : Square root transformation
+
+        censoring : str
+            Specifies whether the observed particle size distribution (PSD) is
+            treated as censored at the edges of the diameter range due to
+            instrumental sensitivity limits:
+
+            - ``"none"`` : No censoring is applied. All diameter bins are used.
+            - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+              range of diameter bins with non-zero observed concentrations is
+              retained.
+
+        loss : int, optional
+            Loss function.
+            If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
+
+            - ``SSE``: Sum of Squared Errors
+            - ``SAE``: Sum of Absolute Errors
+            - ``MAE``: Mean Absolute Error
+            - ``MSE``: Mean Squared Error
+            - ``RMSE``: Root Mean Squared Error
+            - ``relMAE``: Relative Mean Absolute Error
+            - ``KLDiv``: Kullback-Leibler Divergence
+            - ``WD``: Wasserstein Distance
+            - ``JSD``: Jensen-Shannon Distance
+            - ``KS``: Kolmogorov-Smirnov Statistic
+
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
+
+        loss_weight: int, optional
+            Weight of this objective when multiple objectives are used.
+            Must be specified if more than one objective is specified.
+    return_loss : bool, optional
+        If True, return both the loss surface and parameters.
+        Default is False.
 
     Returns
     -------
     ds_params : xarray.Dataset
         Dataset containing the estimated Normalized Gamma distribution parameters.
     """
-    # "target": ["ND", "LWC", "Z", "R"]
-    # "transformation": "log", "identity", "sqrt",  # only for drop_number_concentration
-    # "error_order": 1,     # MAE/MSE ... only for drop_number_concentration
+    # Use default objectives if not specified
+    if objectives is None:
+        objectives = copy.deepcopy(DEFAULT_OBJECTIVES)
+
+    # Check objectives
+    objectives = check_objectives(objectives=objectives)
 
     # Compute required variables
     drop_number_concentration = ds["drop_number_concentration"]
@@ -1608,28 +2795,69 @@ def get_normalized_gamma_parameters_gs(ds, target="ND", transformation="log", er
         diameter_bin_width=diameter_bin_width,  # mm
         moment=4,
     )
-    ds["Nw"] = get_normalized_intercept_parameter_from_moments(moment_3=m3, moment_4=m4)
-    ds["D50"] = get_median_volume_drop_diameter(
+    Nw = get_normalized_intercept_parameter_from_moments(moment_3=m3, moment_4=m4)
+    D50 = get_median_volume_drop_diameter(
         drop_number_concentration=drop_number_concentration,
         diameter=diameter,  # m
         diameter_bin_width=diameter_bin_width,  # mm
     )
 
+    # Define search space
+    if mu is None:
+        mu = np.arange(-4, 30, step=0.01)
+
     # Define kwargs
     kwargs = {
-        "D": ds["diameter_bin_center"].data,
-        "dD": ds["diameter_bin_width"].data,
-        "target": target,
-        "transformation": transformation,
-        "error_order": error_order,
+        "D": ds["diameter_bin_center"].to_numpy(),
+        "dD": ds["diameter_bin_width"].to_numpy(),
+        "objectives": objectives,
+        "return_loss": return_loss,
+        "mu": mu,
     }
 
-    # Fit distribution in parallel
-    da_params = xr.apply_ufunc(
+    # Define function to create parameters dataset
+    def _create_parameters_dataset(da_parameters):
+        # Add parameters coordinates
+        da_parameters = da_parameters.assign_coords({"parameters": ["Nw", "D50", "mu"]})
+
+        # Create parameters dataset
+        ds_parameters = da_parameters.to_dataset(dim="parameters")
+
+        # Add DSD model name to the attribute
+        ds_parameters.attrs["disdrodb_psd_model"] = "NormalizedGammaPSD"
+        return ds_parameters
+
+    # Return cost function if asked
+    if return_loss:
+        da_parameters, da_cost_function = xr.apply_ufunc(
+            apply_normalized_gamma_gs,
+            # Variables varying over time
+            Nw,
+            D50,
+            ds["drop_number_concentration"],
+            ds["fall_velocity"],
+            # Other options
+            kwargs=kwargs,
+            # Settings
+            input_core_dims=[[], [], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
+            output_core_dims=[["parameters"], ["mu_values"]],
+            vectorize=True,
+            dask="parallelized",
+            # Lengths of the new output_core_dims dimensions.
+            dask_gufunc_kwargs={"output_sizes": {"mu_values": len(mu), "parameters": 3}},
+            output_dtypes=["float64", "float64"],
+        )
+        ds_parameters = _create_parameters_dataset(da_parameters)
+        ds_parameters["cost_function"] = da_cost_function
+        ds_parameters = ds_parameters.assign_coords({"mu_values": mu})
+        return ds_parameters
+
+    # Otherwise return just best parameters
+    da_parameters = xr.apply_ufunc(
         apply_normalized_gamma_gs,
         # Variables varying over time
-        ds["Nw"],
-        ds["D50"],
+        Nw,
+        D50,
         ds["drop_number_concentration"],
         ds["fall_velocity"],
         # Other options
@@ -1642,16 +2870,357 @@ def get_normalized_gamma_parameters_gs(ds, target="ND", transformation="log", er
         dask_gufunc_kwargs={"output_sizes": {"parameters": 3}},  # lengths of the new output_core_dims dimensions.
         output_dtypes=["float64"],
     )
+    ds_parameters = _create_parameters_dataset(da_parameters)
+    return ds_parameters
 
-    # Add parameters coordinates
-    da_params = da_params.assign_coords({"parameters": ["Nw", "mu", "D50"]})
 
-    # Create parameters dataset
-    ds_params = da_params.to_dataset(dim="parameters")
+def get_normalized_generalized_gamma_parameters_gs(
+    ds,
+    i,
+    j,
+    mu=None,
+    c=None,
+    objectives=None,
+    return_loss=False,
+):
+    """Estimate Normalized Generalized Gamma PSD parameters using Grid Search optimization.
 
-    # Add DSD model name to the attribute
-    ds_params.attrs["disdrodb_psd_model"] = "NormalizedGammaPSD"
-    return ds_params
+    The parameters ``N_c`` and ``Dc`` are computed empirically from the observed DSD
+    moments, while the shape parameters ``mu`` and ``c`` are estimated through
+    grid search by minimizing the error between observed and modeled quantities.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset containing PSD observations. Must include:
+
+        - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
+        - ``diameter_bin_center`` : Diameter bin centers [mm]
+        - ``diameter_bin_width`` : Diameter bin widths [mm]
+        - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
+
+    i : int
+        Moment order i of the NormalizedGeneralizedGammaPSD.
+    j : int
+        Moment order j of the NormalizedGeneralizedGammaPSD.
+    mu : int, float or numpy.ndarray
+        mu parameter values to search.
+    c : int, float or numpy.ndarray
+        c parameter values to search.
+    objectives: list of dict
+        target : str, optional
+            Target quantity to optimize. Valid options:
+
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
+            - ``"H(x)"`` : Normalized drop number concentration [-]
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
+
+        transformation : str, optional
+            Transformation applied to the target quantity before computing the loss.
+            Valid options:
+
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation
+            - ``"sqrt"`` : Square root transformation
+
+        censoring : str
+            Specifies whether the observed particle size distribution (PSD) is
+            treated as censored at the edges of the diameter range due to
+            instrumental sensitivity limits:
+
+            - ``"none"`` : No censoring is applied. All diameter bins are used.
+            - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"right"`` : Right-censored PSD. Diameter bins at the upper end of
+              the spectrum where the observed number concentration is zero are
+              removed prior to cost-function evaluation.
+            - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
+              range of diameter bins with non-zero observed concentrations is
+              retained.
+
+        loss : int, optional
+            Loss function.
+            If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
+
+            - ``SSE``: Sum of Squared Errors
+            - ``SAE``: Sum of Absolute Errors
+            - ``MAE``: Mean Absolute Error
+            - ``MSE``: Mean Squared Error
+            - ``RMSE``: Root Mean Squared Error
+            - ``relMAE``: Relative Mean Absolute Error
+            - ``KLDiv``: Kullback-Leibler Divergence
+            - ``WD``: Wasserstein Distance
+            - ``JSD``: Jensen-Shannon Distance
+            - ``KS``: Kolmogorov-Smirnov Statistic
+
+            If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
+            - ``AE``: Absolute Error
+            - ``SE``: Squared Error
+
+        loss_weight: int, optional
+            Weight of this objective when multiple objectives are used.
+            Must be specified if more than one objective is specified.
+    return_loss : bool, optional
+        If True, return both the loss surface and parameters.
+        Default is False.
+
+    Returns
+    -------
+    ds_params : xarray.Dataset
+        Dataset containing the estimated Normalized Generalized Gamma distribution parameters.
+    """
+    # Use default objectives if not specified
+    if objectives is None:
+        objectives = copy.deepcopy(DEFAULT_OBJECTIVES)
+
+    # Check objectives
+    objectives = check_objectives(objectives=objectives)
+
+    # Compute required variables
+    drop_number_concentration = ds["drop_number_concentration"]
+    diameter_bin_width = ds["diameter_bin_width"]
+    diameter = ds["diameter_bin_center"] / 1000  # conversion from mm to m
+    Mi = get_moment(
+        drop_number_concentration=drop_number_concentration,
+        diameter=diameter,  # m
+        diameter_bin_width=diameter_bin_width,  # mm
+        moment=i,
+    )
+    Mj = get_moment(
+        drop_number_concentration=drop_number_concentration,
+        diameter=diameter,  # m
+        diameter_bin_width=diameter_bin_width,  # mm
+        moment=j,
+    )
+    Dc = NormalizedGeneralizedGammaPSD.compute_Dc(i=i, j=j, Mi=Mi, Mj=Mj)
+    Nc = NormalizedGeneralizedGammaPSD.compute_Nc(i=i, j=j, Mi=Mi, Mj=Mj)
+
+    # Define search space
+    if mu is None:
+        mu = np.arange(-6, 10, step=0.1)
+        # mu = np.arange(-7, 30, step=0.01)
+    if c is None:
+        c = np.arange(0.01, 10, step=0.1)
+
+    # Define kwargs
+    kwargs = {
+        "i": i,
+        "j": j,
+        "D": ds["diameter_bin_center"].to_numpy(),
+        "dD": ds["diameter_bin_width"].to_numpy(),
+        "objectives": objectives,
+        "return_loss": return_loss,
+        "mu": mu,
+        "c": c,
+    }
+
+    # Define function to create parameters dataset
+    def _create_parameters_dataset(da_parameters, i, j):
+        # Add parameters coordinates
+        da_parameters = da_parameters.assign_coords({"parameters": ["Nc", "Dc", "mu", "c"]})
+
+        # Create parameters dataset
+        ds_parameters = da_parameters.to_dataset(dim="parameters")
+
+        # Add Nc and Dc
+        ds_parameters["Dc"].attrs["moment_orders"] = f"{i}, {j}"
+        ds_parameters["Nc"].attrs["moment_orders"] = f"{i}, {j}"
+
+        # Add DSD model name to the attribute
+        ds_parameters.attrs["disdrodb_psd_model"] = "NormalizedGeneralizedGammaPSD"
+        ds_parameters.attrs["disdrodb_psd_model_kwargs"] = f"{{'i': {i}, 'j': {j}}}"
+        return ds_parameters
+
+    # Return cost function if asked
+    if return_loss:
+        da_parameters, da_cost_function = xr.apply_ufunc(
+            apply_normalized_generalized_gamma_gs,
+            # Variables varying over time
+            Nc,
+            Dc,
+            ds["drop_number_concentration"],
+            ds["fall_velocity"],
+            # Other options
+            kwargs=kwargs,
+            # Settings
+            input_core_dims=[[], [], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
+            output_core_dims=[["parameters"], ["c_values", "mu_values"]],
+            vectorize=True,
+            dask="parallelized",
+            # Lengths of the new output_core_dims dimensions.
+            dask_gufunc_kwargs={"output_sizes": {"mu_values": len(mu), "c_values": len(c), "parameters": 4}},
+            output_dtypes=["float64", "float64", "float64"],
+        )
+        ds_parameters = _create_parameters_dataset(da_parameters, i=i, j=j)
+        ds_parameters["cost_function"] = da_cost_function
+        ds_parameters = ds_parameters.assign_coords({"mu_values": mu, "c_values": c})
+        return ds_parameters
+
+    # Otherwise return just best parameters
+    da_parameters = xr.apply_ufunc(
+        apply_normalized_generalized_gamma_gs,
+        # Variables varying over time
+        Nc,
+        Dc,
+        ds["drop_number_concentration"],
+        ds["fall_velocity"],
+        # Other options
+        kwargs=kwargs,
+        # Settings
+        input_core_dims=[[], [], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
+        output_core_dims=[["parameters"]],
+        vectorize=True,
+        dask="parallelized",
+        dask_gufunc_kwargs={"output_sizes": {"parameters": 4}},  # lengths of the new output_core_dims dimensions.
+        output_dtypes=["float64"],
+    )
+    ds_parameters = _create_parameters_dataset(da_parameters, i=i, j=j)
+    return ds_parameters
+
+
+def fit_ngg_on_normalized_space(
+    x,
+    ND_norm,
+    # PSD parameters
+    i,
+    j,
+    mu=None,
+    c=None,
+    # Optimization options
+    transformation="log",
+    loss="SSE",
+    # Output options
+    return_loss=False,
+):
+    """Fit a NormalizedGeneralizedGammaPSD model in normalized space.
+
+    This function performs a grid search optimization to find the best parameters
+    (mu, c) for the NormalizedGeneralizedGammaPSD model by minimizing a cost function.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        Normalized diameter parameter (D/Dc) [-].
+    ND_norm : numpy.ndarray
+        Observed normalized PSD data (N(D)/Nc [-].
+    i : int
+        Moment order i of the NormalizedGeneralizedGammaPSD.
+    j : int
+        Moment order j of the NormalizedGeneralizedGammaPSD.
+    mu : int, float or numpy.ndarray
+        mu parameter values to search.
+    c : int, float or numpy.ndarray
+        c parameter values to search.
+    transformation : str, optional
+        Transformation applied to the target quantity before computing the loss.
+        The default is ``"log"``.
+        Valid options:
+
+        - ``"identity"`` : No transformation
+        - ``"log"`` : Logarithmic transformation
+        - ``"sqrt"`` : Square root transformation
+
+    loss : int, optional
+        Loss function. The default is ``SSE``.
+        Valid options are:
+
+        - ``SSE``: Sum of Squared Errors
+        - ``SAE``: Sum of Absolute Errors
+        - ``MAE``: Mean Absolute Error
+        - ``MSE``: Mean Squared Error
+        - ``RMSE``: Root Mean Squared Error
+        - ``relMAE``: Relative Mean Absolute Error
+
+    return_loss : bool, optional
+        If True, return both the loss surface and parameters.
+        Default is False.
+
+    Returns
+    -------
+    parameters : numpy.ndarray
+        Best parameters [mu, c].
+        An array of NaN values is returned if no valid solution is found.
+    total_loss : numpy.ndarray, optional
+        2D array of total loss values reshaped to (len(mu), len(c)).
+        Only returned if return_loss=True.
+
+    """
+    # Ensure input is numpy array
+    x = np.asarray(x)
+    ND_norm = np.asarray(ND_norm)
+
+    # Define search space
+    if mu is None:
+        mu = np.arange(-6, 20, step=0.1)
+    if c is None:
+        c = np.arange(0.01, 20, step=0.1)
+
+    # Define combinations of parameters for grid search
+    mu_grid, c_grid = np.meshgrid(
+        mu,
+        c,
+        indexing="xy",
+    )
+    mu_arr = mu_grid.ravel()
+    c_arr = c_grid.ravel()
+
+    # Define objectives
+    transformation = check_transformation(transformation)
+    valid_loss = ["SSE", "SAE", "MAE", "MSE", "RMSE", "relMAE"]
+    if loss not in valid_loss:
+        raise ValueError(f"Invalid loss {loss}. Valid loss are {valid_loss}")
+
+    objectives = [
+        {
+            "target": "N(D)",  # dummy. Do not change
+            "censoring": "none",  # dummy. Do not change
+            "transformation": transformation,
+            "loss": loss,
+        },
+    ]
+
+    # Perform grid search
+    with suppress_warnings():
+
+        # Compute N(D)/Nc
+        ND_norm_preds = NormalizedGeneralizedGammaPSD.normalized_formula(
+            x=x[None, :],
+            i=i,
+            j=j,
+            mu=mu_arr[:, None],
+            c=c_arr[:, None],
+        )
+
+        # Compute loss
+        total_loss = compute_weighted_loss(
+            ND_obs=ND_norm,
+            ND_preds=ND_norm_preds,
+            D=x,
+            dD=None,
+            V=None,
+            objectives=objectives,
+        )
+
+    # Define best parameters
+    if not np.all(np.isnan(total_loss)):
+        best_index = np.nanargmin(total_loss)
+        mu_best, c_best = mu_arr[best_index].item(), c_arr[best_index].item()
+        parameters = np.array([mu_best, c_best])
+    else:
+        parameters = np.array([np.nan, np.nan])
+
+    # If asked, return cost function
+    if return_loss:
+        total_loss = total_loss.reshape(mu_grid.shape)
+        total_loss = xr.DataArray(total_loss, dims=["c_values", "mu_values"])
+        total_loss = total_loss.assign_coords({"mu_values": mu, "c_values": c})
+        return parameters, total_loss
+    return parameters
 
 
 ####-----------------------------------------------------------------.
@@ -1930,10 +3499,40 @@ def _get_exponential_parameters_mom(ds: xr.Dataset, mom_method: str) -> xr.Datas
 
 
 ####--------------------------------------------------------------------------------------.
-#### Routines dictionary
+#### GLOBAL DICTIONARIES
 
-####--------------------------------------------------------------------------------------.
 ATTRS_PARAMS_DICT = {
+    "LognormalPSD": {
+        "Nt": {
+            "standard_name": "number_concentration_of_particles",
+            "units": "m-3",
+            "long_name": "Total Number Concentration",
+        },
+        "mu": {
+            "description": "Mean of the Lognormal PSD",
+            "units": "log(mm)",
+            "long_name": "Mean of the Lognormal PSD",
+        },
+        "sigma": {
+            "standard_name": "Standard Deviation of the Lognormal PSD",
+            "units": "",
+            "long_name": "Standard Deviation of the Lognormal PSD",
+        },
+    },
+    "ExponentialPSD": {
+        "N0": {
+            "description": "Intercept parameter of the Exponential PSD",
+            "standard_name": "particle_size_distribution_intercept",
+            "units": "mm-1 m-3",
+            "long_name": "ExponentialPSD intercept parameter",
+        },
+        "Lambda": {
+            "description": "Slope (rate) parameter of the Exponential PSD",
+            "standard_name": "particle_size_distribution_slope",
+            "units": "mm-1",
+            "long_name": "ExponentialPSD slope parameter",
+        },
+    },
     "GammaPSD": {
         "N0": {
             "description": "Intercept parameter of the Gamma PSD",
@@ -1972,35 +3571,53 @@ ATTRS_PARAMS_DICT = {
             "long_name": "NormalizedGammaPSD Median Volume Drop Diameter",
         },
     },
-    "LognormalPSD": {
+    "GeneralizedGammaPSD": {
         "Nt": {
-            "standard_name": "number_concentration_of_rain_drops_in_air",
+            "standard_name": "number_concentration_of_particles",
             "units": "m-3",
             "long_name": "Total Number Concentration",
         },
-        "mu": {
-            "description": "Mean of the Lognormal PSD",
-            "units": "log(mm)",
-            "long_name": "Mean of the Lognormal PSD",
-        },
-        "sigma": {
-            "standard_name": "Standard Deviation of the Lognormal PSD",
-            "units": "",
-            "long_name": "Standard Deviation of the Lognormal PSD",
-        },
-    },
-    "ExponentialPSD": {
-        "N0": {
-            "description": "Intercept parameter of the Exponential PSD",
-            "standard_name": "particle_size_distribution_intercept",
-            "units": "mm-1 m-3",
-            "long_name": "ExponentialPSD intercept parameter",
-        },
         "Lambda": {
-            "description": "Slope (rate) parameter of the Exponential PSD",
+            "description": "Slope (rate) parameter of the Generalized Gamma PSD",
             "standard_name": "particle_size_distribution_slope",
             "units": "mm-1",
-            "long_name": "ExponentialPSD slope parameter",
+            "long_name": "GeneralizedGammaPSD slope parameter",
+        },
+        "mu": {
+            "description": "Shape parameter of the Generalized Gamma PSD",
+            "standard_name": "particle_size_distribution_shape",
+            "units": "",
+            "long_name": "GeneralizedGammaPSD shape parameter",
+        },
+        "c": {
+            "description": "Shape parameter of the Generalized Gamma PSD",
+            "standard_name": "particle_size_distribution_shape",
+            "units": "",
+            "long_name": "GeneralizedGammaPSD shape parameter c",
+        },
+    },
+    "NormalizedGeneralizedGammaPSD": {
+        "Nc": {
+            "standard_name": "characteristic intercept",
+            "units": "mm-1 m-3",
+            "long_name": "NormalizedGeneralizedGammaPSD Characteristic Intercept Parameter",
+        },
+        "Dc": {
+            "standard_name": "characteristic_diameter",
+            "units": "mm",
+            "long_name": "NormalizedGeneralizedGammaPSD Characteristic Diameter",
+        },
+        "mu": {
+            "description": "Shape parameter of the Normalized Generalized Gamma PSD",
+            "standard_name": "particle_size_distribution_shape",
+            "units": "",
+            "long_name": "NormalizedGeneralizedGammaPSD Shape Parameter",
+        },
+        "c": {
+            "description": "Shape parameter of the Normalized Generalized Gamma PSD",
+            "standard_name": "particle_size_distribution_shape",
+            "units": "",
+            "long_name": "NormalizedGeneralizedGammaPSD Shape Parameter c",
         },
     },
 }
@@ -2035,6 +3652,8 @@ OPTIMIZATION_ROUTINES_DICT = {
         "NormalizedGammaPSD": get_normalized_gamma_parameters_gs,
         "LognormalPSD": get_lognormal_parameters_gs,
         "ExponentialPSD": get_exponential_parameters_gs,
+        "GeneralizedGammaPSD": get_generalized_gamma_parameters_gs,
+        "NormalizedGeneralizedGammaPSD": get_normalized_generalized_gamma_parameters_gs,
     },
     "ML": {
         "GammaPSD": get_gamma_parameters,
@@ -2056,39 +3675,181 @@ def available_optimization(psd_model):
     return [opt for opt in list(OPTIMIZATION_ROUTINES_DICT) if psd_model in OPTIMIZATION_ROUTINES_DICT[opt]]
 
 
+def get_psd_model_parameter_names(psd_model):
+    """Get psd_model parameter names."""
+    return list(ATTRS_PARAMS_DICT[psd_model].keys())
+
+
+def check_psd_parameters(psd_model, parameters):
+    """Check valid psd_model parameters."""
+    valid_params = get_psd_model_parameter_names(psd_model)
+    for param in parameters:
+        if param not in valid_params:
+            raise ValueError(
+                f"Invalid parameter '{param}' for PSD model '{psd_model}'. Valid parameters are {valid_params}.",
+            )
+    return parameters
+
+
 ####--------------------------------------------------------------------------------------.
-#### Argument checkers
+#### CONFIGURATION CHECKERS
+#### - GS
 
 
-def check_psd_model(psd_model, optimization):
-    """Check valid psd_model argument."""
-    valid_psd_models = list(OPTIMIZATION_ROUTINES_DICT[optimization])
-    if psd_model not in valid_psd_models:
-        msg = (
-            f"{optimization} optimization is not available for 'psd_model' {psd_model}. "
-            f"Accepted PSD models are {valid_psd_models}."
-        )
-        raise NotImplementedError(msg)
+def check_fixed_parameters(psd_model, fixed_parameters):
+    """Check valid fixed_parameters argument."""
+    if fixed_parameters is None:
+        if psd_model == "NormalizedGeneralizedGammaPSD":
+            raise ValueError(
+                "For NormalizedGeneralizedGammaPSD fixed_parameters must include 'i' and 'j' moment orders.",
+            )
+        return None
+    if not isinstance(fixed_parameters, dict):
+        raise ValueError("fixed_parameters must be a dictionary.")
+
+    # Extract list of parameters
+    parameters = set(fixed_parameters.keys())
+
+    # Check for NormalizedGeneralizedGammaPSD i and j are provided
+    if psd_model == "NormalizedGeneralizedGammaPSD":
+        if "i" not in parameters or "j" not in parameters:
+            raise ValueError(
+                "fixed_parameters for NormalizedGeneralizedGammaPSD must include 'i' and 'j' moment orders.",
+            )
+        parameters = parameters.difference({"i", "j"})
+
+    # Check validity of fixed_parameters keys (only PSD parameters are allowed)
+    _ = check_psd_parameters(psd_model=psd_model, parameters=parameters)
+
+    # Check value validity
+    for param_name, param_value in fixed_parameters.items():
+        if isinstance(param_value, str):
+            raise ValueError(
+                f"Invalid value for '{param_name}': strings are not allowed.",
+            )
+        if not np.isscalar(param_value):
+            raise ValueError(
+                f"""Invalid value for '{param_name}': expected scalar,
+                , got {type(param_value).__name__}.""",
+            )
+        fixed_parameters[param_name] = float(param_value)
+    return fixed_parameters
 
 
-def check_target(target):
-    """Check valid target argument."""
-    valid_targets = ["ND", "R", "Z", "LWC"]
-    if target not in valid_targets:
-        raise ValueError(f"Invalid 'target' {target}. Valid targets are {valid_targets}.")
-    return target
+def check_search_space_parameters(search_space, psd_model):
+    """Check search_space parameters are PSD model parameters."""
+    if search_space is None:
+        return None
+    parameters = list(search_space.keys())
+    _ = check_psd_parameters(psd_model=psd_model, parameters=parameters)
+    return search_space
 
 
-def check_transformation(transformation):
-    """Check valid transformation argument."""
-    valid_transformation = ["identity", "log", "sqrt"]
-    if transformation not in valid_transformation:
-        raise ValueError(
-            f"Invalid 'transformation' {transformation}. Valid transformations are {transformation}.",
-        )
-    return transformation
+def check_search_space(search_space):
+    """Check valid search_space dictionary."""
+    if search_space is None:
+        return None
+    if not isinstance(search_space, dict):
+        raise ValueError("search_space must be a dictionary.")
+    if len(search_space) == 0:
+        return None
+    # Check validity of each parameter search space specification
+    for param_name, space in search_space.items():
+        if not isinstance(space, dict) or "min" not in space or "max" not in space or "step" not in space:
+            raise ValueError(
+                f"Search space for '{param_name}' must be a dict with 'min', 'max', and 'step' keys. " f"Got: {space}",
+            )
+        # Validate bounds
+        min_val = space["min"]
+        max_val = space["max"]
+        step = space.get("step", None)
+        if min_val >= max_val:
+            raise ValueError(
+                f"Invalid search bounds for '{param_name}': min ({min_val}) >= max ({max_val}). " f"Require min < max.",
+            )
+        if step is None:
+            raise ValueError(
+                f"Search space for '{param_name}' must include 'step' key. Got: {space}",
+            )
+        if step <= 0:
+            raise ValueError(
+                f"Invalid step size for '{param_name}': step ({step}) must be positive.",
+            )
+    return search_space
 
 
+def define_gs_parameters(psd_model, fixed_parameters=None, search_space=None):
+    """Define PSD model parameters for Grid Search optimization routines.
+
+    This function constructs a dictionary of parameter values ready for grid search,
+    converting search space ranges into numpy arrays.
+
+    Parameters
+    ----------
+    fixed_parameters : dict, optional
+        Dictionary with parameter names as keys and scalar values as values.
+        Example: {"mu": 2.0}
+    search_space : dict, optional
+        Dictionary defining search ranges for parameters.
+        Each parameter can have:
+        - 'min' : float, Minimum value
+        - 'max' : float, Maximum value
+        - 'step' : float, Step size for linspace interval
+        Example: {"Lambda": {"min": 0, "max": 10, "step": 0.2}}
+
+    Returns
+    -------
+    dict
+        Dictionary with PSD parameter names as keys and values as:
+        - scalar (int or float)
+        - numpy.ndarray for grid search
+        Empty dict if both inputs are None or empty
+
+    """
+    # Check validity of inputs
+    search_space = check_search_space(search_space=search_space)
+    search_space = check_search_space_parameters(search_space=search_space, psd_model=psd_model)
+    fixed_parameters = check_fixed_parameters(psd_model=psd_model, fixed_parameters=fixed_parameters)
+
+    # Return empty dict if both inputs are empty
+    if (fixed_parameters is None or len(fixed_parameters) == 0) and (search_space is None or len(search_space) == 0):
+        return {}
+
+    # Define parameters dictionary (initialize with None values)
+    required_parameters_dict = {
+        "NormalizedGeneralizedGammaPSD": ["mu", "c", "i", "j"],
+        "NormalizedGammaPSD": ["mu"],
+        "GeneralizedGammaPSD": ["Lambda", "mu", "c"],
+        "LognormalPSD": ["mu", "sigma"],
+        "GammaPSD": ["Lambda", "mu"],
+        "ExponentialPSD": ["Lambda"],
+    }
+    required_parameters = required_parameters_dict[psd_model]
+    parameters = dict.fromkeys(required_parameters)
+
+    # Process fixed_parameters (scalar initial values)
+    if fixed_parameters is not None:
+        for param_name, param_value in fixed_parameters.items():
+            parameters[param_name] = param_value
+
+    # Check if this parameter has a search space range
+    if search_space is not None:
+        for param_name, space in search_space.items():
+            # Extract search space bounds
+            min_val = space["min"]
+            max_val = space["max"]
+            step = space.get("step", None)
+            # Create array of values for this parameter
+            parameters[param_name] = np.arange(min_val, max_val + step, step)
+    else:
+        # Use scalar value
+        parameters[param_name] = param_value
+
+    return parameters
+
+
+# -----------------------------------------------------------------
+#### - ML
 def check_likelihood(likelihood):
     """Check valid likelihood argument."""
     valid_likelihood = ["multinomial", "poisson"]
@@ -2126,6 +3887,8 @@ def check_optimizer(optimizer):
     return optimizer
 
 
+# -----------------------------------------------------------------
+#### - MOM
 def check_mom_methods(mom_methods, psd_model, allow_none=False):
     """Check valid mom_methods arguments."""
     if isinstance(mom_methods, (str, type(None))):
@@ -2142,6 +3905,21 @@ def check_mom_methods(mom_methods, psd_model, allow_none=False):
     return mom_methods
 
 
+# -----------------------------------------------------------------
+#### - WRAPPERS
+
+
+def check_psd_model(psd_model, optimization):
+    """Check valid psd_model argument."""
+    valid_psd_models = list(OPTIMIZATION_ROUTINES_DICT[optimization])
+    if psd_model not in valid_psd_models:
+        msg = (
+            f"{optimization} optimization is not available for 'psd_model' {psd_model}. "
+            f"Accepted PSD models are {valid_psd_models}."
+        )
+        raise NotImplementedError(msg)
+
+
 def check_optimization(optimization):
     """Check valid optimization argument."""
     valid_optimization = list(OPTIMIZATION_ROUTINES_DICT)
@@ -2152,8 +3930,8 @@ def check_optimization(optimization):
     return optimization
 
 
-def check_optimization_kwargs(optimization_kwargs, optimization, psd_model):
-    """Check valid optimization_kwargs."""
+def check_optimization_settings(optimization_settings, optimization, psd_model):
+    """Check valid optimization_settings."""
     dict_arguments = {
         "ML": {
             "init_method": None,
@@ -2163,9 +3941,8 @@ def check_optimization_kwargs(optimization_kwargs, optimization, psd_model):
             "optimizer": check_optimizer,
         },
         "GS": {
-            "target": check_target,
-            "transformation": check_transformation,
-            "error_order": None,
+            "objectives": check_objectives,
+            "search_space": check_search_space,
         },
         "MOM": {
             "mom_methods": None,
@@ -2174,38 +3951,55 @@ def check_optimization_kwargs(optimization_kwargs, optimization, psd_model):
     optimization = check_optimization(optimization)
     check_psd_model(psd_model=psd_model, optimization=optimization)
 
+    # Check fixed parameters validity for optimization="GS"
+    if optimization == "GS":
+        optimization_settings["fixed_parameters"] = check_fixed_parameters(
+            psd_model=psd_model,
+            fixed_parameters=optimization_settings.get("fixed_parameters", None),
+        )
+
     # Retrieve the expected arguments for the given optimization method
     expected_arguments = dict_arguments.get(optimization, {})
 
-    # Check for missing arguments in optimization_kwargs
-    # missing_args = [arg for arg in expected_arguments if arg not in optimization_kwargs]
+    # Check for missing arguments in optimization_settings
+    # missing_args = [arg for arg in expected_arguments if arg not in optimization_settings]
     # if missing_args:
     #     raise ValueError(f"Missing required arguments for {optimization} optimization: {missing_args}")
 
     # Validate arguments values
     _ = [
-        check(optimization_kwargs[arg])
+        check(optimization_settings[arg])
         for arg, check in expected_arguments.items()
-        if callable(check) and arg in optimization_kwargs
+        if callable(check) and arg in optimization_settings
     ]
 
     # Further special checks
-    if optimization == "MOM" and "mom_methods" in optimization_kwargs:
-        _ = check_mom_methods(mom_methods=optimization_kwargs["mom_methods"], psd_model=psd_model)
-    if optimization == "ML" and optimization_kwargs.get("init_method", None) is not None:
-        _ = check_mom_methods(mom_methods=optimization_kwargs["init_method"], psd_model=psd_model, allow_none=True)
+    if optimization == "MOM" and "mom_methods" in optimization_settings:
+        _ = check_mom_methods(mom_methods=optimization_settings["mom_methods"], psd_model=psd_model)
+    if optimization == "ML" and optimization_settings.get("init_method", None) is not None:
+        _ = check_mom_methods(mom_methods=optimization_settings["init_method"], psd_model=psd_model, allow_none=True)
 
 
 ####--------------------------------------------------------------------------------------.
 #### Wrappers for fitting
 
 
-def _finalize_attributes(ds_params, psd_model, optimization, optimization_kwargs):
+def _format_optimization_settings(settings):
+    if isinstance(settings, dict):
+        return ", ".join(f"{k}: {v}" for k, v in settings.items())
+    if isinstance(settings, list):
+        blocks = []
+        for d in settings:
+            opt_str = _format_optimization_settings(d)
+            blocks.append(opt_str)
+        return " | ".join(blocks)
+    raise TypeError("optimization_settings must be dict or list of dict")
+
+
+def _finalize_attributes(ds_params, psd_model, optimization, optimization_settings):
     ds_params.attrs["disdrodb_psd_model"] = psd_model
     ds_params.attrs["disdrodb_psd_optimization"] = optimization
-    ds_params.attrs["disdrodb_psd_optimization_kwargs"] = ", ".join(
-        [f"{k}: {v}" for k, v in optimization_kwargs.items()],
-    )
+    ds_params.attrs["disdrodb_psd_optimization_settings"] = _format_optimization_settings(optimization_settings)
     return ds_params
 
 
@@ -2248,12 +4042,12 @@ def get_mom_parameters(ds: xr.Dataset, psd_model: str, mom_methods=None) -> xr.D
         ds_params = ds_params.assign_coords({"mom_method": mom_methods})
 
     # Add model attributes
-    optimization_kwargs = {"mom_methods": mom_methods}
+    optimization_settings = {"mom_methods": mom_methods}
     ds_params = _finalize_attributes(
         ds_params=ds_params,
         psd_model=psd_model,
         optimization="MOM",
-        optimization_kwargs=optimization_kwargs,
+        optimization_settings=optimization_settings,
     )
     return ds_params
 
@@ -2272,14 +4066,16 @@ def get_ml_parameters(
 
     Parameters
     ----------
-     ds : xarray.Dataset
+    ds : xarray.Dataset
         Input dataset containing drop number concentration data and diameter information.
         It must include the following variables:
+
         - ``drop_number_concentration``: The number concentration of drops.
         - ``diameter_bin_width``": The width of each diameter bin.
         - ``diameter_bin_lower``: The lower bounds of the diameter bins.
         - ``diameter_bin_upper``: The upper bounds of the diameter bins.
         - ``diameter_bin_center``: The center values of the diameter bins.
+
     psd_model : str
         The PSD model to fit. See ``available_psd_models()``.
     init_method: str or list
@@ -2339,7 +4135,7 @@ def get_ml_parameters(
         ds_params = ds_params.assign_coords({"init_method": init_method})
 
     # Add model attributes
-    optimization_kwargs = {
+    optimization_settings = {
         "init_method": init_method,
         "probability_method": "probability_method",
         "likelihood": likelihood,
@@ -2350,47 +4146,191 @@ def get_ml_parameters(
         ds_params=ds_params,
         psd_model=psd_model,
         optimization="ML",
-        optimization_kwargs=optimization_kwargs,
+        optimization_settings=optimization_settings,
     )
 
     # Return dataset with parameters
     return ds_params
 
 
-def get_gs_parameters(ds, psd_model, target="ND", transformation="log", error_order=1):
-    """Retrieve PSD model parameters using Grid Search."""
-    # Check valid psd_model
+def get_gs_parameters(ds, psd_model, fixed_parameters=None, objectives=None, search_space=None, return_loss=False):
+    """Estimate PSD model parameters using Grid Search optimization with multiple objectives.
+
+    This function estimates particle size distribution (PSD) model parameters
+    by minimizing a weighted combination of errors across multiple objectives through
+    grid search over the parameter space.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset containing PSD observations. Must include:
+
+        - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
+        - ``diameter_bin_center`` : Diameter bin centers [mm]
+        - ``diameter_bin_width`` : Diameter bin widths [mm]
+        - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if any objective targets 'R')
+
+    psd_model : str
+        Name of the PSD model to fit. Valid options are:
+
+        - ``"GammaPSD"`` : Gamma distribution
+        - ``"NormalizedGammaPSD"`` : Normalized gamma distribution
+        - ``"LognormalPSD"`` : Lognormal distribution
+        - ``"ExponentialPSD"`` : Exponential distribution
+        - ``"NormalizedGeneralizedGammaPSD"`` : Normalized generalized gamma distribution
+
+    objectives : list of dict
+        List of optimization objectives. Each objective dict must contain:
+
+        - ``"target"`` : str
+            Target quantity to optimize. Valid options:
+
+            - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
+            - ``"H(x)"`` : Normalized drop number concentration [-]. Only for Normalized PSD models.
+            - ``"R"`` : Rain rate [mm h⁻¹]
+            - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+            - ``"LWC"`` : Liquid water content [g m⁻³]
+            - ``"M<p>"`` : Moment of order p
+
+        - ``"transformation"`` : str
+            Transformation applied before computing the error. Valid options:
+
+            - ``"identity"`` : No transformation
+            - ``"log"`` : Logarithmic transformation
+            - ``"sqrt"`` : Square root transformation
+
+        - ``"censoring"`` : str
+            Censoring applied to observed PSD. Valid options:
+
+            - ``"none"`` : No censoring applied
+            - ``"left"`` : Left-censored (remove leading zero bins)
+            - ``"right"`` : Right-censored (remove trailing zero bins)
+            - ``"both"`` : Both sides censored
+
+        - ``"loss"`` : str
+            Error metric.
+            For ``"N(D)"`` and ``"H(x)"`` valid options are ``"SSE"``, ``"SAE"``,
+            ``"MAE"``, ``"MSE"``, ``"RMSE"``, ``"relMAE"``
+            ``"KLDiv"``, ``"JSD"``, ``"WD"``, ``"KS"``.
+
+            For ``"R"``, ``"Z"``, ``"LWC"``, and ``"M<p>"`` valid options are
+            ``"AE"``, ``"SE"``.
+
+        - ``"loss_weight"`` : float, optional
+            Weight for this objective in the combined loss (default: 1.0 for single objective).
+            When multiple objectives are provided, weights are normalized to sum to 1.0.
+
+    fixed_parameters : dict, optional
+        Initial parameter values for the PSD model. Keys are parameter names,
+        values are scalars. Example: {"mu": 2.0, "Lambda": 1.5}
+    search_space : dict, optional
+        Search space configuration for parameters. Each parameter can define:
+
+        - ``"min"`` : float, Minimum value
+        - ``"max"`` : float, Maximum value
+        - ``"step"`` : float, Step size for parameter grid
+
+        Example: {"mu": {"min": 0, "max": 10, "step": 0.2}}
+
+    Returns
+    -------
+    ds_params : xarray.Dataset
+        Dataset containing the estimated PSD model parameters.
+        Variables depend on the selected ``psd_model``:
+
+        - ``GammaPSD`` : ``N0``, ``mu``, ``Lambda``
+        - ``NormalizedGammaPSD`` : ``Nw``, ``mu``, ``D50``
+        - ``LognormalPSD`` : ``Nt``, ``mu``, ``sigma``
+        - ``ExponentialPSD`` : ``N0``, ``Lambda``
+        - ``NormalizedGeneralizedGammaPSD`` : ``Nc``, ``Dc``, ``mu``, ``c``
+
+        Each parameter variable includes attributes with name, units, and description.
+        Dataset attributes contain optimization metadata.
+
+    Raises
+    ------
+    ValueError
+        If objectives structure is invalid or fixed_parameters/search_space bounds are invalid
+    NotImplementedError
+        If psd_model is not supported for GS optimization
+
+    Notes
+    -----
+    Grid search optimization explores a predefined parameter space to find
+    the combination that minimizes the specified loss across all objectives.
+    When multiple objectives are provided, losses are combined using normalized weights.
+
+    If ``drop_number_concentration`` values are all zeros or contain
+    non-finite values, the output PSD parameters are set to NaN.
+
+    Examples
+    --------
+    Single objective optimization:
+
+        >>> objectives = [{
+        ...     "target": "N(D)",
+        ...     "transformation": "log",
+        ...     "censoring": "none",
+        ...     "loss": "MAE"
+        ... }]
+        >>> ds_params = get_gs_parameters(ds, psd_model="GammaPSD", objectives=objectives)
+
+    Multi-objective optimization:
+
+        >>> objectives = [
+        ...     {
+        ...         "target": "N(D)",
+        ...         "transformation": "identity",
+        ...         "censoring": "left",
+        ...         "loss": "MAE",
+        ...         "loss_weight": 0.6
+        ...     },
+        ...     {
+        ...         "target": "LWC",
+        ...         "transformation": "log",
+        ...         "censoring": "both",
+        ...         "loss": "AE",
+        ...         "loss_weight": 0.4
+        ...     }
+        ... ]
+        >>> search_space = {
+        ...     "mu": {"min": 0, "max": 10, "step": 0.2},
+        ...     "Lambda": {"min": 0.1, "max": 5, "step": 0.1}
+        ... }
+        >>> ds_params = get_gs_parameters(
+        ...     ds, psd_model="GammaPSD", search_space=search_space
+        ... )
+    """
+    # Validate inputs
     check_psd_model(psd_model, optimization="GS")
+    objectives = check_objectives(objectives)
+    if objectives is None:
+        objectives = DEFAULT_OBJECTIVES
 
-    # Check valid target
-    target = check_target(target)
+    # Define PSD model parameters (scalars or arrays for grid search)
+    parameters = define_gs_parameters(
+        psd_model=psd_model,
+        fixed_parameters=fixed_parameters,
+        search_space=search_space,
+    )
 
-    # Check valid transformation
-    transformation = check_transformation(transformation)
-
-    # Check fall velocity is available if target R
+    # Ensure fall velocity is available if any objective needs it (e.g., R target)
     if "fall_velocity" not in ds:
         ds["fall_velocity"] = get_rain_fall_velocity_from_ds(ds)
 
-    # Retrieve estimation function
+    # Retrieve model-specific grid search function
     func = OPTIMIZATION_ROUTINES_DICT["GS"][psd_model]
 
-    # Estimate parameters
-    ds_params = func(ds, target=target, transformation=transformation, error_order=error_order)
+    # Call model-specific function with unpacked parameters, objectives, and return_loss=False
+    ds_params = func(ds, **parameters, objectives=objectives, return_loss=return_loss)
 
-    # Add model attributes
-    optimization_kwargs = {
-        "target": target,
-        "transformation": transformation,
-        "error_order": error_order,
-    }
+    # Finalize dataset attributes with optimization metadata
     ds_params = _finalize_attributes(
         ds_params=ds_params,
         psd_model=psd_model,
         optimization="GS",
-        optimization_kwargs=optimization_kwargs,
+        optimization_settings=objectives,
     )
-    # Return dataset with parameters
     return ds_params
 
 
@@ -2417,14 +4357,142 @@ def estimate_model_parameters(
     ds,
     psd_model,
     optimization,
-    optimization_kwargs=None,
+    optimization_settings=None,
 ):
-    """Routine to estimate PSD model parameters."""
-    # Check inputs arguments
-    optimization_kwargs = {} if optimization_kwargs is None else optimization_kwargs
-    optimization = check_optimization(optimization)
-    check_optimization_kwargs(optimization_kwargs=optimization_kwargs, optimization=optimization, psd_model=psd_model)
+    """Estimate particle size distribution model parameters.
 
+    This is the main interface function for fitting PSD models to observed data.
+    It supports three optimization methods: Maximum Likelihood (ML), Method of
+    Moments (MOM), and Grid Search (GS).
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset containing PSD observations. Must include:
+
+        - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
+        - ``diameter_bin_center`` : Diameter bin centers [mm]
+        - ``diameter_bin_width`` : Diameter bin widths [mm]
+
+        Additional variables required for specific optimization methods:
+
+        - For ML: ``diameter_bin_lower``, ``diameter_bin_upper``
+        - For GS with target='R': ``fall_velocity`` (auto-computed if missing)
+        - For MOM: Moment variables ``M0``, ``M1``, ..., ``M6`` (depending on method)
+    psd_model : str
+        Name of the PSD model to fit. Valid options:
+
+        - ``"GammaPSD"`` : Gamma distribution
+        - ``"NormalizedGammaPSD"`` : Normalized gamma distribution
+        - ``"LognormalPSD"`` : Lognormal distribution
+        - ``"ExponentialPSD"`` : Exponential distribution
+
+        Use ``available_optimization(psd_model)`` to check which optimization
+        methods are available for a given model.
+    optimization : str
+        Optimization method to use. Valid options:
+
+        - ``"ML"`` : Maximum Likelihood estimation
+        - ``"MOM"`` : Method of Moments
+        - ``"GS"`` : Grid Search
+    optimization_settings : dict, optional
+        Dictionary of keyword arguments specific to the chosen optimization method.
+
+        For ``optimization="ML"``:
+
+        - ``init_method`` : str or list, Method(s) of moments for parameter initialization
+        - ``probability_method`` : str, Method to compute probabilities (default: 'cdf')
+        - ``likelihood`` : str, Likelihood function ('multinomial' or 'poisson', default: 'multinomial')
+        - ``truncated_likelihood`` : bool, Use truncated likelihood (default: True)
+        - ``optimizer`` : str, Optimization algorithm (default: 'Nelder-Mead')
+
+        For ``optimization="GS"``:
+
+        - ``fixed_parameters`` : dict, optional
+            Allows to specify PSD model parameters to fixed value(s).
+            For example for psd_model=GammaPSD one can use fixed_parameters={"mu": 3}
+            For psd_model=NormalizedGeneralizedGammaPSD, it's mandatory to
+            specify i and j moment order with: fixed_parameters={"i": 3, "j": 4}
+        - ``objectives``:  dict, optional
+            List of optimization objectives. If None (default), use DEFAULT_OBJECTIVES.
+            Each objective dict must contain:
+
+               - ``"target"`` : str
+                   Target quantity to optimize. Valid options:
+                   - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
+                   - ``"H(x)"`` : Normalized drop number concentration [-]. Only for Normalized PSD models.
+                   - ``"R"`` : Rain rate [mm h⁻¹]
+                   - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
+                   - ``"LWC"`` : Liquid water content [g m⁻³]
+                   - ``"M<p>"`` : Moment of order p
+               - ``"transformation"`` : str
+                   Transformation applied before computing the error. Valid options:
+                   - ``"identity"`` : No transformation
+                   - ``"log"`` : Logarithmic transformation
+                   - ``"sqrt"`` : Square root transformation
+               - ``"censoring"`` : str
+                   Censoring applied to observed PSD. Valid options:
+                   - ``"none"`` : No censoring applied
+                   - ``"left"`` : Left-censored (remove leading zero bins)
+                   - ``"right"`` : Right-censored (remove trailing zero bins)
+                   - ``"both"`` : Both sides censored
+               - ``"loss"`` : str
+                   Error metric.
+                   For ``"N(D)"`` and ``"H(x)"`` valid options are
+                   ``"SSE"``, ``"SAE"``, ``"MAE"``, ``"MSE"``, ``"RMSE"``, ``"relMAE"``
+                   ``"KLDiv"``, ``"JSD"``, ``"WD"``, ``"KS"``.
+                   For ``"R"``, ``"Z"``, ``"LWC"``, and ``"M<p>"`` valid options are
+                   ``"AE"``, ``"SE"``.
+               - ``"loss_weight"`` : float, optional
+                   Weight for this objective in the combined loss (default: 1.0 for single objective).
+                   When multiple objectives are provided, weights are normalized to sum to 1.0.
+
+
+        - ``search_space``, dict, optional
+           Search space configuration for parameters. If None (default), use reasonable defaults.
+
+           Each parameter can define:
+
+           - ``"min"`` : float, Minimum value
+           - ``"max"`` : float, Maximum value
+           - ``"step"`` : float, Step size for parameter grid
+
+           Example:
+               {"mu": {"min": 0, "max": 10, "step": 0.2},
+                "Lambda": {"min": 0.1, "max": 5, "step": 0.1}}
+
+        For ``optimization="MOM"``:
+
+        - ``mom_methods`` : str or list, Method(s) of moments to use (e.g., 'M234')
+
+    Returns
+    -------
+    ds_params : xarray.Dataset
+        Dataset containing the estimated PSD model parameters with attributes.
+        Variables depend on the selected ``psd_model``:
+
+        - ``GammaPSD`` : ``N0``, ``mu``, ``Lambda``
+        - ``NormalizedGammaPSD`` : ``Nw``, ``mu``, ``Dm``
+        - ``LognormalPSD`` : ``Nt``, ``mu``, ``sigma``
+        - ``ExponentialPSD`` : ``N0``, ``Lambda``
+
+        Each parameter variable includes attributes with parameter name, units,
+        and optimization metadata.
+
+        Dataset attributes include:
+
+        - ``disdrodb_psd_model`` : The fitted PSD model name
+        - ``disdrodb_psd_optimization`` : The optimization method used
+        - ``disdrodb_psd_optimization_settings`` : String representation of kwargs
+    """
+    # Check inputs arguments
+    optimization_settings = {} if optimization_settings is None else optimization_settings
+    optimization = check_optimization(optimization)
+    check_optimization_settings(
+        optimization_settings=optimization_settings,
+        optimization=optimization,
+        psd_model=psd_model,
+    )
     # Check N(D)
     # --> If all 0, set to np.nan
     # --> If any is not finite --> set to np.nan
@@ -2441,7 +4509,7 @@ def estimate_model_parameters(
     func = dict_func[optimization]
 
     # Retrieve parameters
-    ds_params = func(ds, psd_model=psd_model, **optimization_kwargs)
+    ds_params = func(ds, psd_model=psd_model, **optimization_settings)
 
     # Add parameters attributes (and units)
     for var, attrs in ATTRS_PARAMS_DICT[psd_model].items():

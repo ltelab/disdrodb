@@ -38,7 +38,7 @@ def download_metadata_archive(directory_path, force=False):
 
     Returns
     -------
-    metadata_archive_dir
+    str
         The DISDRODB Metadata Archive directory path.
     """
     # Define DISDRODB Metadata Archive GitHub URL

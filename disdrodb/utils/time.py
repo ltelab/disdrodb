@@ -35,16 +35,17 @@ logger = logging.getLogger(__name__)
 
 
 def seconds_to_temporal_resolution(seconds):
-    """
-    Convert a duration in seconds to a readable string format (e.g., "1H30", "1D2H").
+    """Convert a duration in seconds to a readable string format (e.g., "1H30", "1D2H").
 
     Parameters
     ----------
-    - seconds (int): The time duration in seconds.
+    seconds: int
+        The time duration in seconds.
 
     Returns
     -------
-    - str: The duration as a string in a format like "30S", "1MIN30S", "1H30MIN", or "1D2H".
+    str:
+        The duration as a string in a format like "30S", "1MIN30S", "1H30MIN", or "1D2H".
     """
     timedelta = pd.Timedelta(seconds=seconds)
     components = timedelta.components
@@ -124,7 +125,7 @@ def temporal_resolution_to_seconds(temporal_resolution):
 
     Returns
     -------
-    seconds
+    int
         Duration in seconds.
     """
     seconds, _ = get_sampling_information(temporal_resolution)
@@ -242,7 +243,7 @@ def regularize_dataset(
 
     Parameters
     ----------
-    xr_obj : xarray.Dataset or xr.DataArray
+    xr_obj : xarray.Dataset or xarray.DataArray
         xarray object with time dimension.
     time_dim : str, optional
         The time dimension in the xarray object. The default value is ``"time"``.
@@ -253,7 +254,7 @@ def regularize_dataset(
         Method to use for filling missing timesteps.
         If ``None``, fill with ``fill_value``. The default value is ``None``.
         For other possible methods, see xarray.Dataset.reindex()`.
-    fill_value : (float, dict), optional
+    fill_value : float or dict, optional
         Fill value to fill missing timesteps.
         If not specified, for float variables it uses ``dtypes.NA`` while for
         for integers variables it uses the maximum allowed integer value or,

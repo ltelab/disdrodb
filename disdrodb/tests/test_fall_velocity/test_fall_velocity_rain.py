@@ -129,9 +129,10 @@ class TestGetRaindropFallVelocity:
     ("model", "diameter", "expected"),
     [
         ("Atlas1973", 2.0, 6.5476),
-        ("Brandes2002", 2.0, 6.5384),  # approximate reference
-        ("Uplinger1981", 2.0, 6.5999),  # approximate reference
-        ("VanDijk2002", 2.0, 6.6068),  # approximate reference
+        ("Uplinger1981", 2.0, 6.5999),
+        ("Lhermitte1988", 2.0, 6.6114),
+        ("Brandes2002", 2.0, 6.5384),
+        ("VanDijk2002", 2.0, 6.6068),
     ],
 )
 def test_models_expected_values(model, diameter, expected):

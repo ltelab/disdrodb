@@ -57,7 +57,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
     "--l2m_processing",
     type=bool,
     show_default=True,
-    default=True,
+    default=False,
     help="Run L2M processing.",
 )
 @click_processing_options
@@ -77,7 +77,7 @@ def disdrodb_run(
     # Higher level processing options
     l1_processing: bool = True,
     l2e_processing: bool = True,
-    l2m_processing: bool = True,
+    l2m_processing: bool = False,
     # Processing options
     force: bool = False,
     verbose: bool = True,

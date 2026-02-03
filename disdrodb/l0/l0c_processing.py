@@ -70,16 +70,6 @@ def split_dataset_by_sampling_intervals(
     """
     Split a dataset into subsets where each subset has a consistent sampling interval.
 
-    Notes
-    -----
-    - Does not modify timesteps (regularization is left to `regularize_timesteps`).
-    - Assumes no duplicated timesteps in the dataset.
-    - If only one measurement interval is specified, no timestep-diff checks are performed.
-    - If multiple measurement intervals are specified:
-        * Raises an error if *none* of the expected intervals appear.
-        * Splits where interval changes.
-    - Segments shorter than `min_block_size` are discarded.
-
     Parameters
     ----------
     ds : xarray.Dataset
@@ -97,9 +87,24 @@ def split_dataset_by_sampling_intervals(
         Whether time refers to the end of the measurement interval.
         The default is True.
 
+    Notes
+    -----
+    Does not modify timesteps (regularization is left to `regularize_timesteps`).
+
+    Assumes no duplicated timesteps in the dataset.
+
+    If only one measurement interval is specified, no timestep-diff checks are performed.
+
+    If multiple measurement intervals are specified:
+
+        - Raises an error if *none* of the expected intervals appear.
+        - Splits where interval changes.
+
+    Segments shorter than `min_block_size` are discarded.
+
     Returns
     -------
-    dict[int, xr.Dataset]
+    dict[int, xarray.Dataset]
         A dictionary where keys are the identified sampling intervals (in seconds),
         and values are xarray.Datasets containing only data from those sampling intervals.
     """
@@ -594,7 +599,7 @@ def check_timesteps_regularity(ds, sample_interval, verbose=False, logger=None):
 #### Wrapper
 
 
-def _finalize_l0c_dataset(ds, sample_interval, sensor_name, verbose=True, logger=None):
+def finalize_l0c_dataset(ds, sample_interval, sensor_name, verbose=True, logger=None):
     """Finalize a L0C dataset with unique sampling interval.
 
     It adds the sampling_interval coordinate and it regularizes the timesteps for trailing seconds.
@@ -756,7 +761,7 @@ def create_l0c_datasets(
     # - Add and ensure sample_interval coordinate has just 1 value (not varying with time)
     # - Regularize timesteps for trailing seconds
     dict_ds = {
-        sample_interval: _finalize_l0c_dataset(
+        sample_interval: finalize_l0c_dataset(
             ds=ds,
             sample_interval=sample_interval,
             sensor_name=sensor_name,

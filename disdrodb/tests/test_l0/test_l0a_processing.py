@@ -21,6 +21,7 @@ import os
 import numpy as np
 import pandas as pd
 import pytest
+from packaging.version import Version
 
 from disdrodb.l0.l0a_processing import (
     cast_column_dtypes,
@@ -401,8 +402,12 @@ def test_cast_column_dtypes():
     df_out = cast_column_dtypes(df, sensor_name)
     # Check that the output dataframe has the correct column types
     assert str(df_out["time"].dtype) == "datetime64[s]"
-    assert str(df_out["station_number"].dtype) == "object"
     assert str(df_out["altitude"].dtype) == "float64"
+    # String dtype changed to str from pandas 3.0
+    if Version(pd.__version__) >= Version("3.0"):
+        assert str(df_out["station_number"].dtype) == "str"
+    else:
+        assert str(df_out["station_number"].dtype) == "object"
 
     # Assert raise error if can not cast
     df["altitude"] = "text"
@@ -466,10 +471,12 @@ def test_drop_timesteps():
     n = 2
     # Create an array of datetime values for the time column
     # - Add also a NaT
-    time = pd.date_range(start="2023-01-01 00:00:00", end="2023-01-01 01:00:00", freq="1 min").to_numpy()
+    time = pd.date_range(start="2023-01-01 00:00:00", end="2023-01-01 01:00:00", freq="1 min").to_numpy().copy()
     time[0] = np.datetime64("NaT")
+
     # Create a random array for the dummy column
     dummy = np.random.rand(len(time) - n)
+
     # Create the dataframe with the two columns
     df = pd.DataFrame({"time": time[:-n], "dummy": dummy})
 
@@ -555,7 +562,12 @@ def test_read_raw_text_file(tmp_path):
         column_names=["att_1", "att_2"],
         reader_kwargs=reader_kwargs,
     )
-    df_expected = pd.DataFrame(data)
+    # String dtype changed to str from pandas 3.0
+    if Version(pd.__version__) >= Version("3.0"):
+        df_expected = pd.DataFrame(data)
+
+    else:
+        df_expected = pd.DataFrame(data, dtype="object")
     assert df.equals(df_expected)
 
     # Test with an empty file without column

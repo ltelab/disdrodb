@@ -106,7 +106,7 @@ def count_bins_with_drops(ds):
 
 def _compute_qc_bins_metrics(arr):
     # Find indices of non-zero elements
-    arr = arr.copy()
+    arr = np.asarray(arr).copy()
     arr[np.isnan(arr)] = 0
     non_zero_indices = np.nonzero(arr)[0]
     if non_zero_indices.size == 0:
@@ -117,13 +117,16 @@ def _compute_qc_bins_metrics(arr):
     segment = arr[start_idx : end_idx + 1]
 
     # Compute number of bins with drops
-    total_bins = segment.size
+    total_bins = len(non_zero_indices)
+
+    # Compute number of bins in the segment
+    segment_bins = segment.size
 
     # Compute number of missing bins (zeros)
     n_missing_bins = int(np.sum(segment == 0))
 
     # Compute fraction of bins with missing drops
-    fraction_missing = n_missing_bins / total_bins
+    fraction_missing = n_missing_bins / segment_bins
 
     # Identify longest with with consecutive zeros
     zero_mask = (segment == 0).astype(int)
@@ -152,14 +155,14 @@ def compute_qc_bins_metrics(ds):
     optionally collapses over velocity methods and the velocity dimension, then
     computes four metrics per time step:
 
-      1. Nbins: total number of diameter bins between the first and last non-zero count
-      2. Nbins_missing: number of bins with zero or NaN counts in that interval
-      3. Nbins_missing_fraction: fraction of missing bins (zeros) in the interval
+      1. Nbins: total number of diameter bins with non-zero count
+      2. Nbins_missing: number of bins with zero or NaN counts between the first and last non-zero count
+      3. Nbins_missing_fraction: fraction of missing bins (zeros) between the first and last non-zero count
       4. Nbins_missing_consecutive: maximum length of consecutive missing bins
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds : xarray.Dataset
         Input dataset containing one of the following variables:
         'drop_counts', 'drop_number_concentration', or 'drop_number'.
         If a 'velocity_method' dimension exists, only the first method is used.
@@ -167,7 +170,7 @@ def compute_qc_bins_metrics(ds):
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Dataset with a new 'metric' dimension of size 4 and coordinates:
         ['Nbins', 'Nbins_missing', 'Nbins_missing_fraction', 'Nbins_missing_consecutive'],
         indexed by 'time'.
@@ -298,7 +301,7 @@ def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sam
 
     Returns
     -------
-    drop_number_concentration : xarray.DataArray or ndarray
+    drop_number_concentration : xarray.DataArray or numpy.ndarray
         Array of drop number concentrations \\( N(D) \\) in m⁻³·mm⁻¹, representing
         the number of drops per unit volume per unit diameter interval.
 
@@ -355,7 +358,7 @@ def get_total_number_concentration(drop_number_concentration, diameter_bin_width
 
     Returns
     -------
-    total_number_concentration : xarray.DataArray or ndarray
+    total_number_concentration : xarray.DataArray or numpy.ndarray
         Total number concentration \\( N_t \\) in m⁻³, representing the total number
         of drops per unit volume.
 
@@ -692,8 +695,10 @@ def get_equivalent_reflectivity_factor(drop_number_concentration, diameter, diam
         dim=DIAMETER_DIMENSION,
         skipna=False,
     )
+    # Set to NaN where z <= 0
     invalid_mask = z > 0
     z = z.where(invalid_mask)
+
     # Compute equivalent reflectivity factor in dBZ
     # - np.log10(np.nan) returns -Inf !
     # --> We mask again after the log
@@ -741,8 +746,11 @@ def get_equivalent_reflectivity_spectrum(drop_number_concentration, diameter):
     """
     # Compute reflectivity in mm⁶·m⁻³
     z = drop_number_concentration * ((diameter * 1000) ** 6)
+
+    # Set to NaN where z <= 0
     invalid_mask = z > 0
     z = z.where(invalid_mask)
+
     # Compute equivalent reflectivity factor in dBZ
     # - np.log10(np.nan) returns -Inf !
     # --> We mask again after the log
@@ -930,6 +938,8 @@ def get_min_max_diameter(drop_counts):
     max_drop_diameter : xarray.DataArray
         Maximum diameter where drop_counts is non-zero, for each time step.
     """
+    # TODO: maybe use lower bound for minimum, and upper bound for maximum
+
     # Create a boolean mask where drop_counts is non-zero
     non_zero_mask = drop_counts > 0
 
@@ -1500,7 +1510,7 @@ def get_kinetic_energy_spectrum(
 
     Returns
     -------
-    xr.DataArray
+    xarray.DataArray
         Kinetic Energy Spectrum [J/m2/mm]
     """
     KE_spectrum = (
@@ -1718,9 +1728,9 @@ def compute_integral_parameters(
 
     Parameters
     ----------
-    drop_number_concentration : xr.DataArray
+    drop_number_concentration : xarray.DataArray
         Drop number concentration in each diameter bin [#/m3/mm].
-    velocity : xr.DataArray
+    velocity : xarray.DataArray
         Fall velocity of drops in each diameter bin [m/s].
         The presence of a velocity_method dimension enable to compute the parameters
         with different velocity estimates.
@@ -1873,9 +1883,9 @@ def compute_spectrum_parameters(
 
     Parameters
     ----------
-    drop_number_concentration : xr.DataArray
+    drop_number_concentration : xarray.DataArray
         Drop number concentration in each diameter bin [#/m3/mm].
-    velocity : xr.DataArray
+    velocity : xarray.DataArray
         Fall velocity of drops in each diameter bin [m/s].
         The presence of a velocity_method dimension enable to compute the parameters
         with different velocity estimates.

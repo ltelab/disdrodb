@@ -99,7 +99,7 @@ def _get_dim_isel_on_non_dim_coord_from_sel(xr_obj, coord, sel_indices, method):
     -------
     dim : str
         Dimension related to the 1D non-dimension coordinate.
-    isel_indices : np.ndarray
+    isel_indices : numpy.ndarray
         Indices for index-based selection.
     """
     dim = _get_dim_of_1d_non_dimensional_coord(xr_obj, coord)

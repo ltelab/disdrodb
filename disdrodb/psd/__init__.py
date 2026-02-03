@@ -20,8 +20,10 @@ from disdrodb.psd.fitting import estimate_model_parameters
 from disdrodb.psd.models import (
     ExponentialPSD,
     GammaPSD,
+    GeneralizedGammaPSD,
     LognormalPSD,
     NormalizedGammaPSD,
+    NormalizedGeneralizedGammaPSD,
     available_psd_models,
     create_psd,
 )
@@ -29,8 +31,10 @@ from disdrodb.psd.models import (
 __all__ = [
     "ExponentialPSD",
     "GammaPSD",
+    "GeneralizedGammaPSD",
     "LognormalPSD",
     "NormalizedGammaPSD",
+    "NormalizedGeneralizedGammaPSD",
     "available_psd_models",
     "create_psd",
     "estimate_model_parameters",

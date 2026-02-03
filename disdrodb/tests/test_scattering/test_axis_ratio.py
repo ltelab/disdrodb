@@ -77,6 +77,8 @@ class TestGetAxisRatio:
         ("Pruppacher1970", 2.0, 0.906),
         ("Beard1987", 2.0, 0.92759279),
         ("Andsager1999", 2.0, 0.92759),
+        ("Chang2009", 2.0, 0.96578792),
+        # ("Wen2018", 2.0, 0.9806232), # Incorrect formula in paper
     ],
 )
 def test_get_axis_ratio_expected_values(model, diameter, expected):

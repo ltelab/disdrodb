@@ -193,7 +193,7 @@ def test_disdrodb_run_l2m_station(tmp_path, disdrodb_metadata_archive_dir, paral
     )
     assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.10MIN.*.nc", recursive=True) == 2
 
-    # - 10MIN NGAMMA_GS_LOG_ND_MAE
+    # - 10MIN NGAMMA_GS_LOG_ND_SSE
     data_dir = define_data_dir(
         data_archive_dir=test_data_archive_dir,
         product="L2M",
@@ -201,9 +201,9 @@ def test_disdrodb_run_l2m_station(tmp_path, disdrodb_metadata_archive_dir, paral
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
         temporal_resolution="10MIN",
-        model_name="NGAMMA_GS_LOG_ND_MAE",
+        model_name="NGAMMA_GS_LOG_ND_SSE",
     )
-    assert count_files(data_dir, glob_pattern="L2M_NGAMMA_GS_LOG_ND_MAE.10MIN.*.nc", recursive=True) == 2
+    assert count_files(data_dir, glob_pattern="L2M_NGAMMA_GS_LOG_ND_SSE.10MIN.*.nc", recursive=True) == 2
 
 
 @pytest.mark.parametrize("cli", [True, False])
@@ -341,7 +341,7 @@ def test_disdrodb_run_l2m(tmp_path, disdrodb_metadata_archive_dir, cli):
     )
     assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.10MIN.*.nc", recursive=True) == 2
 
-    # - 10MIN NGAMMA_GS_LOG_ND_MAE
+    # - 10MIN NGAMMA_GS_LOG_ND_SSE
     data_dir = define_data_dir(
         data_archive_dir=test_data_archive_dir,
         product="L2M",
@@ -349,6 +349,6 @@ def test_disdrodb_run_l2m(tmp_path, disdrodb_metadata_archive_dir, cli):
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
         temporal_resolution="10MIN",
-        model_name="NGAMMA_GS_LOG_ND_MAE",
+        model_name="NGAMMA_GS_LOG_ND_SSE",
     )
-    assert count_files(data_dir, glob_pattern="L2M_NGAMMA_GS_LOG_ND_MAE.10MIN.*.nc", recursive=True) == 2
+    assert count_files(data_dir, glob_pattern="L2M_NGAMMA_GS_LOG_ND_SSE.10MIN.*.nc", recursive=True) == 2

@@ -1,0 +1,17 @@
+.highlight-python::before {
+  content: "Python";
+  display: block;
+  background: #3572A5;
+  color: white;
+  padding: 4px 8px;
+  font-size: 0.8em;
+}
+
+.highlight-bash::before {
+  content: "Bash";
+  display: block;
+  background: #4EAA25;
+  color: white;
+  padding: 4px 8px;
+  font-size: 0.8em;
+}

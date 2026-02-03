@@ -21,6 +21,7 @@ import os
 import numpy as np
 import xarray as xr
 
+from disdrodb.utils.warnings import suppress_warnings
 from disdrodb.utils.yaml import read_yaml
 
 EPOCH = "seconds since 1970-01-01 00:00:00"
@@ -67,7 +68,8 @@ def set_encodings(ds: xr.Dataset, encodings_dict: dict) -> xr.Dataset:
     # Set time encoding
     if "time" in ds:
         ds["time"] = ds["time"].dt.floor("s")  # ensure no sub-second values
-        ds["time"] = ds["time"].astype("datetime64[s]")
+        with suppress_warnings():
+            ds["time"] = ds["time"].astype("datetime64[s]")
         ds["time"].encoding.update(get_time_encoding())
 
     # Set the variable encodings

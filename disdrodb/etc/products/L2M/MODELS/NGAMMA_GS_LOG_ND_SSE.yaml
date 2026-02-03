@@ -1,0 +1,8 @@
+psd_model: "NormalizedGammaPSD"
+optimization: "GS"
+optimization_settings:
+  objectives:
+    - target: "N(D)"
+      transformation: "log"
+      censoring: "none"
+      loss: "SSE"

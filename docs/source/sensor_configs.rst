@@ -73,6 +73,7 @@ Sensor logged variables
 
 The ``raw_data_format.yml`` file contains numeric information about each sensor variable.
 For each variable, specify:
+
     * ``n_digits``: number of digits logged (including the sign, if any, but excluding the decimal point)
     * ``n_characters``: total characters (digits, decimal point, and sign)
     * ``n_decimals``: decimal digits (right of the point)

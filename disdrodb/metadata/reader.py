@@ -73,13 +73,13 @@ def read_metadata_archive(
     metadata_archive_dir : str or Path-like, optional
         Path to the root of the DISDRODB Metadata Archive. If None, the
         default metadata base directory is used. Default is None.
-    data_sources : str or sequence of str, optional
+    data_sources : str or list of str, optional
         One or more data source identifiers to filter stations by. If None,
         no filtering on data source is applied. The default is is None.
-    campaign_names : str or sequence of str, optional
+    campaign_names : str or list of str, optional
         One or more campaign names to filter stations by. If None, no filtering
         on campaign is applied. The default is is None.
-    station_names : str or sequence of str, optional
+    station_names : str or list of str, optional
         One or more station names to include. If None, all stations matching
         other filters are considered. The default is is None.
     available_data: bool, optional

@@ -135,6 +135,20 @@ class DISDRODB_Dataset_Accessor(DISDRODB_Base_Accessor):
 
         return plot_raw_and_filtered_spectra(self._obj, **kwargs)
 
+    @property
+    def psd(self):
+        """Return PSD class from DISDRODB L2M product."""
+        from disdrodb.psd.models import create_psd_from_dataset
+
+        return create_psd_from_dataset(self._obj)
+
+    @property
+    def psd_parameters(self):
+        """Return PSD parameters from DISDRODB L2M product."""
+        from disdrodb.psd.models import get_parameters_from_dataset
+
+        return get_parameters_from_dataset(self._obj)
+
 
 @xr.register_dataarray_accessor("disdrodb")
 class DISDRODB_DataArray_Accessor(DISDRODB_Base_Accessor):

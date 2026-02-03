@@ -144,7 +144,7 @@ def qc_spikes_isolated_precip(hydrometeor_type, sample_interval):
 
     Parameters
     ----------
-    hydrometeor_type: xr.DataArray
+    hydrometeor_type: xarray.DataArray
         Hydrometeor type classification array with a ``time`` coordinate.
         Precipitation presence is defined where ``hydrometeor_type>= 1``.
     sample_interval : float or int
@@ -153,7 +153,7 @@ def qc_spikes_isolated_precip(hydrometeor_type, sample_interval):
 
     Returns
     -------
-    flag_spikes : xr.DataArray of int
+    flag_spikes : xarray.DataArray of int
         Binary QC flag array (same dimensions as input) with:
             * 0 : no spike detected
             * 1 : isolated precipitation spike
@@ -762,9 +762,13 @@ def classify_raw_spectrum(
 
     # ------------------------------------------------------------------------.
     #### Define precipitation type variable
-    precipitation_type = xr.ones_like(ds["time"], dtype=float) * -1
-    precipitation_type = xr.where(hydrometeor_type.isin([0]), 0, precipitation_type)
-    precipitation_type = xr.where(hydrometeor_type.isin([1, 2, 3]), 0, precipitation_type)
+    precipitation_type = xr.ones_like(ds["time"], dtype=float) * -2
+    precipitation_type = xr.where(hydrometeor_type.isin([0]), -1, precipitation_type)
+    precipitation_type = xr.where(
+        hydrometeor_type.isin([1, 2, 3, 9]),
+        0,
+        precipitation_type,
+    )  # 9 hail in rainfall class currently
     precipitation_type = xr.where(hydrometeor_type.isin([5, 6, 7, 8]), 1, precipitation_type)
     precipitation_type = xr.where(hydrometeor_type.isin([4]), 2, precipitation_type)
     precipitation_type.attrs.update(
@@ -837,7 +841,7 @@ def classify_raw_spectrum(
     # ------------------------------------------------------------------------
     #### Define QC splashing, strong_wind, margin_fallers, spikes
     # FUTURE: flag_spikes can be used for non hydrometeor classification,
-    # --> But caution because observing the below show true rainfall signature
+    # --> But caution because observing the below code show some true rainfall signature
     # --> raw_spectrum.isel(time=(flag_spikes == 0) & (precipitation_type == 0)).disdrodb.plot_spectrum()
 
     flag_splashing = xr.where((precipitation_type == 0) & (fraction_splash >= 0.1), 1, 0)

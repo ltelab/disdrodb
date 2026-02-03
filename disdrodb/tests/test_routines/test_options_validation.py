@@ -273,11 +273,29 @@ class TestL2MModelConfig:
         with pytest.raises(ValueError, match="Invalid psd_model"):
             L2MModelConfig(**data)
 
-    def test_invalid_optimization_kwargs(self):
+    def test_invalid_optimization_settings(self):
         """Test invalid optimization kwargs."""
         data = copy.deepcopy(GAMMA_ML_CONFIG)
-        data["optimization_kwargs"]["probability_method"] = "INVALID"
+        data["optimization_settings"]["probability_method"] = "INVALID"
 
+        with pytest.raises(ValueError):
+            L2MModelConfig(**data)
+
+    def test_invalid_fixed_parameters(self):
+        """Test invalid fixed_parameters when defined as list."""
+        data = copy.deepcopy(GAMMA_GS_CONFIG)
+        # Test this pass
+        _ = L2MModelConfig(**data)
+        # Now modify fixed parameters as a list
+        # User might specify:
+        # fixed_parameters:
+        # - i: 3
+        # - j: 4
+        # instead of
+        # fixed_parameters:
+        #   i: 3
+        #   j: 4
+        data["optimization_settings"]["fixed_parameters"] = [{"Lambda": 10}]
         with pytest.raises(ValueError):
             L2MModelConfig(**data)
 
@@ -469,7 +487,7 @@ class TestValidateModelConfigs:
         invalid_config = {
             "psd_model": "INVALID_MODEL",  # Invalid model
             "optimization": "ML",
-            "optimization_kwargs": {},
+            "optimization_settings": {},
         }
         write_yaml(invalid_config, models_dir / "INVALID_MODEL.yaml")
 

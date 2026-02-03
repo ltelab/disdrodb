@@ -36,7 +36,7 @@ from disdrodb.l2.empirical_dsd import (
     get_rain_rate_from_drop_number,
 )
 from disdrodb.psd import create_psd, estimate_model_parameters
-from disdrodb.psd.fitting import compute_gof_stats
+from disdrodb.psd.gof_metrics import compute_gof_stats
 from disdrodb.utils.decorators import check_pytmatrix_availability
 from disdrodb.utils.manipulations import (
     define_diameter_array,
@@ -364,10 +364,12 @@ def generate_l2e(
     ds : xarray.Dataset
         DISDRODB L1 dataset.
         Alternatively, a xarray dataset with at least:
-            - variables: raw_drop_number
-            - dimension: DIAMETER_DIMENSION
-            - coordinates: diameter_bin_center, diameter_bin_width, sample_interval
-            - attributes: sensor_name
+
+        - variables: raw_drop_number
+        - dimension: DIAMETER_DIMENSION
+        - coordinates: diameter_bin_center, diameter_bin_width, sample_interval
+        - attributes: sensor_name
+
     ds_env : xarray.Dataset, optional
         Environmental dataset used for fall velocity and water density estimates.
         If None, a default environment dataset will be loaded.
@@ -642,10 +644,12 @@ def generate_l2e(
 def _get_default_optimization(psd_model):
     """PSD model defaults."""
     defaults = {
-        "ExponentialPSD": "ML",
-        "GammaPSD": "ML",
-        "LognormalPSD": "ML",
+        "ExponentialPSD": "GS",
+        "GammaPSD": "GS",
+        "LognormalPSD": "GS",
         "NormalizedGammaPSD": "GS",
+        "GeneralizedGammaPSD": "GS",
+        "NormalizedGeneralizedGammaPSD": "GS",
     }
     optimization = defaults[psd_model]
     return optimization
@@ -695,7 +699,7 @@ def generate_l2m(
     psd_model,
     # Fitting options
     optimization=None,
-    optimization_kwargs=None,
+    optimization_settings=None,
     # PSD discretization
     diameter_min=0,
     diameter_max=10,
@@ -735,7 +739,7 @@ def generate_l2m(
     optimization : str, optional
         The fitting optimization procedure. Either "GS" (Grid Search), "ML (Maximum Likelihood)
         or "MOM" (Method of Moments).
-    optimization_kwargs : dict, optional
+    optimization_settings : dict, optional
         Dictionary with arguments to customize the fitting procedure.
     minimum_nbins: int
         Minimum number of bins with drops required to fit the PSD model.
@@ -786,7 +790,7 @@ def generate_l2m(
         ds=ds,
         psd_model=psd_model,
         optimization=optimization,
-        optimization_kwargs=optimization_kwargs,
+        optimization_settings=optimization_settings,
     )
     psd_fitting_attrs = ds_psd_params.attrs
 
@@ -841,6 +845,20 @@ def generate_l2m(
         "drop_number_concentration",
         "fall_velocity",
         "N",
+        # L0C QC
+        "qc_time",
+        # L1 flags and variables
+        "qc_resampling",
+        "n_margin_fallers",
+        "n_splashing",
+        "flag_graupel",
+        "flag_hail",
+        "flag_spikes",
+        "flag_splashing",
+        "flag_wind_artefacts",
+        # L2E drop statistics
+        "Dmin",
+        "Dmax",
         *METEOROLOGICAL_VARIABLES,
     ]
     variables = [var for var in variables if var in ds]
@@ -885,12 +903,12 @@ def generate_l2_radar(
     ----------
     ds : xarray.Dataset
         Dataset containing the drop number concentration variable or the PSD parameters.
-    frequency : str, float, or list of str and float, optional
+    frequency : str, float, or list of str or float, optional
         Frequencies in GHz for which to compute the radar parameters.
         Alternatively, also strings can be used to specify common radar frequencies.
         If ``None``, the common radar frequencies will be used.
         See ``disdrodb.scattering.available_radar_bands()``.
-    num_points: int or list of integer, optional
+    num_points: int or list of int, optional
         Number of bins into which discretize the PSD.
     diameter_max : float or list of float, optional
         Maximum diameter. The default value is 10 mm.
@@ -899,7 +917,7 @@ def generate_l2_radar(
     axis_ratio_model : str or list of str, optional
         Models to compute the axis ratio. The default model is ``Thurai2007``.
         See available models with ``disdrodb.scattering.available_axis_ratio_models()``.
-    permittivity_model : str str or list of str, optional
+    permittivity_model : str or list of str, optional
         Permittivity model to use to compute the refractive index and the
         rayleigh_dielectric_factor. The default is ``Turner2016``.
         See available models with ``disdrodb.scattering.available_permittivity_models()``.

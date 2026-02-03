@@ -119,8 +119,8 @@ def read_raw_text_file(
     # Preprocess reader_kwargs
     reader_kwargs = preprocess_reader_kwargs(reader_kwargs)
 
-    # Enforce all raw files columns with dtype = 'object'
-    dtype = "object"
+    # Enforce all raw files columns with dtype = 'str'
+    dtype = "str"
 
     # Try to read the data
     try:

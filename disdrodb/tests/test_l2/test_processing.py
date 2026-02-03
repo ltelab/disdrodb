@@ -26,6 +26,7 @@ from disdrodb.fall_velocity import available_rain_fall_velocity_models
 from disdrodb.l2.processing import check_l2e_input_dataset, define_rain_spectrum_mask, generate_l2e, generate_l2m
 from disdrodb.scattering import RADAR_OPTIONS
 from disdrodb.tests.fake_datasets import create_template_dataset, create_template_l2e_dataset
+from disdrodb.utils.warnings import suppress_warnings
 
 
 def create_test_dataset():
@@ -490,7 +491,11 @@ class TestGenerateL2Model:
     def test_with_in_memory_numpy_array(self, psd_model):
         """Test L2M product generation with in-memory numpy data."""
         ds = create_template_l2e_dataset()
-        ds_out = generate_l2m(ds, psd_model=psd_model)
+        if psd_model == "NormalizedGeneralizedGammaPSD":
+            optimization_settings = {"fixed_parameters": {"i": 3, "j": 4}}
+        else:
+            optimization_settings = None
+        ds_out = generate_l2m(ds, psd_model=psd_model, optimization_settings=optimization_settings)
         assert isinstance(ds_out, xr.Dataset)
 
     @pytest.mark.parametrize(
@@ -501,18 +506,26 @@ class TestGenerateL2Model:
         """Test L2M product generation with lazy dask array data."""
         ds = create_template_l2e_dataset()
         ds_lazy = ds.chunk({"time": 1})
-        ds_out = generate_l2m(ds_lazy, psd_model=psd_model)
+
+        if psd_model == "NormalizedGeneralizedGammaPSD":
+            optimization_settings = {"fixed_parameters": {"i": 3, "j": 4}}
+        else:
+            optimization_settings = None
+
+        ds_out = generate_l2m(ds_lazy, psd_model=psd_model, optimization_settings=optimization_settings)
+
         # Test it returns dask arrays
         assert isinstance(ds_out, xr.Dataset)
         assert hasattr(ds_out["R"].data, "chunks")
         assert hasattr(ds_out["KLDiv"].data, "chunks")
 
         # Test it can compute without error
-        ds_out = ds_out.compute()
+        with suppress_warnings():
+            ds_out = ds_out.compute()
         assert isinstance(ds_out, xr.Dataset)
 
         # Test equaliy with in-memory computing
-        ds_out1 = generate_l2m(ds, psd_model=psd_model)
+        ds_out1 = generate_l2m(ds, psd_model=psd_model, optimization_settings=optimization_settings)
         xr.testing.assert_allclose(ds_out, ds_out1)
 
     def test_without_time_dimension(self):
@@ -544,7 +557,7 @@ class TestGenerateL2Model:
         ds_out = generate_l2m(ds, psd_model="NormalizedGammaPSD", optimization="GS")
         assert ds_out.attrs["disdrodb_psd_model"] == "NormalizedGammaPSD"
         assert "disdrodb_psd_optimization" in ds_out.attrs
-        assert "disdrodb_psd_optimization_kwargs" in ds_out.attrs
+        assert "disdrodb_psd_optimization_settings" in ds_out.attrs
 
         # Test raise error
         with pytest.raises(NotImplementedError, match="ML optimization is not available"):
@@ -565,7 +578,7 @@ class TestGenerateL2Model:
         assert "mom_method" in ds_out.dims
         assert ds_out.attrs["disdrodb_psd_model"] == "GammaPSD"
         assert "disdrodb_psd_optimization" in ds_out.attrs
-        assert "disdrodb_psd_optimization_kwargs" in ds_out.attrs
+        assert "disdrodb_psd_optimization_settings" in ds_out.attrs
 
     def test_LognormalPSD_fitting(self):
         """Test LognormalPSD fitting."""
@@ -577,7 +590,7 @@ class TestGenerateL2Model:
 
         assert ds_out.attrs["disdrodb_psd_model"] == "LognormalPSD"
         assert "disdrodb_psd_optimization" in ds_out.attrs
-        assert "disdrodb_psd_optimization_kwargs" in ds_out.attrs
+        assert "disdrodb_psd_optimization_settings" in ds_out.attrs
 
     def test_ExponentialPSD_fitting(self):
         """Test ExponentialPSD fitting."""
@@ -589,7 +602,7 @@ class TestGenerateL2Model:
 
         assert ds_out.attrs["disdrodb_psd_model"] == "ExponentialPSD"
         assert "disdrodb_psd_optimization" in ds_out.attrs
-        assert "disdrodb_psd_optimization_kwargs" in ds_out.attrs
+        assert "disdrodb_psd_optimization_settings" in ds_out.attrs
 
     def test_fitting_without_init_method(self):
         """Test fitting without moment initialization."""
@@ -598,19 +611,19 @@ class TestGenerateL2Model:
             ds,
             psd_model="GammaPSD",
             optimization="ML",
-            optimization_kwargs={"init_method": None},
+            optimization_settings={"init_method": None},
         )
         ds_out = generate_l2m(
             ds,
             psd_model="GammaPSD",
             optimization="ML",
-            optimization_kwargs={"init_method": "None"},
+            optimization_settings={"init_method": "None"},
         )
         ds_out = generate_l2m(
             ds,
             psd_model="GammaPSD",
             optimization="ML",
-            optimization_kwargs={"init_method": ["None"]},
+            optimization_settings={"init_method": ["None"]},
         )
         assert isinstance(ds_out, xr.Dataset)
 
@@ -621,7 +634,7 @@ class TestGenerateL2Model:
             ds,
             psd_model="GammaPSD",
             optimization="ML",
-            optimization_kwargs={"init_method": [None, "M234", "M346"]},
+            optimization_settings={"init_method": [None, "M234", "M346"]},
         )
         assert "init_method" in ds_out.dims
         assert ds_out.sizes["init_method"] == 3

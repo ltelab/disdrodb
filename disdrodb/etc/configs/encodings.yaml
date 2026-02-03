@@ -478,6 +478,34 @@ KLDiv:
   shuffle: true
   fletcher32: false
   contiguous: false
+JSD:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+WD:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+KS:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+KS_pvalue:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
 air_temperature:
   dtype: uint16
   scale_factor: 0.1

@@ -85,10 +85,10 @@ def replace_empty_strings_with_zeros(values):
     return values
 
 
-def format_string_array(string: str, n_values: int) -> np.array:
+def format_string_array(string: str, n_values: int):
     """Split a string with multiple numbers separated by a delimiter into an 1D array.
 
-        e.g. : format_string_array("2,44,22,33", 4) will return [ 2. 44. 22. 33.]
+    format_string_array("2,44,22,33", 4) will return [ 2. 44. 22. 33.]
 
     If empty string ("") or "" --> Return an arrays of zeros
     If the list length is not n_values -> Return an arrays of np.nan
@@ -104,7 +104,7 @@ def format_string_array(string: str, n_values: int) -> np.array:
 
     Returns
     -------
-    np.array
+    numpy.ndarray
         array of float
     """
     # Check for empty string or "0" case
@@ -143,42 +143,36 @@ def format_string_array(string: str, n_values: int) -> np.array:
 
 
 def reshape_raw_spectrum(
-    arr: np.array,
+    arr,
     dims_order: list,
     dims_size_dict: dict,
     n_timesteps: int,
-) -> np.array:
+):
     """Reshape the raw spectrum to a 2D+time array.
 
     The array has dimensions ["time"] + dims_order
 
     Parameters
     ----------
-    arr : np.array
+    arr : numpy.ndarray
         Input array.
     dims_order : list
         The order of dimension in the raw spectrum.
-
-    Examples
-    --------
-        - OTT PARSIVEL spectrum [v1d1 ... v1d32, v2d1, ..., v2d32]
-        --> dims_order = ["diameter_bin_center", "velocity_bin_center"]
-        - Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2]
-        --> dims_order = ["velocity_bin_center", "diameter_bin_center"]
+        For OTT PARSIVEL spectrum [v1d1 ... v1d32, v2d1, ..., v2d32], thus
+        ``dims_order = ["diameter_bin_center", "velocity_bin_center"]``
+        For Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2], thus
+        ``dims_order = ["velocity_bin_center", "diameter_bin_center"]``
     dims_size_dict : dict
         Dictionary with the number of bins for each dimension.
-        For PARSIVEL and PARSIVEL2:
-        {"diameter_bin_center": 32, "velocity_bin_center": 32}
-        For LPM
-        {"diameter_bin_center": 22, "velocity_bin_center": 20}
-        For PWS100
-        {"diameter_bin_center": 34, "velocity_bin_center": 34}
+        For PARSIVEL and PARSIVEL2: ``{"diameter_bin_center": 32, "velocity_bin_center": 32}``
+        For LPM: ``{"diameter_bin_center": 22, "velocity_bin_center": 20}``
+        For PWS100: ``{"diameter_bin_center": 34, "velocity_bin_center": 34}``
     n_timesteps : int
         Number of timesteps.
 
     Returns
     -------
-    np.array
+    numpy.ndarray
         Output array.
 
     Raises
@@ -309,14 +303,16 @@ def ensure_valid_geolocation(ds: xr.Dataset, coord: str, errors: str = "ignore")
         Dataset containing the coordinate.
     coord : str
         Name of the coordinate variable to validate.
-    errors : {"ignore", "raise", "coerce"}, default "ignore"
+    errors : str, optional
+        How to handle invalid values. Options are:
+
         - "ignore": nothing is done.
         - "raise" : raise ValueError if invalid values are found.
         - "coerce": out-of-range values are replaced with NaN.
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Dataset with validated coordinate values.
     """
     # Define coordinates ranges
@@ -376,8 +372,8 @@ def set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
 
     Returns
     -------
-    ds
-        xr.Dataset.
+    xarray.Dataset
+        Dataset with variable attributes.
     """
     # Retrieve attributes dictionaries
     cf_attrs_dict = get_l0b_cf_attrs_dict(sensor_name)

@@ -59,40 +59,42 @@ def get_list_metadata(
 
             - if available_data is False, return metadata filepaths of stations present in the DISDRODB Metadata Archive
             - if available_data is True, return metadata filepaths of stations with data available on the
-            online DISDRODB Decentralized Data Archive (i.e., stations with the disdrodb_data_url in the metadata).
+              online DISDRODB Decentralized Data Archive (i.e., stations with the disdrodb_data_url in the metadata).
 
         If ``product`` is specified:
 
             - if available_data is False, return metadata filepaths of stations where
-            the product directory exists in the in the local DISDRODB Data Archive
+              the product directory exists in the in the local DISDRODB Data Archive
             - if available_data is True, return metadata filepaths of stations where product data exists in the
               in the local DISDRODB Data Archive.
+
         The default is is False.
 
-    data_sources : str or sequence of str, optional
+    data_sources : str or list of str, optional
         One or more data source identifiers to filter stations by.
         The name(s) must be UPPER CASE.
         If None, no filtering on data source is applied. The default is is ``None``.
-    campaign_names : str or sequence of str, optional
+    campaign_names : str or list of str, optional
         One or more campaign names to filter stations by.
         The name(s) must be UPPER CASE.
         If None, no filtering on campaign is applied. The default is is ``None``.
-    station_names : str or sequence of str, optional
+    station_names : str or list of str, optional
         One or more station names to include.
         If None, all stations matching other filters are considered. The default is is ``None``.
     raise_error_if_empty : bool, optional
         If True and no stations satisfy the criteria, raise a ``ValueError``.
         If False, return an empty list/tuple. The default is False.
-    invalid_fields_policy : {'raise', 'warn', 'ignore'}, optional
+    invalid_fields_policy : str, optional
         How to handle invalid filter values for ``data_sources``, ``campaign_names``,
-        or ``station_names`` that are not present in the metadata archive:
+        or ``station_names`` that are not present in the metadata archive. Valid options are:
 
           - 'raise' : raise a ``ValueError`` (default)
           - 'warn'  : emit a warning, then ignore invalid entries
           - 'ignore': silently drop invalid entries
+
     data_archive_dir : str or Path-like, optional
         Path to the root of the local DISDRODB Data Archive. Format: ``<...>/DISDRODB``
-        Required only if ``product``is specified.
+        Required only if ``product`` is specified.
         If None, the``data_archive_dir`` path specified in the DISDRODB active configuration file is used.
         The default is None.
     metadata_archive_dir : str or Path-like, optional

@@ -282,7 +282,7 @@ def copy_default_products_configs(products_configs_dir):
 
     Returns
     -------
-    products_configs_dir
+    str
         The path to the newly created custom product configuration directory.
 
     """

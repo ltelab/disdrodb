@@ -1,0 +1,8 @@
+psd_model: "GammaPSD"
+optimization: "GS"
+optimization_settings:
+  objectives:
+    - target: "N(D)"
+      transformation: "identity"
+      censoring: "none"
+      loss: "SSE"

@@ -197,7 +197,7 @@ def initialize_scatterer(
         Radar elevation angle in degrees.
         Specify 90 degrees for vertically pointing radars.
         The default is 0 degrees.
-    scattering_table_dir : str or Path, optional
+    scattering_table_dir : str or pathlib.Path, optional
         Directory path where T-Matrix scattering tables are stored. If None, the default
         location will be used.
     verbose: bool
@@ -205,7 +205,7 @@ def initialize_scatterer(
 
     Returns
     -------
-    scatterer : Scatterer
+    pytmatrix.Scatterer
         A scatterer object with the PSD integrator configured and scattering
         table loaded or generated.
     """
@@ -303,7 +303,7 @@ def calculate_scatterer(
 
     Returns
     -------
-    scatterer : Scatterer
+    pytmatrix.Scatterer
         A scatterer object with the PSD integrator configured and scattering
         table loaded or generated.
     """
@@ -369,7 +369,7 @@ def load_scatterer(
         Radar elevation angle in degrees.
         Specify 90 degrees for vertically pointing radars.
         The default is 0 degrees.
-    scattering_table_dir : str or Path, optional
+    scattering_table_dir : str or pathlib.Path, optional
         Directory path where T-Matrix scattering tables are stored. If None, the default
         location will be used.
     verbose: bool
@@ -377,7 +377,7 @@ def load_scatterer(
 
     Returns
     -------
-    scatterer : Scatterer
+    pytmatrix.Scatterer
         A scatterer object with the PSD integrator configured and scattering
         table loaded or generated.
     """
@@ -549,7 +549,7 @@ def _estimate_empirical_radar_parameters(
     scatterer,
 ):
     # Assign PSD model to the scatterer object
-    scatterer.psd = BinnedPSD(bin_edges, drop_number_concentration)
+    scatterer.psd = BinnedPSD(bin_edges, np.asarray(drop_number_concentration))
 
     # Get radar variables
     return _try_compute_radar_variables(scatterer)
@@ -562,7 +562,7 @@ def _estimate_model_radar_parameters(
     scatterer,
 ):
     # Assign PSD model to the scatterer object
-    parameters = dict(zip(psd_parameters_names, parameters, strict=True))
+    parameters = dict(zip(psd_parameters_names, np.asarray(parameters), strict=True))
     scatterer.psd = create_psd(psd_model, parameters)
 
     # Get radar variables
@@ -919,12 +919,12 @@ def get_radar_parameters(
     ----------
     ds : xarray.Dataset
         Dataset containing the drop number concentration variable.
-    frequency : str, float, or list of str and float, optional
+    frequency : str, float, or list of str or float, optional
         Frequencies in GHz for which to compute the radar parameters.
         Alternatively, also strings can be used to specify common radar frequencies.
         If ``None``, the common radar frequencies will be used.
         See ``disdrodb.scattering.available_radar_bands()``.
-    num_points: int or lis tof integer, optional
+    num_points: int or list of int, optional
         Number of bins into which discretize the PSD.
     diameter_max : float or list of float, optional
         Maximum diameter. The default value is 8 mm.
@@ -933,7 +933,7 @@ def get_radar_parameters(
     axis_ratio_model : str or list of str, optional
         Models to compute the axis ratio. The default model is ``Thurai2007``.
         See available models with ``disdrodb.scattering.available_axis_ratio_models()``.
-    permittivity_model : str str or list of str, optional
+    permittivity_model : str or list of str, optional
         Permittivity model to use to compute the refractive index and the
         rayleigh_dielectric_factor. The default is ``Turner2016``.
         See available models with ``disdrodb.scattering.available_permittivity_models()``.

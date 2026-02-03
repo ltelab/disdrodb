@@ -294,7 +294,7 @@ def is_documented_by(original):
 
     Parameters
     ----------
-    original : function
+    original : callable
         Function to take the docstring from.
     """
 

@@ -358,12 +358,13 @@ def define_partitioning_tree(time, folder_partitioning):
     folder_partitioning : str or None
         Define the subdirectory structure where saving files.
         Allowed values are:
-          - None: Files are saved directly in data_dir.
-          - "year": Files are saved under a subdirectory for the year.
-          - "year/month": Files are saved under subdirectories for year and month.
-          - "year/month/day": Files are saved under subdirectories for year, month and day
-          - "year/month_name": Files are stored under subdirectories by year and month name
-          - "year/quarter": Files are saved under subdirectories for year and quarter.
+
+        - None: Files are saved directly in data_dir.
+        - "year": Files are saved under a subdirectory for the year.
+        - "year/month": Files are saved under subdirectories for year and month.
+        - "year/month/day": Files are saved under subdirectories for year, month and day
+        - "year/month_name": Files are stored under subdirectories by year and month name
+        - "year/quarter": Files are saved under subdirectories for year and quarter.
 
     Returns
     -------
@@ -411,12 +412,14 @@ def define_file_folder_path(obj, dir_path, folder_partitioning):
     folder_partitioning : str or None
         Define the subdirectory structure where saving files.
         Allowed values are:
-          - None or "": Files are saved directly in data_dir.
-          - "year": Files are saved under a subdirectory for the year.
-          - "year/month": Files are saved under subdirectories for year and month.
-          - "year/month/day": Files are saved under subdirectories for year, month and day
-          - "year/month_name": Files are stored under subdirectories by year and month name
-          - "year/quarter": Files are saved under subdirectories for year and quarter.
+
+        - None or "": Files are saved directly in data_dir.
+        - "year": Files are saved under a subdirectory for the year.
+        - "year/month": Files are saved under subdirectories for year and month.
+        - "year/month/day": Files are saved under subdirectories for year, month and day
+        - "year/month_name": Files are stored under subdirectories by year and month name
+        - "year/quarter": Files are saved under subdirectories for year and quarter.
+
 
     Returns
     -------
@@ -682,10 +685,10 @@ def define_filename(
        Name of the campaign.
     station_name : str
        Name of the station.
-    start_time : datetime.datatime, optional
+    start_time : datetime.datetime, optional
         Start time.
         Required if add_time_period = True.
-    end_time : datetime.datatime, optional
+    end_time : datetime.datetime, optional
         End time.
         Required if add_time_period = True.
     temporal_resolution : str, optional

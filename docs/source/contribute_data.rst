@@ -1,3 +1,5 @@
+.. _contribute_data:
+
 ==============================
 How to Contribute New Data
 ==============================

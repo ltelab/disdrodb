@@ -2,11 +2,11 @@ temporal_resolutions: ["1MIN", "5MIN", "10MIN"]
 models:
   [
     "GAMMA_ML",
-    "GAMMA_GS_ND_MAE",
-    "NGAMMA_GS_LOG_ND_MAE",
-    "NGAMMA_GS_ND_MAE",
+    "GAMMA_GS_ND_SSE",
+    "NGAMMA_GS_LOG_ND_SSE",
+    "NGAMMA_GS_ND_SSE",
     "LOGNORMAL_ML",
-    "LOGNORMAL_GS_ND_MAE",
+    "LOGNORMAL_GS_ND_SSE",
   ]
 archive_options:
   strategy: time_block

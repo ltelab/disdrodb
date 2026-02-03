@@ -78,6 +78,8 @@ from disdrodb.routines import (
     run_l2e_station,
     run_l2m,
     run_l2m_station,
+    run,
+    run_station,
 )
 from disdrodb.utils.manipulations import convert_from_decibel as idecibel
 from disdrodb.utils.manipulations import convert_to_decibel as decibel
@@ -158,6 +160,7 @@ __all__ = [
     "read_metadata_archive",
     "read_station_metadata",
     # Functions invoking the disdrodb_run_* scripts in the terminals
+    "run",
     "run_l0",
     "run_l0_station",
     "run_l0a",
@@ -172,6 +175,7 @@ __all__ = [
     "run_l2e_station",
     "run_l2m",
     "run_l2m_station",
+    "run_station",
 ]
 
 

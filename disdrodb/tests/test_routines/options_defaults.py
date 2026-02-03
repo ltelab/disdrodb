@@ -106,7 +106,7 @@ L2M_GLOBAL_YAML = {
 GAMMA_ML_CONFIG = {
     "psd_model": "GammaPSD",
     "optimization": "ML",
-    "optimization_kwargs": {
+    "optimization_settings": {
         "init_method": None,
         "probability_method": "cdf",
         "likelihood": "multinomial",
@@ -118,17 +118,26 @@ GAMMA_ML_CONFIG = {
 GAMMA_GS_CONFIG = {
     "psd_model": "GammaPSD",
     "optimization": "GS",
-    "optimization_kwargs": {
-        "target": "ND",
-        "transformation": "identity",
-        "error_order": 1,
+    "optimization_settings": {
+        "objectives": [
+            {
+                "target": "N(D)",
+                "censoring": "none",
+                "transformation": "identity",
+                "loss": "SSE",
+            },
+        ],
+        "search_space": {
+            "mu": {"min": 0, "max": 2, "step": 0.1},
+        },
+        "fixed_parameters": {"Lambda": 10},
     },
 }
 
 LOGNORMAL_ML_CONFIG = {
     "psd_model": "LognormalPSD",
     "optimization": "ML",
-    "optimization_kwargs": {
+    "optimization_settings": {
         "init_method": None,
         "probability_method": "cdf",
         "likelihood": "multinomial",

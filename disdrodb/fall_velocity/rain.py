@@ -58,6 +58,33 @@ def get_fall_velocity_atlas_1973(diameter):
     return fall_velocity
 
 
+def get_fall_velocity_lhermitte1988(diameter):
+    """
+    Compute the fall velocity of raindrops using the Lhermitte et al. (1988) relationship.
+
+    Parameters
+    ----------
+    diameter : array-like
+        Diameter of the raindrops in millimeters.
+
+    Returns
+    -------
+    fall_velocity : array-like
+        Fall velocities corresponding to the input diameters, in meters per second.
+
+    References
+    ----------
+    Roger M. Lhermitte, 1988.
+    Observation of rain at vertical incidence with a 94 GHz Doppler radar: An insight on Mie scattering.
+    Geophysical Research Letter, 15(10), 1125-1128.
+    https://doi.org/10.1029/GL015i010p01125
+    """
+    fall_velocity = 9.25 * (1 - np.exp(-(0.068 * diameter**2 + 0.488 * diameter)))  # Ladino 2025
+    # fall_velocity = 9.25 * (1 - np.exp(-(6.8 * (diameter*10)**2 + 4.88*(diameter*10)))) # Lhermitte 1988 formula wrong
+    fall_velocity = fall_velocity.clip(min=0, max=None)
+    return fall_velocity
+
+
 def get_fall_velocity_brandes_2002(diameter):
     """
     Compute the fall velocity of raindrops using the Brandes et al. (2002) relationship.
@@ -298,7 +325,7 @@ def retrieve_raindrop_beard_fall_velocity(
     ----------
     diameter : array-like
         Diameter of the raindrops in millimeters.
-    ds_env : xr.Dataset
+    ds_env : xarray.Dataset
         A dataset containing the following environmental variables:
         - 'altitude' :  Altitude in meters (m).
         - 'latitude' :  Latitude in degrees.
@@ -395,8 +422,9 @@ def retrieve_raindrop_beard_fall_velocity(
 RAIN_FALL_VELOCITY_MODELS = {
     "Atlas1973": get_fall_velocity_atlas_1973,
     "Beard1976": retrieve_raindrop_beard_fall_velocity,
-    "Brandes2002": get_fall_velocity_brandes_2002,
     "Uplinger1981": get_fall_velocity_uplinger_1981,
+    "Lhermitte1988": get_fall_velocity_lhermitte1988,
+    "Brandes2002": get_fall_velocity_brandes_2002,
     "VanDijk2002": get_fall_velocity_van_dijk_2002,
 }
 
@@ -448,7 +476,7 @@ def get_rain_fall_velocity(diameter, model, ds_env=None):
     model : str
         The model to use for calculating the raindrop fall velocity. Must be one of the following:
         'Atlas1973', 'Beard1976', 'Brandes2002', 'Uplinger1981', 'VanDijk2002'.
-    ds_env : xr.Dataset, optional
+    ds_env : xarray.Dataset, optional
         Only required if model is 'Beard1976'.
         A dataset containing the following environmental variables:
         - 'altitude' (m)
@@ -461,7 +489,7 @@ def get_rain_fall_velocity(diameter, model, ds_env=None):
 
     Returns
     -------
-    fall_velocity : xr.DataArray
+    fall_velocity : xarray.DataArray
         The calculated raindrop fall velocities per diameter.
 
     Notes
@@ -532,7 +560,7 @@ def get_rain_fall_velocity_from_ds(ds, ds_env=None, model="Beard1976", diameter=
     model : str, optional
         Model to compute rain drop fall velocity.
         The default model is ``"Beard1976"``.
-    ds_env : xr.Dataset, optional
+    ds_env : xarray.Dataset, optional
         Only required if model is 'Beard1976'.
         A dataset containing the following environmental variables:
         - 'temperature' : Temperature in degrees Kelvin (K).

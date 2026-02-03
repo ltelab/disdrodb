@@ -97,10 +97,10 @@ def infer_altitudes(lats, lons, dem="aster30m"):
 
     Notes
     -----
-    - The OpenTopoData API has a limit of 1000 calls per day.
-    - Each request can include up to 100 locations.
-    - The API allows a maximum of 1 call per second.
-    - The API requests are made in blocks of up to 100 coordinates,
+    The OpenTopoData API has a limit of 1000 calls per day.
+    Each request can include up to 100 locations.
+    The API allows a maximum of 1 call per second.
+    The API requests are made in blocks of up to 100 coordinates,
     with a 2-second delay between requests.
     """
     # Check that lats and lons have the same length

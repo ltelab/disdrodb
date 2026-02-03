@@ -1,9 +1,8 @@
 .. _disdrodb_readers:
 
-=================
+========
 Readers
-=================
-
+========
 
 DISDRODB supports reading and loading data from many input file formats.
 
@@ -168,7 +167,7 @@ In the reader function:
 1. The ``column_names`` list defines the header of the raw text file.
 
 2. The ``reader_kwargs`` dictionary contains all specifications to open the text file into
-   a ``pandas.DataFrame``. The possible key-value arguments are listed `here <https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html>`_
+   a ``pandas.DataFrame``. The possible key-value arguments are listed `pandas.read_csv <https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html>`_
 
 3. The last part of the reader function code take care of apply ad-hoc
    processing to make the ``pandas.DataFrame`` compliant with the DISDRODB L0A standards.
@@ -217,7 +216,8 @@ you can simply pass the ``pandas.DataFrame`` returned by the reader to the ``san
     df = sanitize_df(df)
 
 
-The raw text files reader template is available `here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/template_reader_raw_text_data.py>`_.
+The raw text files reader template is available at
+`https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/template_reader_raw_text_data.py  <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/template_reader_raw_text_data.py>`_.
 
 
 Reader for raw netCDF files
@@ -302,7 +302,7 @@ you can simply pass the ``xarray.Dataset`` returned by the reader to the ``sanit
     ds = sanitize_ds(ds)
 
 
-The raw netCDF files reader template is available `here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/template_reader_raw_netcdf_data.py>`_.
+The raw netCDF files reader template is available at `https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/template_reader_raw_netcdf_data.py <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/template_reader_raw_netcdf_data.py>`_.
 
 
 
@@ -310,8 +310,8 @@ How to develop a new reader
 -----------------------------
 
 The `Reader Implementation Tutorial <https://disdrodb.readthedocs.io/en/latest/tutorials/reader_preparation.html>`_ subsection provides read-only access to the DISDRODB Reader Implementation Tutorial.
-The original Jupyter Notebook tutorial is available in the disdrodb ``/tutorials`` repository (`here <https://github.com/ltelab/disdrodb/blob/main/tutorials/reader_preparation.ipynb>`_) and can be adapted
-to implement new readers .
+`The original Jupyter Notebook tutorial <https://github.com/ltelab/disdrodb/blob/main/tutorials/reader_preparation.ipynb>`_ is available in the disdrodb ``/tutorials`` repository and can be adapted
+to implement new readers.
 
 Please refers to the :ref:`Step 8: Implement the reader <step8>` subsection of the
 `How to Contribute New Data <https://disdrodb.readthedocs.io/en/latest/contribute_data.html>`_ section of the documentation for further detailed information.

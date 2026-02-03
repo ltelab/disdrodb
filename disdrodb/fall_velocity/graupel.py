@@ -66,7 +66,7 @@ def get_fall_velocity_lee_2015(diameter):
 
     Returns
     -------
-    fall_velocity : ndarray or xarray.DataArray
+    fall_velocity : numpy.ndarray or xarray.DataArray
         Terminal fall velocity [m s⁻¹].
     """
     fall_velocity = 1.10 * diameter**0.28
@@ -86,7 +86,7 @@ def get_fall_velocity_locatelli_1974_lump(diameter):
 
     Returns
     -------
-    fall_velocity : ndarray or xarray.DataArray
+    fall_velocity : numpy.ndarray or xarray.DataArray
         Terminal fall velocity [m s⁻¹].
 
     Reference
@@ -114,7 +114,7 @@ def get_fall_velocity_locatelli_1974_conical(diameter):
 
     Returns
     -------
-    fall_velocity : ndarray or xarray.DataArray
+    fall_velocity : numpy.ndarray or xarray.DataArray
         Terminal fall velocity [m s⁻¹].
 
     Reference
@@ -140,7 +140,7 @@ def get_fall_velocity_locatelli_1974_hexagonal(diameter):
 
     Returns
     -------
-    fall_velocity : ndarray or xarray.DataArray
+    fall_velocity : numpy.ndarray or xarray.DataArray
         Terminal fall velocity [m s⁻¹].
 
     Reference
@@ -166,7 +166,7 @@ def get_fall_velocity_heymsfield_2014(diameter):
 
     Returns
     -------
-    fall_velocity : ndarray or xarray.DataArray
+    fall_velocity : numpy.ndarray or xarray.DataArray
         Terminal fall velocity [m s⁻¹].
     Reference
     ---------
@@ -319,7 +319,7 @@ def retrieve_graupel_heymsfield2014_fall_velocity(
     ----------
     diameter : array-like
         Diameter of the graupel particles in millimeters.
-    ds_env : xr.Dataset
+    ds_env : xarray.Dataset
         A dataset containing the following environmental variables:
         - 'altitude' :  Altitude in meters (m).
         - 'latitude' :  Latitude in degrees.
@@ -414,7 +414,7 @@ def get_graupel_fall_velocity(diameter, model, ds_env=None, minimum_diameter=0.5
         The model to use for calculating the graupel fall velocity. Must be one of the following:
        'Lee2015', 'Locatelli1974Lump', 'Locatelli1974Conical', 'Locatelli1974Hexagonal',
        'Heymsfield2014', 'Heymsfield2018'.
-    ds_env : xr.Dataset, optional
+    ds_env : xarray.Dataset, optional
         A dataset containing the following environmental variables:
         - 'altitude' (m)
         - 'latitude' (°)
@@ -426,7 +426,7 @@ def get_graupel_fall_velocity(diameter, model, ds_env=None, minimum_diameter=0.5
 
     Returns
     -------
-    fall_velocity : xr.DataArray
+    fall_velocity : xarray.DataArray
         The calculated graupel fall velocities per diameter.
 
     Notes
