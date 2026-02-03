@@ -59,7 +59,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
     "--l2m_processing",
     type=bool,
     show_default=True,
-    default=True,
+    default=False,
     help="Run L2M processing.",
 )
 @click_data_archive_dir_option
@@ -78,7 +78,7 @@ def disdrodb_run_station(
     # Higher level processing options
     l1_processing: bool = True,
     l2e_processing: bool = True,
-    l2m_processing: bool = True,
+    l2m_processing: bool = False,
     # Processing options
     force: bool = False,
     verbose: bool = True,
@@ -131,8 +131,8 @@ def disdrodb_run_station(
         # Process station with debugging mode and custom workers
         DASK_NUM_WORKERS=4 disdrodb_run_station NETHERLANDS DELFT PAR001_Cabauw --debugging_mode True
 
-        # Process station, skip final L2M level
-        disdrodb_run_station FRANCE ENPC_CARNOT Carnot_Pars1 --l2m_processing False
+        # Process station, create L2M product (disabled by default)
+        disdrodb_run_station FRANCE ENPC_CARNOT Carnot_Pars1 --l2m_processing True
 
         # Force overwrite existing files with verbose output
         disdrodb_run_station EPFL HYMEX_2012 10 --force True --verbose True

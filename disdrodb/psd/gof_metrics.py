@@ -134,20 +134,19 @@ def compute_wasserstein_distance(
         Bin widths
     dim : str
         Name of the bin dimension
-    integration : {"bin", "left_riemann"}, optional
-        Integration scheme for the Wasserstein integral:
+    integration : str, optional
+        Integration scheme used to compute the Wasserstein integral.
+        Supported options are ``"bin"`` and ``"left_riemann"``.
 
-        - "bin":
-            Histogram-based Wasserstein distance.
-            Interprets distributions as piecewise-constant densities over bins of width dD
-            and integrates the CDF difference over those intervals.
-            Default is "bin".
+        ``"bin"`` compute Histogram-based Wasserstein distance. Distributions are interpreted as
+        piecewise-constant densities over bins of width ``dD``. The distance is
+        computed by integrating the difference between cumulative distribution
+        functions over each bin. This is the default.
 
-        - "left_riemann":
-            Discrete-support Wasserstein distance.
-            Interprets probability mass as concentrated at bin centers D and
-            integrates using spacing between support points, consistent with
-            ``scipy.stats.wasserstein_distance``.
+        ``"left_riemann"`` computes Discrete-support Wasserstein distance. Probability mass is assumed to be
+        concentrated at bin centers ``D``, and the integral is approximated using
+        the spacing between support points, consistent with :func:`scipy.stats.wasserstein_distance`.
+
 
     Returns
     -------

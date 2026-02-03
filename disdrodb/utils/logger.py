@@ -224,13 +224,10 @@ def create_product_logs(
     The summary log selects only logged lines with ``root``, ``WARNING``, and ``ERROR`` keywords.
     The problems log file selects only logged lines with the ``ERROR`` keyword.
 
-    The logs directory structure is the follow:
-    /logs
-    - /files/<product_name>/<station> (same structure as data ... a log for each processed file)
-    - /summary
-      -->  SUMMARY.<PRODUCT_ACRONYM>.<CAMPAIGN_NAME>.<STATION_NAME>.log
-    - /problems
-      -->  PROBLEMS.<PRODUCT_ACRONYM>.<CAMPAIGN_NAME>.<STATION_NAME>.log
+    The logs directory structure is the following
+    - ``/logs/files/<product_name>/<station>`` (same structure as data directory, with logs for each processed file)
+    - ``/logs/summary/SUMMARY.<PRODUCT_ACRONYM>.<CAMPAIGN_NAME>.<STATION_NAME>.log``
+    - ``/logs/problems/PROBLEMS.<PRODUCT_ACRONYM>.<CAMPAIGN_NAME>.<STATION_NAME>.log``
 
     Parameters
     ----------

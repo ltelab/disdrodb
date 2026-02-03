@@ -301,7 +301,7 @@ def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sam
 
     Returns
     -------
-    drop_number_concentration : xarray.DataArray or ndarray
+    drop_number_concentration : xarray.DataArray or numpy.ndarray
         Array of drop number concentrations \\( N(D) \\) in m⁻³·mm⁻¹, representing
         the number of drops per unit volume per unit diameter interval.
 
@@ -358,7 +358,7 @@ def get_total_number_concentration(drop_number_concentration, diameter_bin_width
 
     Returns
     -------
-    total_number_concentration : xarray.DataArray or ndarray
+    total_number_concentration : xarray.DataArray or numpy.ndarray
         Total number concentration \\( N_t \\) in m⁻³, representing the total number
         of drops per unit volume.
 
@@ -1510,7 +1510,7 @@ def get_kinetic_energy_spectrum(
 
     Returns
     -------
-    xr.DataArray
+    xarray.DataArray
         Kinetic Energy Spectrum [J/m2/mm]
     """
     KE_spectrum = (

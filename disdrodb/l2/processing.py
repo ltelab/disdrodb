@@ -364,10 +364,12 @@ def generate_l2e(
     ds : xarray.Dataset
         DISDRODB L1 dataset.
         Alternatively, a xarray dataset with at least:
-            - variables: raw_drop_number
-            - dimension: DIAMETER_DIMENSION
-            - coordinates: diameter_bin_center, diameter_bin_width, sample_interval
-            - attributes: sensor_name
+
+        - variables: raw_drop_number
+        - dimension: DIAMETER_DIMENSION
+        - coordinates: diameter_bin_center, diameter_bin_width, sample_interval
+        - attributes: sensor_name
+
     ds_env : xarray.Dataset, optional
         Environmental dataset used for fall velocity and water density estimates.
         If None, a default environment dataset will be loaded.
@@ -901,12 +903,12 @@ def generate_l2_radar(
     ----------
     ds : xarray.Dataset
         Dataset containing the drop number concentration variable or the PSD parameters.
-    frequency : str, float, or list of str and float, optional
+    frequency : str, float, or list of str or float, optional
         Frequencies in GHz for which to compute the radar parameters.
         Alternatively, also strings can be used to specify common radar frequencies.
         If ``None``, the common radar frequencies will be used.
         See ``disdrodb.scattering.available_radar_bands()``.
-    num_points: int or list of integer, optional
+    num_points: int or list of int, optional
         Number of bins into which discretize the PSD.
     diameter_max : float or list of float, optional
         Maximum diameter. The default value is 10 mm.
@@ -915,7 +917,7 @@ def generate_l2_radar(
     axis_ratio_model : str or list of str, optional
         Models to compute the axis ratio. The default model is ``Thurai2007``.
         See available models with ``disdrodb.scattering.available_axis_ratio_models()``.
-    permittivity_model : str str or list of str, optional
+    permittivity_model : str or list of str, optional
         Permittivity model to use to compute the refractive index and the
         rayleigh_dielectric_factor. The default is ``Turner2016``.
         See available models with ``disdrodb.scattering.available_permittivity_models()``.

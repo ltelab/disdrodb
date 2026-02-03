@@ -337,9 +337,9 @@ def filter_dataset_by_time(ds, start_time=None, end_time=None):
     ----------
     ds : xarray.Dataset
         Dataset with a `time` coordinate.
-    start_time : np.datetime64 or None
+    start_time : str, numpy.datetime64 or None
         Inclusive start bound. If None, no lower bound is applied.
-    end_time : np.datetime64 or None
+    end_time : str, numpy.datetime64 or None
         Inclusive end bound. If None, no upper bound is applied.
 
     Returns
@@ -350,9 +350,9 @@ def filter_dataset_by_time(ds, start_time=None, end_time=None):
     time = ds["time"].to_numpy()
     mask = np.ones(time.shape, dtype=bool)
     if start_time is not None:
-        mask &= time >= np.array(start_time, dtype="datetime64[ns]")
+        mask &= time >= np.array(check_time(start_time), dtype="datetime64[ns]")
     if end_time is not None:
-        mask &= time <= np.array(end_time, dtype="datetime64[ns]")
+        mask &= time <= np.array(check_time(end_time), dtype="datetime64[ns]")
     return ds.isel(time=np.where(mask)[0])
 
 
@@ -445,30 +445,73 @@ def open_netcdf_files(
     engine="netcdf4",
     **open_kwargs,
 ):
-    """Open DISDRODB netCDF files using xarray.
+    """Open DISDRODB NetCDF files using xarray.
 
-    Using data_vars="minimal", coords="minimal", compat="override"
-    --> will only concatenate those variables with the time dimension,
-    --> will skip any checking for variables that don't have a time dimension
-       (simply pick the variable from the first file).
-    https://github.com/pydata/xarray/issues/1385#issuecomment-1958761334
+    This function opens and concatenates multiple NetCDF files using
+    ``xarray.open_mfdataset`` with settings optimized for time-based
+    concatenation and minimal variable checking.
 
-    Using combine="nested" and join="outer" ensure that duplicated timesteps
-    are not overwritten!
+    The function uses ``data_vars="minimal"``, ``coords="minimal"``,
+    and ``compat="override"`` to:
 
-    When decode_cf=False
-    --> lat,lon are data_vars and get concatenated without any checking or reading
-    When decode_cf=True
-    --> lat, lon are promoted to coords, then get checked for equality across all files
+    - Concatenate only variables that depend on the time dimension.
+    - Skip consistency checks for variables without a time dimension, taking them from the first file instead.
 
-    For L0B product, if sample_interval variable is present and varies with time,
-    this function concatenate the variable over time without problems.
-    For L0C product, if sample_interval changes across listed files,
-    only sample_interval of first file is reported.
-    --> open_dataset take care of just providing filepaths of files with same sample interval.
-    In L1 and L2 processing, only filepaths of files with same sample interval
-    must be passed to this function.
+    See: https://github.com/pydata/xarray/issues/1385#issuecomment-1958761334
 
+    Using ``combine="nested"`` and ``join="outer"`` ensures that duplicated
+    timesteps are preserved and not overwritten.
+
+    Behavior depends on ``decode_cf``:
+
+    - If ``decode_cf=False``: ``lat`` and ``lon`` are treated as data variables and concatenated without validation.
+    - If ``decode_cf=True``: ``lat`` and ``lon`` are promoted to coordinates and checked for  equality across files.
+
+    Special handling of ``sample_interval``:
+
+    - For L0B products, if ``sample_interval`` varies with time, it is safely concatenated.
+    - For L0C products, if ``sample_interval`` differs across files, only the value from the first file is retained.
+    - For L1 and L2 processing, only files with identical ``sample_interval`` values should be passed to this function.
+
+    Parameters
+    ----------
+    filepaths : str or sequence of str
+        Path(s) to NetCDF files to open.
+    chunks : int, dict, or None, optional
+        Chunking strategy passed to xarray for dask-backed arrays.
+        Use ``-1`` to load data into a single chunk (default).
+    start_time : str or datetime-like or None, optional
+        Start time for temporal subsetting.
+    end_time : str or datetime-like or None, optional
+        End time for temporal subsetting.
+    variables : sequence of str or None, optional
+        Subset of variables to retain.
+    parallel : bool, optional
+        Whether to open files in parallel using dask.
+        The default is ``False``.
+    compute : bool, optional
+        Whether to immediately compute the dataset when using dask.
+        The default is ``True``.
+    engine : str, optional
+        Backend engine used by xarray to read NetCDF files.
+        The default is "netcdf4".
+    **open_kwargs
+        Additional keyword arguments passed to
+        ``xarray.open_mfdataset``.
+
+    Returns
+    -------
+    xarray.Dataset
+        The opened and concatenated dataset.
+
+    See Also
+    --------
+    xarray.open_mfdataset
+
+    Notes
+    -----
+    This function is decorated with ``ensure_safe_open_mfdataset`` to
+    protect against unsafe or incompatible combinations of arguments.
     """
     import xarray as xr
 

@@ -404,7 +404,7 @@ def remove_issue_timesteps(
     issue_dict : dict
         Dictionary with optional keys 'timesteps' (list of datetimes) and
         'time_periods' (list of (start, end) tuples).
-    logger : any, optional
+    logger : optional
         Logger instance to record dropped steps, by default None.
     verbose : bool, optional
         Whether to log informational messages, by default False.

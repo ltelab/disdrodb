@@ -205,7 +205,7 @@ def get_rain_refractive_index_liebe1991_single(temperature, frequency):
 
     Notes
     -----
-    - The code of this function has been derived from RainSense code of Thomas van Leth available at
+    The code of this function has been derived from RainSense code of Thomas van Leth available at
     https://github.com/temperatureCvanLeth/RainSense/blob/master/rainsense/scattering.py#L149
 
     References
@@ -258,9 +258,9 @@ def get_rain_refractive_index_liebe1991(temperature, frequency):
 
     Notes
     -----
-    - The code of this function has been derived from pyradsim code of Daniel Wolfensberger available at
+    The code of this function has been derived from pyradsim code of Daniel Wolfensberger available at
     https://github.com/wolfidan/pyradsim/blob/master/pyradsim/permittivity_models.py#L37
-    - The Liebe et al. (1991) replaces the work of Ray et al. (1972).
+    The Liebe et al. (1991) replaces the work of Ray et al. (1972).
 
     References
     ----------
@@ -329,8 +329,8 @@ def get_rain_refractive_index_ellison2007(temperature, frequency):
 
     Notes
     -----
-    - The model is designed to operate only up to 1000 GHz and temperature ranging from 0 degC to 100 degC.
-    - The code of this function has been derived from Davide Ori raincoat code available at
+    The model is designed to operate only up to 1000 GHz and temperature ranging from 0 degC to 100 degC.
+    The code of this function has been derived from Davide Ori raincoat code available at
     https://github.com/OPTIMICe-team/raincoat/blob/master/raincoat/scatTable/water.py#L160
 
     References
@@ -412,7 +412,7 @@ def get_rain_refractive_index_turner2016(frequency, temperature):
 
     Notes
     -----
-    - The code of this function has been checked against Joseph Hardin pyDSD and Davide Ori raincoat codes
+    The code of this function has been checked against Joseph Hardin pyDSD and Davide Ori raincoat codes
     available at:
     https://github.com/josephhardinee/PyDSD/blob/main/pydsd/utility/dielectric.py#L36
     https://github.com/OPTIMICe-team/raincoat/blob/master/raincoat/scatTable/water.py#L54
@@ -481,7 +481,7 @@ def get_rain_refractive_index_turner2016(frequency, temperature):
 
 ####----------------------------------------------------------------------------------------
 def get_rayleigh_dielectric_factor(m):
-    """Compute the Rayleigh dielectric factor |K|**2 from the complex refractive index.
+    r"""Compute the Rayleigh dielectric factor :math:`|K|^2` from the complex refractive index.
 
     The magnitude squared of the complex dielectric constant factor for liquid water,
     relative to the surrounding medium (typically air).
@@ -496,9 +496,9 @@ def get_rayleigh_dielectric_factor(m):
     Returns
     -------
     float
-        Dielectric factor |K|^2 used in Rayleigh scattering.
+        Dielectric factor :math:`|K|^2` used in Rayleigh scattering.
         Often also called the radar dieletric factor.
-        In pytmatrix, correspond to the Kw_sqr argument of the Scatterer object.
+        In pytmatrix, correspond to the ``Kw_sqr`` argument of the Scatterer object.
     """
     eps = m**2
     K_complex = (eps - 1.0) / (eps + 2.0)

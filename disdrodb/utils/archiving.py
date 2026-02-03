@@ -203,12 +203,13 @@ def identify_time_partitions(start_times, end_times, freq: str) -> list[dict]:
 
     Parameters
     ----------
-    start_times : numpy.ndarray of datetime64[s]
-        Array of inclusive start times for each file.
-    end_times : numpy.ndarray of datetime64[s]
-        Array of inclusive end times for each file.
-    freq : {'none', 'hour', 'day', 'month', 'quarter', 'season', 'year'}
+    start_times : numpy.ndarray
+        Array of inclusive start times in datetime64[s] format for each file.
+    end_times : numpy.ndarray
+        Array of inclusive end times in datetime64[s] format for each file.
+    freq : str
         Frequency determining the granularity of candidate blocks.
+        Allowed values are {'none', 'hour', 'day', 'month', 'quarter', 'season', 'year'}.
         See `generate_time_blocks` for more details.
 
     Returns
@@ -252,7 +253,9 @@ def define_temporal_partitions(filepaths, strategy, parallel, strategy_options):
         List of files paths to be processed
 
     strategy : str
-        Which partitioning strategy to apply:
+        Partitioning strategy to apply.
+
+        Supported values are:
 
         - ``'time_block'`` defines fixed time intervals (e.g. monthly) covering input files.
         - ``'event'`` detect clusters of precipitation ("events").
@@ -267,42 +270,46 @@ def define_temporal_partitions(filepaths, strategy, parallel, strategy_options):
 
         - ``freq``: Time unit for blocks. One of {'year', 'season', 'month', 'day'}.
 
-        See identify_time_partitions for more information.
+        See the ``identify_time_partitions`` function for more information.
 
         If ``strategy == 'event'``, supported options are:
-        - ``variable`` : str
-          Name of the variable to use to apply the event detection.
-        - ``detection_threshold`` : int
-          Minimum number of drops to consider a timestep.
-        - ``neighbor_min_size`` : int
-          Minimum cluster size for merging neighboring events.
-        - ``neighbor_time_interval`` : str
-          Time window (e.g. "5MIN") to merge adjacent clusters.
-        - ``event_max_time_gap`` : str
-          Maximum allowed gap (e.g. "6H") within a single event.
-        - ``event_min_duration`` : str
-          Minimum total duration (e.g. "5MIN") of an event.
-        - ``event_min_size`` : int
-          Minimum number of records in an event.
 
-        See identify_events for more information.
+        - ``variable`` : str
+            Name of the variable to use to apply the event detection.
+        - ``detection_threshold`` : int
+            Minimum number of drops to consider a timestep.
+        - ``neighbor_min_size`` : int
+            Minimum cluster size for merging neighboring events.
+        - ``neighbor_time_interval`` : str
+            Time window (e.g. "5MIN") to merge adjacent clusters.
+        - ``event_max_time_gap`` : str
+            Maximum allowed gap (e.g. "6H") within a single event.
+        - ``event_min_duration`` : str
+            Minimum total duration (e.g. "5MIN") of an event.
+        - ``event_min_size`` : int
+            Minimum number of records in an event.
+
+        See the ``identify_events`` function for more information.
 
     Returns
     -------
     list
         A list of dictionaries, each containing:
 
-        - ``start_time`` (numpy.datetime64[s])
+        - ``start_time``: numpy.datetime64[s]
             Inclusive start of an event or time block.
-        - ``end_time`` (numpy.datetime64[s])
+        - ``end_time``: numpy.datetime64[s]
             Inclusive end of an event or time block.
 
     Notes
     -----
-    - The ``'event'`` strategy requires loading data into memory to identify clusters.
-    - The ``'time_block'`` strategy can operate on metadata alone, without full data loading.
-    - The ``'event'`` strategy implicitly performs data selection on which files to process !
-    - The ``'time_block'`` strategy does not performs data selection on which files to process !
+    The ``'event'`` strategy requires loading data into memory to identify clusters.
+
+    The ``'time_block'`` strategy can operate on metadata alone, without full data loading.
+
+    The ``'event'`` strategy implicitly performs data selection on which files to process !
+
+    The ``'time_block'`` strategy does not performs data selection on which files to process !
     """
     if strategy not in ["time_block", "event"]:
         raise ValueError(f"Unknown strategy: {strategy!r}. Must be 'time_block' or 'event'.")

@@ -84,7 +84,7 @@ def save_table_to_pdf(
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         The data to render.
     filepath : str
         File path where write the final PDF (e.g. '<...>/table.pdf').
@@ -93,8 +93,9 @@ def save_table_to_pdf(
     fontsize : str, optional
         LaTeX font-size command to wrap the table (e.g. '\\small').
         The default is '\\tiny'.
-    orientation : {'portrait', 'landscape'}
-        Page orientation. If 'landscape', the table will be laid out horizontally.
+    orientation : str
+        Page orientation. Allowed values are 'portrait' and 'landscape'.
+        If 'landscape', the table will be laid out horizontally.
         The default is 'landscape'.
     """
     # Export table to LaTeX
@@ -500,11 +501,11 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False, use_ra
 
     Parameters
     ----------
-    x : array_like
+    x : array-like
         Independent variable values. Must be positive and finite after filtering.
-    y : array_like
+    y : array-like
         Dependent variable values. Must be positive and finite after filtering.
-    xbins : array_like
+    xbins : array-like
         Bin edges for grouping ``x`` values (passed to ``pandas.cut``).
     quantile : float, optional
       Quantile of ``y`` to compute in each bin (between 0 and 1).
@@ -642,7 +643,7 @@ def predict_from_powerlaw(x, a, b):
 
     Parameters
     ----------
-    x : array_like
+    x : array-like
         Independent variable values.
     a : float
         Power-law coefficient.
@@ -651,7 +652,7 @@ def predict_from_powerlaw(x, a, b):
 
     Returns
     -------
-    y : ndarray
+    y : numpy.ndarray
         Predicted dependent variable values.
 
     Notes
@@ -697,7 +698,7 @@ def predict_from_inverse_powerlaw(x, a, b):
 
     Parameters
     ----------
-    x : array_like
+    x : array-like
         Values of ``x`` (independent variable in the original power law).
     a : float
         Power-law coefficient of the inverse power-law model.
@@ -706,7 +707,7 @@ def predict_from_inverse_powerlaw(x, a, b):
 
     Returns
     -------
-    y : ndarray
+    y : numpy.ndarray
         Predicted dependent variable values.
     """
     return (x ** (1 / b)) / (a ** (1 / b))
@@ -1726,14 +1727,14 @@ def plot_dmax_relationships(df, diameter_bin_edges, dmax="Dmax", diameter_max=10
 
     Parameters
     ----------
-    df : DataFrame
+    df : pandas.DataFrame
         Input dataframe containing the precipitation data
-    dmax : str, default "Dmax"
-        Column name for maximum diameter
-    vmax : float, default 10
-        Maximum value for Dmax axis limits
-    dpi : int, default 300
-        Resolution for the figure
+    dmax : str, optional
+        Column name for maximum diameter. Default is 'Dmax'.
+    vmax : float, optional
+        Maximum value for Dmax axis limits. Default is 10 mm.
+    dpi : int, optional
+        Resolution for the figure. The default is 300.
     """
     # Compute 2D histograms
     # - Dmax-R

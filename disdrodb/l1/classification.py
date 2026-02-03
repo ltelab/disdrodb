@@ -762,9 +762,13 @@ def classify_raw_spectrum(
 
     # ------------------------------------------------------------------------.
     #### Define precipitation type variable
-    precipitation_type = xr.ones_like(ds["time"], dtype=float) * -1
-    precipitation_type = xr.where(hydrometeor_type.isin([0]), 0, precipitation_type)
-    precipitation_type = xr.where(hydrometeor_type.isin([1, 2, 3]), 0, precipitation_type)
+    precipitation_type = xr.ones_like(ds["time"], dtype=float) * -2
+    precipitation_type = xr.where(hydrometeor_type.isin([0]), -1, precipitation_type)
+    precipitation_type = xr.where(
+        hydrometeor_type.isin([1, 2, 3, 9]),
+        0,
+        precipitation_type,
+    )  # 9 hail in rainfall class currently
     precipitation_type = xr.where(hydrometeor_type.isin([5, 6, 7, 8]), 1, precipitation_type)
     precipitation_type = xr.where(hydrometeor_type.isin([4]), 2, precipitation_type)
     precipitation_type.attrs.update(

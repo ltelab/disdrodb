@@ -138,7 +138,7 @@ def set_disdrodb_attrs(ds, product: str):
 
     Returns
     -------
-    xarray dataset
+    xarray.Dataset
         Dataset.
     """
     # Add dataset conventions

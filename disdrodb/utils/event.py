@@ -44,7 +44,7 @@ def group_timesteps_into_event(
 
     Parameters
     ----------
-    timesteps: np.ndarray
+    timesteps: numpy.ndarray
         Candidate timesteps to be grouped into events.
     neighbor_time_interval : str
         The time interval around a given a timestep defining the neighborhood.
@@ -121,9 +121,9 @@ def remove_isolated_timesteps(timesteps, neighbor_min_size, neighbor_time_interv
 
     Parameters
     ----------
-    timesteps : array-like of np.datetime64
+    timesteps : array-like of numpy.datetime64
         Sorted or unsorted array of valid timesteps.
-    neighbor_time_interval : np.timedelta64
+    neighbor_time_interval : numpy.timedelta64
         The time interval around a given a timestep defining the neighborhood.
         Only timesteps that fall within this time interval before or after a timestep are considered neighbors.
     neighbor_min_size : int, optional
@@ -136,7 +136,7 @@ def remove_isolated_timesteps(timesteps, neighbor_min_size, neighbor_time_interv
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         Array of timesteps with isolated entries removed.
     """
     # Sort timesteps
@@ -182,15 +182,15 @@ def group_timesteps_into_events(timesteps, event_max_time_gap):
 
     Parameters
     ----------
-    timesteps : array-like of np.datetime64
+    timesteps : array-like of numpy.datetime64
         Sorted array of valid timesteps.
-    event_max_time_gap : np.timedelta64
+    event_max_time_gap : numpy.timedelta64
         Maximum time interval allowed between consecutive valid timesteps for them
         to be considered part of the same event.
 
     Returns
     -------
-    list of np.ndarray
+    list of numpy.ndarray
         A list of events, where each event is an array of timesteps.
     """
     # Deal with case with no timesteps

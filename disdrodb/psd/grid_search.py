@@ -130,7 +130,7 @@ def check_objectives(objectives):
 
     Parameters
     ----------
-    objectives : list of dicts
+    objectives : list of dict
         List of objective dictionaries, each containing:
         - 'target' : str, Target variable (N(D), H(x), R, Z, LWC, or M<p>)
         - 'transformation' : str, Transformation type (identity, log, sqrt)
@@ -140,7 +140,7 @@ def check_objectives(objectives):
 
     Returns
     -------
-    list of dicts
+    list of dict
         Validated objectives. Loss weights are not normalized.
     """
     if objectives is None:
@@ -183,18 +183,18 @@ def compute_rain_rate(ND, D, dD, V):
 
     Parameters
     ----------
-    ND : np.ndarray
+    ND : numpy.ndarray
         Drop size distribution [#/m3/mm-1]. Can be 1D [n_bins] or 2D [n_samples, n_bins].
-    D : 1D array
+    D : numpy.ndarray
         Diameter bin centers in mm [n_bins]
-    dD : 1D array
+    dD : numpy.ndarray
        Diameter bin width in mm [n_bins]
-    V : 1D array
+    V : numpy.ndarray
         Terminal velocity [n_bins] [m/s]
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         Rain rate [mm/h]
     """
     axis = 1 if ND.ndim == 2 else None
@@ -207,18 +207,18 @@ def compute_lwc(ND, D, dD, rho_w=1000):
 
     Parameters
     ----------
-    ND : np.ndarray
+    ND : numpy.ndarray
         Drop size distribution [#/m3/mm-1]. Can be 1D [n_bins] or 2D [n_samples, n_bins].
-    D : 1D array
+    D : numpy.ndarray
         Diameter bin centers in mm [n_bins]
-    dD : 1D array
+    dD : numpy.ndarray
        Diameter bin width in mm [n_bins]
     rho_w : float, optional
         Water density [kg/m3]. Default is 1000.
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         Liquid water content [g/m3]
     """
     axis = 1 if ND.ndim == 2 else None
@@ -231,18 +231,18 @@ def compute_moment(ND, order, D, dD):
 
     Parameters
     ----------
-    ND : np.ndarray
+    ND : numpy.ndarray
         Drop size distribution [#/m3/mm-1]. Can be 1D [n_bins] or 2D [n_samples, n_bins].
     order : int
         Moment order.
-    D : 1D array
+    D : numpy.ndarray
         Diameter bin centers in mm [n_bins]
-    dD : 1D array
+    dD : numpy.ndarray
        Diameter bin width in mm [n_bins]
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         Moment of the specified order [mm^order·m^-3]
     """
     axis = 1 if ND.ndim == 2 else None
@@ -254,16 +254,16 @@ def compute_z(ND, D, dD):
 
     Parameters
     ----------
-    ND : np.ndarray
+    ND : numpy.ndarray
         Drop size distribution [#/m3/mm-1]. Can be 1D [n_bins] or 2D [n_samples, n_bins].
-    D : 1D array
+    D : numpy.ndarray
         Diameter bin centers in mm [n_bins]
-    dD : 1D array
+    dD : numpy.ndarray
        Diameter bin width in mm [n_bins]
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         Radar reflectivity [dBZ]
     """
     z = compute_moment(ND, order=6, D=D, dD=dD)  # mm⁶·m⁻³
@@ -285,15 +285,15 @@ def compute_target_variable(
     ----------
     target : str
         Target variable type. Can be 'Z', 'R', 'LWC', moments ('M0'-'M6'), 'N(D)', or 'H(x)'.
-    ND_obs : 1D array
-        Observed drop size distribution [#/m3/mm-1] [n_bins]
-    ND_preds : 2D array
-        Predicted drop size distributions [n_samples, n_bins] [#/m3/mm-1]
-    D : 1D array
+    ND_obs : numpy.ndarray
+        Observed drop size distribution of shape (n_bins, ) with units [#/m3/mm-1]
+    ND_preds : numpy.ndarray
+        Predicted drop size distributions of shape (n_samples, n_bins) with units [#/m3/mm-1]
+    D : numpy.ndarray
         Diameter bin centers in mm [n_bins]
-    dD : 1D array
+    dD : numpy.ndarray
        Diameter bin width in mm [n_bins]
-    V : 1D array
+    V : numpy.ndarray
         Terminal velocity [n_bins] [m/s]
 
     Returns
@@ -330,15 +330,15 @@ def left_truncate_bins(ND_obs, ND_preds, D, dD, V):
 
     Parameters
     ----------
-    ND_obs : 1D array
-        Observed drop size distribution [n_bins]
-    ND_preds : 2D array
-        Predicted drop size distributions [n_samples, n_bins]
-    D : 1D array
+    ND_obs : numpy.ndarray
+        Observed drop size distribution of shape (n_bins, ) with units [#/m3/mm-1]
+    ND_preds : numpy.ndarray
+        Predicted drop size distributions of shape (n_samples, n_bins) with units [#/m3/mm-1]
+    D : numpy.ndarray
         Diameter bin center in mm [n_bins]
-    dD : 1D array
+    dD : numpy.ndarray
         Diameter bin width in mm [n_bins]
-    V : 1D array
+    V : numpy.ndarray
         Terminal velocity [n_bins]
 
     Returns
@@ -363,15 +363,15 @@ def right_truncate_bins(ND_obs, ND_preds, D, dD, V):
 
     Parameters
     ----------
-    ND_obs : 1D array
-        Observed drop size distribution [n_bins]
-    ND_preds : 2D array
-        Predicted drop size distributions [n_samples, n_bins]
-    D : 1D array
+    ND_obs : numpy.ndarray
+        Observed drop size distribution of shape (n_bins, ) with units [#/m3/mm-1]
+    ND_preds : numpy.ndarray
+        Predicted drop size distributions of shape (n_samples, n_bins) with units [#/m3/mm-1]
+    D : numpy.ndarray
         Diameter bin center in mm [n_bins]
-    dD : 1D array
+    dD : numpy.ndarray
         Diameter bin width in mm [n_bins]
-    V : 1D array
+    V : numpy.ndarray
         Terminal velocity [n_bins]
 
     Returns
@@ -404,15 +404,15 @@ def truncate_bin_edges(
 
     Parameters
     ----------
-    ND_obs : 1D array
-        Observed drop size distribution [n_bins]
-    ND_preds : 2D array
-        Predicted drop size distributions [n_samples, n_bins]
-    D : 1D array
+    ND_obs : numpy.ndarray
+        Observed drop size distribution of shape (n_bins, ) with units [#/m3/mm-1]
+    ND_preds : numpy.ndarray
+        Predicted drop size distributions of shape (n_samples, n_bins) with units [#/m3/mm-1]
+    D : numpy.ndarray
         Diameter bin center in mm [n_bins]
-    dD : 1D array
+    dD : numpy.ndarray
         Diameter bin width in mm [n_bins]
-    V : 1D array
+    V : numpy.ndarray
         Terminal velocity [n_bins]
     left_censored : bool, optional
         If True, truncate from the left (remove small diameter bins). Default is False.
@@ -445,9 +445,9 @@ def apply_transformation(obs, pred, transformation):
 
     Parameters
     ----------
-    obs : np.ndarray
+    obs : numpy.ndarray
         Observed values
-    pred : np.ndarray
+    pred : numpy.ndarray
         Predicted values
     transformation : str
         Transformation type: 'identity', 'log', or 'sqrt'.
@@ -472,16 +472,16 @@ def _compute_kl(p_k, q_k, eps=1e-12):
 
     Parameters
     ----------
-    p_k : np.ndarray
+    p_k : numpy.ndarray
         Reference probability distribution [n_samples, n_bins] or [1, n_bins]
-    q_k : np.ndarray
+    q_k : numpy.ndarray
         Comparison probability distribution [n_samples, n_bins]
     eps : float, optional
         Small value for numerical stability. Default is 1e-12.
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         KL divergence for each sample [n_samples]
     """
     q_safe = np.maximum(q_k, eps)
@@ -506,17 +506,17 @@ def compute_kl_divergence(obs, pred, dD, eps=1e-12):
 
     Parameters
     ----------
-    obs : 1D array
-        Observed N(D) values [n_bins]. Unit [#/m3/mm-1]
-    pred : 2D array
-        Predicted N(D) values [n_samples, n_bins]. Unit [#/m3/mm-1]
-    dD : 1D array
-       Diameter bin width in mm [n_bins]
+    obs : numpy.ndarray
+        Observed N(D) values with shape (n_bins,) and units [#/m3/mm-1]
+    pred : numpy.ndarray
+        Predicted N(D) values with shape (n_samples, n_bins) and units [#/m3/mm-1]
+    dD : numpy.ndarray
+       Diameter bin width in mm with shape (n_bins,)
 
     Returns
     -------
-    np.ndarray
-        KL divergence for each sample [n_samples]
+    numpy.ndarray
+        KL divergence for each sample with shape (n_samples,)
     """
     # Convert N(D) to probabilities (normalize by bin width and total)
     # pdf =  N(D) * dD / sum( N(D) * dD)
@@ -538,16 +538,16 @@ def compute_jensen_shannon_distance(obs, pred, dD, eps=1e-12):
 
     Parameters
     ----------
-    obs : 1D array
-        Observed N(D) values [n_bins]. Unit [#/m3/mm-1]
-    pred : 2D array
-        Predicted N(D) values [n_samples, n_bins]. Unit [#/m3/mm-1]
-    dD : 1D array
-       Diameter bin width in mm [n_bins]
+    obs : numpy.ndarray
+        Observed N(D) values with shape (n_bins,) and units [#/m3/mm-1]
+    pred : numpy.ndarray
+        Predicted N(D) values with shape (n_samples, n_bins) and units [#/m3/mm-1]
+    dD : numpy.ndarray
+       Diameter bin width in mm with shape (n_bins,)
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         Jensen-Shannon distance for each sample [n_samples]
     """
     # Convert N(D) to probability distributions
@@ -581,34 +581,30 @@ def compute_wasserstein_distance(obs, pred, D, dD, eps=1e-12, integration="bin")
 
     Parameters
     ----------
-    obs : 1D array
-        Observed N(D) values [n_bins]. Unit [#/m3/mm-1]
-    pred : 2D array
-        Predicted N(D) values [n_samples, n_bins]. Unit [#/m3/mm-1]
-    D : 1D array
-        Diameter bin centers in mm [n_bins]
-    dD : 1D array
-       Diameter bin width in mm [n_bins]
-    integration : {"bin", "left_riemann"}
-        Integration scheme for the Wasserstein integral:
+    obs : numpy.ndarray
+        Observed N(D) values with shape (n_bins,) and units [#/m3/mm-1]
+    pred : numpy.ndarray
+        Predicted N(D) values with shape (n_samples, n_bins) and units [#/m3/mm-1]
+    D : numpy.ndarray
+        Diameter bin centers in mm with shape (n_bins,)
+    dD : numpy.ndarray
+       Diameter bin width in mm with shape (n_bins,)
+    integration : str, optional
+        Integration scheme used to compute the Wasserstein integral.
+        Supported options are ``"bin"`` and ``"left_riemann"``.
 
-        - "bin":
-            Histogram-based Wasserstein distance.
-            Interprets N(D) as a piecewise-constant density over bins of width dD
-            and integrates the CDF difference over those intervals.
-            Assumes the CDF difference is constant within each bin and
-            integrates using the bin widths (dD).
+        ``"bin"`` compute Histogram-based Wasserstein distance. N(D) are interpreted as
+        piecewise-constant densities over bins of width ``dD``. The distance is
+        computed by integrating the difference between cumulative distribution
+        functions over each bin. This is the default.
 
-        - "left_riemann":
-            Discrete-support Wasserstein distance.
-            Interprets probability mass as concentrated at bin centers D and
-            integrates using spacing between support points, consistent with
-            scipy.stats.wasserstein_distance.
-            Use Left Riemann sum using bin centers.
+        ``"left_riemann"`` computes Discrete-support Wasserstein distance. Probability mass is assumed to be
+        concentrated at bin centers ``D``, and the integral is approximated using
+        the spacing between support points, consistent with :func:`scipy.stats.wasserstein_distance`.
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         Wasserstein distance for each sample [n_samples]
     """
     # from scipy.stats import wasserstein_distance
@@ -674,16 +670,16 @@ def compute_kolmogorov_smirnov_distance(obs, pred, dD, eps=1e-12):
 
     Parameters
     ----------
-    obs : 1D array
-        Observed N(D) values [n_bins]. Unit [#/m3/mm-1]
-    pred : 2D array
-        Predicted N(D) values [n_samples, n_bins]. Unit [#/m3/mm-1]
-    dD : 1D array
-       Diameter bin width in mm [n_bins]
+    obs : numpy.ndarray
+        Observed N(D) values with shape (n_bins,) and units [#/m3/mm-1]
+    pred : numpy.ndarray
+        Predicted N(D) values with shape (n_samples, n_bins) and units [#/m3/mm-1]
+    dD : numpy.ndarray
+       Diameter bin width in mm with shape (n_bins,)
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         KS statistic for each sample [n_samples]
         If 0, the two distributions are identical.
     np.ndarray
@@ -734,24 +730,24 @@ def compute_errors(obs, pred, loss, D=None, dD=None):  # noqa: PLR0911
 
     Parameters
     ----------
-    obs : np.ndarray
+    obs : numpy.ndarray
         Observed values.
         Is scalar value if specified target is an integral variable.
         Is 1D array of size [n_bins] if target is a distribution.
-    pred : np.ndarray
+    pred : numpy.ndarray
         Predicted values. Can be 1D [n_samples] or 2D [n_samples, n_bins].
         Is 1D when specified target is an integral variable.
         Is 2D when specified target is a distribution.
     loss : str
         Error metric to compute. See supported metrics in ERROR_METRICS.
-    D : 1D array, optional
+    D : numpy.ndarray, optional
         Diameter bin center in mm [n_bins]. Required for 'WD' metric. Default is None.
-    dD : 1D array, optional
+    dD : numpy.ndarray, optional
         Diameter bin width in mm [n_bins]. Required for distribution metrics. Default is None.
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         Computed error(s) [n_samples] for most metrics, or [n_samples, n_bins] for element-wise metrics.
     """
     # Handle scalar obs case (from integral targets like Z, R, LWC)
@@ -809,12 +805,12 @@ def normalize_errors(errors):
 
     Parameters
     ----------
-    errors : np.ndarray
+    errors : numpy.ndarray
         Error values to normalize [n_samples]
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         Normalized errors (if normalize_error=True) or original errors (if False)
     """
     p10 = np.nanpercentile(errors, q=10)
@@ -851,15 +847,15 @@ def compute_loss(
 
     Parameters
     ----------
-    ND_obs : 1D array
-        Observed drop size distribution [n_bins] [#/m3/mm-1]
-    ND_preds : 2D array
-        Predicted drop size distributions [n_samples, n_bins] [#/m3/mm-1]
-    D : 1D array
+    ND_obs : numpy.ndarray
+        Observed drop size distribution of shape (n_bins, ) with units [#/m3/mm-1]
+    ND_preds : numpy.ndarray
+        Predicted drop size distributions of shape (n_samples, n_bins) with units [#/m3/mm-1]
+    D : numpy.ndarray
         Diameter bin centers in mm [n_bins]
-    dD : 1D array
+    dD : numpy.ndarray
        Diameter bin width in mm [n_bins]
-    V : 1D array
+    V : numpy.ndarray
         Terminal velocity [n_bins] [m/s]
     target : str
         Target variable: 'Z', 'R', 'LWC', moments ('M0'-'M6'), 'N(D)', or 'H(x)'.
@@ -888,7 +884,7 @@ def compute_loss(
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         Computed errors [n_samples]. Values are NaN where computation failed.
     """
     # Check input
@@ -939,35 +935,40 @@ def compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives, Nc=None):
 
     Parameters
     ----------
-    ND_obs : 1D array
-        Observed drop size distribution [n_bins] [#/m3/mm-1]
-    ND_preds : 2D array
-        Predicted drop size distributions [n_samples, n_bins] [#/m3/mm-1]
-    D : 1D array
+    ND_obs : numpy.ndarray
+        Observed drop size distribution of shape (n_bins, ) with units [#/m3/mm-1]
+    ND_preds : numpy.ndarray
+        Predicted drop size distributions of shape (n_samples, n_bins) with units [#/m3/mm-1]
+    D : numpy.ndarray
         Diameter bin centers in mm [n_bins]
-    dD : 1D array
+    dD : numpy.ndarray
        Diameter bin width in mm [n_bins]
-    V : 1D array
+    V : numpy.ndarray
         Terminal velocity [n_bins] [m/s]
-    objectives: list of dicts
+    objectives: list of dict
         target : str, optional
             Target quantity to optimize. Valid options:
+
             - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"H(x)"`` : Normalized drop number concentration [-]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
             - ``"M<p>"`` : Moment of order p
+
         transformation : str, optional
             Transformation applied to the target quantity before computing the loss.
             Valid options:
+
             - ``"identity"`` : No transformation
             - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
+
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
             treated as censored at the edges of the diameter range due to
             instrumental sensitivity limits:
+
             - ``"none"`` : No censoring is applied. All diameter bins are used.
             - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
               the spectrum where the observed number concentration is zero are
@@ -978,9 +979,11 @@ def compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives, Nc=None):
             - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
               range of diameter bins with non-zero observed concentrations is
               retained.
+
         loss : int, optional
             Loss function.
             If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
+
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -991,9 +994,12 @@ def compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives, Nc=None):
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
             - ``AE``: Absolute Error
             - ``SE``: Squared Error
+
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -1003,7 +1009,7 @@ def compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives, Nc=None):
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         Computed errors [n_samples]. Values are NaN where computation failed.
     """
     # Compute weighted loss across all targets

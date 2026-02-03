@@ -11,7 +11,7 @@ and listing the URLs of remote repositories storing raw disdrometer data.
 This platform facilitates community collaboration to continuously enhance station metadata
 using best open-source practices.
 It also enables iterative data quality improvements while keeping the DISDRODB
- product chain transparent and fully reproducible.
+product chain transparent and fully reproducible.
 
 To ensure the quality and consistency of metadata, a comprehensive standard set of metadata keys
 has been established.

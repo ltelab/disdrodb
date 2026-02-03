@@ -309,12 +309,13 @@ def plot_spectrum(
         Name of the variable to plot if xr_obj is a Dataset.
     ax : matplotlib.axes.Axes, optional
         Axes to plot on. If None, uses current axes or creates a new one.
-    cmap : Colormap, optional
+    cmap : matplotlib.colors.Colormap, optional
         Colormap to use. If None, uses 'Spectral_r' with 'under' set to 'none'.
     norm : matplotlib.colors.Normalize, optional
         Normalization for colormap. If None, uses LogNorm with vmin=1.
-    extend : {'neither', 'both', 'min', 'max'}, optional
+    extend : str, optional
         Whether to draw arrows on the colorbar to indicate out-of-range values.
+        Valid options are 'neither', 'min', 'max', 'both'.
         Default is 'max'.
     add_colorbar : bool, optional
         Whether to add a colorbar. Default is True.
@@ -327,10 +328,12 @@ def plot_spectrum(
 
     Notes
     -----
-    - If the input DataArray has a time dimension, it is summed over time before plotting
-        unless FacetGrid options (e.g., col, row) are specified in plot_kwargs.
-    - If FacetGrid options are used, the plot will create a grid of subplots for each time slice.
-      To create a FacetGrid plot, use:
+    If the input DataArray has a time dimension, it is summed over time before plotting
+    unless FacetGrid options (e.g., col, row) are specified in plot_kwargs.
+
+    If FacetGrid options are used, the plot will create a grid of subplots for each time slice.
+
+    To create a FacetGrid plot, use:
 
       ds.isel(time=slice(0, 9)).disdrodb.plot_spectrum(col="time", col_wrap=3)
 
@@ -470,7 +473,7 @@ def normalize_array(arr, method="max"):
 
     Parameters
     ----------
-    arr : np.ndarray
+    arr : numpy.ndarray
         Input array.
     method : str
         Normalization method. Options:
@@ -482,7 +485,7 @@ def normalize_array(arr, method="max"):
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         Normalized array.
     """
     arr = np.asarray(arr, dtype=float)
@@ -704,12 +707,12 @@ def compute_dense_lines(
     coord : str
         The name of the coordinate/dimension of the DataArray to bin over.
         ``da.coords[coord]`` must be a 1D numeric array (monotonic is recommended).
-    x_bins : array_like of shape (nx+1,)
-        Bin edges to bin the coordinate/dimension.
+    x_bins : array-like
+        Bin edges to bin the coordinate/dimension with shape (nx+1,).
         Must be monotonically increasing.
         The number of x-bins will be ``nx = len(x_bins) - 1``.
-    y_bins : array_like of shape (ny+1,)
-        Bin edges for the DataArray values.
+    y_bins : array-like
+        Bin edges for the DataArray values with shape (ny+1,).
         Must be monotonically increasing.
         The number of y-bins will be ``ny = len(y_bins) - 1``.
     normalization : bool, optional
@@ -719,7 +722,7 @@ def compute_dense_lines(
 
     Returns
     -------
-    xr.DataArray
+    xarray.DataArray
         2D histogram of shape ``(ny, nx)``. Dimensions are ``('y', 'x')``, where:
 
         - ``x``: the bin-center coordinate of ``x_bins`` (length ``nx``)

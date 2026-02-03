@@ -66,7 +66,7 @@ def get_fall_velocity_lee_2015(diameter):
 
     Returns
     -------
-    fall_velocity : ndarray or xarray.DataArray
+    fall_velocity : numpy.ndarray or xarray.DataArray
         Terminal fall velocity [m s⁻¹].
     """
     fall_velocity = 1.10 * diameter**0.28
@@ -86,7 +86,7 @@ def get_fall_velocity_locatelli_1974_lump(diameter):
 
     Returns
     -------
-    fall_velocity : ndarray or xarray.DataArray
+    fall_velocity : numpy.ndarray or xarray.DataArray
         Terminal fall velocity [m s⁻¹].
 
     Reference
@@ -114,7 +114,7 @@ def get_fall_velocity_locatelli_1974_conical(diameter):
 
     Returns
     -------
-    fall_velocity : ndarray or xarray.DataArray
+    fall_velocity : numpy.ndarray or xarray.DataArray
         Terminal fall velocity [m s⁻¹].
 
     Reference
@@ -140,7 +140,7 @@ def get_fall_velocity_locatelli_1974_hexagonal(diameter):
 
     Returns
     -------
-    fall_velocity : ndarray or xarray.DataArray
+    fall_velocity : numpy.ndarray or xarray.DataArray
         Terminal fall velocity [m s⁻¹].
 
     Reference
@@ -166,7 +166,7 @@ def get_fall_velocity_heymsfield_2014(diameter):
 
     Returns
     -------
-    fall_velocity : ndarray or xarray.DataArray
+    fall_velocity : numpy.ndarray or xarray.DataArray
         Terminal fall velocity [m s⁻¹].
     Reference
     ---------

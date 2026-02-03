@@ -504,7 +504,7 @@ def validate_l2m_model_configs(products_configs_dir: str):
 
     Raises
     ------
-    ValidationError
+    pydantic.ValidationError
         If any L2M model configuration is invalid.
     """
     # Get all L2M model configuration files
@@ -622,7 +622,7 @@ def validate_all_product_yaml_files(products_configs_dir):
 
     Raises
     ------
-    ValidationError
+    pydantic.ValidationError
         If any YAML file validation fails with detailed information.
     """
     # Define product validators mapping

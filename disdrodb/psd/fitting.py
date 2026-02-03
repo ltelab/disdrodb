@@ -89,8 +89,9 @@ def get_expected_probabilities(params, cdf_func, pdf_func, bin_edges, probabilit
         Probability density function (PDF) that takes a value and parameters as inputs.
     bin_edges : array-like
         Edges of the bins for which to compute the probabilities.
-    probability_method : {'cdf', 'pdf'}
-        Method to compute the probabilities. If 'cdf', use the CDF to compute probabilities.
+    probability_method : str
+        Method to compute the probabilities. Valid values are 'cdf' and 'pdf'.
+        If 'cdf', use the CDF to compute probabilities.
         If 'pdf', integrate the PDF over each bin range.
     normalized : bool, optional
         If True, normalize the probabilities to sum to 1. Default is False.
@@ -268,7 +269,7 @@ def estimate_lognormal_parameters(
 
     References
     ----------
-    .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.lognorm.html#scipy.stats.lognorm
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.lognorm.html#scipy.stats.lognorm
     """
     # Definite initial guess for the parameters
     scale = np.exp(mu)  # mu = np.log(scale)
@@ -380,12 +381,13 @@ def estimate_exponential_parameters(
     Notes
     -----
     The exponential distribution is defined as:
-        N(D) = N0 * exp(-Lambda * D) = Nt * Lambda * exp(-Lambda * D)
+
+    N(D) = N0 * exp(-Lambda * D) = Nt * Lambda * exp(-Lambda * D)
     where Lambda = 1 / scale and N0 = Nt * Lambda.
 
     References
     ----------
-    .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.expon.html
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.expon.html
     """
     # Definite initial guess for parameters
     scale = 1 / Lambda
@@ -461,8 +463,7 @@ def estimate_gamma_parameters(
     output_dictionary=True,
     optimizer="Nelder-Mead",
 ):
-    """
-    Estimate the parameters of a gamma distribution given histogram data.
+    r"""Estimate the parameters of a gamma distribution given histogram data.
 
     Parameters
     ----------
@@ -501,13 +502,29 @@ def estimate_gamma_parameters(
     Notes
     -----
     The gamma distribution is defined as:
-        N(D) = N0 * D**mu * exp(-Lambda*D)
-    where Lambda = 1/scale, and mu = a - 1 with ``a`` being the shape parameter of the gamma distribution.
-    N0 is defined as N0 = Nt*Lambda**(mu+1)/gamma(mu+1).
+
+    .. math::
+
+    N(D) = N_0 \, D^{\mu} \, \exp(-\Lambda D)
+
+    where:
+
+    - :math:`D` is the particle diameter,
+    - :math:`\Lambda = 1 / \text{scale}` is the slope parameter,
+    - :math:`\mu = a - 1` is the shape parameter, with :math:`a` the gamma distribution shape parameter.
+
+    The intercept parameter :math:`N_0` is defined as:
+
+    .. math::
+
+    N_0 = N_t \, \frac{\Lambda^{\mu + 1}}{\Gamma(\mu + 1)}
+
+    where :math:`N_t` is the total number concentration and
+    :math:`\Gamma(\cdot)` denotes the gamma function.
 
     References
     ----------
-    .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gamma.html
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gamma.html
 
     """
     # Define initial guess for parameters
@@ -673,13 +690,14 @@ def get_gamma_parameters(
     ----------
     ds : xarray.Dataset
         Input dataset containing drop size distribution data. It must include the following variables:
+
         - ``drop_number_concentration``: The number concentration of drops.
         - ``diameter_bin_width``": The width of each diameter bin.
         - ``diameter_bin_lower``: The lower bounds of the diameter bins.
         - ``diameter_bin_upper``: The upper bounds of the diameter bins.
         - ``diameter_bin_center``: The center values of the diameter bins.
-        - The moments M0...M6 variables required to compute the initial parameters
-          with the specified mom_method.
+        - The moments M0...M6 variables required to compute the initial parameters with the specified mom_method.
+
     init_method: str or list
         The method(s) of moments used to initialize the gamma parameters.
         If None (or 'None'), the scale parameter is set to 1 and mu to 0 (a=1).
@@ -776,12 +794,14 @@ def get_lognormal_parameters(
     Parameters
     ----------
     ds : xarray.Dataset
-    Input dataset containing drop size distribution data. It must include the following variables:
-    - ``drop_number_concentration``: The number concentration of drops.
-    - ``diameter_bin_width``": The width of each diameter bin.
-    - ``diameter_bin_lower``: The lower bounds of the diameter bins.
-    - ``diameter_bin_upper``: The upper bounds of the diameter bins.
-    - ``diameter_bin_center``: The center values of the diameter bins.
+        Input dataset containing drop size distribution data. It must include the following variables:
+
+        - ``drop_number_concentration``: The number concentration of drops.
+        - ``diameter_bin_width``: The width of each diameter bin.
+        - ``diameter_bin_lower``: The lower bounds of the diameter bins.
+        - ``diameter_bin_upper``: The upper bounds of the diameter bins.
+        - ``diameter_bin_center``: The center values of the diameter bins.
+
     probability_method : str, optional
         Method to compute probabilities. The default value is ``cdf``.
     likelihood : str, optional
@@ -795,9 +815,11 @@ def get_lognormal_parameters(
     -------
     xarray.Dataset
         Dataset containing the estimated lognormal distribution parameters:
+
         - ``Nt``: Total number concentration.
         - ``mu``: Mean of the lognormal distribution.
         - ``sigma``: Standard deviation of the lognormal distribution.
+
         The resulting dataset will have an attribute ``disdrodb_psd_model`` set to ``LognormalPSD``.
 
     Notes
@@ -984,34 +1006,39 @@ def apply_exponential_gs(
     ----------
     Nt : float
         Total number concentration.
-    ND_obs : ndarray
+    ND_obs : numpy.ndarray
         Observed PSD data [#/mm/m3].
-    V : ndarray
+    V : numpy.ndarray
         Fall velocity [m/s].
-    D : ndarray
+    D : numpy.ndarray
         Diameter bins [mm].
-    dD : ndarray
+    dD : numpy.ndarray
         Diameter bin widths [mm].
     Lambda : int, float or numpy.ndarray
         Lambda parameter values to search.
-    objectives: list of dicts
+    objectives: list of dict
         target : str, optional
             Target quantity to optimize. Valid options:
+
             - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
             - ``"M<p>"`` : Moment of order p
+
         transformation : str, optional
             Transformation applied to the target quantity before computing the loss.
             Valid options:
+
             - ``"identity"`` : No transformation
             - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
+
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
             treated as censored at the edges of the diameter range due to
             instrumental sensitivity limits:
+
             - ``"none"`` : No censoring is applied. All diameter bins are used.
             - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
               the spectrum where the observed number concentration is zero are
@@ -1022,9 +1049,11 @@ def apply_exponential_gs(
             - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
               range of diameter bins with non-zero observed concentrations is
               retained.
+
         loss : int, optional
             Loss function.
             If target is ``"N(D)"``, valid options are:
+
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -1035,9 +1064,11 @@ def apply_exponential_gs(
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
             - ``AE``: Absolute Error
             - ``SE``: Squared Error
+
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -1047,17 +1078,17 @@ def apply_exponential_gs(
 
     Returns
     -------
-    parameters : ndarray
+    parameters : numpy.ndarray
         Best parameters as [N0, Lambda].
         An array of NaN values is returned if no valid solution is found.
-    total_loss : ndarray, optional
+    total_loss : numpy.ndarray, optional
         1D array of total loss values.
         Only returned if return_loss=True.
 
     Notes
     -----
-    - When multiple objectives are provided, losses are normalized and weighted
-    - The best parameters correspond to the minimum total weighted loss
+    When multiple objectives are provided, losses are normalized and weighted.
+    The best parameters correspond to the minimum total weighted loss.
     """
     # Ensure input is numpy array
     Nt = np.asarray(Nt)
@@ -1125,36 +1156,41 @@ def apply_gamma_gs(
     ----------
     Nt : float
         Total number concentration.
-    ND_obs : ndarray
+    ND_obs : numpy.ndarray
         Observed PSD data [#/mm/m3].
-    V : ndarray
+    V : numpy.ndarray
         Fall velocity [m/s].
-    D : ndarray
+    D : numpy.ndarray
         Diameter bins [mm].
-    dD : ndarray
+    dD : numpy.ndarray
         Diameter bin widths [mm].
     mu : int, float or numpy.ndarray
         mu parameter values to search.
     Lambda : int, float or numpy.ndarray
         Lambda parameter values to search.
-    objectives: list of dicts
+    objectives: list of dict
         target : str, optional
             Target quantity to optimize. Valid options:
+
             - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
             - ``"M<p>"`` : Moment of order p
+
         transformation : str, optional
             Transformation applied to the target quantity before computing the loss.
             Valid options:
+
             - ``"identity"`` : No transformation
             - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
+
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
             treated as censored at the edges of the diameter range due to
             instrumental sensitivity limits:
+
             - ``"none"`` : No censoring is applied. All diameter bins are used.
             - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
               the spectrum where the observed number concentration is zero are
@@ -1165,9 +1201,11 @@ def apply_gamma_gs(
             - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
               range of diameter bins with non-zero observed concentrations is
               retained.
+
         loss : int, optional
             Loss function.
             If target is ``"N(D)"``, valid options are:
+
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -1178,9 +1216,12 @@ def apply_gamma_gs(
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
             - ``AE``: Absolute Error
             - ``SE``: Squared Error
+
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -1190,17 +1231,17 @@ def apply_gamma_gs(
 
     Returns
     -------
-    parameters : ndarray
+    parameters : numpy.ndarray
         Best parameters as [N0, Lambda, mu].
         An array of NaN values is returned if no valid solution is found.
-    total_loss : ndarray, optional
+    total_loss : numpy.ndarray, optional
         2D array of total loss values reshaped to (len(mu), len(Lambda)).
         Only returned if return_loss=True.
 
     Notes
     -----
-    - When multiple objectives are provided, losses are normalized and weighted
-    - The best parameters correspond to the minimum total weighted loss
+    When multiple objectives are provided, losses are normalized and weighted
+    The best parameters correspond to the minimum total weighted loss.
     """
     # Ensure input is numpy array
     Nt = np.asarray(Nt)
@@ -1276,13 +1317,13 @@ def apply_generalized_gamma_gs(
     ----------
     Nt : float
         Total number concentration.
-    ND_obs : ndarray
+    ND_obs : numpy.ndarray
         Observed PSD data [#/mm/m3].
-    V : ndarray
+    V : numpy.ndarray
         Fall velocity [m/s].
-    D : ndarray
+    D : numpy.ndarray
         Diameter bins [mm].
-    dD : ndarray
+    dD : numpy.ndarray
         Diameter bin widths [mm].
     mu : int, float or numpy.ndarray
         mu parameter values to search.
@@ -1290,24 +1331,29 @@ def apply_generalized_gamma_gs(
         c parameter values to search.
     Lambda : int, float or numpy.ndarray
         Lambda parameter values to search.
-    objectives: list of dicts
+    objectives: list of dict
         target : str, optional
             Target quantity to optimize. Valid options:
+
             - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
             - ``"M<p>"`` : Moment of order p
+
         transformation : str, optional
             Transformation applied to the target quantity before computing the loss.
             Valid options:
+
             - ``"identity"`` : No transformation
             - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
+
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
             treated as censored at the edges of the diameter range due to
             instrumental sensitivity limits:
+
             - ``"none"`` : No censoring is applied. All diameter bins are used.
             - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
               the spectrum where the observed number concentration is zero are
@@ -1318,9 +1364,11 @@ def apply_generalized_gamma_gs(
             - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
               range of diameter bins with non-zero observed concentrations is
               retained.
+
         loss : int, optional
             Loss function.
             If target is ``"N(D)"``, valid options are:
+
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -1331,9 +1379,12 @@ def apply_generalized_gamma_gs(
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
             - ``AE``: Absolute Error
             - ``SE``: Squared Error
+
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -1343,17 +1394,17 @@ def apply_generalized_gamma_gs(
 
     Returns
     -------
-    parameters : ndarray
+    parameters : numpy.ndarray
         Best parameters as [Lambda, mu, c].
         An array of NaN values is returned if no valid solution is found.
-    total_loss : ndarray, optional
+    total_loss : numpy.ndarray, optional
         3D array of total loss values reshaped to (len(mu), len(Lambda), len(c)).
         Only returned if return_loss=True.
 
     Notes
     -----
-    - When multiple objectives are provided, losses are normalized and weighted
-    - The best parameters correspond to the minimum total weighted loss
+    When multiple objectives are provided, losses are normalized and weighted.
+    The best parameters correspond to the minimum total weighted loss.
     """
     # Ensure input is numpy array
     Nt = np.asarray(Nt)
@@ -1435,36 +1486,41 @@ def apply_lognormal_gs(
     ----------
     Nt : float
         Total number concentration.
-    ND_obs : ndarray
+    ND_obs : numpy.ndarray
         Observed PSD data [#/mm/m3].
-    V : ndarray
+    V : numpy.ndarray
         Fall velocity [m/s].
-    D : ndarray
+    D : numpy.ndarray
         Diameter bins [mm].
-    dD : ndarray
+    dD : numpy.ndarray
         Diameter bin widths [mm].
     mu : int, float or numpy.ndarray
         mu parameter values to search.
     sigma : int, float or numpy.ndarray
         sigma parameter values to search.
-    objectives: list of dicts
+    objectives: list of dict
         target : str, optional
             Target quantity to optimize. Valid options:
+
             - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
             - ``"M<p>"`` : Moment of order p
+
         transformation : str, optional
             Transformation applied to the target quantity before computing the loss.
             Valid options:
+
             - ``"identity"`` : No transformation
             - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
+
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
             treated as censored at the edges of the diameter range due to
             instrumental sensitivity limits:
+
             - ``"none"`` : No censoring is applied. All diameter bins are used.
             - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
               the spectrum where the observed number concentration is zero are
@@ -1475,9 +1531,11 @@ def apply_lognormal_gs(
             - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
               range of diameter bins with non-zero observed concentrations is
               retained.
+
         loss : int, optional
             Loss function.
             If target is ``"N(D)"``, valid options are:
+
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -1488,9 +1546,12 @@ def apply_lognormal_gs(
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
             - ``AE``: Absolute Error
             - ``SE``: Squared Error
+
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -1500,17 +1561,17 @@ def apply_lognormal_gs(
 
     Returns
     -------
-    parameters : ndarray
+    parameters : numpy.ndarray
         Best parameters as [mu, sigma].
         An array of NaN values is returned if no valid solution is found.
-    total_loss : ndarray, optional
+    total_loss : numpy.ndarray, optional
         2D array of total loss values reshaped to (len(mu), len(sigma)).
         Only returned if return_loss=True.
 
     Notes
     -----
-    - When multiple objectives are provided, losses are normalized and weighted
-    - The best parameters correspond to the minimum total weighted loss
+    When multiple objectives are provided, losses are normalized and weighted.
+    The best parameters correspond to the minimum total weighted loss
     """
     # Ensure input is numpy array
     Nt = np.asarray(Nt)
@@ -1585,35 +1646,40 @@ def apply_normalized_gamma_gs(
         Normalized intercept parameter.
     D50 : float
         Median volume diameter parameter.
-    ND_obs : ndarray
+    ND_obs : numpy.ndarray
         Observed PSD data [#/mm/m3].
-    V : ndarray
+    V : numpy.ndarray
         Fall velocity [m/s].
-    D : ndarray
+    D : numpy.ndarray
         Diameter bins [mm].
-    dD : ndarray
+    dD : numpy.ndarray
         Diameter bin widths [mm].
     mu : int, float or numpy.ndarray
         mu parameter values to search.
-    objectives: list of dicts
+    objectives: list of dict
         target : str, optional
             Target quantity to optimize. Valid options:
+
             - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"H(x)"`` : Normalized drop number concentration [-]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
             - ``"M<p>"`` : Moment of order p
+
         transformation : str, optional
             Transformation applied to the target quantity before computing the loss.
             Valid options:
+
             - ``"identity"`` : No transformation
             - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
+
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
             treated as censored at the edges of the diameter range due to
             instrumental sensitivity limits:
+
             - ``"none"`` : No censoring is applied. All diameter bins are used.
             - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
               the spectrum where the observed number concentration is zero are
@@ -1624,9 +1690,11 @@ def apply_normalized_gamma_gs(
             - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
               range of diameter bins with non-zero observed concentrations is
               retained.
+
         loss : int, optional
             Loss function.
             If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
+
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -1637,9 +1705,12 @@ def apply_normalized_gamma_gs(
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
             - ``AE``: Absolute Error
             - ``SE``: Squared Error
+
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -1649,17 +1720,17 @@ def apply_normalized_gamma_gs(
 
     Returns
     -------
-    parameters : ndarray
+    parameters : numpy.ndarray
         Best parameters as [Nw, mu, D50].
         An array of NaN values is returned if no valid solution is found.
-    total_loss : ndarray, optional
+    total_loss : numpy.ndarray, optional
         1D array of total loss values.
         Only returned if return_loss=True.
 
     Notes
     -----
-    - When multiple objectives are provided, losses are normalized and weighted
-    - The best parameters correspond to the minimum total weighted loss
+    When multiple objectives are provided, losses are normalized and weighted.
+    The best parameters correspond to the minimum total weighted loss
     """
     # Ensure input is numpy array
     Nw = np.asarray(Nw)
@@ -1731,13 +1802,13 @@ def apply_normalized_generalized_gamma_gs(
         Normalized intercept parameter.
     Dc : float
         Normalized characteristic diameter parameter.
-    ND_obs : ndarray
+    ND_obs : numpy.ndarray
         Observed PSD data [#/mm/m3].
-    V : ndarray
+    V : numpy.ndarray
         Fall velocity [m/s].
-    D : ndarray
+    D : numpy.ndarray
         Diameter bins [mm].
-    dD : ndarray
+    dD : numpy.ndarray
         Diameter bin widths [mm].
     i : int
         Moment order i of the NormalizedGeneralizedGammaPSD.
@@ -1747,25 +1818,30 @@ def apply_normalized_generalized_gamma_gs(
         mu parameter values to search.
     c : int, float or numpy.ndarray
         c parameter values to search.
-    objectives: list of dicts
+    objectives: list of dict
         target : str, optional
             Target quantity to optimize. Valid options:
+
             - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"H(x)"`` : Normalized drop number concentration [-]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
             - ``"M<p>"`` : Moment of order p
+
         transformation : str, optional
             Transformation applied to the target quantity before computing the loss.
             Valid options:
+
             - ``"identity"`` : No transformation
             - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
+
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
             treated as censored at the edges of the diameter range due to
             instrumental sensitivity limits:
+
             - ``"none"`` : No censoring is applied. All diameter bins are used.
             - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
               the spectrum where the observed number concentration is zero are
@@ -1776,9 +1852,11 @@ def apply_normalized_generalized_gamma_gs(
             - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
               range of diameter bins with non-zero observed concentrations is
               retained.
+
         loss : int, optional
             Loss function.
             If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
+
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -1789,9 +1867,12 @@ def apply_normalized_generalized_gamma_gs(
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
             - ``AE``: Absolute Error
             - ``SE``: Squared Error
+
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -1801,17 +1882,17 @@ def apply_normalized_generalized_gamma_gs(
 
     Returns
     -------
-    parameters : ndarray
+    parameters : numpy.ndarray
         Best parameters as [Nc, Dc, mu, c].
         An array of NaN values is returned if no valid solution is found.
-    total_loss : ndarray, optional
+    total_loss : numpy.ndarray, optional
         2D array of total loss values reshaped to (len(mu), len(c)).
         Only returned if return_loss=True.
 
     Notes
     -----
-    - When multiple objectives are provided, losses are normalized and weighted
-    - The best parameters correspond to the minimum total weighted loss
+    When multiple objectives are provided, losses are normalized and weighted.
+    The best parameters correspond to the minimum total weighted loss.
     """
     # Thurai 2018: mu [-3, 1], c [0-6]
 
@@ -1886,30 +1967,37 @@ def get_exponential_parameters_gs(
     ----------
     ds : xarray.Dataset
         Input dataset containing PSD observations. Must include:
+
         - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
         - ``diameter_bin_center`` : Diameter bin centers [mm]
         - ``diameter_bin_width`` : Diameter bin widths [mm]
         - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
+
     Lambda : int, float or numpy.ndarray
         Lambda parameter values to search.
-    objectives: list of dicts
+    objectives: list of dict
         target : str, optional
             Target quantity to optimize. Valid options:
+
             - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
             - ``"M<p>"`` : Moment of order p
+
         transformation : str, optional
             Transformation applied to the target quantity before computing the loss.
             Valid options:
+
             - ``"identity"`` : No transformation
             - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
+
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
             treated as censored at the edges of the diameter range due to
             instrumental sensitivity limits:
+
             - ``"none"`` : No censoring is applied. All diameter bins are used.
             - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
               the spectrum where the observed number concentration is zero are
@@ -1920,9 +2008,11 @@ def get_exponential_parameters_gs(
             - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
               range of diameter bins with non-zero observed concentrations is
               retained.
+
         loss : int, optional
             Loss function.
             If target is ``"N(D)"``, valid options are:
+
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -1933,9 +2023,12 @@ def get_exponential_parameters_gs(
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
             - ``AE``: Absolute Error
             - ``SE``: Squared Error
+
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -2048,32 +2141,39 @@ def get_gamma_parameters_gs(
     ----------
     ds : xarray.Dataset
         Input dataset containing PSD observations. Must include:
+
         - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
         - ``diameter_bin_center`` : Diameter bin centers [mm]
         - ``diameter_bin_width`` : Diameter bin widths [mm]
         - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
+
     mu : int, float or numpy.ndarray
         mu parameter values to search.
     Lambda : int, float or numpy.ndarray
         Lambda parameter values to search.
-    objectives: list of dicts
+    objectives: list of dict
         target : str, optional
             Target quantity to optimize. Valid options:
+
             - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
             - ``"M<p>"`` : Moment of order p
+
         transformation : str, optional
             Transformation applied to the target quantity before computing the loss.
             Valid options:
+
             - ``"identity"`` : No transformation
             - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
+
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
             treated as censored at the edges of the diameter range due to
             instrumental sensitivity limits:
+
             - ``"none"`` : No censoring is applied. All diameter bins are used.
             - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
               the spectrum where the observed number concentration is zero are
@@ -2084,9 +2184,11 @@ def get_gamma_parameters_gs(
             - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
               range of diameter bins with non-zero observed concentrations is
               retained.
+
         loss : int, optional
             Loss function.
             If target is ``"N(D)"``, valid options are:
+
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -2097,9 +2199,12 @@ def get_gamma_parameters_gs(
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
             - ``AE``: Absolute Error
             - ``SE``: Squared Error
+
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -2223,34 +2328,41 @@ def get_generalized_gamma_parameters_gs(
     ----------
     ds : xarray.Dataset
         Input dataset containing PSD observations. Must include:
+
         - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
         - ``diameter_bin_center`` : Diameter bin centers [mm]
         - ``diameter_bin_width`` : Diameter bin widths [mm]
         - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
+
     mu : int, float or numpy.ndarray
         mu parameter values to search.
     c : int, float or numpy.ndarray
         c parameter values to search.
     Lambda : int, float or numpy.ndarray
         Lambda parameter values to search.
-    objectives: list of dicts
+    objectives: list of dict
         target : str, optional
             Target quantity to optimize. Valid options:
+
             - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
             - ``"M<p>"`` : Moment of order p
+
         transformation : str, optional
             Transformation applied to the target quantity before computing the loss.
             Valid options:
+
             - ``"identity"`` : No transformation
             - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
+
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
             treated as censored at the edges of the diameter range due to
             instrumental sensitivity limits:
+
             - ``"none"`` : No censoring is applied. All diameter bins are used.
             - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
               the spectrum where the observed number concentration is zero are
@@ -2261,9 +2373,11 @@ def get_generalized_gamma_parameters_gs(
             - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
               range of diameter bins with non-zero observed concentrations is
               retained.
+
         loss : int, optional
             Loss function.
             If target is ``"N(D)"``, valid options are:
+
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -2274,9 +2388,12 @@ def get_generalized_gamma_parameters_gs(
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
             - ``AE``: Absolute Error
             - ``SE``: Squared Error
+
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -2402,32 +2519,39 @@ def get_lognormal_parameters_gs(
     ----------
     ds : xarray.Dataset
         Input dataset containing PSD observations. Must include:
+
         - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
         - ``diameter_bin_center`` : Diameter bin centers [mm]
         - ``diameter_bin_width`` : Diameter bin widths [mm]
         - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
+
     mu : int, float or numpy.ndarray
         mu parameter values to search.
     sigma : int, float or numpy.ndarray
         sigma parameter values to search.
-    objectives: list of dicts
+    objectives: list of dict
         target : str, optional
             Target quantity to optimize. Valid options:
+
             - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
             - ``"M<p>"`` : Moment of order p
+
         transformation : str, optional
             Transformation applied to the target quantity before computing the loss.
             Valid options:
+
             - ``"identity"`` : No transformation
             - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
+
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
             treated as censored at the edges of the diameter range due to
             instrumental sensitivity limits:
+
             - ``"none"`` : No censoring is applied. All diameter bins are used.
             - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
               the spectrum where the observed number concentration is zero are
@@ -2438,9 +2562,11 @@ def get_lognormal_parameters_gs(
             - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
               range of diameter bins with non-zero observed concentrations is
               retained.
+
         loss : int, optional
             Loss function.
             If target is ``"N(D)"``, valid options are:
+
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -2451,9 +2577,12 @@ def get_lognormal_parameters_gs(
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
             - ``AE``: Absolute Error
             - ``SE``: Squared Error
+
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -2568,31 +2697,38 @@ def get_normalized_gamma_parameters_gs(
     ----------
     ds : xarray.Dataset
         Input dataset containing PSD observations. Must include:
+
         - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
         - ``diameter_bin_center`` : Diameter bin centers [mm]
         - ``diameter_bin_width`` : Diameter bin widths [mm]
         - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
+
     mu : int, float or numpy.ndarray
         mu parameter values to search.
-    objectives: list of dicts
+    objectives: list of dict
         target : str, optional
             Target quantity to optimize. Valid options:
+
             - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"H(x)"`` : Normalized drop number concentration [-]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
             - ``"M<p>"`` : Moment of order p
+
         transformation : str, optional
             Transformation applied to the target quantity before computing the loss.
             Valid options:
+
             - ``"identity"`` : No transformation
             - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
+
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
             treated as censored at the edges of the diameter range due to
             instrumental sensitivity limits:
+
             - ``"none"`` : No censoring is applied. All diameter bins are used.
             - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
               the spectrum where the observed number concentration is zero are
@@ -2603,9 +2739,11 @@ def get_normalized_gamma_parameters_gs(
             - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
               range of diameter bins with non-zero observed concentrations is
               retained.
+
         loss : int, optional
             Loss function.
             If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
+
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -2616,9 +2754,12 @@ def get_normalized_gamma_parameters_gs(
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
             - ``AE``: Absolute Error
             - ``SE``: Squared Error
+
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -2752,10 +2893,12 @@ def get_normalized_generalized_gamma_parameters_gs(
     ----------
     ds : xarray.Dataset
         Input dataset containing PSD observations. Must include:
+
         - ``drop_number_concentration`` : Drop number concentration [m⁻³ mm⁻¹]
         - ``diameter_bin_center`` : Diameter bin centers [mm]
         - ``diameter_bin_width`` : Diameter bin widths [mm]
         - ``fall_velocity`` : Drop fall velocity [m s⁻¹] (required if target='R')
+
     i : int
         Moment order i of the NormalizedGeneralizedGammaPSD.
     j : int
@@ -2764,25 +2907,30 @@ def get_normalized_generalized_gamma_parameters_gs(
         mu parameter values to search.
     c : int, float or numpy.ndarray
         c parameter values to search.
-    objectives: list of dicts
+    objectives: list of dict
         target : str, optional
             Target quantity to optimize. Valid options:
+
             - ``"N(D)"`` : Drop number concentration [m⁻³ mm⁻¹]
             - ``"H(x)"`` : Normalized drop number concentration [-]
             - ``"R"`` : Rain rate [mm h⁻¹]
             - ``"Z"`` : Radar reflectivity [mm⁶ m⁻³]
             - ``"LWC"`` : Liquid water content [g m⁻³]
             - ``"M<p>"`` : Moment of order p
+
         transformation : str, optional
             Transformation applied to the target quantity before computing the loss.
             Valid options:
+
             - ``"identity"`` : No transformation
             - ``"log"`` : Logarithmic transformation
             - ``"sqrt"`` : Square root transformation
+
         censoring : str
             Specifies whether the observed particle size distribution (PSD) is
             treated as censored at the edges of the diameter range due to
             instrumental sensitivity limits:
+
             - ``"none"`` : No censoring is applied. All diameter bins are used.
             - ``"left"`` : Left-censored PSD. Diameter bins at the lower end of
               the spectrum where the observed number concentration is zero are
@@ -2793,9 +2941,11 @@ def get_normalized_generalized_gamma_parameters_gs(
             - ``"both"`` : Both left- and right-censored PSD. Only the contiguous
               range of diameter bins with non-zero observed concentrations is
               retained.
+
         loss : int, optional
             Loss function.
             If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
+
             - ``SSE``: Sum of Squared Errors
             - ``SAE``: Sum of Absolute Errors
             - ``MAE``: Mean Absolute Error
@@ -2806,9 +2956,12 @@ def get_normalized_generalized_gamma_parameters_gs(
             - ``WD``: Wasserstein Distance
             - ``JSD``: Jensen-Shannon Distance
             - ``KS``: Kolmogorov-Smirnov Statistic
+
             If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
             - ``AE``: Absolute Error
             - ``SE``: Squared Error
+
         loss_weight: int, optional
             Weight of this objective when multiple objectives are used.
             Must be specified if len(objectives) > 1.
@@ -2967,28 +3120,32 @@ def fit_ngg_on_normalized_space(
         Transformation applied to the target quantity before computing the loss.
         The default is ``"log"``.
         Valid options:
+
         - ``"identity"`` : No transformation
         - ``"log"`` : Logarithmic transformation
         - ``"sqrt"`` : Square root transformation
+
     loss : int, optional
         Loss function. The default is ``SSE``.
         Valid options are:
+
         - ``SSE``: Sum of Squared Errors
         - ``SAE``: Sum of Absolute Errors
         - ``MAE``: Mean Absolute Error
         - ``MSE``: Mean Squared Error
         - ``RMSE``: Root Mean Squared Error
         - ``relMAE``: Relative Mean Absolute Error
+
     return_loss : bool, optional
         If True, return both the loss surface and parameters.
         Default is False.
 
     Returns
     -------
-    parameters : ndarray
+    parameters : numpy.ndarray
         Best parameters [mu, c].
         An array of NaN values is returned if no valid solution is found.
-    total_loss : ndarray, optional
+    total_loss : numpy.ndarray, optional
         2D array of total loss values reshaped to (len(mu), len(c)).
         Only returned if return_loss=True.
 
@@ -3836,7 +3993,7 @@ def _format_optimization_settings(settings):
             opt_str = _format_optimization_settings(d)
             blocks.append(opt_str)
         return " | ".join(blocks)
-    raise TypeError("optimization_settings must be dict or list of dicts")
+    raise TypeError("optimization_settings must be dict or list of dict")
 
 
 def _finalize_attributes(ds_params, psd_model, optimization, optimization_settings):
@@ -4016,7 +4173,7 @@ def get_gs_parameters(ds, psd_model, fixed_parameters=None, objectives=None, sea
         - ``"LognormalPSD"`` : Lognormal distribution
         - ``"ExponentialPSD"`` : Exponential distribution
         - ``"NormalizedGeneralizedGammaPSD"`` : Normalized generalized gamma distribution
-    objectives : list of dicts
+    objectives : list of dict
         List of optimization objectives. Each objective dict must contain:
 
         - ``"target"`` : str

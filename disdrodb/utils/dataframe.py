@@ -39,7 +39,7 @@ def log_arange(start, stop, log_step=0.1, base=10):
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         Array of values spaced in log scale.
     """
     if start <= 0 or stop <= 0:
@@ -69,7 +69,7 @@ def log_linspace(start, stop, n_bins, base=10):
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         Array of values spaced evenly in log space.
     """
     if start <= 0 or stop <= 0:

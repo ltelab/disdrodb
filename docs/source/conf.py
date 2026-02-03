@@ -68,6 +68,7 @@ intersphinx_mapping = {
     "xarray": ("https://docs.xarray.dev/en/stable/", None),
     "dask": ("https://docs.dask.org/en/stable/", None),
     "pydantic": ("https://docs.pydantic.dev/latest/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
 }
 always_document_param_types = True
 
@@ -75,8 +76,14 @@ always_document_param_types = True
 nitpicky = True
 nitpick_ignore = [
     ("py:class", "optional"),
+    ("py:class", "any"),
     ("py:class", "array-like"),
+    ("py:class", "datetime-like"),
+    ("py:class", "sequence"),
     ("py:class", "file-like object"),
+    ("py:class", "ConfigDict"),
+    ("py:class", "Path-like"),
+    ("py:class", "pytmatrix.Scatterer"),
     # For traitlets docstrings
     ("py:class", "All"),
     ("py:class", "t.Any"),

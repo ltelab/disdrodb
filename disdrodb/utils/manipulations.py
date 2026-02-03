@@ -76,7 +76,7 @@ def define_diameter_array(diameter_min=0, diameter_max=10, diameter_spacing=0.05
 
     Returns
     -------
-    xr.DataArray
+    xarray.DataArray
         A DataArray containing the center of each diameter bin, with coordinates for
         the bin width, lower bound, upper bound, and center.
 
@@ -100,7 +100,7 @@ def define_velocity_array(velocity_min=0, velocity_max=10, velocity_spacing=0.05
 
     Returns
     -------
-    xr.DataArray
+    xarray.DataArray
         A DataArray containing the center of each velocity bin, with coordinates for
         the bin width, lower bound, upper bound, and center.
 

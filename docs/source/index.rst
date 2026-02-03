@@ -122,6 +122,7 @@ Documentation
    installation
    quick_start
    products
+   products_configuration
    metadata_archive
    metadata
    processing
