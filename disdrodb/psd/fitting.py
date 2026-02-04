@@ -2232,9 +2232,9 @@ def get_gamma_parameters_gs(
 
     # Define search space
     if mu is None:
-        mu = np.arange(0, 15, step=0.1)
+        mu = np.arange(-1, 20, step=0.1)
     if Lambda is None:
-        Lambda = np.arange(0, 30, step=0.1)
+        Lambda = np.arange(0, 40, step=0.1)
 
     # Define kwargs
     kwargs = {
@@ -2421,11 +2421,11 @@ def get_generalized_gamma_parameters_gs(
 
     # Define search space
     if mu is None:
-        mu = np.arange(0, 10, step=0.2)
+        mu = np.arange(-1, 10, step=0.2)
     if c is None:
-        c = np.arange(0, 10, step=0.2)
+        c = np.arange(0, 6, step=0.1)
     if Lambda is None:
-        Lambda = np.arange(0, 20, step=0.2)
+        Lambda = np.arange(0.5, 20, step=0.1)
 
     # Define kwargs
     kwargs = {
@@ -2610,9 +2610,9 @@ def get_lognormal_parameters_gs(
 
     # Define search space
     if mu is None:
-        mu = np.arange(-4, 1, step=0.1)
+        mu = np.arange(-1.5, 1, step=0.025)
     if sigma is None:
-        sigma = np.arange(0, 3, step=0.2)
+        sigma = np.arange(0, 1, step=0.01)
 
     # Define kwargs
     kwargs = {
@@ -2804,7 +2804,7 @@ def get_normalized_gamma_parameters_gs(
 
     # Define search space
     if mu is None:
-        mu = np.arange(-4, 30, step=0.01)
+        mu = np.arange(-1, 30, step=0.01)
 
     # Define kwargs
     kwargs = {
@@ -3002,8 +3002,9 @@ def get_normalized_generalized_gamma_parameters_gs(
 
     # Define search space
     if mu is None:
-        mu = np.arange(-6, 10, step=0.1)
-        # mu = np.arange(-7, 30, step=0.01)
+        mu = np.arange(-1, 10, step=0.1)
+        # mu = np.arange(-1, 5, step=0.1) # Nt not infinite only if mu > -1
+
     if c is None:
         c = np.arange(0.01, 10, step=0.1)
 
