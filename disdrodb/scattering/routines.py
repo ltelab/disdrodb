@@ -19,6 +19,7 @@
 import itertools
 import logging
 import os
+import subprocess
 
 import dask
 import numpy as np
@@ -33,7 +34,6 @@ from disdrodb.scattering.permittivity import (
     get_rayleigh_dielectric_factor,
     get_refractive_index,
 )
-from disdrodb.utils.logger import log_info
 from disdrodb.utils.manipulations import filter_diameter_bins, get_diameter_bin_edges
 from disdrodb.utils.warnings import suppress_warnings
 
@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 RADAR_OPTIONS = [
     "frequency",
+    "diameter_min",
     "diameter_max",
     "num_points",
     "canting_angle_std",
@@ -161,47 +162,53 @@ def get_forward_geometry(elevation_angle):
 
 
 def initialize_scatterer(
-    wavelength,
-    refractive_index,
+    frequency,
     num_points=1024,
+    diameter_min=0,
     diameter_max=8,
     canting_angle_std=7,
     axis_ratio_model="Thurai2007",
+    water_temperature=10,
+    permittivity_model="Turner2016",
     elevation_angle=0,
 ):
     """Initialize T-matrix scatterer object for a given frequency.
 
-    Load a scatterer object with cached scattering table.
-
-    If the scattering table does not exist at the specified location, it will be
-    created and saved to disk. If the file is found, it will be loaded and used
-    to configure the scatterer.
+    This function does not compute the scattering table !
+    Please use calculate_scatter to directly compute the scattering table.
+    In load_scatterer a precomputed scattering table is attached to the scatter object
+    initialized by this function.
 
     Parameters
     ----------
-    wavelength : float
-        Radar wavelength in mm.
-    refractive_index: complex
-        Water refractive index.
-    num_points: int
+    frequency : float
+        Radar frequency in GHz.
+    num_points : int, optional
         Number of bins into which discretize the PSD.
-    diameter_max : float
+        The default is 1024.
+    diameter_min : float, optional
+        Minimum drop diameter in millimeters for the scattering table.
+        The default is 0 mm.
+    diameter_max : float, optional
         Maximum drop diameter in millimeters for the scattering table.
+        The default is 8 mm.
     canting_angle_std : float, optional
-        Standard deviation of the canting angle distribution in degrees,
-        by default 7.
-    axis_ratio_model: str
+        Standard deviation of the canting angle distribution in degrees.
+        The default is 7 degrees.
+    axis_ratio_model : str, optional
         Axis ratio model used to shape hydrometeors. The default is ``"Thurai2007"``.
         See available models with ``disdrodb.scattering.available_axis_ratio_models()``.
-    elevation_angle: str
+    water_temperature : float, optional
+        Water temperature in degree Celsius to be used in the permittivity model.
+        The default is 10 degC.
+    permittivity_model : str, optional
+        Permittivity model to use to compute the refractive index and the
+        rayleigh_dielectric_factor. The default is ``Turner2016``.
+        See available models with ``disdrodb.scattering.available_permittivity_models()``.
+    elevation_angle : float, optional
         Radar elevation angle in degrees.
         Specify 90 degrees for vertically pointing radars.
         The default is 0 degrees.
-    scattering_table_dir : str or pathlib.Path, optional
-        Directory path where T-Matrix scattering tables are stored. If None, the default
-        location will be used.
-    verbose: bool
-        Whether to verbose the computation of the scattering table. The default is False.
 
     Returns
     -------
@@ -212,6 +219,15 @@ def initialize_scatterer(
     from pytmatrix import orientation
     from pytmatrix.psd import PSDIntegrator
     from pytmatrix.tmatrix import Scatterer
+
+    # Compute wavelength and refractive index
+    wavelength = frequency_to_wavelength(frequency)
+
+    refractive_index = get_refractive_index(
+        frequency=frequency,
+        temperature=water_temperature,
+        permittivity_model=permittivity_model,
+    )
 
     # Retrieve custom axis ratio function
     axis_ratio_func = get_axis_ratio_model(axis_ratio_model)
@@ -253,12 +269,14 @@ def initialize_scatterer(
     # --> The Scatterer class expects horizontal to vertical
     # --> Axis ratio model are defined to return vertical to horizontal aspect ratio !
     scatterer.psd_integrator.axis_ratio_func = lambda D: 1.0 / axis_ratio_func(D)
-    # - Define function to compute refrative index (as function of D)
+    # - Define function to compute refractive index (as function of D)
     # scatterer.psd_integrator.m_func = None    # Use constant value of scatterer.m
     # - Define number of points over which to integrate
     scatterer.psd_integrator.num_points = num_points
     # - Define maximum drop diameter
     scatterer.psd_integrator.D_max = diameter_max
+    scatterer.psd_integrator.D_min = diameter_min
+
     # - Define geometries
     # --> convention: first is backward, second is forward
     scatterer.psd_integrator.geometries = (backward_geom, forward_geom)
@@ -266,37 +284,45 @@ def initialize_scatterer(
 
 
 def calculate_scatterer(
-    wavelength,
-    refractive_index,
+    frequency,
     num_points=1024,
+    diameter_min=0,
     diameter_max=8,
     canting_angle_std=7,
     axis_ratio_model="Thurai2007",
+    water_temperature=10,
+    permittivity_model="Turner2016",
     elevation_angle=0,
 ):
-    """Initialize T-matrix scatterer object for a given frequency.
-
-    Load a scatterer object with cached scattering table.
-
-    If the scattering table does not exist at the specified location, it will be
-    created and saved to disk. If the file is found, it will be loaded and used
-    to configure the scatterer.
+    """Compute T-matrix scatterer object for a given frequency.
 
     Parameters
     ----------
-    wavelength : float
-        Radar wavelength in millimeters.
-    num_points: int
+    frequency : float
+        Radar frequency in GHz.
+    num_points : int, optional
         Number of bins into which discretize the PSD.
-    diameter_max : float
+        The default is 1024.
+    diameter_min : float, optional
+        Minimum drop diameter in millimeters for the scattering table.
+        The default is 0 mm.
+    diameter_max : float, optional
         Maximum drop diameter in millimeters for the scattering table.
+        The default is 8 mm.
     canting_angle_std : float, optional
-        Standard deviation of the canting angle distribution in degrees,
-        by default 7.
+        Standard deviation of the canting angle distribution in degrees.
+        The default is 7 degrees.
     axis_ratio_model : str, optional
         Axis ratio model used to shape hydrometeors. The default is ``"Thurai2007"``.
         See available models with ``disdrodb.scattering.available_axis_ratio_models()``.
-    elevation_angle: str
+    water_temperature : float, optional
+        Water temperature in degree Celsius to be used in the permittivity model.
+        The default is 10 degC.
+    permittivity_model : str, optional
+        Permittivity model to use to compute the refractive index and the
+        rayleigh_dielectric_factor. The default is ``Turner2016``.
+        See available models with ``disdrodb.scattering.available_permittivity_models()``.
+    elevation_angle : float, optional
         Radar elevation angle in degrees.
         Specify 90 degrees for vertically pointing radars.
         The default is 0 degrees.
@@ -310,12 +336,14 @@ def calculate_scatterer(
     # ---------------------------------------------------------------.
     # Initialize Scatterer class
     scatterer = initialize_scatterer(
-        wavelength=wavelength,
-        refractive_index=refractive_index,
+        frequency=frequency,
         num_points=num_points,
+        diameter_min=diameter_min,
         diameter_max=diameter_max,
         canting_angle_std=canting_angle_std,
         axis_ratio_model=axis_ratio_model,
+        water_temperature=water_temperature,
+        permittivity_model=permittivity_model,
         elevation_angle=elevation_angle,
     )
 
@@ -328,6 +356,7 @@ def calculate_scatterer(
 def load_scatterer(
     frequency,
     num_points=1024,
+    diameter_min=0,
     diameter_max=8,
     canting_angle_std=7,
     axis_ratio_model="Thurai2007",
@@ -341,38 +370,49 @@ def load_scatterer(
     Load a scatterer object with cached scattering table.
 
     If the scattering table does not exist at the specified location, it will be
-    created and saved to disk. If the file is found, it will be loaded and used
-    to configure the scatterer.
+    created (in a new python process) and saved to disk.
+    If the scattering table file is found, it will be loaded and used to configure the scatterer.
+
+    ATTENTION: WE PREGENERATE SCATTERING TABLE EACH TIME IN A NEW PYTHON PROCESS
+    BECAUSE WE NOTICED THAT IF SCATTERING SIMULATIONS PARAMETERS ARE CHANGED
+    IN THE SAME PYTHON PROCESS, EVERY RANDOM N PARAMETERS CHANGES, PYTMATRIX START
+    TO GENERATE BAD TMATRIX SCATTERING TABLES.
+    THE ROOT CAUSE OF THIS BUG COULD NOT BE IDENTIFIED !
 
     Parameters
     ----------
     frequency : float
         Radar frequency in GHz.
-    num_points: int
+    num_points : int, optional
         Number of bins into which discretize the PSD.
-    diameter_max : float
+        The default is 1024.
+    diameter_min : float, optional
+        Minimum drop diameter in millimeters for the scattering table.
+        The default is 0 mm.
+    diameter_max : float, optional
         Maximum drop diameter in millimeters for the scattering table.
+        The default is 8 mm.
     canting_angle_std : float, optional
-        Standard deviation of the canting angle distribution in degrees,
-        by default 7.
+        Standard deviation of the canting angle distribution in degrees.
+        The default is 7 degrees.
     axis_ratio_model : str, optional
         Axis ratio model used to shape hydrometeors. The default is ``"Thurai2007"``.
         See available models with ``disdrodb.scattering.available_axis_ratio_models()``.
-    permittivity_model : str
+    permittivity_model : str, optional
         Permittivity model to use to compute the refractive index and the
         rayleigh_dielectric_factor. The default is ``Turner2016``.
         See available models with ``disdrodb.scattering.available_permittivity_models()``.
-    water_temperature : float
+    water_temperature : float, optional
         Water temperature in degree Celsius to be used in the permittivity model.
         The default is 10 degC.
-    elevation_angle: str
+    elevation_angle : float, optional
         Radar elevation angle in degrees.
         Specify 90 degrees for vertically pointing radars.
         The default is 0 degrees.
     scattering_table_dir : str or pathlib.Path, optional
         Directory path where T-Matrix scattering tables are stored. If None, the default
         location will be used.
-    verbose: bool
+    verbose : bool, optional
         Whether to verbose the computation of the scattering table. The default is False.
 
     Returns
@@ -381,70 +421,61 @@ def load_scatterer(
         A scatterer object with the PSD integrator configured and scattering
         table loaded or generated.
     """
-    # Define wavelength (in mm)
-    wavelength = frequency_to_wavelength(frequency)
-
-    # Define complex refractive index
-    refractive_index = get_refractive_index(
-        frequency=frequency,
-        temperature=water_temperature,
-        permittivity_model=permittivity_model,
-    )
-
-    # Retrieve scattering table directory
-    scattering_table_dir = get_scattering_table_dir(scattering_table_dir)
-
-    # Define a filename based on the key parameters
+    # Define LUT filename based on the key parameters
     filename = "_".join(
         [
             "ScatteringTable",
-            f"wl-{wavelength:.2f}",
+            f"f-{frequency:.2f}",
             f"el-{elevation_angle:.1f}",
-            f"dmax-{diameter_max:.1f}",
+            f"dmin-{diameter_min:.2f}",
+            f"dmax-{diameter_max:.2f}",
             f"npts-{num_points}",
-            f"m-{refractive_index:.3f}",
             f"cant-{canting_angle_std:.1f}",
-            f"ar-{axis_ratio_model}.pkl",
+            f"t-{water_temperature:.3f}",
+            f"ar-{axis_ratio_model}",
+            f"perm-{permittivity_model}.pkl",
         ],
     )
-    scatter_table_filepath = os.path.join(scattering_table_dir, filename)
+
+    # Define scattering table directory
+    scattering_table_dir = get_scattering_table_dir(scattering_table_dir)
+    scattering_table_filepath = os.path.join(scattering_table_dir, filename)
+
+    # Compute LUT in new python process if does not exist yet
+    ensure_pytmatrix_lut_exists(
+        frequency=frequency,
+        num_points=num_points,
+        diameter_min=diameter_min,
+        diameter_max=diameter_max,
+        canting_angle_std=canting_angle_std,
+        axis_ratio_model=axis_ratio_model,
+        permittivity_model=permittivity_model,
+        water_temperature=water_temperature,
+        elevation_angle=elevation_angle,
+        lut_path=scattering_table_filepath,
+        verbose=verbose,
+    )
 
     # Load or create scattering table
-    if os.path.exists(scatter_table_filepath):
-        scatterer = initialize_scatterer(
-            wavelength=wavelength,
-            refractive_index=refractive_index,
-            num_points=num_points,
-            diameter_max=diameter_max,
-            canting_angle_std=canting_angle_std,
-            axis_ratio_model=axis_ratio_model,
-            elevation_angle=elevation_angle,
-        )
-        _ = scatterer.psd_integrator.load_scatter_table(scatter_table_filepath)
-
-    else:
-        if verbose:
-            msg = f"- Computing pyTmatrix {filename}"
-            log_info(logger=logger, msg=msg, verbose=verbose)
-
-        # Calculate scatterer
-        scatterer = calculate_scatterer(
-            wavelength=wavelength,
-            refractive_index=refractive_index,
-            num_points=num_points,
-            diameter_max=diameter_max,
-            canting_angle_std=canting_angle_std,
-            axis_ratio_model=axis_ratio_model,
-            elevation_angle=elevation_angle,
-        )
-
-        scatterer.psd_integrator.save_scatter_table(scatter_table_filepath)
+    scatterer = initialize_scatterer(
+        frequency=frequency,
+        num_points=num_points,
+        diameter_min=diameter_min,
+        diameter_max=diameter_max,
+        canting_angle_std=canting_angle_std,
+        axis_ratio_model=axis_ratio_model,
+        permittivity_model=permittivity_model,
+        water_temperature=water_temperature,
+        elevation_angle=elevation_angle,
+    )
+    _ = scatterer.psd_integrator.load_scatter_table(scattering_table_filepath)
     return scatterer
 
 
 def precompute_scattering_tables(
     frequency,
     num_points,
+    diameter_min,
     diameter_max,
     canting_angle_std,
     axis_ratio_model,
@@ -453,13 +484,42 @@ def precompute_scattering_tables(
     elevation_angle,
     verbose=True,
 ):
-    """Precompute the pyTMatrix scattering tables required for radar variables simulations."""
+    """Precompute the pyTMatrix scattering tables required for radar variables simulations.
+
+    Parameters
+    ----------
+    frequency : float or list of float
+        Radar frequency or frequencies in GHz.
+    num_points : int or list of int
+        Number of bins into which discretize the PSD.
+    diameter_min : float or list of float
+        Minimum drop diameter in millimeters for the scattering table.
+    diameter_max : float or list of float
+        Maximum drop diameter in millimeters for the scattering table.
+    canting_angle_std : float or list of float
+        Standard deviation of the canting angle distribution in degrees.
+    axis_ratio_model : str or list of str
+        Axis ratio model(s) used to shape hydrometeors.
+        See available models with ``disdrodb.scattering.available_axis_ratio_models()``.
+    permittivity_model : str or list of str
+        Permittivity model(s) to use to compute the refractive index and the
+        rayleigh_dielectric_factor.
+        See available models with ``disdrodb.scattering.available_permittivity_models()``.
+    water_temperature : float or list of float
+        Water temperature(s) in degree Celsius to be used in the permittivity model.
+    elevation_angle : float or list of float
+        Radar elevation angle(s) in degrees.
+        Specify 90 degrees for vertically pointing radars.
+    verbose : bool, optional
+        Whether to verbose the computation of the scattering tables. The default is True.
+    """
     from disdrodb.scattering.routines import get_list_simulations_params, load_scatterer
 
     # Define parameters for all requested simulations
     list_params = get_list_simulations_params(
         frequency=frequency,
         num_points=num_points,
+        diameter_min=diameter_min,
         diameter_max=diameter_max,
         canting_angle_std=canting_angle_std,
         axis_ratio_model=axis_ratio_model,
@@ -475,6 +535,81 @@ def precompute_scattering_tables(
             verbose=verbose,
             **params,
         )
+
+
+def ensure_pytmatrix_lut_exists(
+    frequency,
+    num_points,
+    diameter_min,
+    diameter_max,
+    canting_angle_std,
+    axis_ratio_model,
+    permittivity_model,
+    water_temperature,
+    elevation_angle,
+    lut_path,
+    verbose=False,
+):
+    """Create a pyTMatrix LUT at lut_path if it does not exist yet."""
+    if os.path.exists(lut_path):
+        return
+
+    cmd = [
+        "pytmatrix_lut",
+        "--frequency",
+        str(frequency),
+        "--num-points",
+        str(num_points),
+        "--diameter-min",
+        str(diameter_min),
+        "--diameter-max",
+        str(diameter_max),
+        "--canting-angle-std",
+        str(canting_angle_std),
+        "--axis-ratio-model",
+        axis_ratio_model,
+        "--permittivity-model",
+        permittivity_model,
+        "--water-temperature",
+        str(water_temperature),
+        "--elevation-angle",
+        str(elevation_angle),
+        lut_path,
+    ]
+
+    if verbose:
+        print("Running:", " ".join(cmd))
+
+    result = subprocess.run(
+        cmd,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    # Process failed
+    if result.returncode != 0:
+
+        # Process killed by signal (segfault, OOM, etc.)
+        if result.returncode < 0:
+            signal = -result.returncode
+            msg = (
+                f"pyTMatrix LUT generation was killed by signal {signal}.\n\n"
+                "This usually indicates a numerical crash.\n\n"
+                "Try adjusting the simulation parameters, e.g.:\n"
+                "  - reduce maximum diameter (dmax)\n"
+                "  - increase num_points\n"
+                "  - avoid very small canting angle std (< 5 deg)\n"
+                "  - check frequency / size resonance combinations\n"
+            )
+        else:
+            msg = (
+                f"pyTMatrix LUT generation failed "
+                f"(exit code {result.returncode}).\n\n"
+                f"STDERR:\n{result.stderr or '<empty>'}"
+            )
+
+        raise RuntimeError(msg)
 
 
 ####----------------------------------------------------------------------
@@ -583,6 +718,7 @@ def get_model_radar_parameters(
     ds,
     frequency,
     num_points=1024,
+    diameter_min=0,
     diameter_max=10,
     canting_angle_std=7,
     axis_ratio_model="Thurai2007",
@@ -601,21 +737,26 @@ def get_model_radar_parameters(
         The dataset attribute disdrodb_psd_model specifies the PSD model to use.
     frequency : float
         Frequency in GHz for which to compute the radar parameters.
-    canting_angle_std : float, optional
-        Standard deviation of the canting angle.  The default value is 10.
+    num_points : int, optional
+        Number of bins into which discretize the PSD.
+        The default is 1024.
+    diameter_min : float, optional
+        Minimum diameter. The default value is 0 mm.
     diameter_max : float, optional
-        Maximum diameter. The default value is 8 mm.
+        Maximum diameter. The default value is 10 mm.
+    canting_angle_std : float, optional
+        Standard deviation of the canting angle. The default value is 7 degrees.
     axis_ratio_model : str, optional
         Axis ratio model used to shape hydrometeors. The default is ``"Thurai2007"``.
         See available models with ``disdrodb.scattering.available_axis_ratio_models()``.
-    permittivity_model : str
+    permittivity_model : str, optional
         Permittivity model to use to compute the refractive index and the
         rayleigh_dielectric_factor. The default is ``Turner2016``.
         See available models with ``disdrodb.scattering.available_permittivity_models()``.
-    water_temperature : float
+    water_temperature : float, optional
         Water temperature in degree Celsius to be used in the permittivity model.
         The default is 10 degC.
-    elevation_angle: str
+    elevation_angle : float, optional
         Radar elevation angle in degrees.
         Specify 90 degrees for vertically pointing radars.
         The default is 0 degrees.
@@ -641,6 +782,7 @@ def get_model_radar_parameters(
     scatterer = load_scatterer(
         frequency=frequency,
         num_points=num_points,
+        diameter_min=diameter_min,
         diameter_max=diameter_max,
         canting_angle_std=canting_angle_std,
         axis_ratio_model=axis_ratio_model,
@@ -677,6 +819,7 @@ def get_model_radar_parameters(
         da_radar=da_radar,
         frequency=frequency,
         num_points=num_points,
+        diameter_min=diameter_min,
         diameter_max=diameter_max,
         canting_angle_std=canting_angle_std,
         axis_ratio_model=axis_ratio_model,
@@ -691,6 +834,7 @@ def get_empirical_radar_parameters(
     ds,
     frequency,
     num_points=1024,
+    diameter_min=0,
     diameter_max=10,
     canting_angle_std=7,
     axis_ratio_model="Thurai2007",
@@ -708,21 +852,26 @@ def get_empirical_radar_parameters(
         Dataset containing the drop number concentration variable.
     frequency : float
         Frequency in GHz for which to compute the radar parameters.
-    canting_angle_std : float, optional
-        Standard deviation of the canting angle.  The default value is 10.
+    num_points : int, optional
+        Number of bins into which discretize the PSD.
+        The default is 1024.
+    diameter_min : float, optional
+        Minimum diameter. The default value is 0 mm.
     diameter_max : float, optional
-        Maximum diameter. The default value is 8 mm.
+        Maximum diameter. The default value is 10 mm.
+    canting_angle_std : float, optional
+        Standard deviation of the canting angle. The default value is 7 degrees.
     axis_ratio_model : str, optional
         Axis ratio model used to shape hydrometeors. The default is ``"Thurai2007"``.
         See available models with ``disdrodb.scattering.available_axis_ratio_models()``.
-    permittivity_model : str
+    permittivity_model : str, optional
         Permittivity model to use to compute the refractive index and the
         rayleigh_dielectric_factor. The default is ``Turner2016``.
         See available models with ``disdrodb.scattering.available_permittivity_models()``.
-    water_temperature : float
+    water_temperature : float, optional
         Water temperature in degree Celsius to be used in the permittivity model.
         The default is 10 degC.
-    elevation_angle: str
+    elevation_angle : float, optional
         Radar elevation angle in degrees.
         Specify 90 degrees for vertically pointing radars.
         The default is 0 degrees.
@@ -755,6 +904,7 @@ def get_empirical_radar_parameters(
     scatterer = load_scatterer(
         frequency=frequency,
         num_points=num_points,
+        diameter_min=diameter_min,
         diameter_max=diameter_max,
         canting_angle_std=canting_angle_std,
         axis_ratio_model=axis_ratio_model,
@@ -788,6 +938,7 @@ def get_empirical_radar_parameters(
         da_radar=da_radar,
         frequency=frequency,
         num_points=num_points,
+        diameter_min=diameter_min,
         diameter_max=diameter_max,
         canting_angle_std=canting_angle_std,
         axis_ratio_model=axis_ratio_model,
@@ -802,6 +953,7 @@ def _finalize_radar_dataset(
     da_radar,
     frequency,
     num_points,
+    diameter_min,
     diameter_max,
     canting_angle_std,
     axis_ratio_model,
@@ -818,6 +970,7 @@ def _finalize_radar_dataset(
     # Expand dimensions for later merging in get_radar_parameters()
     dims_dict = {
         "frequency": [frequency],
+        "diameter_min": [diameter_min],
         "diameter_max": [diameter_max],
         "num_points": [num_points],
         "axis_ratio_model": [axis_ratio_model],
@@ -845,6 +998,7 @@ def ensure_rounded_unique_array(arr, decimals=None):
 def get_list_simulations_params(
     frequency,
     num_points,
+    diameter_min,
     diameter_max,
     canting_angle_std,
     axis_ratio_model,
@@ -860,7 +1014,8 @@ def get_list_simulations_params(
     # - Otherwise problems with non-unique xarray dataset coordinates
     frequency = ensure_rounded_unique_array(frequency, decimals=2)
     num_points = ensure_rounded_unique_array(num_points, decimals=0)
-    diameter_max = ensure_rounded_unique_array(diameter_max, decimals=1)
+    diameter_min = ensure_rounded_unique_array(diameter_min, decimals=2)
+    diameter_max = ensure_rounded_unique_array(diameter_max, decimals=2)
     canting_angle_std = ensure_rounded_unique_array(canting_angle_std, decimals=1)
     axis_ratio_model = ensure_rounded_unique_array(axis_ratio_model)
     permittivity_model = ensure_rounded_unique_array(permittivity_model)
@@ -879,6 +1034,7 @@ def get_list_simulations_params(
     list_params = [
         {
             "frequency": freq.item(),
+            "diameter_min": d_min.item(),
             "diameter_max": d_max.item(),
             "num_points": n_p.item(),
             "canting_angle_std": cas.item(),
@@ -887,8 +1043,9 @@ def get_list_simulations_params(
             "water_temperature": t_w.item(),
             "elevation_angle": el.item(),
         }
-        for freq, d_max, n_p, cas, ar, perm, t_w, el in itertools.product(
+        for freq, d_min, d_max, n_p, cas, ar, perm, t_w, el in itertools.product(
             frequency,
+            diameter_min,
             diameter_max,
             num_points,
             canting_angle_std,
@@ -905,6 +1062,7 @@ def get_radar_parameters(
     ds,
     frequency=None,
     num_points=1024,
+    diameter_min=0,
     diameter_max=8,
     canting_angle_std=7,
     axis_ratio_model="Thurai2007",
@@ -926,6 +1084,8 @@ def get_radar_parameters(
         See ``disdrodb.scattering.available_radar_bands()``.
     num_points: int or list of int, optional
         Number of bins into which discretize the PSD.
+    diameter_min : float or list of float, optional
+       Minimum diameter. The default value is 0 mm.
     diameter_max : float or list of float, optional
         Maximum diameter. The default value is 8 mm.
     canting_angle_std : float or list of float, optional
@@ -974,6 +1134,7 @@ def get_radar_parameters(
     list_params = get_list_simulations_params(
         frequency=frequency,
         num_points=num_points,
+        diameter_min=diameter_min,
         diameter_max=diameter_max,
         canting_angle_std=canting_angle_std,
         axis_ratio_model=axis_ratio_model,
@@ -992,6 +1153,7 @@ def get_radar_parameters(
 
     # Merge into a single dataset
     ds_radar = xr.merge(list_ds, compat="no_conflicts", join="outer")
+    ds_radar.attrs = {}
 
     # Order frequency from lowest to highest
     # --> ['S', 'C', 'X', 'Ku', 'K', 'Ka', 'W']
@@ -1010,7 +1172,7 @@ def get_radar_parameters(
     for param in RADAR_OPTIONS:
         if ds_radar.sizes[param] == 1:
             value = ds_radar[param].item()
-            scattering_string += f"param: {value}; "
+            scattering_string += f"{param}: {value}; "
 
     if scattering_string != "":
         ds_radar.attrs["disdrodb_scattering_options"] = scattering_string

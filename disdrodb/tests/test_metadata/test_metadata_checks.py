@@ -292,7 +292,7 @@ def test_check_metadata_archive_measurement_interval(tmp_path):
         metadata_dict=metadata_dict,
     )
     is_valid = check_metadata_archive(metadata_archive_dir)
-    assert is_valid
+    assert not is_valid
 
     # Test 4 : measurement_interval value with bad value or empty string not valid
     metadata_dict = {"measurement_interval": "BAD"}

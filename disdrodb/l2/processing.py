@@ -889,6 +889,7 @@ def generate_l2_radar(
     ds,
     frequency=None,
     num_points=1024,
+    diameter_min=0,
     diameter_max=10,
     canting_angle_std=7,
     axis_ratio_model="Thurai2007",
@@ -910,6 +911,8 @@ def generate_l2_radar(
         See ``disdrodb.scattering.available_radar_bands()``.
     num_points: int or list of int, optional
         Number of bins into which discretize the PSD.
+    diameter_min : float or list of float, optional
+        Minimum diameter. The default value is 0 mm.
     diameter_max : float or list of float, optional
         Maximum diameter. The default value is 10 mm.
     canting_angle_std : float or list of float, optional
@@ -946,6 +949,7 @@ def generate_l2_radar(
         ds=ds,
         frequency=frequency,
         num_points=num_points,
+        diameter_min=diameter_min,
         diameter_max=diameter_max,
         canting_angle_std=canting_angle_std,
         axis_ratio_model=axis_ratio_model,

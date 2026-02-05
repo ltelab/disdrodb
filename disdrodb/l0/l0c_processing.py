@@ -685,20 +685,25 @@ def create_l0c_datasets(
 
     # ---------------------------------------------------------------------------------------.
     # Open files with data within the provided day and concatenate them
-    ds = open_netcdf_files(
-        filepaths,
-        start_time=start_time_tol,
-        end_time=end_time_tol,
-        chunks={},
-        parallel=False,
-        compute=True,
-    )
-
-    # If not data for that time block, return empty dictionary
+    # - If no timesteps available (for given time block, return empty dictionary)
     # - Can occur when raw files are already by block of months and e.g. here saving to daily blocks !
-    if ds.sizes["time"] == 0:
-        log_info(logger=logger, msg=f"No data between {start_time} and {end_time}.", verbose=verbose)
-        return {}
+    try:
+        ds = open_netcdf_files(
+            filepaths,
+            start_time=start_time_tol,
+            end_time=end_time_tol,
+            chunks={},
+            parallel=False,
+            compute=True,
+        )
+    except ValueError as e:
+        if str(e).startswith("No timesteps available"):
+            log_warning(
+                logger=logger,
+                msg=f"No data between {start_time} and {end_time}.",
+            )
+            return {}
+        raise
 
     # If 1 or 2 timesteps per time block, return empty dictionary
     n_timesteps = len(ds["time"])

@@ -17,6 +17,7 @@
 """Test scattering routines."""
 
 import re
+import subprocess
 
 import numpy as np
 import pytest
@@ -121,11 +122,129 @@ class TestGeometry:
 
 
 @pytest.mark.skipif(not is_pytmatrix_available(), reason="pytmatrix not available")
+def test_pytmatrix_lut_cli(tmp_path):
+    """Test the pytmatrix_lut CLI command creates the expected LUT file."""
+    # Define output path
+    output_file = tmp_path / "test_scattering_table.pkl"
+
+    # Build the CLI command
+    cmd = [
+        "pytmatrix_lut",
+        "--frequency",
+        "5.4",
+        "--num-points",
+        "100",
+        "--diameter-min",
+        "0.0",
+        "--diameter-max",
+        "2.0",
+        "--canting-angle-std",
+        "7.0",
+        "--axis-ratio-model",
+        "Thurai2007",
+        "--permittivity-model",
+        "Turner2016",
+        "--water-temperature",
+        "10.0",
+        "--elevation-angle",
+        "0.0",
+        str(output_file),
+    ]
+
+    # Run the CLI command
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    # Check that the command succeeded
+    assert result.returncode == 0, f"CLI failed with stderr: {result.stderr}"
+
+    # Check that the output file was created
+    assert output_file.exists(), f"Output file {output_file} was not created"
+
+    # Check that the file has non-zero size
+    assert output_file.stat().st_size > 0, "Output file is empty"
+
+    # Check that success message was printed
+    assert "LUT written to" in result.stdout
+
+
+@pytest.mark.skipif(not is_pytmatrix_available(), reason="pytmatrix not available")
+def test_pytmatrix_lut_cli_invalid_args():
+    """Test the pytmatrix_lut CLI command fails gracefully with invalid arguments."""
+    # Test missing required argument (frequency)
+    cmd = ["pytmatrix_lut", "output.pkl"]
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    assert result.returncode != 0
+
+    # Test invalid axis ratio model
+    cmd = [
+        "pytmatrix_lut",
+        "--frequency",
+        "5.4",
+        "--axis-ratio-model",
+        "InvalidModel",
+        "output.pkl",
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    assert result.returncode != 0
+
+
+@pytest.mark.skipif(is_pytmatrix_available(), reason="pytmatrix is available")
+def test_pytmatrix_lut_cli_fails_without_pytmatrix(tmp_path):
+    """Test the pytmatrix_lut CLI command fails when pytmatrix is not installed."""
+    # Define output path
+    output_file = tmp_path / "test_scattering_table.pkl"
+
+    # Build the CLI command with valid arguments
+    cmd = [
+        "pytmatrix_lut",
+        "--frequency",
+        "5.4",
+        "--num-points",
+        "100",
+        "--diameter-min",
+        "0.0",
+        "--diameter-max",
+        "2.0",
+        "--canting-angle-std",
+        "7.0",
+        "--axis-ratio-model",
+        "Thurai2007",
+        "--permittivity-model",
+        "Turner2016",
+        "--water-temperature",
+        "10.0",
+        "--elevation-angle",
+        "0.0",
+        str(output_file),
+    ]
+
+    # Run the CLI command
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    # Check that the command failed (pytmatrix not available)
+    assert result.returncode != 0, "CLI should fail when pytmatrix is not installed"
+
+    # The output file should not be created
+    assert not output_file.exists(), "Output file should not be created when pytmatrix is missing"
+
+
+@pytest.mark.skipif(not is_pytmatrix_available(), reason="pytmatrix not available")
 def test_precompute_scattering_tables():
     """Test precompute_scattering_tables do not raise errors."""
     out = precompute_scattering_tables(
         frequency=[2.7, 5.6],
         num_points=[100, 200],
+        diameter_min=[0.0],
         diameter_max=[2.0],
         canting_angle_std=[10.0],
         axis_ratio_model=["Brandes2002"],
@@ -145,6 +264,7 @@ class TestListSimulationParams:
         params = get_list_simulations_params(
             frequency=5.6,
             num_points=100,
+            diameter_min=0.0,
             diameter_max=5.0,
             canting_angle_std=10.0,
             axis_ratio_model="Brandes2002",
@@ -158,6 +278,7 @@ class TestListSimulationParams:
         expected_keys = {
             "frequency",
             "num_points",
+            "diameter_min",
             "diameter_max",
             "canting_angle_std",
             "axis_ratio_model",
@@ -175,6 +296,7 @@ class TestListSimulationParams:
         params = get_list_simulations_params(
             frequency=[2.7, 5.6],
             num_points=[100, 200],
+            diameter_min=[0.0],
             diameter_max=[2.0],
             canting_angle_std=[10.0],
             axis_ratio_model=["Brandes2002"],
@@ -192,6 +314,7 @@ class TestListSimulationParams:
         params = get_list_simulations_params(
             frequency=[5.6001, 5.5999, 5.6],
             num_points=[100, 100, 100.0],
+            diameter_min=[0.1, 0.102],
             diameter_max=[2.0, 2.0001],
             canting_angle_std=[10.0],
             axis_ratio_model=["Brandes2002"],
@@ -204,6 +327,7 @@ class TestListSimulationParams:
         d = params[0]
         assert d["frequency"] == 5.6
         assert d["num_points"] == 100
+        assert d["diameter_min"] == 0.1
         assert d["diameter_max"] == 2.0
         assert d["water_temperature"] == 20.0
 
@@ -213,6 +337,7 @@ class TestListSimulationParams:
             get_list_simulations_params(
                 frequency=5.6,
                 num_points=100,
+                diameter_min=0,
                 diameter_max=2.0,
                 canting_angle_std=10.0,
                 axis_ratio_model="NotAModel",
@@ -227,6 +352,7 @@ class TestListSimulationParams:
             get_list_simulations_params(
                 frequency=5.6,
                 num_points=100,
+                diameter_min=0,
                 diameter_max=2.0,
                 canting_angle_std=10.0,
                 axis_ratio_model="Brandes2002",
@@ -240,6 +366,7 @@ class TestListSimulationParams:
         params = get_list_simulations_params(
             frequency=[35.5, 2.7, 94.05],
             num_points=100,
+            diameter_min=0.0,
             diameter_max=2.0,
             canting_angle_std=10.0,
             axis_ratio_model="Brandes2002",
@@ -285,6 +412,7 @@ class TestGetRadarParameters:
             ds=ds,
             frequency=None,
             num_points=1024,
+            diameter_min=0,
             diameter_max=8,
             canting_angle_std=7,
             axis_ratio_model="Thurai2007",
@@ -310,6 +438,7 @@ class TestGetRadarParameters:
             ds=ds,
             frequency=None,
             num_points=1024,
+            diameter_min=0,
             diameter_max=8,
             canting_angle_std=7,
             axis_ratio_model="Thurai2007",
@@ -334,6 +463,7 @@ class TestGetRadarParameters:
             ds=ds,
             frequency=None,
             num_points=1024,
+            diameter_min=0,
             diameter_max=8,
             canting_angle_std=7,
             axis_ratio_model="Thurai2007",
@@ -353,6 +483,7 @@ class TestGetRadarParameters:
             ds=ds,
             frequency="C",
             num_points=1024,
+            diameter_min=0,
             diameter_max=8,
             canting_angle_std=7,
             axis_ratio_model="Thurai2007",
@@ -375,6 +506,7 @@ class TestGetRadarParameters:
         [
             ("frequency", [4.8, 5.3]),
             ("num_points", [256, 1024]),
+            ("diameter_min", [0.0, 0.1]),
             ("diameter_max", [6.0, 8.0]),
             ("canting_angle_std", [5.0, 7.0]),
             ("axis_ratio_model", ["Thurai2007", "Andsager1999"]),
@@ -391,6 +523,7 @@ class TestGetRadarParameters:
         radar_kwargs = {
             "frequency": "C",
             "num_points": 1024,
+            "diameter_min": 0,
             "diameter_max": 8,
             "canting_angle_std": 7,
             "axis_ratio_model": "Thurai2007",
@@ -433,6 +566,7 @@ class TestGetRadarParameters:
             ds=ds,
             frequency="C",
             num_points=1024,
+            diameter_min=0,
             diameter_max=8,
             canting_angle_std=7,
             axis_ratio_model="Thurai2007",
@@ -463,6 +597,7 @@ class TestGetRadarParameters:
             ds=ds,
             frequency="C",
             num_points=1024,
+            diameter_min=0,
             diameter_max=8,
             canting_angle_std=7,
             axis_ratio_model="Thurai2007",
@@ -485,6 +620,7 @@ class TestGetRadarParameters:
         [
             ("frequency", ["C", "X"]),
             ("num_points", [256, 1024]),
+            ("diameter_min", [0.0, 0.1]),
             ("diameter_max", [6.0, 8.0]),
             ("canting_angle_std", [5.0, 7.0]),
             ("axis_ratio_model", ["Thurai2007", "Andsager1999"]),
@@ -508,6 +644,7 @@ class TestGetRadarParameters:
         radar_kwargs = {
             "frequency": "C",
             "num_points": 1024,
+            "diameter_min": 0,
             "diameter_max": 8,
             "canting_angle_std": 7,
             "axis_ratio_model": "Thurai2007",

@@ -113,6 +113,7 @@ are computed once and cached for subsequent runs.
         ds=ds,
         frequency=frequencies,
         num_points=1024,  # T-matrix integration points
+        diameter_min=0,  # Minimum diameter (mm)
         diameter_max=10,  # Maximum diameter (mm)
         canting_angle_std=7,  # Canting angle std dev (degrees)
         axis_ratio_model="Thurai2007",

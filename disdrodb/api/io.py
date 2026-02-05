@@ -570,7 +570,11 @@ def open_netcdf_files(
     # Subset time
     if start_time is not None or end_time is not None:
         ds = filter_dataset_by_time(ds, start_time=start_time, end_time=end_time)
-
+        # Close connection and raise error if no timesteps available
+        if ds.sizes["time"] == 0:
+            ds.close()
+            del ds
+            raise ValueError(f"No timesteps available between {start_time} and {end_time}")
     # Ensure coordinates are already loaded in memory
     for coord in list(ds.coords):
         ds[coord] = ds[coord].load()

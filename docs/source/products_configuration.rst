@@ -192,7 +192,8 @@ For details, see :ref:`Polarimetric Radar Variables Simulations <disdrodb_radar>
     radar_enabled: true
     radar_options:
       frequency: [5.6, 9.7, X]           # GHz or band names (S, C, X, Ku, Ka, W)
-      num_points: 50                     # T-matrix integration points
+      num_points: 1024                   # T-matrix integration points
+      diameter_min: 0.0                  # Minimum diameter (mm)
       diameter_max: 8.0                  # Maximum diameter (mm)
       canting_angle_std: 10              # Canting angle std dev (degrees)
       axis_ratio_model: Thurai2007       # Axis ratio models
@@ -428,7 +429,7 @@ optimization methods. Models are fit independently, allowing comparison of diffe
   See :func:`get_gs_parameters <disdrodb.psd.fitting.get_gs_parameters>` for details.
 
 - ``ML``: Maximum likelihood estimation using scipy optimizers.
-  See  :func:`get_gs_parameters <disdrodb.psd.fitting.get_ml_parameters>` for details.
+  See  :func:`get_ml_parameters <disdrodb.psd.fitting.get_ml_parameters>` for details.
 
 - ``MOM``: Method of moments.
   Analytically solves for parameters using moment relationships.
