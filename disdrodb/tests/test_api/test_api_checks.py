@@ -648,14 +648,14 @@ class TestMeasurementIntervals:
             check_measurement_interval("abc")
         with pytest.raises(ValueError):
             check_measurement_interval("5")
-        with pytest.raises(TypeError):
-            check_measurement_interval(True)
         with pytest.raises(ValueError):
             check_measurement_interval(3.2)
         with pytest.raises(ValueError):
             check_measurement_interval(0)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             check_measurement_interval([1])
+        with pytest.raises(TypeError):
+            check_measurement_interval(True)
 
 
 class TestCheckStationInputs:
