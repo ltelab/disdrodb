@@ -126,6 +126,7 @@ def test_precompute_scattering_tables():
     out = precompute_scattering_tables(
         frequency=[2.7, 5.6],
         num_points=[100, 200],
+        diameter_min=[0.0],
         diameter_max=[2.0],
         canting_angle_std=[10.0],
         axis_ratio_model=["Brandes2002"],
@@ -145,6 +146,7 @@ class TestListSimulationParams:
         params = get_list_simulations_params(
             frequency=5.6,
             num_points=100,
+            diameter_min=0.0,
             diameter_max=5.0,
             canting_angle_std=10.0,
             axis_ratio_model="Brandes2002",
@@ -158,6 +160,7 @@ class TestListSimulationParams:
         expected_keys = {
             "frequency",
             "num_points",
+            "diameter_min",
             "diameter_max",
             "canting_angle_std",
             "axis_ratio_model",
@@ -175,6 +178,7 @@ class TestListSimulationParams:
         params = get_list_simulations_params(
             frequency=[2.7, 5.6],
             num_points=[100, 200],
+            diameter_min=[0.0],
             diameter_max=[2.0],
             canting_angle_std=[10.0],
             axis_ratio_model=["Brandes2002"],
@@ -192,6 +196,7 @@ class TestListSimulationParams:
         params = get_list_simulations_params(
             frequency=[5.6001, 5.5999, 5.6],
             num_points=[100, 100, 100.0],
+            diameter_min=[0.1, 0.102],
             diameter_max=[2.0, 2.0001],
             canting_angle_std=[10.0],
             axis_ratio_model=["Brandes2002"],
@@ -204,6 +209,7 @@ class TestListSimulationParams:
         d = params[0]
         assert d["frequency"] == 5.6
         assert d["num_points"] == 100
+        assert d["diameter_min"] == 0.1
         assert d["diameter_max"] == 2.0
         assert d["water_temperature"] == 20.0
 
@@ -213,6 +219,7 @@ class TestListSimulationParams:
             get_list_simulations_params(
                 frequency=5.6,
                 num_points=100,
+                diameter_min=0,
                 diameter_max=2.0,
                 canting_angle_std=10.0,
                 axis_ratio_model="NotAModel",
@@ -227,6 +234,7 @@ class TestListSimulationParams:
             get_list_simulations_params(
                 frequency=5.6,
                 num_points=100,
+                diameter_min=0,
                 diameter_max=2.0,
                 canting_angle_std=10.0,
                 axis_ratio_model="Brandes2002",
@@ -240,6 +248,7 @@ class TestListSimulationParams:
         params = get_list_simulations_params(
             frequency=[35.5, 2.7, 94.05],
             num_points=100,
+            diameter_min=0.0,
             diameter_max=2.0,
             canting_angle_std=10.0,
             axis_ratio_model="Brandes2002",
@@ -285,6 +294,7 @@ class TestGetRadarParameters:
             ds=ds,
             frequency=None,
             num_points=1024,
+            diameter_min=0,
             diameter_max=8,
             canting_angle_std=7,
             axis_ratio_model="Thurai2007",
@@ -310,6 +320,7 @@ class TestGetRadarParameters:
             ds=ds,
             frequency=None,
             num_points=1024,
+            diameter_min=0,
             diameter_max=8,
             canting_angle_std=7,
             axis_ratio_model="Thurai2007",
@@ -334,6 +345,7 @@ class TestGetRadarParameters:
             ds=ds,
             frequency=None,
             num_points=1024,
+            diameter_min=0,
             diameter_max=8,
             canting_angle_std=7,
             axis_ratio_model="Thurai2007",
@@ -353,6 +365,7 @@ class TestGetRadarParameters:
             ds=ds,
             frequency="C",
             num_points=1024,
+            diameter_min=0,
             diameter_max=8,
             canting_angle_std=7,
             axis_ratio_model="Thurai2007",
@@ -375,6 +388,7 @@ class TestGetRadarParameters:
         [
             ("frequency", [4.8, 5.3]),
             ("num_points", [256, 1024]),
+            ("diameter_min", [0.0, 0.1]),
             ("diameter_max", [6.0, 8.0]),
             ("canting_angle_std", [5.0, 7.0]),
             ("axis_ratio_model", ["Thurai2007", "Andsager1999"]),
@@ -391,6 +405,7 @@ class TestGetRadarParameters:
         radar_kwargs = {
             "frequency": "C",
             "num_points": 1024,
+            "diameter_min": 0,
             "diameter_max": 8,
             "canting_angle_std": 7,
             "axis_ratio_model": "Thurai2007",
@@ -433,6 +448,7 @@ class TestGetRadarParameters:
             ds=ds,
             frequency="C",
             num_points=1024,
+            diameter_min=0,
             diameter_max=8,
             canting_angle_std=7,
             axis_ratio_model="Thurai2007",
@@ -463,6 +479,7 @@ class TestGetRadarParameters:
             ds=ds,
             frequency="C",
             num_points=1024,
+            diameter_min=0,
             diameter_max=8,
             canting_angle_std=7,
             axis_ratio_model="Thurai2007",
@@ -485,6 +502,7 @@ class TestGetRadarParameters:
         [
             ("frequency", ["C", "X"]),
             ("num_points", [256, 1024]),
+            ("diameter_min", [0.0, 0.1]),
             ("diameter_max", [6.0, 8.0]),
             ("canting_angle_std", [5.0, 7.0]),
             ("axis_ratio_model", ["Thurai2007", "Andsager1999"]),
@@ -508,6 +526,7 @@ class TestGetRadarParameters:
         radar_kwargs = {
             "frequency": "C",
             "num_points": 1024,
+            "diameter_min": 0,
             "diameter_max": 8,
             "canting_angle_std": 7,
             "axis_ratio_model": "Thurai2007",

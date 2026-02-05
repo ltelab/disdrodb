@@ -292,6 +292,10 @@ class RadarOptions(CustomBaseModel):
         ...,
         description="Number of points for T-matrix simulation",
     )
+    diameter_min: int | float | list[int | float] = Field(
+        0,
+        description="Minimum diameter for T-matrix simulation",
+    )
     diameter_max: int | float | list[int | float] = Field(
         ...,
         description="Maximum diameter for T-matrix simulation",
@@ -323,6 +327,7 @@ class RadarOptions(CustomBaseModel):
         "axis_ratio_model",
         "permittivity_model",
         "num_points",
+        "diameter_min",
         "diameter_max",
         "canting_angle_std",
         "water_temperature",

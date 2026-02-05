@@ -635,9 +635,8 @@ class TestMeasurementIntervals:
     def test_valid_intervals(self):
         """Test integers and strings convert to int list."""
         assert check_measurement_interval(10) == 10
-        assert check_measurement_interval("5") == 5
         assert check_measurement_intervals(10) == [10]
-        assert check_measurement_intervals([5, "6"]) == [5, 6]
+        assert check_measurement_intervals([5]) == [5]
 
     def test_invalid_intervals(self):
         """Test empty string, None, and non-digits raise errors."""
@@ -647,6 +646,14 @@ class TestMeasurementIntervals:
             check_measurement_interval(None)
         with pytest.raises(ValueError):
             check_measurement_interval("abc")
+        with pytest.raises(ValueError):
+            check_measurement_interval("5")
+        with pytest.raises(TypeError):
+            check_measurement_interval(True)
+        with pytest.raises(ValueError):
+            check_measurement_interval(3.2)
+        with pytest.raises(ValueError):
+            check_measurement_interval(0)
 
 
 class TestCheckStationInputs:

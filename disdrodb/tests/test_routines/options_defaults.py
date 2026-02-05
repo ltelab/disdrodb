@@ -22,6 +22,7 @@ ARCHIVE_OPTIONS_EVENT = {
 RADAR_OPTIONS = {
     "frequency": ["S", "C", "X", "Ku", "K", "Ka", "W"],
     "num_points": 1024,
+    "diameter_min": 0,
     "diameter_max": 10,
     "canting_angle_std": 7,
     "axis_ratio_model": "Thurai2007",

@@ -119,14 +119,64 @@ def check_scattering_table_dir(scattering_table_dir: str):
 
 
 def check_measurement_interval(measurement_interval):
-    """Check measurement interval validity."""
-    if isinstance(measurement_interval, str) and measurement_interval == "":
-        raise ValueError("measurement_interval' must be specified as an integer value.")
+    """Check measurement interval validity.
+
+    The measurement interval must be a positive natural number.
+    It can be specified as an int or a float (but must represent a whole number)
+
+    Parameters
+    ----------
+    measurement_interval : int or float
+        The measurement interval value to validate.
+
+    Returns
+    -------
+    int
+        The validated measurement interval as an integer.
+
+    Raises
+    ------
+    ValueError
+        If the measurement interval is not a valid positive natural number.
+    TypeError
+        If the measurement interval has an invalid type.
+    """
+    # Check for None
     if isinstance(measurement_interval, type(None)):
-        raise ValueError("measurement_interval' can not be None.")
-    if isinstance(measurement_interval, str) and not measurement_interval.isdigit():
-        raise ValueError("measurement_interval' is not a positive digit.")
-    return int(measurement_interval)
+        raise ValueError("'measurement_interval' cannot be None.")
+
+    # Check for empty string
+    if isinstance(measurement_interval, str) and measurement_interval == "":
+        raise ValueError("'measurement_interval' must be specified as an integer value.")
+
+    # Check for boolean (bool is subclass of int, so check before int)
+    if isinstance(measurement_interval, bool):
+        raise TypeError("'measurement_interval' cannot be a boolean.")
+
+    # Handle string input
+    if isinstance(measurement_interval, str):
+        if not measurement_interval.isdigit():
+            raise ValueError("'measurement_interval' is not a positive integer.")
+        raise ValueError("'measurement_interval' must be specified as number, not as string.'")
+
+    # Handle numeric input (int or float)
+    if isinstance(measurement_interval, (int, float)):
+        # Check if positive
+        if measurement_interval <= 0:
+            raise ValueError("'measurement_interval' must be a positive number.")
+
+        # Check if it's a whole number (no decimals)
+        if measurement_interval != int(measurement_interval):
+            raise ValueError(
+                f"'measurement_interval' must be a natural number without decimals. Got {measurement_interval}.",
+            )
+
+        return int(measurement_interval)
+
+    # Invalid type
+    raise TypeError(
+        f"'measurement_interval' must be an int or float. Got {type(measurement_interval).__name__}.",
+    )
 
 
 def check_measurement_intervals(measurement_intervals):

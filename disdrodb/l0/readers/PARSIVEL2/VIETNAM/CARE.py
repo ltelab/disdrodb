@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+"""Reader for VIETNAM CARE Parsivel2 data."""
+
 import os
 
 import pandas as pd
@@ -106,12 +108,12 @@ def reader_parsivel(filepath, logger):
         "sensor_temperature",
         "sensor_heating_current",
         "sensor_battery_voltage",
-        "sample_interval",
         "sensor_status",
-        "rain_kinetic_energy",
         "sensor_temperature_receiver",
         "sensor_temperature_trasmitter",
-        "V_Batt_Min",
+        "rain_kinetic_energy",
+        "sample_interval",
+        "temps_present",
     ]
 
     ##------------------------------------------------------------------------.
@@ -126,7 +128,7 @@ def reader_parsivel(filepath, logger):
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
         "RECORD",
-        "V_Batt_Min",
+        "temps_present",
     ]
     df = df.drop(columns=columns_to_drop, errors="ignore")
     return df
@@ -217,11 +219,11 @@ def reader(
     df = df.drop_duplicates(subset="time", keep="first")
 
     # Initialize empty arrays
-    # --> 0 values array produced in L0B
+    # --> NaN values array produced in L0B
     arrays_columns = ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"]
     for c in arrays_columns:
         if c not in df:
-            df[c] = ""
+            df[c] = "NaN"
 
     # Add raw spectrum if available
     if os.path.exists(spectrum_filepath):

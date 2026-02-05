@@ -193,6 +193,7 @@ For details, see :ref:`Polarimetric Radar Variables Simulations <disdrodb_radar>
     radar_options:
       frequency: [5.6, 9.7, X]           # GHz or band names (S, C, X, Ku, Ka, W)
       num_points: 1024                   # T-matrix integration points
+      diameter_min: 0.0                  # Minimum diameter (mm)
       diameter_max: 8.0                  # Maximum diameter (mm)
       canting_angle_std: 10              # Canting angle std dev (degrees)
       axis_ratio_model: Thurai2007       # Axis ratio models

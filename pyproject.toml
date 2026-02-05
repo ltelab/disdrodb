@@ -110,6 +110,9 @@ disdrodb_download_station="disdrodb.cli.disdrodb_download_station:disdrodb_downl
 disdrodb_upload_archive="disdrodb.cli.disdrodb_upload_archive:disdrodb_upload_archive"
 disdrodb_upload_station="disdrodb.cli.disdrodb_upload_station:disdrodb_upload_station"
 
+# Pytmatrix utility
+pytmatrix_lut = "disdrodb.cli.pytmatrix_lut:main"
+
 # L0A
 disdrodb_run_l0a_station="disdrodb.cli.disdrodb_run_l0a_station:disdrodb_run_l0a_station"
 disdrodb_run_l0a="disdrodb.cli.disdrodb_run_l0a:disdrodb_run_l0a"
