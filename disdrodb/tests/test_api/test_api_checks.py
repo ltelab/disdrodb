@@ -654,6 +654,8 @@ class TestMeasurementIntervals:
             check_measurement_interval(3.2)
         with pytest.raises(ValueError):
             check_measurement_interval(0)
+        with pytest.raises(ValueError):
+            check_measurement_interval([1])
 
 
 class TestCheckStationInputs:

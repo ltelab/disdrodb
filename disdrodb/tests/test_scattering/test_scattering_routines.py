@@ -16,7 +16,6 @@
 # -----------------------------------------------------------------------------.
 """Test scattering routines."""
 
-import os
 import re
 import subprocess
 
@@ -127,22 +126,31 @@ def test_pytmatrix_lut_cli(tmp_path):
     """Test the pytmatrix_lut CLI command creates the expected LUT file."""
     # Define output path
     output_file = tmp_path / "test_scattering_table.pkl"
-    
+
     # Build the CLI command
     cmd = [
         "pytmatrix_lut",
-        "--frequency", "5.4",
-        "--num-points", "100",
-        "--diameter-min", "0.0",
-        "--diameter-max", "2.0",
-        "--canting-angle-std", "7.0",
-        "--axis-ratio-model", "Thurai2007",
-        "--permittivity-model", "Turner2016",
-        "--water-temperature", "10.0",
-        "--elevation-angle", "0.0",
+        "--frequency",
+        "5.4",
+        "--num-points",
+        "100",
+        "--diameter-min",
+        "0.0",
+        "--diameter-max",
+        "2.0",
+        "--canting-angle-std",
+        "7.0",
+        "--axis-ratio-model",
+        "Thurai2007",
+        "--permittivity-model",
+        "Turner2016",
+        "--water-temperature",
+        "10.0",
+        "--elevation-angle",
+        "0.0",
         str(output_file),
     ]
-    
+
     # Run the CLI command
     result = subprocess.run(
         cmd,
@@ -150,16 +158,16 @@ def test_pytmatrix_lut_cli(tmp_path):
         text=True,
         check=False,
     )
-    
+
     # Check that the command succeeded
     assert result.returncode == 0, f"CLI failed with stderr: {result.stderr}"
-    
+
     # Check that the output file was created
     assert output_file.exists(), f"Output file {output_file} was not created"
-    
+
     # Check that the file has non-zero size
     assert output_file.stat().st_size > 0, "Output file is empty"
-    
+
     # Check that success message was printed
     assert "LUT written to" in result.stdout
 
@@ -171,12 +179,14 @@ def test_pytmatrix_lut_cli_invalid_args():
     cmd = ["pytmatrix_lut", "output.pkl"]
     result = subprocess.run(cmd, capture_output=True, text=True, check=False)
     assert result.returncode != 0
-    
+
     # Test invalid axis ratio model
     cmd = [
         "pytmatrix_lut",
-        "--frequency", "5.4",
-        "--axis-ratio-model", "InvalidModel",
+        "--frequency",
+        "5.4",
+        "--axis-ratio-model",
+        "InvalidModel",
         "output.pkl",
     ]
     result = subprocess.run(cmd, capture_output=True, text=True, check=False)
@@ -188,22 +198,31 @@ def test_pytmatrix_lut_cli_fails_without_pytmatrix(tmp_path):
     """Test the pytmatrix_lut CLI command fails when pytmatrix is not installed."""
     # Define output path
     output_file = tmp_path / "test_scattering_table.pkl"
-    
+
     # Build the CLI command with valid arguments
     cmd = [
         "pytmatrix_lut",
-        "--frequency", "5.4",
-        "--num-points", "100",
-        "--diameter-min", "0.0",
-        "--diameter-max", "2.0",
-        "--canting-angle-std", "7.0",
-        "--axis-ratio-model", "Thurai2007",
-        "--permittivity-model", "Turner2016",
-        "--water-temperature", "10.0",
-        "--elevation-angle", "0.0",
+        "--frequency",
+        "5.4",
+        "--num-points",
+        "100",
+        "--diameter-min",
+        "0.0",
+        "--diameter-max",
+        "2.0",
+        "--canting-angle-std",
+        "7.0",
+        "--axis-ratio-model",
+        "Thurai2007",
+        "--permittivity-model",
+        "Turner2016",
+        "--water-temperature",
+        "10.0",
+        "--elevation-angle",
+        "0.0",
         str(output_file),
     ]
-    
+
     # Run the CLI command
     result = subprocess.run(
         cmd,
@@ -211,10 +230,10 @@ def test_pytmatrix_lut_cli_fails_without_pytmatrix(tmp_path):
         text=True,
         check=False,
     )
-    
+
     # Check that the command failed (pytmatrix not available)
     assert result.returncode != 0, "CLI should fail when pytmatrix is not installed"
-    
+
     # The output file should not be created
     assert not output_file.exists(), "Output file should not be created when pytmatrix is missing"
 

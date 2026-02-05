@@ -562,7 +562,7 @@ def parse_format_v3(df):
     ]
     df.columns = column_names
 
-    # Sanitize columns for //// and ??? patterns 
+    # Sanitize columns for //// and ??? patterns
     pattern = r"([/?]+)"
     for col in df.select_dtypes(include=["string", "object"]):
         df[col] = (

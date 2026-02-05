@@ -996,3 +996,60 @@ class TestCreateL0cDatasets:
         assert len(result) == 2
         assert isinstance(result[60], xr.Dataset)
         assert isinstance(result[180], xr.Dataset)
+
+    def test_event_time_outside_dataset_range_returns_empty_dict(self, mocker):
+        """Test that empty dict is returned when event_info times are outside dataset time range."""
+
+        # Mock open_netcdf_files to raise ValueError when no timesteps available
+        def mock_open_files(*args, **kwargs):
+            raise ValueError("No timesteps available between start_time and end_time")
+
+        mocker.patch("disdrodb.l0.l0c_processing.open_netcdf_files", side_effect=mock_open_files)
+
+        # Event info requesting data from February (outside dataset range)
+        event_info = {
+            "start_time": np.datetime64("2023-02-01T00:00:00"),
+            "end_time": np.datetime64("2023-02-02T00:00:00"),
+            "filepaths": ["file1.nc"],
+        }
+
+        result = create_l0c_datasets(
+            event_info=event_info,
+            measurement_intervals=[60],
+            sensor_name="PARSIVEL",
+        )
+
+        # Should return empty dictionary
+        assert isinstance(result, dict)
+        assert len(result) == 0
+
+    def test_fewer_than_three_timesteps_returns_empty_dict(self, mocker):
+        """Test that empty dict is returned when dataset has fewer than 3 timesteps."""
+        # Mock dataset with only 2 timesteps
+        times = pd.date_range("2023-01-01", periods=2, freq="60s")
+        raw_drop_number = xr.DataArray(np.ones((2, 32)), dims=("time", "diameter_bin_center"))
+        ds = xr.Dataset(
+            {
+                "raw_drop_number": raw_drop_number,
+                "data": ("time", np.random.rand(2)),
+            },
+            coords={"time": times},
+        )
+
+        mocker.patch("disdrodb.l0.l0c_processing.open_netcdf_files", return_value=ds)
+
+        event_info = {
+            "start_time": np.datetime64("2023-01-01T00:00:00"),
+            "end_time": np.datetime64("2023-01-02T00:00:00"),
+            "filepaths": ["file1.nc"],
+        }
+
+        result = create_l0c_datasets(
+            event_info=event_info,
+            measurement_intervals=[60],
+            sensor_name="PARSIVEL",
+        )
+
+        # Should return empty dictionary
+        assert isinstance(result, dict)
+        assert len(result) == 0

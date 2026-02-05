@@ -619,6 +619,33 @@ class TestOpenDataset:
         # Check info of two sample intervals is present
         assert ds.attrs["measurement_interval"] == [20, 30]
 
+    def test_open_netcdf_files_raises_error_when_times_outside_range(self, tmp_path):
+        """Test that open_netcdf_files raises error when start/end times are outside dataset range."""
+        # Create a simple netCDF dataset with times in January 2023
+        times = pd.date_range("2023-01-15", periods=10, freq="60s")
+        ds = xr.Dataset(
+            {
+                "raw_drop_number": (("time", "diameter_bin_center"), np.ones((10, 32))),
+                "data": ("time", np.random.rand(10)),
+            },
+            coords={
+                "time": times,
+                "diameter_bin_center": np.arange(32),
+            },
+        )
+
+        # Write dataset to disk
+        fpath = tmp_path / "test_dataset.nc"
+        ds.to_netcdf(fpath)
+
+        # Test that requesting data from February (outside dataset range) raises error
+        with pytest.raises(ValueError, match="No timesteps available between"):
+            open_netcdf_files(
+                filepaths=[str(fpath)],
+                start_time=np.datetime64("2023-02-01T00:00:00"),
+                end_time=np.datetime64("2023-02-02T00:00:00"),
+            )
+
 
 def test_open_netcdf_files_with_duplicate_timesteps(tmp_path):
     """Test open_netcdf_files deals correctly with duplicated timesteps."""
