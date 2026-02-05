@@ -457,21 +457,19 @@ def load_scatterer(
     )
 
     # Load or create scattering table
-    if os.path.exists(scattering_table_filepath):
-        scatterer = initialize_scatterer(
-            frequency=frequency,
-            num_points=num_points,
-            diameter_min=diameter_min,
-            diameter_max=diameter_max,
-            canting_angle_std=canting_angle_std,
-            axis_ratio_model=axis_ratio_model,
-            permittivity_model=permittivity_model,
-            water_temperature=water_temperature,
-            elevation_angle=elevation_angle,
-        )
-        _ = scatterer.psd_integrator.load_scatter_table(scattering_table_filepath)
-        return scatterer
-    raise ValueError(f"Scattering table {scattering_table_filepath} does not exist")
+    scatterer = initialize_scatterer(
+        frequency=frequency,
+        num_points=num_points,
+        diameter_min=diameter_min,
+        diameter_max=diameter_max,
+        canting_angle_std=canting_angle_std,
+        axis_ratio_model=axis_ratio_model,
+        permittivity_model=permittivity_model,
+        water_temperature=water_temperature,
+        elevation_angle=elevation_angle,
+    )
+    _ = scatterer.psd_integrator.load_scatter_table(scattering_table_filepath)
+    return scatterer
 
 
 def precompute_scattering_tables(

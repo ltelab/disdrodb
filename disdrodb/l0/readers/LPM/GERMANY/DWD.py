@@ -562,11 +562,16 @@ def parse_format_v3(df):
     ]
     df.columns = column_names
 
-    # Sanitize columns
-    df["current_heating_voltage_supply"] = df["current_heating_voltage_supply"].str.replace("///", "NaN")
-    df["current_heating_house"] = df["current_heating_house"].str.replace("////", "NaN")
-    df["current_heating_heads"] = df["current_heating_heads"].str.replace("////", "NaN")
-    df["current_heating_carriers"] = df["current_heating_carriers"].str.replace("////", "NaN")
+    # Sanitize columns for //// and ??? patterns 
+    pattern = r"([/?]+)"
+    for col in df.select_dtypes(include=["string", "object"]):
+        df[col] = (
+            df[col]
+            .str.replace(pattern, "NaN", regex=True)
+            .str.split(",")
+            .apply(lambda x: ["NaN" if v.strip() == "NaN" else v.strip() for v in x])
+            .str.join(", ")
+        )
 
     # Define datetime "time" column
     df["time"] = df["sensor_date"] + "-" + df["sensor_time"]

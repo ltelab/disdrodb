@@ -142,7 +142,7 @@ def check_measurement_interval(measurement_interval):
         If the measurement interval has an invalid type.
     """
     # Check for None
-    if isinstance(measurement_interval, type(None)):
+    if measurement_interval is None:
         raise ValueError("'measurement_interval' cannot be None.")
 
     # Check for empty string
@@ -157,7 +157,7 @@ def check_measurement_interval(measurement_interval):
     if isinstance(measurement_interval, str):
         if not measurement_interval.isdigit():
             raise ValueError("'measurement_interval' is not a positive integer.")
-        raise ValueError("'measurement_interval' must be specified as number, not as string.'")
+        raise ValueError("'measurement_interval' must be specified as number, not as string'")
 
     # Handle numeric input (int or float)
     if isinstance(measurement_interval, (int, float)):
