@@ -661,7 +661,7 @@ def check_time(time):
     if isinstance(time, np.ndarray):
         if np.issubdtype(time.dtype, np.datetime64):
             if time.size == 1:
-                time = time[0].astype("datetime64[s]").tolist()
+                time = np.atleast_1d(time)[0].astype("datetime64[s]").tolist()
             else:
                 raise ValueError("Expecting a single timestep!")
         else:
