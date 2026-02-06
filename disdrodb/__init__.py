@@ -80,6 +80,8 @@ from disdrodb.routines import (
     run_l2m_station,
     run,
     run_station,
+    get_product_options,
+    get_model_options,
 )
 from disdrodb.utils.manipulations import convert_from_decibel as idecibel
 from disdrodb.utils.manipulations import convert_to_decibel as decibel
@@ -147,6 +149,8 @@ __all__ = [
     "generate_l2m",
     "get_data_archive_dir",
     "get_metadata_archive_dir",
+    "get_model_options",
+    "get_product_options",
     "get_reader",
     "get_scattering_table_dir",
     "get_station_reader",

@@ -17,6 +17,8 @@
 """Testing events utilities."""
 
 import numpy as np
+import pytest
+import xarray as xr
 
 from disdrodb.utils.event import (
     group_timesteps_into_event,
@@ -271,3 +273,520 @@ class TestGroupTimestepsIntoEvents:
         assert len(events) == 1
         expected = np.array([t1, t2, t0], dtype="datetime64[s]")
         np.testing.assert_array_equal(events[0], expected)
+
+
+class TestSplitIntoEvents:
+    def test_threshold_based_detection_single_event(self):
+        """Basic threshold detection produces single event from consecutive high-value timesteps."""
+        time = np.array(
+            [
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:30:00",
+                "2022-01-01T01:00:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"N": (["time"], [15, 20, 18])},
+            coords={"time": time},
+        )
+        events = list(
+            ds.disdrodb.split_into_events(
+                variable="N",
+                threshold=10,
+                event_max_time_gap="2H",
+                neighbor_min_size=0,
+                neighbor_time_interval="5MIN",
+                event_min_duration="0S",
+                event_min_size=1,
+            ),
+        )
+        assert len(events) == 1
+        assert events[0].sizes["time"] == 3
+        np.testing.assert_array_equal(events[0]["time"].values, time)
+
+    def test_threshold_based_detection_multiple_events(self):
+        """Threshold detection splits into multiple events when gaps exceed max time gap."""
+        time = np.array(
+            [
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:30:00",
+                "2022-01-01T03:00:00",
+                "2022-01-01T03:30:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"N": (["time"], [15, 20, 18, 22])},
+            coords={"time": time},
+        )
+        events = list(
+            ds.disdrodb.split_into_events(
+                variable="N",
+                threshold=10,
+                event_max_time_gap="1H",
+                neighbor_min_size=0,
+                neighbor_time_interval="5MIN",
+                event_min_duration="0S",
+                event_min_size=1,
+            ),
+        )
+        assert len(events) == 2
+        assert events[0].sizes["time"] == 2
+        assert events[1].sizes["time"] == 2
+
+    def test_boolean_based_detection(self):
+        """Boolean variable detection correctly identifies events from True values."""
+        time = np.array(
+            [
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:30:00",
+                "2022-01-01T01:00:00",
+                "2022-01-01T03:00:00",
+                "2022-01-01T03:30:00",
+                "2022-01-01T03:40:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"is_rainy": (["time"], [False, True, True, False, True, True])},
+            coords={"time": time},
+        )
+        events = list(
+            ds.disdrodb.split_into_events(
+                variable="is_rainy",
+                threshold=None,
+                event_max_time_gap="30MIN",
+                neighbor_min_size=0,
+                neighbor_time_interval="5MIN",
+                event_min_duration="0S",
+                event_min_size=1,
+            ),
+        )
+        # Two separate events (False in middle breaks continuity)
+        assert len(events) == 2
+        assert events[0].sizes["time"] == 2
+        assert events[1].sizes["time"] == 2
+
+    def test_no_events_found_below_threshold(self):
+        """No events returned when all values are below threshold."""
+        time = np.array(
+            [
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:30:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"N": (["time"], [5, 3])},
+            coords={"time": time},
+        )
+        events = list(
+            ds.disdrodb.split_into_events(
+                variable="N",
+                threshold=10,
+                event_max_time_gap="1H",
+                neighbor_min_size=0,
+                neighbor_time_interval="5MIN",
+                event_min_duration="0S",
+                event_min_size=1,
+            ),
+        )
+        assert len(events) == 0
+
+    def test_no_events_found_all_false(self):
+        """No events returned when boolean variable is all False."""
+        time = np.array(
+            [
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:30:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"is_rainy": (["time"], [False, False])},
+            coords={"time": time},
+        )
+        events = list(
+            ds.disdrodb.split_into_events(
+                variable="is_rainy",
+                threshold=None,
+                event_max_time_gap="1H",
+                neighbor_min_size=0,
+                neighbor_time_interval="5MIN",
+                event_min_duration="0S",
+                event_min_size=1,
+            ),
+        )
+        assert len(events) == 0
+
+    def test_event_min_size_filter(self):
+        """Events with fewer timesteps than event_min_size are discarded."""
+        time = np.array(
+            [
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:30:00",
+                "2022-01-01T03:00:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"N": (["time"], [15, 20, 18])},
+            coords={"time": time},
+        )
+        events = list(
+            ds.disdrodb.split_into_events(
+                variable="N",
+                threshold=10,
+                event_max_time_gap="1H",
+                event_min_size=2,
+                neighbor_min_size=0,
+                neighbor_time_interval="5MIN",
+                event_min_duration="0S",
+            ),
+        )
+        # First two form one event (size=2), third is isolated (size=1, filtered)
+        assert len(events) == 1
+        assert events[0].sizes["time"] == 2
+
+    def test_event_min_duration_filter(self):
+        """Events shorter than event_min_duration are discarded."""
+        time = np.array(
+            [
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:10:00",
+                "2022-01-01T02:00:00",
+                "2022-01-01T04:00:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"N": (["time"], [15, 20, 18, 22])},
+            coords={"time": time},
+        )
+        events = list(
+            ds.disdrodb.split_into_events(
+                variable="N",
+                threshold=10,
+                event_max_time_gap="1H",
+                event_min_duration="1H",
+                neighbor_min_size=0,
+                neighbor_time_interval="5MIN",
+                event_min_size=1,
+            ),
+        )
+        # First event duration=10min (filtered), second two are single points (filtered)
+        assert len(events) == 0
+
+    def test_neighbor_isolation_removal(self):
+        """Isolated timesteps without enough neighbors are excluded from events."""
+        time = np.array(
+            [
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:01:00",
+                "2022-01-01T02:00:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"N": (["time"], [15, 20, 18])},
+            coords={"time": time},
+        )
+        events = list(
+            ds.disdrodb.split_into_events(
+                variable="N",
+                threshold=10,
+                neighbor_min_size=1,
+                neighbor_time_interval="5MIN",
+                event_min_duration="0S",
+                event_max_time_gap="2H",
+                event_min_size=2,
+            ),
+        )
+        # Third timestep at 02:00 is isolated (no neighbor within 5min)
+        assert len(events) == 1
+        assert events[0].sizes["time"] == 2
+
+    def test_sortby_duration_decreasing(self):
+        """Events sorted by duration in decreasing order when sortby='duration'."""
+        time = np.array(
+            [
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:10:00",
+                "2022-01-01T02:00:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"N": (["time"], [15, 20, 18])},
+            coords={"time": time},
+        )
+        events = list(
+            ds.disdrodb.split_into_events(
+                variable="N",
+                threshold=10,
+                event_max_time_gap="30MIN",
+                neighbor_min_size=0,
+                neighbor_time_interval="5MIN",
+                event_min_duration="0S",
+                event_min_size=1,
+                sortby="duration",
+                sortby_order="decreasing",
+            ),
+        )
+        assert len(events) == 2
+        # Longest first
+        assert events[0]["duration"].item() > events[1]["duration"].item()
+
+    def test_sortby_duration_increasing(self):
+        """Events sorted by duration in increasing order when sortby_order='increasing'."""
+        time = np.array(
+            [
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:10:00",
+                "2022-01-01T02:00:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"N": (["time"], [15, 20, 18])},
+            coords={"time": time},
+        )
+        events = list(
+            ds.disdrodb.split_into_events(
+                variable="N",
+                threshold=10,
+                event_max_time_gap="30MIN",
+                neighbor_min_size=0,
+                neighbor_time_interval="5MIN",
+                event_min_duration="0S",
+                event_min_size=1,
+                sortby="duration",
+                sortby_order="increasing",
+            ),
+        )
+        assert len(events) == 2
+        # Shortest first
+        assert events[0]["duration"].item() < events[1]["duration"].item()
+
+    def test_sortby_custom_callable(self):
+        """Events sorted by custom callable returning scalar value."""
+        time = np.array(
+            [
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:30:00",
+                "2022-01-01T02:00:00",
+                "2022-01-01T02:30:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"N": (["time"], [15, 20, 10, 30])},
+            coords={"time": time},
+        )
+        # Sort by max N in event
+        sortby_func = lambda ds_event: float(ds_event["N"].max())  # noqa: E731
+        events = list(
+            ds.disdrodb.split_into_events(
+                variable="N",
+                threshold=5,
+                event_max_time_gap="1H",
+                neighbor_min_size=0,
+                neighbor_time_interval="5MIN",
+                event_min_duration="0S",
+                event_min_size=1,
+                sortby=sortby_func,
+                sortby_order="decreasing",
+            ),
+        )
+        assert len(events) == 2
+        # Event with max N=30 should be first
+        assert float(events[0]["N"].max()) == 30
+        assert float(events[1]["N"].max()) == 20
+
+    def test_invalid_non_boolean_without_threshold(self):
+        """ValueError raised when threshold=None and variable is not boolean."""
+        time = np.array(
+            [
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:30:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"N": (["time"], [15, 20])},
+            coords={"time": time},
+        )
+        with pytest.raises(ValueError, match="must be a boolean DataArray"):
+            list(
+                ds.disdrodb.split_into_events(
+                    variable="N",
+                    threshold=None,
+                    event_max_time_gap="1H",
+                    neighbor_min_size=0,
+                    neighbor_time_interval="5MIN",
+                    event_min_duration="0S",
+                    event_min_size=1,
+                ),
+            )
+
+    def test_invalid_sortby_callable_non_scalar(self):
+        """ValueError raised when sortby callable returns non-scalar value."""
+        time = np.array(
+            [
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:30:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"N": (["time"], [15, 20])},
+            coords={"time": time},
+        )
+        # Returns an array instead of scalar
+        sortby_func = lambda ds_event: ds_event["N"].to_numpy()  # noqa: E731
+        with pytest.raises(ValueError, match="must return a scalar value"):
+            list(
+                ds.disdrodb.split_into_events(
+                    variable="N",
+                    threshold=10,
+                    event_max_time_gap="1H",
+                    neighbor_min_size=0,
+                    neighbor_time_interval="5MIN",
+                    event_min_duration="0S",
+                    event_min_size=1,
+                    sortby=sortby_func,
+                ),
+            )
+
+    def test_invalid_sortby_value(self):
+        """ValueError raised when sortby is invalid (not None, 'duration', or callable)."""
+        time = np.array(
+            [
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:30:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"N": (["time"], [15, 20])},
+            coords={"time": time},
+        )
+        with pytest.raises(ValueError, match="must be None, 'duration', or a callable"):
+            list(
+                ds.disdrodb.split_into_events(
+                    variable="N",
+                    threshold=10,
+                    event_max_time_gap="1H",
+                    neighbor_min_size=0,
+                    neighbor_time_interval="5MIN",
+                    event_min_duration="0S",
+                    event_min_size=1,
+                    sortby="invalid_value",
+                ),
+            )
+
+    def test_unsorted_dataset_is_sorted(self):
+        """Dataset with unsorted time coordinate is automatically sorted before processing."""
+        time = np.array(
+            [
+                "2022-01-01T01:00:00",
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:30:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"N": (["time"], [18, 15, 20])},
+            coords={"time": time},
+        )
+        events = list(
+            ds.disdrodb.split_into_events(
+                variable="N",
+                threshold=10,
+                event_max_time_gap="2H",
+                neighbor_min_size=0,
+                neighbor_time_interval="5MIN",
+                event_min_duration="0S",
+                event_min_size=1,
+            ),
+        )
+        assert len(events) == 1
+        # Time should be sorted in the output
+        expected_time = np.sort(time)
+        np.testing.assert_array_equal(events[0]["time"].values, expected_time)
+
+    def test_duration_attribute_added_to_events(self):
+        """Each event dataset contains a 'duration' attribute with the event duration."""
+        time = np.array(
+            [
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:30:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"N": (["time"], [15, 20])},
+            coords={"time": time},
+        )
+        events = list(
+            ds.disdrodb.split_into_events(
+                variable="N",
+                threshold=10,
+                event_max_time_gap="1H",
+                neighbor_min_size=0,
+                neighbor_time_interval="5MIN",
+                event_min_duration="0S",
+                event_min_size=1,
+            ),
+        )
+        assert len(events) == 1
+        assert "duration" in events[0]
+        assert events[0]["duration"].item() == np.timedelta64(30, "m")
+
+    def test_empty_dataset(self):
+        """Empty dataset returns no events."""
+        time = np.array([], dtype="datetime64[s]")
+        ds = xr.Dataset(
+            {"N": (["time"], [])},
+            coords={"time": time},
+        )
+        events = list(
+            ds.disdrodb.split_into_events(
+                variable="N",
+                threshold=10,
+                event_max_time_gap="1H",
+                neighbor_min_size=0,
+                neighbor_time_interval="5MIN",
+                event_min_duration="0S",
+                event_min_size=1,
+            ),
+        )
+        assert len(events) == 0
+
+    def test_sample_interval_validation(self):
+        """ValueError raised when neighbor_time_interval is less than sample_interval."""
+        time = np.array(
+            [
+                "2022-01-01T00:00:00",
+                "2022-01-01T00:30:00",
+            ],
+            dtype="datetime64[s]",
+        )
+        ds = xr.Dataset(
+            {"N": (["time"], [15, 20])},
+            coords={"time": time},
+        )
+        ds["sample_interval"] = 1800  # 30 minutes in seconds
+        with pytest.raises(ValueError, match="must be at least equal to the dataset sample interval"):
+            list(
+                ds.disdrodb.split_into_events(
+                    variable="N",
+                    threshold=10,
+                    neighbor_time_interval="10MIN",  # Less than 30min
+                    event_max_time_gap="1H",
+                    neighbor_min_size=0,
+                    event_min_duration="0S",
+                    event_min_size=1,
+                ),
+            )

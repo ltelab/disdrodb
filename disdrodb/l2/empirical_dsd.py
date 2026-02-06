@@ -1712,6 +1712,38 @@ def get_kinetic_energy_variables_from_drop_number(
 
 
 ####-------------------------------------------------------------------------------------------------------.
+#### Rainfall classification
+
+
+def bringi_nw_dm_classification(Dm, Nw):
+    """Bringi stratiform / convective classification using Nw-Dm space.
+
+    Returns
+    -------
+    xr.DataArray
+        0 = invalid / no rain
+        1 = stratiform
+        2 = convective
+    """
+    logNw = np.log10(Nw)
+    boundary = 6.3 - 1.6 * Dm
+    rain_type = xr.zeros_like(Dm, dtype=np.int8)
+    rain_type = xr.where(logNw > boundary, 2, rain_type)
+    rain_type = xr.where(logNw <= boundary, 1, rain_type)
+
+    rain_type.name = "rain_classification"
+    rain_type.attrs.update(
+        {
+            "standard_name": "precipitation_type",
+            "long_name": "Bringi Nw-Dm stratiform/convective precipitation classification",
+            "flag_values": np.array([0, 1, 2], dtype=np.int8),
+            "flag_meanings": "invalid stratiform convective",
+        },
+    )
+    return rain_type
+
+
+####-------------------------------------------------------------------------------------------------------.
 #### Wrapper ####
 
 

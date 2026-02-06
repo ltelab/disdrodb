@@ -109,25 +109,39 @@ n_splashing:
   units: "1"
   description: "Count of splashing drops detected. Splashing drops are identified as particles with diameter between 0 and 6 mm and velocity <= 0.6 m/s."
   valid_min: 0
+n_wind_artefacts:
+  long_name: "number of particles caused by wind artefacts"
+  standard_name: "number_of_wind_artefact_particles"
+  units: "1"
+  description: "Wind artefacts in heavy rainfall identified using criteria from Friedrich et al. (2013): particles with diameter_lower >= 5 mm and velocity_upper < 1 m/s."
+  valid_min: 0
+raw_drop_number:
+  description: Counts of drops per diameter and velocity class
+  long_name: Drop counts per diameter and velocity class
+  units: ""
 drop_number:
   description: Counts of drops per diameter and velocity class
   long_name: Drop counts per diameter and velocity class
   units: ""
-raw_drop_number:
-  description: Counts of drops per diameter and velocity class
-  long_name: Drop counts per diameter and velocity class
+raw_particle_counts:
+  description: Counts of particles per diameter class
+  long_name: Particle counts per diameter class
+  units: ""
+raw_drop_counts:
+  description: Counts of drops per diameter class
+  long_name: Drop counts per diameter class
   units: ""
 drop_counts:
   description: Counts of drops per diameter class
   long_name: Drop counts per diameter class
   units: ""
 Dmin:
-  description: Minimum drop diameter
-  long_name: Minimum drop diameter
+  description: Minimum particle diameter
+  long_name: Minimum particle diameter
   units: mm
 Dmax:
-  description: Maximum drop diameter
-  long_name: Maximum drop diameter
+  description: Maximum particle diameter
+  long_name: Maximum particle diameter
   units: mm
 fall_velocity:
   description: Estimated drop fall velocity per diameter class
