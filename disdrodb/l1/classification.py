@@ -846,18 +846,24 @@ def classify_raw_spectrum(
 
     flag_splashing = xr.where((precipitation_type == 0) & (fraction_splash >= 0.1), 1, 0)
     flag_wind_artefacts = xr.where((precipitation_type == 0) & (n_wind_artefacts >= 1), 1, 0)
+
     flag_noise = xr.where((hydrometeor_type == -2), 1, 0)
     flag_spikes = qc_spikes_isolated_precip(hydrometeor_type, sample_interval=sample_interval)
 
     # ------------------------------------------------------------------------.
     #### Define n_particles_<hydro_class>
-    n_graupel_ld_final = xr.where(flag_graupel == 1, n_graupel_ld, 0)
-    n_graupel_hd_final = xr.where(flag_graupel == 2, n_graupel_hd, 0)
+    n_graupel_ld_final = xr.where(flag_graupel > 0, n_graupel_ld, 0)
+    n_graupel_hd_final = xr.where(flag_graupel > 0, n_graupel_hd, 0)
 
-    n_small_hail_final = xr.where(flag_hail == 1, n_small_hail, 0)
-    n_large_hail_final = xr.where(flag_hail == 2, n_large_hail, 0)
+    n_small_hail_final = xr.where(flag_hail > 0, n_small_hail, 0)
+    n_large_hail_final = xr.where(flag_hail > 0, n_large_hail, 0)
     n_margin_fallers_final = xr.where(precipitation_type == 0, n_margin_fallers, 0)
     n_splashing_final = xr.where(flag_splashing == 1, n_splashing, 0)
+    n_wind_artefacts_final = xr.where(
+        flag_wind_artefacts == 1 & (precipitation_type == 0),
+        n_wind_artefacts,
+        0,
+    )  # maybe when R > XXX ?
 
     # ------------------------------------------------------------------------.
     # Create HC and QC dataset
@@ -876,6 +882,7 @@ def classify_raw_spectrum(
     ds_class["n_large_hail"] = n_large_hail_final
     ds_class["n_margin_fallers"] = n_margin_fallers_final
     ds_class["n_splashing"] = n_splashing_final
+    ds_class["n_wind_artefacts"] = n_wind_artefacts_final
 
     # fraction_splash
     # fraction_margin_fallers

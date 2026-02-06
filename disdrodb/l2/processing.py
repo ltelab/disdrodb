@@ -454,6 +454,7 @@ def generate_l2e(
 
     ds["drop_number"] = drop_number
     ds["drop_counts"] = drop_counts
+    ds["raw_drop_counts"] = drop_counts_raw
 
     # -------------------------------------------------------
     # Compute drop statistics

@@ -26,6 +26,7 @@ from disdrodb.l1.classification import (
 )
 from disdrodb.l1.resampling import add_sample_interval
 from disdrodb.l1_env.routines import load_env_dataset
+from disdrodb.l2.empirical_dsd import get_min_max_diameter
 from disdrodb.utils.manipulations import filter_diameter_bins
 from disdrodb.utils.time import ensure_sample_interval_in_seconds, infer_sample_interval
 from disdrodb.utils.writer import finalize_product
@@ -78,7 +79,20 @@ def generate_l1(
     ds_l1 = xr.Dataset()
 
     # Add raw_drop_number variable to L1 dataset
+    # - If velocity dimension is available, f(D,V)
+    # - If no velocity dimension, f(D) only (e.g. RD-80, ODM-470)
     ds_l1["raw_drop_number"] = ds["raw_drop_number"]
+
+    # Add raw_particle_counts: f(D)
+    if has_velocity_dimension:
+        ds_l1["raw_particle_counts"] = ds_l1["raw_drop_number"].sum(dim=VELOCITY_DIMENSION)
+    else:  # equal to raw_drop_number, but we keep the name for consistency with other sensors
+        ds_l1["raw_particle_counts"] = ds_l1["raw_drop_number"]
+
+    # Add Dmin and Dmax variables
+    Dmin, Dmax = get_min_max_diameter(ds_l1["raw_particle_counts"])
+    ds_l1["Dmin"] = Dmin
+    ds_l1["Dmax"] = Dmax
 
     # Add sample interval as coordinate (in seconds)
     ds_l1 = add_sample_interval(ds_l1, sample_interval=sample_interval)

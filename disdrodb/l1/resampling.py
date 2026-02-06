@@ -217,7 +217,14 @@ def resample_dataset(ds, sample_interval, temporal_resolution):
     #   --> Resampling over timesteps with NaN in drop_number will result in finite drop_number but qc_resampling > 0
     # - qc_resampling will inform on the amount of timesteps missing
 
-    for var in ["drop_number", "raw_drop_number", "drop_counts", "drop_number_concentration"]:
+    for var in [
+        "drop_number",
+        "raw_drop_number",
+        "drop_counts",
+        "raw_drop_counts",
+        "drop_number_concentration",
+        "raw_particle_counts",
+    ]:
         if var in ds:
             dims = set(ds[var].dims) - {"time"}
             invalid_timesteps = np.isnan(ds[var]).any(dim=dims)
@@ -252,9 +259,11 @@ def resample_dataset(ds, sample_interval, temporal_resolution):
     var_to_average = ["fall_velocity"]
     var_to_cumulate = [
         "raw_drop_number",
+        "raw_particle_counts",
         "drop_number",
         "drop_counts",
         "drop_number_concentration",
+        "raw_drop_counts",
         "N",
         "Nraw",
         "Nremoved",

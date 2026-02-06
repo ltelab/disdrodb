@@ -258,7 +258,7 @@ def regularize_dataset(
         Fill value to fill missing timesteps.
         If not specified, for float variables it uses ``dtypes.NA`` while for
         for integers variables it uses the maximum allowed integer value or,
-        in case of undecoded variables, the ``_FillValue`` DataArray attribute..
+        in case of undecoded variables, the ``_FillValue`` DataArray attribute.
 
     Returns
     -------
