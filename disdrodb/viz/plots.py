@@ -130,7 +130,7 @@ def _get_nd_variable(xr_obj, variable=None):
          Variable name to extract from the xarray object.
         If xr_obj is a DataArray, will return the DataArray and its name directly'.
         If xr_obj is a Dataset, if None, will search for candidate variables in order:
-        ['drop_number_concentration', 'drop_counts', 'raw_particle_counts', "raw_drop_counts"].
+        ['drop_number_concentration', 'drop_counts', 'raw_drop_counts', 'raw_particle_counts'].
 
     Returns
     -------
@@ -150,7 +150,7 @@ def _get_nd_variable(xr_obj, variable=None):
             # Search for candidate variables
             l1_variables = ["raw_particle_counts"]
             l2e_variables = ["drop_number_concentration", "drop_counts", "raw_drop_counts"]
-            candidate_variables = [*l1_variables, *l2e_variables]
+            candidate_variables = [*l2e_variables, *l1_variables]
             for var in candidate_variables:
                 if var in xr_obj:
                     variable = var
@@ -335,10 +335,16 @@ def plot_nd_quicklook(
         fill_value=np.nan,
     )
 
+    # Check at least 2 timesteps are available
+    if ds.sizes["time"] < 2:
+        raise ValueError("Dataset must have at least 2 time steps for quicklook.")
+
     # Enforce legend colorbar for n_slices 1 and 2
     if n_slices <= 2:
         cbar_as_legend = True
-    # Define figure with GridSpec
+
+    # ------------------------------------------------------------
+    #### - Define figure with GridSpec
     # - If cbar_as_legend=False: reserve extra row for colorbar
     # - If cbar_as_legend=True: no extra row needed
     fig = plt.figure(figsize=(14, 2.8 * n_slices))
@@ -368,7 +374,8 @@ def plot_nd_quicklook(
         )
         axes = [fig.add_subplot(gs[i, 0]) for i in range(n_slices)]
 
-    # Plot each slice
+    # ---------------------------------------------------------------
+    #### - Plot each slice
     for i in range(n_slices):
         # Extract dataset slice
         t0 = time_bins[i]
@@ -484,7 +491,7 @@ def plot_nd_quicklook(
     axes[n_slices - 1].set_xlabel("Time (UTC)", fontsize=12)
 
     # ---------------------------------------------------------------
-    #### Add title
+    #### - Add title
     # Format title based on whether dates are the same
     t_start_dt = time_bins[0]
     t_end_dt = time_bins[n_slices]
@@ -503,7 +510,7 @@ def plot_nd_quicklook(
     )
 
     # --------------------------------------------------------------
-    #### Add centered y-labels in the middle of the figure (closer to axes)
+    #### - Add centered y-labels in the middle of the figure (closer to axes)
     fig.text(
         0.09,
         0.5,
@@ -525,11 +532,11 @@ def plot_nd_quicklook(
         )
 
     # --------------------------------------------------------------
-    #### Add legend
+    #### - Add legend
     axes[0].legend(loc="upper left", fontsize=12, frameon=True, fancybox=False, edgecolor="black")
 
     # --------------------------------------------------------------
-    # Add colorbar
+    #### - Add colorbar
     if cbar_as_legend:
         # Add colorbar as a legend in the last subplot with background box
         cax = axes[-1].inset_axes([0.73, 0.72, 0.25, 0.12])  # [x, y, width, height] in axes coords

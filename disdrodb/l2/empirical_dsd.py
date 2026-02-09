@@ -1725,11 +1725,19 @@ def bringi_nw_dm_classification(Dm, Nw):
         1 = stratiform
         2 = convective
     """
-    logNw = np.log10(Nw)
+    # Identify valid rain samples: positive Nw and finite Dm/Nw.
+    valid = (Nw > 0) & np.isfinite(Nw) & np.isfinite(Dm)
+
+    # Compute log10(Nw) only for valid data to avoid -inf/nan propagation.
+    logNw = xr.where(valid, np.log10(Nw), np.nan)
+
+    # Compute boundary
     boundary = 6.3 - 1.6 * Dm
+
+    # Initialize as 0 = invalid / no rain, and classify only valid samples.
     rain_type = xr.zeros_like(Dm, dtype=np.int8)
-    rain_type = xr.where(logNw > boundary, 2, rain_type)
-    rain_type = xr.where(logNw <= boundary, 1, rain_type)
+    rain_type = xr.where(valid & (logNw > boundary), 2, rain_type)
+    rain_type = xr.where(valid & (logNw <= boundary), 1, rain_type)
 
     rain_type.name = "rain_classification"
     rain_type.attrs.update(

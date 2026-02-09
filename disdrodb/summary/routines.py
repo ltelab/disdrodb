@@ -928,7 +928,7 @@ def define_lognorm_max_value(value):
     return nice_value * magnitude
 
 
-def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
+def plot_dsd_params_relationships(df, add_nt=False, log_step=0.05, dpi=300):
     """Create a figure illustrating the relationships between DSD parameters."""
     # TODO: option to use D50 instead of Dm
 
@@ -940,7 +940,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
         y="Nw",
         variables=["R", "LWC", "Nt"],
         x_bins=np.arange(0, 8, 0.1),
-        y_bins=log_arange(10, 1_000_000, log_step=0.05, base=10),
+        y_bins=log_arange(10, 1_000_000, log_step=log_step, base=10),
     )
 
     # - Dm vs LWC (W)
@@ -950,7 +950,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
         y="LWC",
         variables=["R", "Nw", "Nt"],
         x_bins=np.arange(0, 8, 0.1),
-        y_bins=log_arange(0.01, 10, log_step=0.05, base=10),
+        y_bins=log_arange(0.01, 10, log_step=log_step, base=10),
     )
 
     # - Dm vs R
@@ -960,7 +960,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
         y="R",
         variables=["Nw", "LWC", "Nt"],
         x_bins=np.arange(0, 8, 0.1),
-        y_bins=log_arange(0.1, 500, log_step=0.05, base=10),
+        y_bins=log_arange(0.1, 500, log_step=log_step, base=10),
     )
 
     # - Dm vs Nt
@@ -970,7 +970,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
         y="Nt",
         variables=["R", "LWC", "Nw"],
         x_bins=np.arange(0, 8, 0.1),
-        y_bins=log_arange(1, 100_000, log_step=0.05, base=10),
+        y_bins=log_arange(1, 100_000, log_step=log_step, base=10),
     )
 
     # Define different colormaps for each column
@@ -1326,7 +1326,16 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
     return fig
 
 
-def plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=False, figsize=(10, 10), dpi=300):
+def plot_dsd_params_density(
+    df,
+    log_dm=False,
+    lwc=True,
+    log_normalize=False,
+    log_step=0.05,
+    linear_step=0.1,
+    figsize=(10, 10),
+    dpi=300,
+):
     """Generate a figure with various DSD relationships.
 
     All histograms are computed first, then normalized, and finally plotted together.
@@ -1359,9 +1368,6 @@ def plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=False, fig
     df["LWC"] = df["LWC"]
     water_var = "LWC" if lwc else "R"
     water_label = "LWC [g/m³]" if lwc else "R [mm/h]"
-
-    log_step = 0.05
-    linear_step = 0.1
 
     # Dm range and scale settings
     if not log_dm:

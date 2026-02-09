@@ -314,7 +314,7 @@ Load configuration for specific parametric model:
 
     # Load model configuration
     model_options = disdrodb.get_model_options(
-        model_name="GAMMA_ML",  # GAMMA_ML, NGAMMA_GS_ND_SSEetc.
+        model_name="GAMMA_ML",  # GAMMA_ML, NGAMMA_GS_ND_SSE, etc.
         products_configs_dir=products_configs_dir,
     )
 

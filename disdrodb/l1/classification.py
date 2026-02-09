@@ -860,7 +860,7 @@ def classify_raw_spectrum(
     n_margin_fallers_final = xr.where(precipitation_type == 0, n_margin_fallers, 0)
     n_splashing_final = xr.where(flag_splashing == 1, n_splashing, 0)
     n_wind_artefacts_final = xr.where(
-        flag_wind_artefacts == 1 & (precipitation_type == 0),
+        (flag_wind_artefacts == 1) & (precipitation_type == 0),
         n_wind_artefacts,
         0,
     )  # maybe when R > XXX ?

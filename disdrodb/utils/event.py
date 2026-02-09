@@ -72,9 +72,6 @@ def split_into_events(
         - numeric variable if ``threshold`` is not None
         - boolean variable if ``threshold`` is None
 
-    variable : str
-        Name of the variable to use to apply the event detection.
-        The default is "N".
     threshold : int or float or None, optional
         Threshold used to define candidate timesteps.
 
@@ -94,14 +91,14 @@ def split_into_events(
         - If `neighbor_min_size=1`, the timestep must have at least one neighbor within `neighbor_time_interval`.
         - If `neighbor_min_size=2`, the timestep must have at least two timesteps within `neighbor_time_interval`.
 
-        Defaults to 1.
+        Defaults to 2.
     event_max_time_gap: str
         The maximum time interval between two timesteps to be considered part of the same event.
         This parameters is used to group timesteps into events !
     event_min_duration : str
         The minimum duration an event must span. Events shorter than this duration are discarded.
     event_min_size : int, optional
-        The minimum number of valid timesteps required for an event. Defaults to 1.
+        The minimum number of valid timesteps required for an event. Defaults to 3.
     sortby: None, str or callable
         Sorting key for events:
 
@@ -130,7 +127,7 @@ def split_into_events(
     >>> events = list(split_into_events(ds, variable="N", threshold=10))
 
     Boolean-based detection (precomputed mask)
-    >>> ds["is_rainy"] = (ds["R"] > 0.1) & ds["Nbins"] > 2)
+    >>> ds["is_rainy"] = (ds["R"] > 0.1) & (ds["Nbins"] > 2)
     >>> events = list(split_into_events(ds, variable="is_rainy"))
 
     Sort by duration (longest first)

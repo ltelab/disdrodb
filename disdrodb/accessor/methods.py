@@ -102,7 +102,10 @@ class DISDRODB_Base_Accessor:
         from disdrodb.viz.plots import plot_spectrum, plot_spectrum_evolution
 
         if animation:
-            return plot_spectrum_evolution(self._obj, **kwargs)
+            # `plot_spectrum_evolution` is called for its side effects (e.g., displaying an animation)
+            # and does not return a meaningful value
+            plot_spectrum_evolution(self._obj, **kwargs)
+            return None
         return plot_spectrum(self._obj, **kwargs)
 
     def plot_nd(self, **kwargs):
