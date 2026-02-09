@@ -15,8 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB module for DSD retrievals."""
+
 from disdrodb.retrievals.lut import NearestNeighbourLUT2D
 
 __all__ = [
-    "NearestNeighbourLUT2D"
+    "NearestNeighbourLUT2D",
 ]

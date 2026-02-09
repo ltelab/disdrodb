@@ -16,17 +16,19 @@
 # -----------------------------------------------------------------------------.
 """Routines for 2D Look Up Tables (LUT)."""
 
+import pickle
+
 import numpy as np
 import pandas as pd
-import pickle
 from scipy.spatial import cKDTree
 
 ### in predict()
-# - if input NaN, return NaN in predict() 
+# - if input NaN, return NaN in predict()
 # - add argument max_distance(). If distance > specified, set to np.nan
 #   --> allow specify tuple for x and y (univariate distance)
-#   --> if one value, applied to dist currently computed 
-#   --> if none, do not mask 
+#   --> if one value, applied to dist currently computed
+#   --> if none, do not mask
+
 
 class NearestNeighbourLUT2D:
     """A 2D nearest neighbor lookup table using k-d tree.
@@ -81,21 +83,21 @@ class NearestNeighbourLUT2D:
     """
 
     def __init__(self, df, x, y, columns=None, dtype=np.float32):
-        if columns is None: 
+        if columns is None:
             columns = list(df.columns)
         if x in df.index.names:
             df = df.reset_index()
-        # Check x and y 
+        # Check x and y
         if x not in df:
             raise ValueError(f"{x=} is not a column of df.")
         if y not in df:
             raise ValueError(f"{y=} is not a column of df.")
-        
-        # Subset columns 
+
+        # Subset columns
         if not np.all(np.isin(columns, df.columns)):
             missing = np.setdiff1d(columns, df.columns).tolist()
             raise ValueError(f"{missing} columns not found in DataFrame")
-        
+
         self.x = x
         self.y = y
         self.columns = columns
@@ -179,29 +181,28 @@ class NearestNeighbourLUT2D:
         The method automatically converts scalar inputs to 1D arrays.
         Input values that are NaN or inf will produce NaN output rows.
         """
-       
         x = np.atleast_1d(x).astype(float)
         y = np.atleast_1d(y).astype(float)
-     
+
         if x.shape != y.shape:
             raise ValueError("x and y must have the same shape")
-     
+
         # Identify invalid inputs (NaN or inf)
         invalid_mask = ~np.isfinite(x) | ~np.isfinite(y)
-        
+
         # Initialize output array with NaN
         n_points = len(x)
         n_columns = len(self.columns)
         data = np.full((n_points, n_columns), np.nan, dtype=self.dtype)
         dist = np.full(n_points, np.nan, dtype=self.dtype)
-        
+
         # Only process valid points
         valid_mask = ~invalid_mask
         if np.any(valid_mask):
             pts_valid = np.column_stack([x[valid_mask], y[valid_mask]])
             dist_valid, idx_valid = self.tree.query(pts_valid)
             data_valid = self.values[idx_valid]
-            
+
             # Apply max_distance masking if specified
             if max_distance is not None:
                 if isinstance(max_distance, (tuple, list)):
@@ -209,42 +210,41 @@ class NearestNeighbourLUT2D:
                     if len(max_distance) != 2:
                         raise ValueError("max_distance tuple must have exactly 2 elements (dx, dy)")
                     dx_max, dy_max = max_distance
-                    
+
                     # Get nearest neighbor coordinates
                     nearest_points = self.points[idx_valid]
                     dx = np.abs(x[valid_mask] - nearest_points[:, 0])
                     dy = np.abs(y[valid_mask] - nearest_points[:, 1])
-                    
+
                     # Mask points exceeding either threshold
                     distance_mask = (dx > dx_max) | (dy > dy_max)
                 else:
                     # Euclidean distance masking
                     distance_mask = dist_valid > max_distance
-                
+
                 # Set masked values to NaN
                 data_valid[distance_mask] = np.nan
-            
+
             # Assign valid data to output array
             data[valid_mask] = data_valid
             dist[valid_mask] = dist_valid
-     
+
         df_out = pd.DataFrame(
             data,
-            columns=self.columns
+            columns=self.columns,
         )
-     
+
         # Add coordinates
         df_out[self.x] = x
         df_out[self.y] = y
-     
+
         # Keep original order
-        df_out = df_out[[self.x, self.y] + self.columns]
-     
+        df_out = df_out[[self.x, self.y, *self.columns]]
+
         if return_distance:
             df_out["distance"] = dist
 
         return df_out
-
 
     # ------------------
     # Convenience
@@ -275,7 +275,7 @@ class NearestNeighbourLUT2D:
         This is a convenience method for single-point queries returning a dict
         instead of a DataFrame.
         """
-        if np.size(x) != 1: 
+        if np.size(x) != 1:
             raise ValueError("predict_dict accepts only scalars")
         df = self.predict(x, y).iloc[0]
         return df.to_dict()

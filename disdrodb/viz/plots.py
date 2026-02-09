@@ -266,15 +266,18 @@ def plot_nd_quicklook(
     norm=None,
     d_lim=(0.3, 5),
     # Colorbar options
-    cbar_as_legend=False,
+    cbar_as_legend=True,
     # Rain type options
     add_rain_type=None,
     rain_type_colors=None,
+    # Add Dm and sigma_m
+    add_dm=True,
+    add_sigma_m=True,
     # Rain rate options
     add_r=True,
-    r_lim=(0.1, 50),
+    r_lim=(0.1, 200),
     r_scale="log",
-    r_color="tab:blue",
+    r_color="slategrey",
     r_alpha=1,
     r_linewidth=1.2,
 ):
@@ -287,6 +290,13 @@ def plot_nd_quicklook(
         cmap.set_under("none")
     if norm is None:
         norm = LogNorm(vmin=1, vmax=10_000)
+
+    # Compute event Rmax, Ptot, and event duration
+    r_max = ds["R"].max().item()
+    p_tot = ds["P"].sum().item()
+
+    # Calculate event duration
+    duration = ds.disdrodb.end_time - ds.disdrodb.start_time
 
     # ---------------------------
     # Define temporal slices
@@ -399,15 +409,28 @@ def plot_nd_quicklook(
         # Always remove xarray default title
         ax.set_title("")
 
-        # Overlay Dm
-        ds_slice["Dm"].plot(
-            ax=ax,
-            x="time",
-            color="black",
-            linestyle="--",
-            linewidth=1.2,
-            label="Dm",
-        )
+        #### - Overlay Dm
+        if add_dm:
+            ds_slice["Dm"].plot(
+                ax=ax,
+                x="time",
+                color="black",
+                linestyle="-",
+                linewidth=1.2,
+                label="$D_m$",
+            )
+
+        #### - Overlay sigma_m
+        if add_sigma_m:
+            (ds_slice["sigma_m"] * 2).plot(
+                ax=ax,
+                x="time",
+                color="black",
+                linestyle="--",
+                linewidth=1.2,
+                label=r"$2\sigma_m$",
+            )
+
         # Remove xarray default title
         ax.set_title("")
 
@@ -415,7 +438,7 @@ def plot_nd_quicklook(
         ax.set_xlabel("")
         ax.set_ylabel("")
 
-        # Add rain rate on secondary axis
+        #### - Add rain rate on secondary axis
         if add_r:
             ax_r = ax.twinx()
             ds_slice["R"].plot(
@@ -428,8 +451,18 @@ def plot_nd_quicklook(
             )
             # Always remove xarray default title
             ax_r.set_title("")
-            ax_r.set_ylim(r_lim)
             ax_r.set_yscale(r_scale)
+            # Display playnumbers instead of scientific notation
+            ax_r.set_ylim(r_lim)
+            yticks = ax_r.get_yticks()
+            ytick_labels = [f"{t:g}" for t in yticks]
+            print(yticks)
+            print(ytick_labels)
+            ax_r.set_yticks(yticks)
+            ax_r.set_yticklabels(ytick_labels)
+
+            # Enforce ylim
+            ax_r.set_ylim(r_lim)
             # Remove ylabel from all individual axes
             ax_r.set_ylabel("")
             ax_r.tick_params(axis="y", labelcolor=r_color)
@@ -440,7 +473,7 @@ def plot_nd_quicklook(
 
         ax.set_ylim(*d_lim)
 
-        # Add rain type strip at the top of the subplot as inset axes
+        #### - Add rain type strip at the top of the subplot as inset axes
         if add_rain_type and add_rain_type in ds_slice:
             # Get rain_type values for this time slice
             rain_type = ds_slice[add_rain_type]
@@ -492,6 +525,12 @@ def plot_nd_quicklook(
 
     # ---------------------------------------------------------------
     #### - Add title
+    # Format duration as "XhYmin" or "Xmin"
+    total_minutes = int(duration.total_seconds() / 60)
+    hours = total_minutes // 60
+    minutes = total_minutes % 60
+    duration_str = f"{hours}H{minutes:02d}MIN" if hours > 0 else f"{minutes}MIN"
+
     # Format title based on whether dates are the same
     t_start_dt = time_bins[0]
     t_end_dt = time_bins[n_slices]
@@ -502,11 +541,27 @@ def plot_nd_quicklook(
         # Different dates: show full datetime for both
         title_str = f"{t_start_dt.strftime('%Y-%m-%d %H:%M')} - {t_end_dt.strftime('%Y-%m-%d %H:%M')} UTC"
 
-    # Set title
+    # Set center title
     axes[0].set_title(
         title_str,
         fontsize=14,
         fontweight="bold",
+        loc="center",
+    )
+
+    # Add left title with Rmax and Ptot
+    left_title_str = f"$R_{{max}}$={r_max:.1f} mm/h  $P_{{tot}}$={p_tot:.1f} mm"
+    axes[0].set_title(
+        left_title_str,
+        fontsize=13,
+        loc="left",
+    )
+
+    # Add right title with event duration
+    axes[0].set_title(
+        duration_str,
+        fontsize=13,
+        loc="right",
     )
 
     # --------------------------------------------------------------
@@ -565,7 +620,7 @@ def plot_nd_quicklook(
             fc="white",
             ec="none",
             lw=0.5,
-            alpha=0.8,
+            alpha=0.9,
             shape="square",
             zorder=fancybox_zorder,
         )
