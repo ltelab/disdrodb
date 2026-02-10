@@ -277,9 +277,12 @@ def plot_nd_quicklook(
     add_r=True,
     r_lim=(0.1, 200),
     r_scale="log",
-    r_color="slategrey",
+    r_color="black",
     r_alpha=1,
-    r_linewidth=1.2,
+    r_linewidth=1.8,
+    r_linestyle=":",
+    # Figure options
+    dpi=300,
 ):
     """Display multi-rows quicklook of N(D)."""
     from pycolorbar.utils.mpl_legend import add_fancybox, get_tightbbox_position
@@ -357,7 +360,7 @@ def plot_nd_quicklook(
     #### - Define figure with GridSpec
     # - If cbar_as_legend=False: reserve extra row for colorbar
     # - If cbar_as_legend=True: no extra row needed
-    fig = plt.figure(figsize=(14, 2.8 * n_slices))
+    fig = plt.figure(figsize=(14, 2.8 * n_slices), dpi=dpi)
 
     if cbar_as_legend:
         # No extra row for colorbar
@@ -447,6 +450,7 @@ def plot_nd_quicklook(
                 color=r_color,
                 alpha=r_alpha,
                 linewidth=r_linewidth,
+                linestyle=r_linestyle,
                 label="R",
             )
             # Always remove xarray default title
@@ -456,8 +460,6 @@ def plot_nd_quicklook(
             ax_r.set_ylim(r_lim)
             yticks = ax_r.get_yticks()
             ytick_labels = [f"{t:g}" for t in yticks]
-            print(yticks)
-            print(ytick_labels)
             ax_r.set_yticks(yticks)
             ax_r.set_yticklabels(ytick_labels)
 
@@ -482,8 +484,8 @@ def plot_nd_quicklook(
             if rain_type_colors is None:
                 rain_type_colors = {
                     0: "none",  # No precipitation
-                    1: "lightblue",  # Stratiform
-                    2: "orange",  # Convective
+                    1: "dodgerblue",  # Stratiform
+                    2: "orangered",  # Convective
                 }
 
             # Create inset axes at the top (sharing x-axis with main plot)
@@ -514,10 +516,17 @@ def plot_nd_quicklook(
                 norm=norm_rain,
                 shading="flat",
             )
+            # Add 'axis' line
+            ax_rain.axhline(
+                y=0,
+                color="black",
+                linewidth=0.8,
+                alpha=1.0,
+            )
 
-            # clean up
+            # Remove ticks and ticklabels
             ax_rain.set_yticks([])
-            ax_rain.tick_params(axis="x", labelbottom=False)
+            ax_rain.xaxis.set_visible(False)
             for spine in ax_rain.spines.values():
                 spine.set_visible(False)
 
@@ -588,13 +597,30 @@ def plot_nd_quicklook(
 
     # --------------------------------------------------------------
     #### - Add legend
-    axes[0].legend(loc="upper left", fontsize=12, frameon=True, fancybox=False, edgecolor="black")
+    # Collect legend handles from both axes
+    handles, labels = ax.get_legend_handles_labels()
+
+    if add_r:
+        handles_r, labels_r = ax_r.get_legend_handles_labels()
+        handles += handles_r
+        labels += labels_r
+
+    axes[0].legend(
+        handles,
+        labels,
+        loc="upper left",
+        bbox_to_anchor=(0, 0.98),
+        fontsize=12,
+        frameon=True,
+        fancybox=False,
+        edgecolor="black",
+    )
 
     # --------------------------------------------------------------
     #### - Add colorbar
     if cbar_as_legend:
         # Add colorbar as a legend in the last subplot with background box
-        cax = axes[-1].inset_axes([0.73, 0.72, 0.25, 0.12])  # [x, y, width, height] in axes coords
+        cax = axes[-1].inset_axes([0.73, 0.70, 0.25, 0.12])  # [x, y, width, height] in axes coords
 
         # # Raise z-order so the colorbar is on top and fancybox behind
         fancybox_zorder = cax.get_zorder() + 1
@@ -639,6 +665,9 @@ def plot_nd_quicklook(
             extend="max",
         )
         cbar.set_label(cbar_label, fontsize=11)
+
+    # Return figure
+    return fig
 
 
 ####-------------------------------------------------------------------------------------------------------

@@ -51,7 +51,7 @@ class TestNearestNeighbourLUT2D:
         assert lut.columns == ["value1", "value2"]
         assert lut.dtype == np.float32
         assert lut.points.shape == (6, 2)
-        assert lut.to_numpy().shape == (6, 2)
+        assert lut.values.shape == (6, 2)  # noqa: PD011
 
     def test_init_with_default_columns(self, sample_df):
         """Test initialization with default columns (all columns)."""
@@ -63,7 +63,7 @@ class TestNearestNeighbourLUT2D:
         lut = NearestNeighbourLUT2D(sample_df, "x", "y", columns=["value1"], dtype=np.float64)
         assert lut.dtype == np.float64
         assert lut.points.dtype == np.float64
-        assert lut.to_numpy().dtype == np.float64
+        assert lut.values.dtype == np.float64  # noqa: PD011
 
     def test_init_with_index_reset(self):
         """Test initialization when x is in DataFrame index."""
@@ -170,7 +170,7 @@ class TestNearestNeighbourLUT2D:
         assert loaded_lut.y == lut.y
         assert loaded_lut.columns == lut.columns
         assert np.array_equal(loaded_lut.points, lut.points)
-        assert np.array_equal(loaded_lut.to_numpy(), lut.to_numpy())
+        assert np.array_equal(loaded_lut.values, lut.values)
 
     def test_save_lut_preserves_functionality(self, lut, tmp_path):
         """Test that loaded LUT produces same predictions as original."""

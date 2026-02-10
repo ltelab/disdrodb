@@ -36,7 +36,7 @@ from scipy.optimize import curve_fit
 import disdrodb
 from disdrodb.api.path import define_station_dir
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
-from disdrodb.l2.empirical_dsd import get_drop_average_velocity
+from disdrodb.l2.empirical_dsd import bringi_nw_dm_classification, get_drop_average_velocity
 from disdrodb.scattering import RADAR_OPTIONS
 from disdrodb.utils.dataframe import compute_2d_histogram, log_arange
 from disdrodb.utils.event import group_timesteps_into_event
@@ -51,6 +51,7 @@ from disdrodb.utils.yaml import write_yaml
 from disdrodb.viz.plots import (
     compute_dense_lines,
     max_blend_images,
+    plot_nd_quicklook,
     plot_raw_and_filtered_spectra,
     plot_spectrum,
     to_rgba,
@@ -3927,6 +3928,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
 
     # ---------------------------------------------------------------------.
     #### Create table with events summary
+    table_events_summary = None
     if not temporal_resolution.startswith("ROLL"):
         table_events_summary = create_table_events_summary(df, temporal_resolution=temporal_resolution)
         if len(table_events_summary) > 0:
@@ -4018,6 +4020,100 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             caption="DSD Summary",
             orientation="portrait",  # "landscape",
         )
+
+    ####---------------------------------------------------------------------.
+    #### Create events quicklooks
+    if table_events_summary is not None:
+        # Define number of quicklooks
+        n_quicklooks = 10
+
+        # Create quicklooks for Rmax
+        table_events_summary = table_events_summary.sort_values(by="max_R", ascending=False)
+
+        for i in range(min(n_quicklooks, len(table_events_summary))):
+            event_stats = table_events_summary.iloc[i]
+            if event_stats["duration"] >= 10:  # minimum 10 minutes
+                ds_event = ds.sel(time=slice(event_stats["start_time"], event_stats["end_time"]))
+                ds_event["rain_type"] = bringi_nw_dm_classification(ds_event["Dm"], ds_event["Nw"])
+
+                # Plot quicklook
+                fig = plot_nd_quicklook(
+                    ds_event,
+                    # Plot layout
+                    hours_per_slice=3,
+                    max_rows=6,
+                    aligned=False,
+                    verbose=False,
+                    cbar_as_legend=True,
+                    add_rain_type="rain_type",
+                    d_lim=(0.3, 7),
+                    # Figure options
+                    dpi=300,
+                )
+
+                # Create quicklooks directory
+                quicklook_dir = os.path.join(summary_dir_path, "Quicklooks_Rmax")
+                os.makedirs(quicklook_dir, exist_ok=True)
+
+                # Define quicklooks filename
+                rmax = event_stats["max_R"]
+                start_time_str = event_stats["start_time"].strftime("%Y%m%dT%H%M%S")
+                end_time_str = event_stats["end_time"].strftime("%Y%m%dT%H%M%S")
+                quicklook_filename = define_filename(
+                    prefix=f"Quicklook_Rmax_{rmax:.0f}_{start_time_str}_{end_time_str}",
+                    extension="png",
+                    data_source=data_source,
+                    campaign_name=campaign_name,
+                    station_name=station_name,
+                    temporal_resolution=temporal_resolution,
+                )
+                quicklook_filepath = os.path.join(quicklook_dir, quicklook_filename)
+                fig.savefig(quicklook_filepath, bbox_inches="tight")
+                plt.close()
+
+        # Create quicklooks for P_total
+        table_events_summary = table_events_summary.sort_values(by="P_total", ascending=False)
+
+        for i in range(min(n_quicklooks, len(table_events_summary))):
+            event_stats = table_events_summary.iloc[i]
+            if event_stats["duration"] >= 10:  # minimum 10 minutes
+                ds_event = ds.sel(time=slice(event_stats["start_time"], event_stats["end_time"]))
+                ds_event["rain_type"] = bringi_nw_dm_classification(ds_event["Dm"], ds_event["Nw"])
+
+                # Plot quicklook
+                fig = plot_nd_quicklook(
+                    ds_event,
+                    # Plot layout
+                    hours_per_slice=3,
+                    max_rows=6,
+                    aligned=False,
+                    verbose=False,
+                    cbar_as_legend=True,
+                    add_rain_type="rain_type",
+                    d_lim=(0.3, 7),
+                    # Figure options
+                    dpi=300,
+                )
+
+                # Create quicklooks directory
+                quicklook_dir = os.path.join(summary_dir_path, "Quicklooks_Ptot")
+                os.makedirs(quicklook_dir, exist_ok=True)
+
+                # Define quicklooks filename
+                p_tot = event_stats["P_total"]
+                start_time_str = event_stats["start_time"].strftime("%Y%m%dT%H%M%S")
+                end_time_str = event_stats["end_time"].strftime("%Y%m%dT%H%M%S")
+                quicklook_filename = define_filename(
+                    prefix=f"Quicklook_P_tot_{p_tot:.0f}_{start_time_str}_{end_time_str}",
+                    extension="png",
+                    data_source=data_source,
+                    campaign_name=campaign_name,
+                    station_name=station_name,
+                    temporal_resolution=temporal_resolution,
+                )
+                quicklook_filepath = os.path.join(quicklook_dir, quicklook_filename)
+                fig.savefig(quicklook_filepath, bbox_inches="tight")
+                plt.close()
 
     #### ---------------------------------------------------------------------.
     #### Create L2E RADAR Summary Plots
