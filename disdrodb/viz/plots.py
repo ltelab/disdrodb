@@ -964,11 +964,13 @@ def normalize_array(arr, method="max"):
         Input array.
     method : str
         Normalization method. Options:
+
         - 'max'  : Divide by the maximum value.
         - 'minmax': Scale to [0, 1] range.
         - 'zscore': Standardize to mean 0, std 1.
         - 'log'  : Apply log10 transform (shifted if min <= 0).
         - 'none' : No normalization (return original array).
+
 
     Returns
     -------
@@ -1016,12 +1018,14 @@ def _np_to_rgba_alpha(arr, cmap="viridis", cmap_norm=None, scaling="linear"):
         The default is Normalize(vmin, vmax).
     scaling : str, optional
         Scaling type for alpha mapping:
+
         - "linear"   : min-max normalization
         - "log"      : logarithmic normalization (positive values only)
         - "sqrt"     : square-root (power-law with exponent=0.5)
         - "exp"      : exponential scaling
         - "quantile" : percentile-based scaling
         - "none"     : full opacity (alpha=1)
+
 
     Returns
     -------

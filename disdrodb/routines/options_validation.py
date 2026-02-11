@@ -146,8 +146,10 @@ def validate_temporal_resolution_consistency(products_configs_dir):
     Validate temporal resolution consistency across products for each sensor.
 
     Raises warnings if:
+
     - L1 temporal_resolutions doesn't include all L2E and L2M temporal resolutions
     - L2E temporal_resolutions doesn't include all L2M temporal resolutions
+
     """
     sensor_names = available_sensor_names()
     for sensor_name in sensor_names:

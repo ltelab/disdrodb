@@ -72,6 +72,7 @@ def split_into_events(
         - numeric variable if ``threshold`` is not None
         - boolean variable if ``threshold`` is None
 
+
     threshold : int or float or None, optional
         Threshold used to define candidate timesteps.
 
@@ -87,9 +88,9 @@ def split_into_events(
         The minimum number of neighboring timesteps required within `neighbor_time_interval` for a
         timestep to be considered non-isolated.  Isolated timesteps are removed !
 
-        - If `neighbor_min_size=0,  then no timestep is considered isolated and no filtering occurs.
-        - If `neighbor_min_size=1`, the timestep must have at least one neighbor within `neighbor_time_interval`.
-        - If `neighbor_min_size=2`, the timestep must have at least two timesteps within `neighbor_time_interval`.
+        - If ``neighbor_min_size=0``, then no timestep is considered isolated and no filtering occurs.
+        - If ``neighbor_min_size=1``, the timestep must have at least one neighbor within ``neighbor_time_interval``.
+        - If ``neighbor_min_size=2``, the timestep must have at least two timesteps within ``neighbor_time_interval``.
 
         Defaults to 2.
     event_max_time_gap: str
@@ -250,9 +251,9 @@ def group_timesteps_into_event(
         The minimum number of neighboring timesteps required within `neighbor_time_interval` for a
         timestep to be considered non-isolated.  Isolated timesteps are removed !
 
-        - If `neighbor_min_size=0,  then no timestep is considered isolated and no filtering occurs.
-        - If `neighbor_min_size=1`, the timestep must have at least one neighbor within `neighbor_time_interval`.
-        - If `neighbor_min_size=2`, the timestep must have at least two timesteps within `neighbor_time_interval`.
+        - If ``neighbor_min_size=0``, then no timestep is considered isolated and no filtering occurs.
+        - If ``neighbor_min_size=1``, the timestep must have at least one neighbor within ``neighbor_time_interval``.
+        - If ``neighbor_min_size=2``, the timestep must have at least two timesteps within ``neighbor_time_interval``.
 
         Defaults to 1.
     event_max_time_gap: str
@@ -331,9 +332,9 @@ def remove_isolated_timesteps(timesteps, neighbor_min_size, neighbor_time_interv
         The minimum number of neighboring timesteps required within `neighbor_time_interval` for a
         timestep to be considered non-isolated.
 
-        - If `neighbor_min_size=0,  then no timestep is considered isolated and no filtering occurs.
-        - If `neighbor_min_size=1`, the timestep must have at least one neighbor within `neighbor_time_interval`.
-        - If `neighbor_min_size=2`, the timestep must have at least two timesteps within `neighbor_time_interval`.
+        - If ``neighbor_min_size=0``, then no timestep is considered isolated and no filtering occurs.
+        - If ``neighbor_min_size=1``, the timestep must have at least one neighbor within ``neighbor_time_interval``.
+        - If ``neighbor_min_size=2``, the timestep must have at least two timesteps within ``neighbor_time_interval``.
 
         Defaults to 1.
 

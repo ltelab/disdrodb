@@ -55,12 +55,14 @@ def define_configs(
     folder_partitioning : str
         The folder partitioning scheme used in the DISDRODB Data Archive.
         Allowed values are:
+
         - "": No additional subdirectories, files are saved directly in <station_dir>.
         - "year": Files are stored under a subdirectory for the year (<station_dir>/2025).
         - "year/month": Files are stored under subdirectories by year and month (<station_dir>/2025/04).
         - "year/month/day": Files are stored under subdirectories by year, month and day (<station_dir>/2025/04/01).
         - "year/month_name": Files are stored under subdirectories by year and month name (<station_dir>/2025/April).
         - "year/quarter": Files are stored under subdirectories by year and quarter (<station_dir>/2025/Q2).
+
     zenodo_token: str
         Zenodo Access Token. It is required to upload stations data to Zenodo.
     zenodo_sandbox_token: str

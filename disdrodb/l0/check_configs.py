@@ -146,7 +146,7 @@ class L0BEncodingSchema(CustomBaseModel):
     # if contiguous = True, then zlib must be set to False
     @model_validator(mode="before")
     def check_contiguous_and_zlib(cls, values):
-        """Check the the compression value validity."""
+        """Check the compression value validity."""
         contiguous = values.get("contiguous")
         zlib = values.get("zlib")
         if contiguous and zlib:

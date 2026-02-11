@@ -669,8 +669,8 @@ def write_l0a(
         Output file path.
     force : bool, optional
         Whether to overwrite existing data.
-        If ``True``, overwrite existing data into destination directories.
-        If ``False``, raise an error if there are already data into destination directories. This is the default.
+        If ``True``, overwrite existing data in destination directories.
+        If ``False``, raise an error if there are already data in destination directories. This is the default.
     verbose : bool, optional
         Whether to verbose the processing. The default is ``False``.
 

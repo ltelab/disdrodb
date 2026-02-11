@@ -320,18 +320,22 @@ def ensure_sample_interval_in_seconds(sample_interval):  # noqa: PLR0911
     sample_interval : int, numpy.ndarray, xarray.DataArray, or numpy.timedelta64
         The sample interval to be converted to seconds.
         It can be:
+
         - An integer representing the interval in seconds.
         - A numpy array or xarray DataArray of integers representing intervals in seconds.
         - A numpy.timedelta64 object representing the interval.
         - A numpy array or xarray DataArray of numpy.timedelta64 objects representing intervals.
 
+
     Returns
     -------
     int, numpy.ndarray, or xarray.DataArray
         The sample interval converted to seconds. The return type matches the input type:
+
         - If the input is an integer, the output is an integer.
         - If the input is a numpy array, the output is a numpy array of integers (unless NaN is present)
         - If the input is an xarray DataArray, the output is an xarray DataArray of integers (unless NaN is present).
+
 
     """
     # Deal with timedelta objects

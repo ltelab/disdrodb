@@ -890,11 +890,13 @@ def get_exponential_parameters(
     ds : xarray.Dataset
         Input dataset containing drop number concentration data and diameter information.
         It must include the following variables:
+
         - ``drop_number_concentration``: The number concentration of drops.
         - ``diameter_bin_width``": The width of each diameter bin.
         - ``diameter_bin_lower``: The lower bounds of the diameter bins.
         - ``diameter_bin_upper``: The upper bounds of the diameter bins.
         - ``diameter_bin_center``: The center values of the diameter bins.
+
     probability_method : str, optional
         Method to compute probabilities. The default value is ``cdf``.
     likelihood : str, optional
@@ -908,9 +910,12 @@ def get_exponential_parameters(
     -------
     xarray.Dataset
         Dataset containing the estimated expontial distribution parameters:
+
         - ``N0``: Intercept parameter.
         - ``Lambda``: Scale parameter.
+
         The resulting dataset will have an attribute ``disdrodb_psd_model`` set to ``ExponentialPSD``.
+
 
     Notes
     -----
@@ -3793,18 +3798,23 @@ def define_gs_parameters(psd_model, fixed_parameters=None, search_space=None):
     search_space : dict, optional
         Dictionary defining search ranges for parameters.
         Each parameter can have:
+
         - 'min' : float, Minimum value
         - 'max' : float, Maximum value
         - 'step' : float, Step size for linspace interval
+
         Example: {"Lambda": {"min": 0, "max": 10, "step": 0.2}}
 
     Returns
     -------
     dict
         Dictionary with PSD parameter names as keys and values as:
+
         - scalar (int or float)
         - numpy.ndarray for grid search
+
         Empty dict if both inputs are None or empty
+
 
     """
     # Check validity of inputs

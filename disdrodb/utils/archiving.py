@@ -151,9 +151,9 @@ def identify_events(
         The minimum number of neighboring timesteps required within `neighbor_time_interval` for a
         timestep to be considered non-isolated.  Isolated timesteps are removed !
 
-        - If `neighbor_min_size=0,  then no timestep is considered isolated and no filtering occurs.
-        - If `neighbor_min_size=1`, the timestep must have at least one neighbor within `neighbor_time_interval`.
-        - If `neighbor_min_size=2`, the timestep must have at least two timesteps within `neighbor_time_interval`.
+        - If ``neighbor_min_size=0``, then no timestep is considered isolated and no filtering occurs.
+        - If ``neighbor_min_size=1``, the timestep must have at least one neighbor within `neighbor_time_interval`.
+        - If ``neighbor_min_size=2``, the timestep must have at least two timesteps within `neighbor_time_interval`.
 
         Defaults to 1.
     event_max_time_gap: str
@@ -384,6 +384,7 @@ def group_files_by_temporal_partitions(
     -------
     list of dict
         A list where each element is a dictionary containing:
+
         - 'start_time': Adjusted start time of the event (`datetime.datetime64`).
         - 'end_time': Adjusted end time of the event (`datetime.datetime64`).
         - 'filepaths': List of file paths overlapping with the adjusted event period.
@@ -429,6 +430,7 @@ def group_files_by_time_block(filepaths, freq="day", tolerance_seconds=120):
     -------
     list of dict
         A list where each element is a dictionary containing:
+
         - 'start_time': Adjusted start time of the event (`datetime.datetime64`).
         - 'end_time': Adjusted end time of the event (`datetime.datetime64`).
         - 'filepaths': List of file paths overlapping with the adjusted event period.

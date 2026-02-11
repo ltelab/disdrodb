@@ -160,8 +160,10 @@ def create_product_directory(
     """Initialize the directory structure for a DISDRODB product.
 
     If product files already exists:
-    - If ``force=True``, it remove all existing data inside the product directory.
-    - If ``force=False``, it raise an error.
+
+    - If ``force=True``, it removes all existing data inside the product directory.
+    - If ``force=False``, it raises an error.
+
     """
     # NOTE: ``force=False`` behaviour could be changed to enable updating of missing files.
     # This would require also adding code to check whether a downstream file already exist.

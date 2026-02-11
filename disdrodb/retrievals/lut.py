@@ -159,9 +159,11 @@ class NearestNeighbourLUT2D:
             Default is False.
         max_distance : float, tuple of float, or None, optional
             Maximum distance threshold for valid predictions.
+
             - If None: no distance masking is applied.
             - If float: points with Euclidean distance > max_distance are set to NaN.
             - If tuple (dx, dy): points are masked if |x - x_nearest| > dx OR |y - y_nearest| > dy.
+
             Default is None.
 
         Returns

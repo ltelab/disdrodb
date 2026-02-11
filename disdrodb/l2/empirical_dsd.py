@@ -1585,10 +1585,13 @@ def get_kinetic_energy_variables(
     -------
     xarray.Dataset
         Xarray Dataset with relevant rainfall kinetic energy variables:
+
         - TKE: Total Kinetic Energy [J/m2]
         - KED: Kinetic Energy per unit rainfall Depth [J·m⁻²·mm⁻¹]. Typical values range between 0 and 40 J·m⁻²·mm⁻¹.
         - KEF: Kinetic Energy Flux [J·m⁻²·h⁻¹]. Typical values range between 0 and 5000 J·m⁻²·h⁻¹.
+
         KEF is related to the KED by the rain rate: KED = KEF/R .
+
     """
     # Check velocity DataArray does not have a velocity dimension
     if VELOCITY_DIMENSION in velocity.dims:
@@ -1662,6 +1665,7 @@ def get_kinetic_energy_variables_from_drop_number(
     -------
     xarray.Dataset
         Xarray Dataset with relevant rainfall kinetic energy variables:
+
         - TKE: Total Kinetic Energy [J/m2]
         - KED: Kinetic Energy per unit rainfall Depth [J·m⁻²·mm⁻¹]. Typical values range between 0 and 40 J·m⁻²·mm⁻¹.
         - KEF: Kinetic Energy Flux [J·m⁻²·h⁻¹]. Typical values range between 0 and 5000 J·m⁻²·h⁻¹.
@@ -1823,6 +1827,7 @@ def compute_integral_parameters(
     -------
     ds : xarray.Dataset
         Dataset containing the computed integral parameters:
+
         - Nt : Total number concentration [#/m3]
         - M1 to M6 : Moments of the drop size distribution
         - Z : Reflectivity factor [dBZ]
@@ -1839,6 +1844,7 @@ def compute_integral_parameters(
         - TKE: Total Kinetic Energy [J/m2]
         - KED: Kinetic Energy per unit rainfall Depth [J·m⁻²·mm⁻¹].
         - KEF: Kinetic Energy Flux [J·m⁻²·h⁻¹].
+
     """
     # Ensure velocity does not contain NaN
     # --> e.g. when D > 10 mm --> Replace to 0
@@ -1976,10 +1982,12 @@ def compute_spectrum_parameters(
     -------
     ds : xarray.Dataset
         Dataset containing the following spectrum:
+
         - KE_spectrum : Kinetic Energy spectrum [J/m2/mm]
         - R_spectrum : Rain Rate spectrum [mm/h/mm]
         - LWC_spectrum : Mass spectrum [g/m3/mm]
         - Z_spectrum : Reflectivity spectrum [dBZ of mm6/m3/mm]
+
     """
     # Ensure velocity does not contain NaN
     # --> e.g. when D > 10 mm --> Replace to 0

@@ -132,11 +132,13 @@ def check_objectives(objectives):
     ----------
     objectives : list of dict
         List of objective dictionaries, each containing:
+
         - 'target' : str, Target variable (N(D), H(x), R, Z, LWC, or M<p>)
         - 'transformation' : str, Transformation type (identity, log, sqrt)
         - 'censoring' : str, Censoring type (none, left, right, both)
         - 'loss' : str, Error metric (SSE, SAE, MAE, MSE, RMSE, etc.)
         - 'loss_weight' : float, optional, Weight for weighted optimization (auto-set to 1.0 for single objective)
+
 
     Returns
     -------
@@ -866,6 +868,7 @@ def compute_loss(
     loss : str
         Loss function.
         If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
+
         - ``SSE``: Sum of Squared Errors
         - ``SAE``: Sum of Absolute Errors
         - ``MAE``: Mean Absolute Error
@@ -876,9 +879,12 @@ def compute_loss(
         - ``WD``: Wasserstein Distance
         - ``JSD``: Jensen-Shannon Distance
         - ``KS``: Kolmogorov-Smirnov Statistic
+
         If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
         - ``AE``: Absolute Error
         - ``SE``: Squared Error
+
     check_arguments : bool, optional
         If True, validate input arguments. Default is True.
 
