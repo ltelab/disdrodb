@@ -26,6 +26,7 @@ import xarray as xr
 
 from disdrodb.api.checks import check_sensor_name
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
+from disdrodb.utils.manipulations import filter_diameter_bins
 from disdrodb.utils.time import ensure_sample_interval_in_seconds
 from disdrodb.utils.xarray import (
     remove_diameter_coordinates,
@@ -340,6 +341,41 @@ def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sam
     else:
         drop_number_concentration = safe_ratio / (sampling_area * diameter_bin_width * sample_interval)
     return drop_number_concentration
+
+
+def compute_Nt_interval(
+    drop_number_concentration,
+    minimum_diameter=0.0,
+    maximum_diameter=None,
+):
+    r"""Compute number concentration over a specified diameter interval.
+
+    Parameters
+    ----------
+    drop_number_concentration : xarray.DataArray
+        Drop number concentration N(D) [m⁻³ mm⁻¹].
+    diameter_bin_width : xarray.DataArray
+        Diameter bin width ΔD [mm].
+    minimum_diameter : float
+        Lower diameter bound (mm), exclusive.
+    maximum_diameter : float or None
+        Upper diameter bound (mm), inclusive.
+        If None, integrates over D > D_min.
+    diameter_coord : str
+        Name of the diameter coordinate.
+
+    Returns
+    -------
+    Nt : xarray.DataArray
+        Number concentration N_t [m⁻³] over the specified interval.
+    """
+    drop_number_concentration = filter_diameter_bins(
+        drop_number_concentration,
+        minimum_diameter=minimum_diameter,
+        maximum_diameter=maximum_diameter,
+    )
+    diameter_bin_width = drop_number_concentration["diameter_bin_width"]
+    return get_total_number_concentration(drop_number_concentration, diameter_bin_width=diameter_bin_width)
 
 
 def get_total_number_concentration(drop_number_concentration, diameter_bin_width):

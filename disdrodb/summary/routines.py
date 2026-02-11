@@ -3783,7 +3783,8 @@ def prepare_summary_dataset(ds, velocity_method="theoretical_velocity", source="
             ds = ds.isel({dim: 0})
 
     # Unstack frequency dimension
-    ds = unstack_radar_variables(ds)
+    if "frequency" in ds.dims:
+        ds = unstack_radar_variables(ds)
 
     # For kinetic energy variables, select source="drop_number"
     if "source" in ds.dims:
