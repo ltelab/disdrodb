@@ -134,8 +134,6 @@ def format_string_array(string: str, n_values: int):
     values = values.astype("str")
     # Replace '' with 0
     values = replace_empty_strings_with_zeros(values)
-    # Replace "-9.999" with 0
-    values = np.char.replace(values, "-9.999", "0")
     # Cast values to float type
     # --> Note: the disk encoding is specified in the l0b_encodings.yml
     values = values.astype(float)
@@ -253,8 +251,14 @@ def retrieve_l0b_arrays(
         # - Option 3: more memory efficient
         n_timesteps = len(df[key])
         arr = np.empty((n_timesteps, n_values), dtype=float)  # preallocates
-        for i, s in enumerate(df[key].astype(str)):
+        for i, s in enumerate(df[key].to_numpy().astype(str)):
             arr[i, :] = format_string_array(s, n_values=n_values)
+
+        if key == "raw_drop_concentration" and sensor_name.startswith("PARSIVEL"):
+            # Convert from log(N(D)) to N(D)
+            mask_valid = arr != -9.999
+            arr[mask_valid] = 10 ** arr[mask_valid]
+            arr[~mask_valid] = 0.0
 
         # Retrieve dimensions
         dims_order = dims_order_dict[key]

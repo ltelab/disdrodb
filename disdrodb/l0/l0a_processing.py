@@ -473,7 +473,9 @@ def replace_nan_flags(df, sensor_name, logger=None, verbose=False):
         # If the variable is in the dataframe
         if var in df:
             # Get array with occurrence of nan_flags
-            is_a_nan_flag = df[var].isin(nan_flags)
+            is_a_nan_flag = np.logical_or.reduce(
+                [np.isclose(df[var], v) for v in nan_flags],
+            )
             # If nan_flags values are present, replace with np.nan
             n_nan_flags_values = np.sum(is_a_nan_flag)
             if n_nan_flags_values > 0:

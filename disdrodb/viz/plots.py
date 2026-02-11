@@ -130,13 +130,13 @@ def _get_nd_variable(xr_obj, variable=None):
          Variable name to extract from the xarray object.
         If xr_obj is a DataArray, will return the DataArray and its name directly'.
         If xr_obj is a Dataset, if None, will search for candidate variables in order:
-        ['drop_number_concentration', 'drop_counts', 'raw_drop_counts', 'raw_particle_counts'].
+        ['drop_number_concentration', 'drop_counts', 'raw_drop_counts', 'raw_particle_counts', 'raw_drop_concentration'].
 
     Returns
     -------
     tuple
         (DataArray, variable_name)
-    """
+    """  # noqa: E501
     if not isinstance(xr_obj, (xr.Dataset, xr.DataArray)):
         raise TypeError("Expecting xarray object as input.")
 
@@ -148,9 +148,10 @@ def _get_nd_variable(xr_obj, variable=None):
         # xr.Dataset provided
         if variable is None:
             # Search for candidate variables
+            l0_variables = ["raw_drop_concentration"]
             l1_variables = ["raw_particle_counts"]
             l2e_variables = ["drop_number_concentration", "drop_counts", "raw_drop_counts"]
-            candidate_variables = [*l2e_variables, *l1_variables]
+            candidate_variables = [*l2e_variables, *l1_variables, *l0_variables]
             for var in candidate_variables:
                 if var in xr_obj:
                     variable = var
@@ -172,7 +173,15 @@ def _get_nd_variable(xr_obj, variable=None):
     return da, variable_name
 
 
-def plot_nd(xr_obj, variable=None, cmap=None, norm=None, yscale="linear", ax=None):
+def plot_nd(
+    xr_obj,
+    variable=None,
+    cmap=None,
+    norm=None,
+    yscale="linear",
+    ax=None,
+    velocity_method="theoretical_velocity",
+):
     """Plot drop number concentration N(D) or drop counts timeseries.
 
     Parameters
@@ -192,12 +201,21 @@ def plot_nd(xr_obj, variable=None, cmap=None, norm=None, yscale="linear", ax=Non
         Scale for y-axis ('linear' or 'log'). Default is 'linear'.
     ax : matplotlib axes, optional
         Axes to plot on.
+    velocity_method : str, optional
+        If the dataset has a velocity_method dimension, select the method to use for plotting.
+        The default is "theoretical_velocity".
 
     Returns
     -------
     matplotlib axes or plot object
     """
+    # Select velocity_method=0 if velocity_method dimension exists (e.g. for L2E products)
+    if velocity_method in xr_obj.dims:
+        xr_obj = xr_obj.sel(velocity_method=velocity_method)
+
+    # Retrieve N(D)
     da_nd, variable_name = _get_nd_variable(xr_obj, variable=variable)
+    da_nd = da_nd.compute()
     labels = _get_nd_labels(variable_name, da=da_nd)
 
     # Check only time and diameter dimensions are specified
@@ -216,9 +234,9 @@ def plot_nd(xr_obj, variable=None, cmap=None, norm=None, yscale="linear", ax=Non
         )
         return ax
 
-    # Regularize input
-    da_nd = da_nd.compute()
-    da_nd = da_nd.disdrodb.regularize()
+    # Regularize input if sample_interval is available to ensure consistent time steps
+    if "sample_interval" in da_nd.coords:
+        da_nd = da_nd.disdrodb.regularize()
 
     # Set 0 values to np.nan
     da_nd = da_nd.where(da_nd > 0)
@@ -261,7 +279,7 @@ def plot_nd_quicklook(
     verbose=True,
     # Spectrum options
     variable="drop_number_concentration",
-    cbar_label="N(D) [# m⁻³ mm⁻¹]",
+    cbar_label="N(D) [# $m^{-3} mm^{-1}$]",
     cmap=None,
     norm=None,
     d_lim=(0.3, 5),
@@ -782,7 +800,7 @@ def plot_spectrum(
     extend="max",
     add_colorbar=True,
     cbar_kwargs=None,
-    title="Drop Spectrum",
+    title=None,
     **plot_kwargs,
 ):
     """Plot the spectrum.
@@ -809,7 +827,7 @@ def plot_spectrum(
     cbar_kwargs : dict, optional
         Additional keyword arguments for colorbar. If None, uses {'label': 'Number of particles '}.
     title : str, optional
-        Title of the plot. Default is 'Drop Spectrum'.
+        Title of the plot. If not provided, defaults to the timestep or time range of the spectrum.
     **plot_kwargs : dict
         Additional keyword arguments passed to xarray's plot.pcolormesh method.
 
@@ -831,10 +849,18 @@ def plot_spectrum(
     # Check if FacetGrid
     is_facetgrid = "col" in plot_kwargs or "row" in plot_kwargs
 
+    # Define start_time and end_time for title if not provided
+    start_time = pd.to_datetime(drop_number.disdrodb.start_time).strftime("%Y-%m-%d %H:%M:%S")
+    end_time = pd.to_datetime(drop_number.disdrodb.end_time).strftime("%Y-%m-%d %H:%M:%S")
+
     # Sum over time dimension if still present
     # - Unless FacetGrid options in plot_kwargs
     if "time" in drop_number.dims and not is_facetgrid:
         drop_number = drop_number.sum(dim="time")
+        if title is None:
+            title = f"{start_time} - {end_time}"
+    elif title is None:
+        title = f"{start_time}"
 
     # Define default cbar_kwargs if not specified
     if cbar_kwargs is None:

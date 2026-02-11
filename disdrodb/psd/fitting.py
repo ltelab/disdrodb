@@ -1036,7 +1036,8 @@ def apply_exponential_gs(
             Valid options:
 
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation
+            - ``"log"`` : Natural logarithm transformation
+            - ``"log10"`` : Base-10 logarithmic transformation
             - ``"sqrt"`` : Square root transformation
 
         censoring : str
@@ -1188,7 +1189,8 @@ def apply_gamma_gs(
             Valid options:
 
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation
+            - ``"log"`` : Natural logarithm transformation
+            - ``"log10"`` : Base-10 logarithmic transformation
             - ``"sqrt"`` : Square root transformation
 
         censoring : str
@@ -1351,7 +1353,8 @@ def apply_generalized_gamma_gs(
             Valid options:
 
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation
+            - ``"log"`` : Natural logarithm transformation
+            - ``"log10"`` : Base-10 logarithmic transformation
             - ``"sqrt"`` : Square root transformation
 
         censoring : str
@@ -1518,7 +1521,8 @@ def apply_lognormal_gs(
             Valid options:
 
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation
+            - ``"log"`` : Natural logarithm transformation
+            - ``"log10"`` : Base-10 logarithmic transformation
             - ``"sqrt"`` : Square root transformation
 
         censoring : str
@@ -1677,7 +1681,8 @@ def apply_normalized_gamma_gs(
             Valid options:
 
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation
+            - ``"log"`` : Natural logarithm transformation
+            - ``"log10"`` : Base-10 logarithmic transformation
             - ``"sqrt"`` : Square root transformation
 
         censoring : str
@@ -1839,7 +1844,8 @@ def apply_normalized_generalized_gamma_gs(
             Valid options:
 
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation
+            - ``"log"`` : Natural logarithm transformation
+            - ``"log10"`` : Base-10 logarithmic transformation
             - ``"sqrt"`` : Square root transformation
 
         censoring : str
@@ -1995,7 +2001,8 @@ def get_exponential_parameters_gs(
             Valid options:
 
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation
+            - ``"log"`` : Natural logarithm transformation
+            - ``"log10"`` : Base-10 logarithmic transformation
             - ``"sqrt"`` : Square root transformation
 
         censoring : str
@@ -2171,7 +2178,8 @@ def get_gamma_parameters_gs(
             Valid options:
 
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation
+            - ``"log"`` : Natural logarithm transformation
+            - ``"log10"`` : Base-10 logarithmic transformation
             - ``"sqrt"`` : Square root transformation
 
         censoring : str
@@ -2360,7 +2368,8 @@ def get_generalized_gamma_parameters_gs(
             Valid options:
 
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation
+            - ``"log"`` : Natural logarithm transformation
+            - ``"log10"`` : Base-10 logarithmic transformation
             - ``"sqrt"`` : Square root transformation
 
         censoring : str
@@ -2549,7 +2558,8 @@ def get_lognormal_parameters_gs(
             Valid options:
 
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation
+            - ``"log"`` : Natural logarithm transformation
+            - ``"log10"`` : Base-10 logarithmic transformation
             - ``"sqrt"`` : Square root transformation
 
         censoring : str
@@ -2726,7 +2736,8 @@ def get_normalized_gamma_parameters_gs(
             Valid options:
 
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation
+            - ``"log"`` : Natural logarithm transformation
+            - ``"log10"`` : Base-10 logarithmic transformation
             - ``"sqrt"`` : Square root transformation
 
         censoring : str
@@ -2928,7 +2939,8 @@ def get_normalized_generalized_gamma_parameters_gs(
             Valid options:
 
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation
+            - ``"log"`` : Natural logarithm transformation
+            - ``"log10"`` : Base-10 logarithmic transformation
             - ``"sqrt"`` : Square root transformation
 
         censoring : str
@@ -3128,7 +3140,8 @@ def fit_ngg_on_normalized_space(
         Valid options:
 
         - ``"identity"`` : No transformation
-        - ``"log"`` : Logarithmic transformation
+        - ``"log"`` : Natural logarithm transformation
+        - ``"log10"`` : Base-10 logarithmic transformation
         - ``"sqrt"`` : Square root transformation
 
     loss : int, optional
@@ -4207,7 +4220,8 @@ def get_gs_parameters(ds, psd_model, fixed_parameters=None, objectives=None, sea
             Transformation applied before computing the error. Valid options:
 
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation
+            - ``"log"`` : Natural logarithm transformation
+            - ``"log10"`` : Base-10 logarithmic transformation
             - ``"sqrt"`` : Square root transformation
 
         - ``"censoring"`` : str
@@ -4439,7 +4453,8 @@ def estimate_model_parameters(
                - ``"transformation"`` : str
                    Transformation applied before computing the error. Valid options:
                    - ``"identity"`` : No transformation
-                   - ``"log"`` : Logarithmic transformation
+                   - ``"log"`` : Natural logarithm transformation
+                   - ``"log10"`` : Base-10 logarithmic transformation
                    - ``"sqrt"`` : Square root transformation
                - ``"censoring"`` : str
                    Censoring applied to observed PSD. Valid options:
