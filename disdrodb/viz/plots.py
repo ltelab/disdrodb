@@ -849,18 +849,22 @@ def plot_spectrum(
     # Check if FacetGrid
     is_facetgrid = "col" in plot_kwargs or "row" in plot_kwargs
 
-    # Define start_time and end_time for title if not provided
-    start_time = pd.to_datetime(drop_number.disdrodb.start_time).strftime("%Y-%m-%d %H:%M:%S")
-    end_time = pd.to_datetime(drop_number.disdrodb.end_time).strftime("%Y-%m-%d %H:%M:%S")
+    # Define start_time and end_time if time coordinate is present
+    if "time" in drop_number.coords:
+        start_time = pd.to_datetime(drop_number.disdrodb.start_time).strftime("%Y-%m-%d %H:%M:%S")
+        end_time = pd.to_datetime(drop_number.disdrodb.end_time).strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        start_time = None
+        end_time = None
 
     # Sum over time dimension if still present
     # - Unless FacetGrid options in plot_kwargs
     if "time" in drop_number.dims and not is_facetgrid:
         drop_number = drop_number.sum(dim="time")
         if title is None:
-            title = f"{start_time} - {end_time}"
+            title = f"{start_time} - {end_time}" if start_time is not None else ""
     elif title is None:
-        title = f"{start_time}"
+        title = f"{start_time}" if start_time is not None else ""
 
     # Define default cbar_kwargs if not specified
     if cbar_kwargs is None:
