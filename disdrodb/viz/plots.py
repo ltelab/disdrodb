@@ -210,7 +210,7 @@ def plot_nd(
     matplotlib axes or plot object
     """
     # Select velocity_method=0 if velocity_method dimension exists (e.g. for L2E products)
-    if velocity_method in xr_obj.dims:
+    if "velocity_method" in xr_obj.dims:
         xr_obj = xr_obj.sel(velocity_method=velocity_method)
 
     # Retrieve N(D)
@@ -245,7 +245,7 @@ def plot_nd(
     if cmap is None:
         cmap = plt.get_cmap("Spectral_r").copy()
 
-    vmin = da_nd.min().item()
+    vmin = np.nanmax(da_nd.min().item(), 1e-8)  # avoid crash with all NaN values
     norm = LogNorm(vmin, None) if norm is None else norm
 
     # Plot N(D) or drop counts

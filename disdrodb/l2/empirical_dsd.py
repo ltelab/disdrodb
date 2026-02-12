@@ -354,15 +354,11 @@ def compute_Nt_interval(
     ----------
     drop_number_concentration : xarray.DataArray
         Drop number concentration N(D) [m⁻³ mm⁻¹].
-    diameter_bin_width : xarray.DataArray
-        Diameter bin width ΔD [mm].
     minimum_diameter : float
         Lower diameter bound (mm), exclusive.
     maximum_diameter : float or None
         Upper diameter bound (mm), inclusive.
         If None, integrates over D > D_min.
-    diameter_coord : str
-        Name of the diameter coordinate.
 
     Returns
     -------

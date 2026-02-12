@@ -468,20 +468,30 @@ def replace_nan_flags(df, sensor_name, logger=None, verbose=False):
     """
     # Get dictionary of nan flags
     dict_nan_flags = get_nan_flags_dict(sensor_name)
+
     # Loop over the needed variable, and replace nan_flags values with np.nan
     for var, nan_flags in dict_nan_flags.items():
-        # If the variable is in the dataframe
-        if var in df:
-            # Get array with occurrence of nan_flags
-            is_a_nan_flag = np.logical_or.reduce(
-                [np.isclose(df[var], v) for v in nan_flags],
-            )
-            # If nan_flags values are present, replace with np.nan
-            n_nan_flags_values = np.sum(is_a_nan_flag)
-            if n_nan_flags_values > 0:
-                msg = f"In variable {var}, {n_nan_flags_values} values were nan_flags and were replaced to np.nan."
-                log_info(logger=logger, msg=msg, verbose=verbose)
-                df.loc[is_a_nan_flag, var] = np.nan
+
+        # If the variable is not in the dataframe, skip it
+        if var not in df:
+            continue
+
+        # Extract column values as numpy array
+        values = df[var].to_numpy()
+
+        # Numeric dtype → use np.isclose
+        if np.issubdtype(values.dtype, np.number):
+            is_a_nan_flag = np.logical_or.reduce(np.isclose(values, v) for v in nan_flags)
+        else:
+            # Non-numeric → use isin
+            is_a_nan_flag = np.isin(values, nan_flags)
+
+        # If nan_flags values are present, replace with np.nan
+        n_nan_flags_values = np.sum(is_a_nan_flag)
+        if n_nan_flags_values > 0:
+            msg = f"In variable {var}, {n_nan_flags_values} values were nan_flags and were replaced to np.nan."
+            log_info(logger=logger, msg=msg, verbose=verbose)
+            df.loc[is_a_nan_flag, var] = np.nan
     # Return dataframe
     return df
 

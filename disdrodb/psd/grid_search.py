@@ -452,7 +452,7 @@ def apply_transformation(obs, pred, transformation):
     pred : numpy.ndarray
         Predicted values
     transformation : str
-        Transformation type: 'identity', 'log',, 'log10', or 'sqrt'.
+        Transformation type: 'identity', 'log', 'log10', or 'sqrt'.
 
     Returns
     -------

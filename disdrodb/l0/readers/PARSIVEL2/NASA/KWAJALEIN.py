@@ -81,23 +81,20 @@ def reader(
     # Retrieve time and telegram field
     df = df["TO_PARSE"].str.split(" ", expand=True, n=6)
     df.columns = ["year", "month", "day", "dummy", "hour", "minute", "TO_BE_JOINED"]
-    
+
     # Create datetime rounded to minute (seconds default to 00)
-    df['time'] = pd.to_datetime(
-    df[['year', 'month', 'day', 'hour', 'minute']]
+    df["time"] = pd.to_datetime(
+        df[["year", "month", "day", "hour", "minute"]],
     )
     # Define seconds (consecutive 5 rows with same minute --> infer 10 seconds increments)
-    df['second'] = df.groupby('time').cumcount() * 10
-    df['time'] = df['time'] + pd.to_timedelta(df['second'], unit='s')
-    
-    # Join raw drop number 
+    df["second"] = df.groupby("time").cumcount() * 10
+    df["time"] = df["time"] + pd.to_timedelta(df["second"], unit="s")
+
+    # Join raw drop number
     df["raw_drop_number"] = df["TO_BE_JOINED"].str.replace(" ", ",").str.strip(",")
 
     # Drop columns not agreeing with DISDRODB L0 standards
     df = df.drop(columns=["year", "month", "day", "hour", "minute", "second", "dummy", "TO_BE_JOINED"])
-    
+
     # Return the dataframe adhering to DISDRODB L0 standards
     return df
-    
-    
-    
