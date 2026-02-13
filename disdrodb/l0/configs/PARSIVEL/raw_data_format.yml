@@ -62,7 +62,7 @@ reflectivity_32bit:
   data_range:
     - -9.999
     - 99.999
-  nan_flags: 99.999
+  nan_flags: [99.999, -9.999]
   field_number: "07"
 mor_visibility:
   n_digits: 4

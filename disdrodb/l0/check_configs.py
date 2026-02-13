@@ -146,7 +146,7 @@ class L0BEncodingSchema(CustomBaseModel):
     # if contiguous = True, then zlib must be set to False
     @model_validator(mode="before")
     def check_contiguous_and_zlib(cls, values):
-        """Check the the compression value validity."""
+        """Check the compression value validity."""
         contiguous = values.get("contiguous")
         zlib = values.get("zlib")
         if contiguous and zlib:
@@ -258,7 +258,7 @@ class RawDataFormatSchema(CustomBaseModel):
     n_decimals: int | None
     n_naturals: int | None
     data_range: list[float] | None
-    nan_flags: int | float | str | None = None
+    nan_flags: int | float | str | list | None = None
     valid_values: list[float] | None = None
     dimension_order: list[str] | None = None
     n_values: int | None = None

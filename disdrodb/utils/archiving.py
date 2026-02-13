@@ -58,12 +58,14 @@ def generate_time_blocks(
         End of the overall time range. Inclusive by default (see inclusive_end_time argument).
     freq : str
         Frequency specifier. Accepted values are:
+
         - 'none'    : return a single block [start_time, end_time]
         - 'day'     : split into daily blocks
         - 'month'   : split into calendar months
         - 'quarter' : split into calendar quarters
         - 'year'    : split into calendar years
         - 'season'  : split into meteorological seasons (MAM, JJA, SON, DJF)
+
     inclusive_end_time: bool
         The default is True.
         If False, if the last block end_time is equal to input end_time, such block is removed.
@@ -148,9 +150,11 @@ def identify_events(
     neighbor_min_size : int, optional
         The minimum number of neighboring timesteps required within `neighbor_time_interval` for a
         timestep to be considered non-isolated.  Isolated timesteps are removed !
-        - If `neighbor_min_size=0,  then no timestep is considered isolated and no filtering occurs.
-        - If `neighbor_min_size=1`, the timestep must have at least one neighbor within `neighbor_time_interval`.
-        - If `neighbor_min_size=2`, the timestep must have at least two timesteps within `neighbor_time_interval`.
+
+        - If ``neighbor_min_size=0``, then no timestep is considered isolated and no filtering occurs.
+        - If ``neighbor_min_size=1``, the timestep must have at least one neighbor within `neighbor_time_interval`.
+        - If ``neighbor_min_size=2``, the timestep must have at least two timesteps within `neighbor_time_interval`.
+
         Defaults to 1.
     event_max_time_gap: str
         The maximum time interval between two timesteps to be considered part of the same event.
@@ -164,10 +168,12 @@ def identify_events(
     -------
     list of dict
         A list of events, where each event is represented as a dictionary with keys:
+
         - "start_time": np.datetime64, start time of the event
         - "end_time": np.datetime64, end time of the event
         - "duration": np.timedelta64, duration of the event
         - "n_timesteps": int, number of valid timesteps in the event
+
     """
     # Open datasets in parallel
     ds = open_netcdf_files(filepaths, variables=["time", variable], parallel=parallel, compute=True)
@@ -179,7 +185,9 @@ def identify_events(
     if "sample_interval" in ds:
         sample_interval = ds["sample_interval"].compute().item()
         if temporal_resolution_to_seconds(neighbor_time_interval) < sample_interval:
-            msg = "'neighbor_time_interval' must be at least equal to the dataset sample interval ({sample_interval} s)"
+            msg = (
+                f"'neighbor_time_interval' must be at least equal to the dataset sample interval ({sample_interval} s)"
+            )
             raise ValueError(msg)
 
     # Define event list
@@ -376,6 +384,7 @@ def group_files_by_temporal_partitions(
     -------
     list of dict
         A list where each element is a dictionary containing:
+
         - 'start_time': Adjusted start time of the event (`datetime.datetime64`).
         - 'end_time': Adjusted end time of the event (`datetime.datetime64`).
         - 'filepaths': List of file paths overlapping with the adjusted event period.
@@ -421,6 +430,7 @@ def group_files_by_time_block(filepaths, freq="day", tolerance_seconds=120):
     -------
     list of dict
         A list where each element is a dictionary containing:
+
         - 'start_time': Adjusted start time of the event (`datetime.datetime64`).
         - 'end_time': Adjusted end time of the event (`datetime.datetime64`).
         - 'filepaths': List of file paths overlapping with the adjusted event period.

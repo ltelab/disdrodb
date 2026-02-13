@@ -149,7 +149,7 @@ list_particles:
 raw_drop_concentration:
   description: Particle number concentrations per diameter class
   long_name: Raw drop concentration
-  units: log10 1/(m3*mm)
+  units: 1/(m3*mm)
 raw_drop_average_velocity:
   description: Average particle velocities for each diameter class
   long_name: Raw drop average velocity

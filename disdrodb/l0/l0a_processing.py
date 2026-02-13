@@ -21,6 +21,7 @@ import os
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 
 from disdrodb.l0.check_standards import check_l0a_column_names, check_l0a_standards
 from disdrodb.l0.l0b_processing import infer_split_str
@@ -468,18 +469,29 @@ def replace_nan_flags(df, sensor_name, logger=None, verbose=False):
     """
     # Get dictionary of nan flags
     dict_nan_flags = get_nan_flags_dict(sensor_name)
+
     # Loop over the needed variable, and replace nan_flags values with np.nan
     for var, nan_flags in dict_nan_flags.items():
-        # If the variable is in the dataframe
-        if var in df:
-            # Get array with occurrence of nan_flags
-            is_a_nan_flag = df[var].isin(nan_flags)
-            # If nan_flags values are present, replace with np.nan
-            n_nan_flags_values = np.sum(is_a_nan_flag)
-            if n_nan_flags_values > 0:
-                msg = f"In variable {var}, {n_nan_flags_values} values were nan_flags and were replaced to np.nan."
-                log_info(logger=logger, msg=msg, verbose=verbose)
-                df.loc[is_a_nan_flag, var] = np.nan
+
+        # If the variable is not in the dataframe, skip it
+        if var not in df:
+            continue
+        # Numeric dtype → use np.isclose
+        if is_numeric_dtype(df[var]):
+            is_a_nan_flag = np.logical_or.reduce([np.isclose(df[var], v) for v in nan_flags])
+            flag_value = np.nan
+        else:
+            # Non-numeric → use isin
+            is_a_nan_flag = np.isin(df[var], nan_flags)
+            flag_value = "NaN"
+
+        # If nan_flags values are present, replace with np.nan
+        n_nan_flags_values = np.sum(is_a_nan_flag)
+        if n_nan_flags_values > 0:
+            msg = f"In variable {var}, {n_nan_flags_values} values were nan_flags and were replaced to np.nan."
+            log_info(logger=logger, msg=msg, verbose=verbose)
+            df.loc[is_a_nan_flag, var] = flag_value
+
     # Return dataframe
     return df
 
@@ -669,8 +681,8 @@ def write_l0a(
         Output file path.
     force : bool, optional
         Whether to overwrite existing data.
-        If ``True``, overwrite existing data into destination directories.
-        If ``False``, raise an error if there are already data into destination directories. This is the default.
+        If ``True``, overwrite existing data in destination directories.
+        If ``False``, raise an error if there are already data in destination directories. This is the default.
     verbose : bool, optional
         Whether to verbose the processing. The default is ``False``.
 

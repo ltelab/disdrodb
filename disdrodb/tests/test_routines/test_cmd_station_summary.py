@@ -42,7 +42,7 @@ FORCE = False
 TEMPORAL_RESOLUTION = "1MIN"
 
 # import pathlib
-# tmp_path = pathlib.Path("/tmp/13")
+# tmp_path = pathlib.Path("/tmp/14")
 # test_data_archive_dir = os.path.join(tmp_path, "DISDRODB")
 # dst_dir = os.path.join(test_data_archive_dir, ARCHIVE_VERSION)
 # shutil.copytree(TEST_DATA_L2E_DIR, dst_dir, dirs_exist_ok=True)

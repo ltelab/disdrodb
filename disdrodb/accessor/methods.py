@@ -97,10 +97,15 @@ class DISDRODB_Base_Accessor:
 
         return align(self._obj, *args)
 
-    def plot_spectrum(self, **kwargs):
+    def plot_spectrum(self, animation=False, **kwargs):
         """Plot spectrum."""
-        from disdrodb.viz.plots import plot_spectrum
+        from disdrodb.viz.plots import plot_spectrum, plot_spectrum_evolution
 
+        if animation:
+            # `plot_spectrum_evolution` is called for its side effects (e.g., displaying an animation)
+            # and does not return a meaningful value
+            plot_spectrum_evolution(self._obj, **kwargs)
+            return None
         return plot_spectrum(self._obj, **kwargs)
 
     def plot_nd(self, **kwargs):
@@ -148,6 +153,16 @@ class DISDRODB_Dataset_Accessor(DISDRODB_Base_Accessor):
         from disdrodb.psd.models import get_parameters_from_dataset
 
         return get_parameters_from_dataset(self._obj)
+
+    def split_into_events(self, variable, **kwargs):
+        """Split a DISDRODB product into events."""
+        from disdrodb.utils.event import split_into_events
+
+        return split_into_events(
+            self._obj,
+            variable=variable,
+            **kwargs,
+        )
 
 
 @xr.register_dataarray_accessor("disdrodb")

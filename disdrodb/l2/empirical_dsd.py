@@ -26,6 +26,7 @@ import xarray as xr
 
 from disdrodb.api.checks import check_sensor_name
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
+from disdrodb.utils.manipulations import filter_diameter_bins
 from disdrodb.utils.time import ensure_sample_interval_in_seconds
 from disdrodb.utils.xarray import (
     remove_diameter_coordinates,
@@ -340,6 +341,37 @@ def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sam
     else:
         drop_number_concentration = safe_ratio / (sampling_area * diameter_bin_width * sample_interval)
     return drop_number_concentration
+
+
+def compute_Nt_interval(
+    drop_number_concentration,
+    minimum_diameter=0.0,
+    maximum_diameter=None,
+):
+    r"""Compute number concentration over a specified diameter interval.
+
+    Parameters
+    ----------
+    drop_number_concentration : xarray.DataArray
+        Drop number concentration N(D) [m⁻³ mm⁻¹].
+    minimum_diameter : float
+        Lower diameter bound (mm), exclusive.
+    maximum_diameter : float or None
+        Upper diameter bound (mm), inclusive.
+        If None, integrates over D > D_min.
+
+    Returns
+    -------
+    Nt : xarray.DataArray
+        Number concentration N_t [m⁻³] over the specified interval.
+    """
+    drop_number_concentration = filter_diameter_bins(
+        drop_number_concentration,
+        minimum_diameter=minimum_diameter,
+        maximum_diameter=maximum_diameter,
+    )
+    diameter_bin_width = drop_number_concentration["diameter_bin_width"]
+    return get_total_number_concentration(drop_number_concentration, diameter_bin_width=diameter_bin_width)
 
 
 def get_total_number_concentration(drop_number_concentration, diameter_bin_width):
@@ -1549,10 +1581,13 @@ def get_kinetic_energy_variables(
     -------
     xarray.Dataset
         Xarray Dataset with relevant rainfall kinetic energy variables:
+
         - TKE: Total Kinetic Energy [J/m2]
         - KED: Kinetic Energy per unit rainfall Depth [J·m⁻²·mm⁻¹]. Typical values range between 0 and 40 J·m⁻²·mm⁻¹.
         - KEF: Kinetic Energy Flux [J·m⁻²·h⁻¹]. Typical values range between 0 and 5000 J·m⁻²·h⁻¹.
+
         KEF is related to the KED by the rain rate: KED = KEF/R .
+
     """
     # Check velocity DataArray does not have a velocity dimension
     if VELOCITY_DIMENSION in velocity.dims:
@@ -1626,6 +1661,7 @@ def get_kinetic_energy_variables_from_drop_number(
     -------
     xarray.Dataset
         Xarray Dataset with relevant rainfall kinetic energy variables:
+
         - TKE: Total Kinetic Energy [J/m2]
         - KED: Kinetic Energy per unit rainfall Depth [J·m⁻²·mm⁻¹]. Typical values range between 0 and 40 J·m⁻²·mm⁻¹.
         - KEF: Kinetic Energy Flux [J·m⁻²·h⁻¹]. Typical values range between 0 and 5000 J·m⁻²·h⁻¹.
@@ -1712,6 +1748,46 @@ def get_kinetic_energy_variables_from_drop_number(
 
 
 ####-------------------------------------------------------------------------------------------------------.
+#### Rainfall classification
+
+
+def bringi_nw_dm_classification(Dm, Nw):
+    """Bringi stratiform / convective classification using Nw-Dm space.
+
+    Returns
+    -------
+    xr.DataArray
+        0 = invalid / no rain
+        1 = stratiform
+        2 = convective
+    """
+    # Identify valid rain samples: positive Nw and finite Dm/Nw.
+    valid = (Nw > 0) & np.isfinite(Nw) & np.isfinite(Dm)
+
+    # Compute log10(Nw) only for valid data to avoid -inf/nan propagation.
+    logNw = xr.where(valid, np.log10(Nw), np.nan)
+
+    # Compute boundary
+    boundary = 6.3 - 1.6 * Dm
+
+    # Initialize as 0 = invalid / no rain, and classify only valid samples.
+    rain_type = xr.zeros_like(Dm, dtype=np.int8)
+    rain_type = xr.where(valid & (logNw > boundary), 2, rain_type)
+    rain_type = xr.where(valid & (logNw <= boundary), 1, rain_type)
+
+    rain_type.name = "rain_classification"
+    rain_type.attrs.update(
+        {
+            "standard_name": "precipitation_type",
+            "long_name": "Bringi Nw-Dm stratiform/convective precipitation classification",
+            "flag_values": np.array([0, 1, 2], dtype=np.int8),
+            "flag_meanings": "invalid stratiform convective",
+        },
+    )
+    return rain_type
+
+
+####-------------------------------------------------------------------------------------------------------.
 #### Wrapper ####
 
 
@@ -1747,6 +1823,7 @@ def compute_integral_parameters(
     -------
     ds : xarray.Dataset
         Dataset containing the computed integral parameters:
+
         - Nt : Total number concentration [#/m3]
         - M1 to M6 : Moments of the drop size distribution
         - Z : Reflectivity factor [dBZ]
@@ -1763,6 +1840,7 @@ def compute_integral_parameters(
         - TKE: Total Kinetic Energy [J/m2]
         - KED: Kinetic Energy per unit rainfall Depth [J·m⁻²·mm⁻¹].
         - KEF: Kinetic Energy Flux [J·m⁻²·h⁻¹].
+
     """
     # Ensure velocity does not contain NaN
     # --> e.g. when D > 10 mm --> Replace to 0
@@ -1900,10 +1978,12 @@ def compute_spectrum_parameters(
     -------
     ds : xarray.Dataset
         Dataset containing the following spectrum:
+
         - KE_spectrum : Kinetic Energy spectrum [J/m2/mm]
         - R_spectrum : Rain Rate spectrum [mm/h/mm]
         - LWC_spectrum : Mass spectrum [g/m3/mm]
         - Z_spectrum : Reflectivity spectrum [dBZ of mm6/m3/mm]
+
     """
     # Ensure velocity does not contain NaN
     # --> e.g. when D > 10 mm --> Replace to 0

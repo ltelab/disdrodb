@@ -47,7 +47,6 @@ Setup and Configuration
     import xarray as xr
     import disdrodb
     from disdrodb.l0.l0c_processing import finalize_l0c_dataset
-    from disdrodb.routines.options import get_product_options, get_model_options
     from disdrodb.configs import get_products_configs_dir
 
 **Configure Station**
@@ -235,7 +234,7 @@ Compute empirical rainfall parameters and radar observables from classified L1 d
 .. code-block:: python
 
     # Load L2E processing options
-    l2e_options = get_product_options(
+    l2e_options = disdrodb.get_product_options(
         product="L2E",
         temporal_resolution=temporal_resolution,
         products_configs_dir=products_configs_dir,
@@ -291,7 +290,7 @@ Fit parametric DSD models to derive modeled rainfall parameters.
 .. code-block:: python
 
     # Load L2M processing options
-    l2m_options = get_product_options(
+    l2m_options = disdrodb.get_product_options(
         product="L2M",
         temporal_resolution=temporal_resolution,
         products_configs_dir=products_configs_dir,
@@ -314,8 +313,8 @@ Load configuration for specific parametric model:
 .. code-block:: python
 
     # Load model configuration
-    model_options = get_model_options(
-        model_name="NGAMMA_GS_ND_SSE",  # GAMMA_ML, etc.
+    model_options = disdrodb.get_model_options(
+        model_name="GAMMA_ML",  # GAMMA_ML, NGAMMA_GS_ND_SSE, etc.
         products_configs_dir=products_configs_dir,
     )
 

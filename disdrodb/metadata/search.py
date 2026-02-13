@@ -64,23 +64,23 @@ def get_list_metadata(
         If ``product`` is specified:
 
             - if available_data is False, return metadata filepaths of stations where
-              the product directory exists in the in the local DISDRODB Data Archive
+              the product directory exists in the local DISDRODB Data Archive
             - if available_data is True, return metadata filepaths of stations where product data exists in the
-              in the local DISDRODB Data Archive.
+              local DISDRODB Data Archive.
 
-        The default is is False.
+        The default is False.
 
     data_sources : str or list of str, optional
         One or more data source identifiers to filter stations by.
         The name(s) must be UPPER CASE.
-        If None, no filtering on data source is applied. The default is is ``None``.
+        If None, no filtering on data source is applied. The default is ``None``.
     campaign_names : str or list of str, optional
         One or more campaign names to filter stations by.
         The name(s) must be UPPER CASE.
-        If None, no filtering on campaign is applied. The default is is ``None``.
+        If None, no filtering on campaign is applied. The default is ``None``.
     station_names : str or list of str, optional
         One or more station names to include.
-        If None, all stations matching other filters are considered. The default is is ``None``.
+        If None, all stations matching other filters are considered. The default is ``None``.
     raise_error_if_empty : bool, optional
         If True and no stations satisfy the criteria, raise a ``ValueError``.
         If False, return an empty list/tuple. The default is False.

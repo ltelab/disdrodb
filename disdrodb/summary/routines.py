@@ -36,7 +36,7 @@ from scipy.optimize import curve_fit
 import disdrodb
 from disdrodb.api.path import define_station_dir
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
-from disdrodb.l2.empirical_dsd import get_drop_average_velocity
+from disdrodb.l2.empirical_dsd import bringi_nw_dm_classification, get_drop_average_velocity
 from disdrodb.scattering import RADAR_OPTIONS
 from disdrodb.utils.dataframe import compute_2d_histogram, log_arange
 from disdrodb.utils.event import group_timesteps_into_event
@@ -51,6 +51,7 @@ from disdrodb.utils.yaml import write_yaml
 from disdrodb.viz.plots import (
     compute_dense_lines,
     max_blend_images,
+    plot_nd_quicklook,
     plot_raw_and_filtered_spectra,
     plot_spectrum,
     to_rgba,
@@ -928,7 +929,7 @@ def define_lognorm_max_value(value):
     return nice_value * magnitude
 
 
-def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
+def plot_dsd_params_relationships(df, add_nt=False, log_step=0.05, dpi=300):
     """Create a figure illustrating the relationships between DSD parameters."""
     # TODO: option to use D50 instead of Dm
 
@@ -940,7 +941,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
         y="Nw",
         variables=["R", "LWC", "Nt"],
         x_bins=np.arange(0, 8, 0.1),
-        y_bins=log_arange(10, 1_000_000, log_step=0.05, base=10),
+        y_bins=log_arange(10, 1_000_000, log_step=log_step, base=10),
     )
 
     # - Dm vs LWC (W)
@@ -950,7 +951,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
         y="LWC",
         variables=["R", "Nw", "Nt"],
         x_bins=np.arange(0, 8, 0.1),
-        y_bins=log_arange(0.01, 10, log_step=0.05, base=10),
+        y_bins=log_arange(0.01, 10, log_step=log_step, base=10),
     )
 
     # - Dm vs R
@@ -960,7 +961,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
         y="R",
         variables=["Nw", "LWC", "Nt"],
         x_bins=np.arange(0, 8, 0.1),
-        y_bins=log_arange(0.1, 500, log_step=0.05, base=10),
+        y_bins=log_arange(0.1, 500, log_step=log_step, base=10),
     )
 
     # - Dm vs Nt
@@ -970,7 +971,7 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
         y="Nt",
         variables=["R", "LWC", "Nw"],
         x_bins=np.arange(0, 8, 0.1),
-        y_bins=log_arange(1, 100_000, log_step=0.05, base=10),
+        y_bins=log_arange(1, 100_000, log_step=log_step, base=10),
     )
 
     # Define different colormaps for each column
@@ -1326,7 +1327,16 @@ def plot_dsd_params_relationships(df, add_nt=False, dpi=300):
     return fig
 
 
-def plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=False, figsize=(10, 10), dpi=300):
+def plot_dsd_params_density(
+    df,
+    log_dm=False,
+    lwc=True,
+    log_normalize=False,
+    log_step=0.05,
+    linear_step=0.1,
+    figsize=(10, 10),
+    dpi=300,
+):
     """Generate a figure with various DSD relationships.
 
     All histograms are computed first, then normalized, and finally plotted together.
@@ -1359,9 +1369,6 @@ def plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=False, fig
     df["LWC"] = df["LWC"]
     water_var = "LWC" if lwc else "R"
     water_label = "LWC [g/m³]" if lwc else "R [mm/h]"
-
-    log_step = 0.05
-    linear_step = 0.1
 
     # Dm range and scale settings
     if not log_dm:
@@ -3775,8 +3782,13 @@ def prepare_summary_dataset(ds, velocity_method="theoretical_velocity", source="
         if dim in ds.dims and dim != "frequency":
             ds = ds.isel({dim: 0})
 
+    # Select only one elevation angle
+    if "elevation_angle" in ds.dims:
+        ds = ds.isel(elevation_angle=0)
+
     # Unstack frequency dimension
-    ds = unstack_radar_variables(ds)
+    if "frequency" in ds.dims:
+        ds = unstack_radar_variables(ds)
 
     # For kinetic energy variables, select source="drop_number"
     if "source" in ds.dims:
@@ -3921,6 +3933,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
 
     # ---------------------------------------------------------------------.
     #### Create table with events summary
+    table_events_summary = None
     if not temporal_resolution.startswith("ROLL"):
         table_events_summary = create_table_events_summary(df, temporal_resolution=temporal_resolution)
         if len(table_events_summary) > 0:
@@ -4012,6 +4025,100 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             caption="DSD Summary",
             orientation="portrait",  # "landscape",
         )
+
+    ####---------------------------------------------------------------------.
+    #### Create events quicklooks
+    if table_events_summary is not None:
+        # Define number of quicklooks
+        n_quicklooks = 10
+
+        # Create quicklooks for Rmax
+        table_events_summary = table_events_summary.sort_values(by="max_R", ascending=False)
+
+        for i in range(min(n_quicklooks, len(table_events_summary))):
+            event_stats = table_events_summary.iloc[i]
+            if event_stats["duration"] >= 10:  # minimum 10 minutes
+                ds_event = ds.sel(time=slice(event_stats["start_time"], event_stats["end_time"]))
+                ds_event["rain_type"] = bringi_nw_dm_classification(ds_event["Dm"], ds_event["Nw"])
+
+                # Plot quicklook
+                fig = plot_nd_quicklook(
+                    ds_event,
+                    # Plot layout
+                    hours_per_slice=3,
+                    max_rows=6,
+                    aligned=False,
+                    verbose=False,
+                    cbar_as_legend=True,
+                    add_rain_type="rain_type",
+                    d_lim=(0.3, 7),
+                    # Figure options
+                    dpi=300,
+                )
+
+                # Create quicklooks directory
+                quicklook_dir = os.path.join(summary_dir_path, "Quicklooks_Rmax")
+                os.makedirs(quicklook_dir, exist_ok=True)
+
+                # Define quicklooks filename
+                rmax = event_stats["max_R"]
+                start_time_str = event_stats["start_time"].strftime("%Y%m%dT%H%M%S")
+                end_time_str = event_stats["end_time"].strftime("%Y%m%dT%H%M%S")
+                quicklook_filename = define_filename(
+                    prefix=f"Quicklook_Rmax_{rmax:.0f}_{start_time_str}_{end_time_str}",
+                    extension="png",
+                    data_source=data_source,
+                    campaign_name=campaign_name,
+                    station_name=station_name,
+                    temporal_resolution=temporal_resolution,
+                )
+                quicklook_filepath = os.path.join(quicklook_dir, quicklook_filename)
+                fig.savefig(quicklook_filepath, bbox_inches="tight")
+                plt.close()
+
+        # Create quicklooks for P_total
+        table_events_summary = table_events_summary.sort_values(by="P_total", ascending=False)
+
+        for i in range(min(n_quicklooks, len(table_events_summary))):
+            event_stats = table_events_summary.iloc[i]
+            if event_stats["duration"] >= 10:  # minimum 10 minutes
+                ds_event = ds.sel(time=slice(event_stats["start_time"], event_stats["end_time"]))
+                ds_event["rain_type"] = bringi_nw_dm_classification(ds_event["Dm"], ds_event["Nw"])
+
+                # Plot quicklook
+                fig = plot_nd_quicklook(
+                    ds_event,
+                    # Plot layout
+                    hours_per_slice=3,
+                    max_rows=6,
+                    aligned=False,
+                    verbose=False,
+                    cbar_as_legend=True,
+                    add_rain_type="rain_type",
+                    d_lim=(0.3, 7),
+                    # Figure options
+                    dpi=300,
+                )
+
+                # Create quicklooks directory
+                quicklook_dir = os.path.join(summary_dir_path, "Quicklooks_Ptot")
+                os.makedirs(quicklook_dir, exist_ok=True)
+
+                # Define quicklooks filename
+                p_tot = event_stats["P_total"]
+                start_time_str = event_stats["start_time"].strftime("%Y%m%dT%H%M%S")
+                end_time_str = event_stats["end_time"].strftime("%Y%m%dT%H%M%S")
+                quicklook_filename = define_filename(
+                    prefix=f"Quicklook_P_tot_{p_tot:.0f}_{start_time_str}_{end_time_str}",
+                    extension="png",
+                    data_source=data_source,
+                    campaign_name=campaign_name,
+                    station_name=station_name,
+                    temporal_resolution=temporal_resolution,
+                )
+                quicklook_filepath = os.path.join(quicklook_dir, quicklook_filename)
+                fig.savefig(quicklook_filepath, bbox_inches="tight")
+                plt.close()
 
     #### ---------------------------------------------------------------------.
     #### Create L2E RADAR Summary Plots

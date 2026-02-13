@@ -64,7 +64,17 @@ raw_data_format_dict = {
         "data_range": [0, 89],
         "nan_flags": -9999,
     },
+    "key_3": {
+        "valid_values": [1, 2, 3],
+        "data_range": [0, 89],
+        "nan_flags": [-9999, -99],
+    },
+    "key_4": {
+        "data_range": None,
+        "nan_flags": "???",
+    },
 }
+
 config_dict = {"raw_data_format.yml": raw_data_format_dict}
 
 TEST_SENSOR_NAME = "test"
@@ -109,18 +119,24 @@ def test_replace_nan_flags(create_test_config_files):
     # Create a sample dataframe with nan flags
     data = {
         "key_1": [6, 7, 1, 9, -9999],
-        "key_2": [6, 7, 1, 9, -9999],
+        "key_2": [6, 7, 1, -99, -9999],
+        "key_3": [6, 7, 1, -99, -9999],
+        "key_4": ["a", "b", "c", "60", "???"],
     }
     df = pd.DataFrame(data)
 
     # Call the function with the sample dataframe
     df = replace_nan_flags(df, sensor_name=TEST_SENSOR_NAME, verbose=True)
 
-    expected_data = {
-        "key_1": [6, 7, 1, 9, -9999],
-        "key_2": [6, 7, 1, 9, np.nan],
-    }
-    assert df.equals(pd.DataFrame(expected_data))
+    df_expected = pd.DataFrame(
+        {
+            "key_1": [6, 7, 1, 9, -9999],
+            "key_2": [6, 7, 1, -99, np.nan],
+            "key_3": [6, 7, 1, np.nan, np.nan],
+            "key_4": ["a", "b", "c", "60", "NaN"],
+        },
+    )
+    pd.testing.assert_frame_equal(df, df_expected)
 
 
 class TestRemoveCorruptedRows:

@@ -57,8 +57,8 @@ def write_product(ds: xr.Dataset, filepath: str, force: bool = False) -> None:
         Output file path.
     force : bool, optional
         Whether to overwrite existing data.
-        If ``True``, overwrite existing data into destination directories.
-        If ``False``, raise an error if there are already data into destination directories. This is the default.
+        If ``True``, overwrite existing data in destination directories.
+        If ``False``, raise an error if there are already data in destination directories. This is the default.
     """
     # Create station directory if does not exist
     create_directory(os.path.dirname(filepath))

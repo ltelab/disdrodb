@@ -321,16 +321,16 @@ def retrieve_graupel_heymsfield2014_fall_velocity(
         Diameter of the graupel particles in millimeters.
     ds_env : xarray.Dataset
         A dataset containing the following environmental variables:
+
         - 'altitude' :  Altitude in meters (m).
         - 'latitude' :  Latitude in degrees.
         - 'temperature' : Temperature in degrees Kelvin (K).
         - 'relative_humidity' :  Relative humidity between 0 and 1.
-        - 'sea_level_air_pressure' : Standard atmospheric pressure at sea level in Pascals (Pa).
-        The default is 101_325 Pa.
+        - 'sea_level_air_pressure' : Standard atmospheric pressure at sea level in Pascals (Pa). The default is 101_325 Pa.
         - 'air_pressure': Air pressure in Pascals (Pa). If None, air_pressure at altitude is inferred.
-        - 'lapse_rate' : Atmospheric lapse rate in degrees Celsius or Kelvin per meter (°C/m).
-        The default is 0.0065 K/m.
+        - 'lapse_rate' : Atmospheric lapse rate in degrees Celsius or Kelvin per meter (°C/m). The default is 0.0065 K/m.
         - 'gas_constant_dry_air': Gas constant for dry air in J/(kg*K). The default is 287.04 is J/(kg*K).
+
     graupel_density : float, optional
         Bulk density of the ice particle [kg m⁻³].
         Defaults to 500 kg m⁻³ (typical for graupel; hail can be ~900).
@@ -339,7 +339,7 @@ def retrieve_graupel_heymsfield2014_fall_velocity(
     -------
     fall_velocity : array-like
         Terminal fall velocity for the graupel particles.
-    """
+    """  # noqa: E501
     air_viscosity = retrieve_air_dynamic_viscosity(ds_env)
     air_density = retrieve_air_density(ds_env)
     fall_velocity = get_graupel_heymsfield_2014_fall_velocity(
@@ -416,12 +416,14 @@ def get_graupel_fall_velocity(diameter, model, ds_env=None, minimum_diameter=0.5
        'Heymsfield2014', 'Heymsfield2018'.
     ds_env : xarray.Dataset, optional
         A dataset containing the following environmental variables:
+
         - 'altitude' (m)
         - 'latitude' (°)
         - 'temperature' : Temperature in degrees Kelvin (K).
         - 'relative_humidity' :  Relative humidity. A value between 0 and 1.
         - 'sea_level_air_pressure' : Sea level air pressure in Pascals (Pa).
         - 'lapse_rate' : Lapse rate in degrees Celsius per meter (°C/m).
+
         If not specified, sensible default values are used.
 
     Returns
