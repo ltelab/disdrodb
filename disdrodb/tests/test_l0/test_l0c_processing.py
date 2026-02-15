@@ -830,6 +830,7 @@ class TestCreateL0cDatasets:
             },
             coords={"time": times},
         )
+        ds.attrs["sensor_name"] = "PARSIVEL"
 
         # Mock open_netcdf_files
         mocker.patch("disdrodb.l0.l0c_processing.open_netcdf_files", return_value=ds)
@@ -845,7 +846,6 @@ class TestCreateL0cDatasets:
         result = create_l0c_datasets(
             event_info=event_info,
             measurement_intervals=[60],
-            sensor_name="PARSIVEL",
         )
 
         assert isinstance(result, dict)
@@ -866,6 +866,7 @@ class TestCreateL0cDatasets:
             },
             coords={"time": times},
         )
+        ds.attrs["sensor_name"] = "PARSIVEL"
 
         # Mock open_netcdf_files
         mocker.patch("disdrodb.l0.l0c_processing.open_netcdf_files", return_value=ds)
@@ -881,7 +882,6 @@ class TestCreateL0cDatasets:
         result = create_l0c_datasets(
             event_info=event_info,
             measurement_intervals=[30],
-            sensor_name="PARSIVEL",
         )
 
         assert isinstance(result, dict)
@@ -900,6 +900,7 @@ class TestCreateL0cDatasets:
             },
             coords={"time": times},
         )
+        ds.attrs["sensor_name"] = "PARSIVEL"
 
         mocker.patch("disdrodb.l0.l0c_processing.open_netcdf_files", return_value=ds)
 
@@ -913,7 +914,6 @@ class TestCreateL0cDatasets:
             create_l0c_datasets(
                 event_info=event_info,
                 measurement_intervals=[60],
-                sensor_name="PARSIVEL",
             )
 
     def test_too_few_timesteps_after_duplicate_removal(self, mocker):
@@ -928,6 +928,7 @@ class TestCreateL0cDatasets:
             coords={"time": times},
         )
         ds = xr.concat([ds, ds], dim="time")
+        ds.attrs["sensor_name"] = "PARSIVEL"
 
         mocker.patch("disdrodb.l0.l0c_processing.open_netcdf_files", return_value=ds)
 
@@ -941,7 +942,6 @@ class TestCreateL0cDatasets:
             create_l0c_datasets(
                 event_info=event_info,
                 measurement_intervals=[60],
-                sensor_name="PARSIVEL",
             )
 
     def test_multiple_measurement_intervals(self, mocker):
@@ -973,6 +973,7 @@ class TestCreateL0cDatasets:
             },
             coords={"time": times},
         )
+        mock_ds.attrs["sensor_name"] = "PARSIVEL"
 
         mocker.patch("disdrodb.l0.l0c_processing.open_netcdf_files", return_value=mock_ds)
         mocker.patch("disdrodb.l0.l0c_processing.set_l0b_encodings", side_effect=lambda ds, **kwargs: ds)
@@ -987,7 +988,6 @@ class TestCreateL0cDatasets:
         result = create_l0c_datasets(
             event_info=event_info,
             measurement_intervals=[60, 180],
-            sensor_name="PARSIVEL",
         )
 
         assert isinstance(result, dict)
@@ -1016,7 +1016,6 @@ class TestCreateL0cDatasets:
         result = create_l0c_datasets(
             event_info=event_info,
             measurement_intervals=[60],
-            sensor_name="PARSIVEL",
         )
 
         # Should return empty dictionary
@@ -1035,6 +1034,7 @@ class TestCreateL0cDatasets:
             },
             coords={"time": times},
         )
+        ds.attrs["sensor_name"] = "PARSIVEL"
 
         mocker.patch("disdrodb.l0.l0c_processing.open_netcdf_files", return_value=ds)
 
@@ -1047,7 +1047,6 @@ class TestCreateL0cDatasets:
         result = create_l0c_datasets(
             event_info=event_info,
             measurement_intervals=[60],
-            sensor_name="PARSIVEL",
         )
 
         # Should return empty dictionary

@@ -641,7 +641,6 @@ def finalize_l0c_dataset(ds, sample_interval, sensor_name, verbose=True, logger=
 def create_l0c_datasets(
     event_info,
     measurement_intervals,
-    sensor_name,
     ensure_variables_equality=True,
     logger=None,
     verbose=True,
@@ -715,6 +714,67 @@ def create_l0c_datasets(
         )
         return {}
 
+    # Create dictionary of L0C datasets for each measurement interval
+    dict_ds = generate_l0c_datasets(
+        ds=ds,
+        measurement_intervals=measurement_intervals,
+        ensure_variables_equality=ensure_variables_equality,
+        logger=logger,
+        verbose=verbose,
+    )
+    # Subset to specified start_time and end_time
+    dict_ds = {
+        sample_interval: ds.sel({"time": slice(start_time, end_time)}) for sample_interval, ds in dict_ds.items()
+    }
+    return dict_ds
+
+
+def generate_l0c_datasets(ds, measurement_intervals, ensure_variables_equality=True, logger=None, verbose=True):
+    """Generate L0C datasets from L0B data separating timesteps with different measurement intervals.
+
+    This function processes an L0B dataset by removing invalid and duplicated timesteps,
+    splitting timesteps by measurement intervals, and finalizing each subset into L0C format.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input L0B dataset to process.
+    measurement_intervals : list or int
+        List of expected measurement intervals (in seconds).
+    ensure_variables_equality : bool, optional
+        If True, drops duplicated timesteps where variables other than 'raw_drop_number'
+        have different values. If False, keeps duplicated timesteps if 'raw_drop_number'
+        values are equal, even if other variables differ.
+        Default is True.
+    logger : logging.Logger, optional
+        Logger instance for logging warnings and information. Default is None.
+    verbose : bool, optional
+        If True, prints log messages to console in addition to logging. Default is True.
+
+    Returns
+    -------
+    dict
+        Dictionary with measurements intervals (int, in seconds) as keys and processed
+        xarray.Dataset objects as values. Each dataset contains data for a single
+        measurement interval with regularized timesteps and quality flags.
+
+    Notes
+    -----
+    Processing steps:
+    1. Drops timesteps with invalid sample intervals (if 'sample_interval' variable exists)
+    2. Removes duplicated timesteps based on 'raw_drop_number' equality
+    3. Splits dataset by sampling intervals
+    4. Regularizes timesteps to handle trailing seconds
+    5. Adds quality control flags for time coordinate
+    6. Adds sample_interval coordinate and updates attributes
+
+    Multiple sampling intervals may be present in a single input dataset, resulting
+    in multiple output datasets.
+    """
+    # Retrieve sensor name from dataset attributes
+    if "sensor_name" not in ds.attrs:
+        raise ValueError("Missing 'sensor_name' attribute in the dataset.")
+    sensor_name = ds.attrs.get("sensor_name")
     # ---------------------------------------------------------------------------------------.
     # If sample interval is a dataset variable, drop timesteps with unexpected measurement intervals !
     if "sample_interval" in ds:
@@ -772,7 +832,60 @@ def create_l0c_datasets(
             sensor_name=sensor_name,
             verbose=verbose,
             logger=logger,
-        ).sel({"time": slice(start_time, end_time)})
+        )
         for sample_interval, ds in dict_ds.items()
     }
     return dict_ds
+
+
+def generate_l0c(ds, measurement_interval, ensure_variables_equality=True, logger=None, verbose=True):
+    """Generate a single L0C dataset for a specific measurement interval.
+
+    This is a convenience wrapper around `generate_l0c_datasets` that returns only
+    the dataset corresponding to the specified measurement interval.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input L0B dataset to process.
+    measurement_interval : int
+        The expected measurement interval (in seconds) of the data.
+    ensure_variables_equality : bool, optional
+        If True, drops duplicated timesteps where variables other than 'raw_drop_number'
+        have different values. If False, keeps duplicated timesteps if 'raw_drop_number'
+        values are equal, even if other variables differ.
+        Default is True.
+    logger : logging.Logger, optional
+        Logger instance for logging warnings and information. Default is None.
+    verbose : bool, optional
+        If True, prints log messages to console in addition to logging. Default is True.
+
+    Returns
+    -------
+    xarray.Dataset
+        Processed L0C dataset for the specified measurement interval with regularized
+        timesteps and quality flags.
+
+    Notes
+    -----
+    Processing steps:
+    1. Drops timesteps with invalid measurement interval (if 'sample_interval' variable exists)
+    2. Removes duplicated timesteps based on 'raw_drop_number' equality
+    4. Regularizes timesteps to handle trailing seconds
+    6. Adds sample_interval coordinate and updates attributes
+
+    See Also
+    --------
+    generate_l0c_datasets
+
+    """
+    if not isinstance(measurement_interval, int):
+        raise TypeError("measurement_interval must be an integer.")
+    dict_ds = generate_l0c_datasets(
+        ds,
+        measurement_intervals=measurement_interval,
+        ensure_variables_equality=ensure_variables_equality,
+        logger=logger,
+        verbose=verbose,
+    )
+    return dict_ds[measurement_interval]

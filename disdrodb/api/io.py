@@ -38,7 +38,6 @@ from disdrodb.api.path import (
     define_metadata_dir,
     define_station_dir,
 )
-from disdrodb.l0.l0_reader import define_readers_directory
 from disdrodb.utils.dict import extract_product_kwargs
 from disdrodb.utils.directories import list_files, remove_file_or_directories
 from disdrodb.utils.logger import (
@@ -231,7 +230,7 @@ def find_files(
 #### DISDRODB Open Product Files
 
 
-def _open_raw_files(filepaths, data_source, campaign_name, station_name, metadata_archive_dir):
+def open_raw_files(filepaths, data_source, campaign_name, station_name, metadata_archive_dir):
     """Open raw files to DISDRODB L0A or L0B format.
 
     Raw text files are opened into a DISDRODB L0A pandas Dataframe.
@@ -667,7 +666,7 @@ def open_dataset(
     # - For raw txt files return DISDRODB L0A dataframe
     # - For raw netCDF files return DISDRODB L0B dataframe
     if product == "RAW":
-        obj = _open_raw_files(
+        obj = open_raw_files(
             filepaths=filepaths,
             data_source=data_source,
             campaign_name=campaign_name,
@@ -846,6 +845,8 @@ def open_metadata_directory(
 
 def open_readers_directory():
     """Open the disdrodb software readers directory."""
+    from disdrodb.l0.l0_reader import define_readers_directory
+
     readers_directory = define_readers_directory()
 
     open_file_explorer(readers_directory)
