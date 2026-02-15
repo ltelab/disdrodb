@@ -350,7 +350,6 @@ def _generate_l0c(
     ):
         """Define L0C product processing."""
         # Retrieve information from metadata
-        sensor_name = metadata["sensor_name"]
         campaign_name = metadata["campaign_name"]
         station_name = metadata["station_name"]
         measurement_intervals = check_measurement_intervals(metadata["measurement_interval"])
@@ -359,7 +358,6 @@ def _generate_l0c(
         dict_ds = create_l0c_datasets(
             event_info=event_info,
             measurement_intervals=measurement_intervals,
-            sensor_name=sensor_name,
             ensure_variables_equality=True,
             logger=logger,
             verbose=verbose,
