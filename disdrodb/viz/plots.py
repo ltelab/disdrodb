@@ -911,7 +911,7 @@ def plot_raw_and_filtered_spectra(
     extend="max",
     add_theoretical_average_velocity=True,
     add_measured_average_velocity=True,
-    figsize=(8, 4),
+    figsize=(6.9, 3.2),
     dpi=300,
 ):
     """Plot raw and filtered drop spectrum."""

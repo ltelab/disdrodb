@@ -31,6 +31,7 @@ import pandas as pd
 import xarray as xr
 from matplotlib.colors import ListedColormap, LogNorm, Normalize
 from matplotlib.gridspec import GridSpec
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from scipy.optimize import curve_fit
 
 import disdrodb
@@ -470,35 +471,51 @@ def prepare_latex_table_events_summary(df):
 #### Powerlaw routines
 
 
-def fit_powerlaw_with_ransac(x, y):
-    """Fit powerlaw relationship with RANSAC algorithm."""
-    from sklearn.linear_model import LinearRegression, RANSACRegressor
+def apply_2d_outlier_removal(df_data, xbins, ybins, min_counts):
+    """Remove observations that fall in 2D histogram bins having less than min_counts."""
+    df_data["x_bin"] = pd.cut(df_data["x"], bins=xbins, right=False)
+    df_data["y_bin"] = pd.cut(df_data["y"], bins=ybins, right=False)
 
-    x = np.asanyarray(x)
-    y = np.asanyarray(y)
-    X = np.log10(x).reshape(-1, 1)
-    Y = np.log10(y)
-    ransac = RANSACRegressor(
-        estimator=LinearRegression(),
-        min_samples=0.5,
-        residual_threshold=0.3,
-        random_state=42,
+    # Remove values outside bins
+    df_data = df_data[(df_data["x_bin"].cat.codes != -1) & (df_data["y_bin"].cat.codes != -1)]
+
+    # Count per 2D bin
+    counts_2d = df_data.groupby(["x_bin", "y_bin"], observed=True).size().reset_index(name="n")
+
+    # Keep only dense cells
+    dense_cells = counts_2d[counts_2d["n"] >= min_counts]
+
+    # Merge back to original data
+    df_data = df_data.merge(
+        dense_cells[["x_bin", "y_bin"]],
+        on=["x_bin", "y_bin"],
+        how="inner",
     )
-    ransac.fit(X, Y)
-    b = ransac.estimator_.coef_[0]  # slope
-    loga = ransac.estimator_.intercept_  # intercept
-    a = 10**loga
-    return a, b
+    return df_data
 
 
-def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False, use_ransac=True):
-    """
-    Fit a power-law relationship ``y = a * x**b`` to binned median values.
+def fit_powerlaw(x, y, xbins, ybins, quantile=0.5, min_counts=10, x_in_db=False, robust=True, quadratic=False):
+    r"""Fit a power-law relationship to binned quantile values.
 
-    This function bins ``x`` into intervals defined by ``xbins``, computes the
-    median of ``y`` in each bin (robust to outliers), and fits a power-law model
-    using the RANSAC or Levenberg-Marquardt algorithm.
-    Optionally, ``x`` can be converted from decibel units to linear scale automatically before fitting.
+    This function bins ``x`` into intervals defined by ``xbins``, computes a
+    specified quantile of ``y`` in each bin (median by default, robust to outliers),
+    and fits a power-law model using either the RANSAC algorithm (if robust=True)
+    or weighted nonlinear least squares. Optionally, ``x`` can be converted from
+    decibel units to linear scale automatically before fitting.
+
+    The fitted model depends on the ``quadratic`` parameter:
+
+    - If ``quadratic=False`` (default), fit a classical power law:
+
+      .. math::
+
+         y = a x^b
+
+    - If ``quadratic=True``, fit a log-quadratic power law:
+
+      .. math::
+
+         y = a x^b 10^{c (\log_{10} x)^2}
 
     Parameters
     ----------
@@ -508,40 +525,56 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False, use_ra
         Dependent variable values. Must be positive and finite after filtering.
     xbins : array-like
         Bin edges for grouping ``x`` values (passed to ``pandas.cut``).
+    ybins : array-like, optional
+        Bin edges for 2D histogram outlier removal. If provided, removes observations
+        in 2D bins with fewer than ``min_counts`` samples before fitting.
     quantile : float, optional
-      Quantile of ``y`` to compute in each bin (between 0 and 1).
-      For example: 0.5 = median, 0.25 = lower quartile, 0.75 = upper quartile.
-      Default is 0.5 (median)
+        Quantile of ``y`` to compute in each bin (between 0 and 1).
+        For example: 0.5 = median, 0.25 = lower quartile, 0.75 = upper quartile.
+        Default is 0.5 (median).
+    min_counts : int, optional
+        Minimum number of observations required in each bin for it to be included
+        in the fit. Default is 10.
     x_in_db : bool, optional
         If True, converts ``x`` values from decibels (dB) to linear scale using
         :func:`disdrodb.idecibel`. Default is False.
-    use_ransac: bool, optional
-        Whether to fit the powerlaw using the Random Sample Consensus (RANSAC)
-        algorithm or using the Levenberg-Marquardt algorithm.
-        The default is True.
+    robust : bool, optional
+        Whether to fit the power law using the Random Sample Consensus (RANSAC)
+        algorithm (robust=True) or using weighted nonlinear least squares solved with
+        the Levenberg-Marquardt algorithm (robust=False).
+        Default is True.
         To fit with RANSAC, scikit-learn must be installed.
+    quadratic : bool, optional
+        If False (default), fit a classical power law :math:`y = a x^b` in log-log space.
+        If True, fit a log-quadratic power law :math:`y = a x^b 10^{c (\log_{10} x)^2}`.
+        Default is False.
 
     Returns
     -------
     params : tuple of float
         Estimated parameters ``(a, b)`` of the power-law relationship.
+        If quadratic=True, returns ``(a, b, c)`` for the log-quadratic power law.
     params_std : tuple of float
         One standard deviation uncertainties ``(a_std, b_std)`` estimated from
         the covariance matrix of the fit.
-        Parameters standard deviation is currently
-        not available if fitting with the RANSAC algorithm.
+        If quadratic=True, returns ``(a_std, b_std, c_std)``.
+        Parameters standard deviation is currently not available when fitting
+        with the RANSAC algorithm (returns None values).
 
     Notes
     -----
-    - This implementation uses median statistics within bins, which reduces
+    - This implementation uses quantile statistics within bins, which reduces
       the influence of outliers.
     - Both ``x`` and ``y`` are filtered to retain only positive, finite values
       before binning.
     - Fitting is performed on the bin centers (midpoints between bin edges).
+    - The median absolute deviation (MAD) is used to estimate uncertainties
+      for weighted nonlinear least squares fitting.
 
     See Also
     --------
     predict_from_powerlaw : Predict values from the fitted power-law parameters.
+    predict_from_logquadratic_powerlaw : Predict values from the log-quadratic power law.
     inverse_powerlaw_parameters : Compute parameters of the inverse power law.
 
     Examples
@@ -550,7 +583,7 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False, use_ra
     >>> x = np.linspace(1, 50, 200)
     >>> y = 2 * x**1.5 + np.random.normal(0, 5, size=x.size)
     >>> xbins = np.arange(0, 60, 5)
-    >>> (a, b), (a_std, b_std) = fit_powerlaw(x, y, xbins)
+    >>> (a, b), (a_std, b_std) = fit_powerlaw(x, y, xbins, ybins=None)
     """
     # Set min_counts to 0 during pytest execution in order to test the summary routine
     if os.environ.get("PYTEST_CURRENT_TEST"):
@@ -558,8 +591,8 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False, use_ra
 
     # Check if RANSAC algorithm is available
     sklearn_available = importlib.util.find_spec("sklearn") is not None
-    if use_ransac and not sklearn_available:
-        use_ransac = False
+    if robust and not sklearn_available:
+        robust = False
 
     # Ensure numpy array
     x = np.asanyarray(x)
@@ -572,6 +605,10 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False, use_ra
 
     # Define dataframe
     df_data = pd.DataFrame({"x": x, "y": y})
+
+    # Outlier removal in 2D histogram
+    if ybins is not None:
+        df_data = apply_2d_outlier_removal(df_data, xbins=xbins, ybins=ybins, min_counts=min_counts)
 
     # Alternative code
     # from disdrodb.utils.dataframe import compute_1d_histogram
@@ -601,6 +638,9 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False, use_ra
     )
     df_agg["x"] = np.array([iv.left + (iv.right - iv.left) / 2 for iv in df_agg.index])
 
+    # Keep only data where y > 0
+    df_agg = df_agg[df_agg["y"] > 0]
+
     # If input is in decibel, convert to linear scale
     if x_in_db:
         df_agg["x"] = disdrodb.idecibel(df_agg["x"])
@@ -610,37 +650,359 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False, use_ra
     if len(df_agg) < 5:
         raise ValueError("Not enough data to fit a power law.")
 
-    # Estimate sigma based on MAD
-    sigma = df_agg["mad"]
+    # Estimate standard deviation for WNLS
+    # - Ensure is not 0 (can occur if within bins all same value)
+    sigma = 1.4826 * df_agg["mad"]
+    sigma_lb = np.percentile(sigma[sigma > 0], 1)  # or small fraction
+    sigma = np.maximum(sigma, sigma_lb)
 
     # Fit the data
     with suppress_warnings():
-        if use_ransac:
-            a, b = fit_powerlaw_with_ransac(x=df_agg["x"], y=df_agg["y"])
-            a_std = None
-            b_std = None
-        else:
+        if not quadratic:
+            if robust:
+                return fit_powerlaw_with_ransac(x=df_agg["x"], y=df_agg["y"])
+            return fit_powerlaw_with_wnls(x=df_agg["x"], y=df_agg["y"], sigma=sigma)
+        # quadratic=True
+        if robust:
+            return fit_logquadratic_powerlaw_with_ransac(df_agg["x"], y=df_agg["y"])
+        return fit_logquadratic_powerlaw_with_wnls(
+            x=df_agg["x"],
+            y=df_agg["y"],
+            sigma=sigma,
+        )
 
-            (a, b), pcov = curve_fit(
-                lambda x, a, b: a * np.power(x, b),
-                df_agg["x"],
-                df_agg["y"],
-                method="lm",
-                sigma=sigma,
-                absolute_sigma=True,
-                maxfev=10_000,  # max n iterations
-            )
-            a_std, b_std = np.sqrt(np.diag(pcov))
-            a_std = float(a_std)
-            b_std = float(b_std)
 
-    # Return the parameters and their standard deviation
+def fit_powerlaw_with_wnls(x, y, sigma):
+    r"""Fit a power-law relationship using Weighted Nonlinear Least Squares (WNLS).
+
+    This function fits a power-law model :math:`y = a x^b` by transforming
+    to log10-space and performing weighted linear regression with the
+    Levenberg-Marquardt algorithm.
+
+    .. math::
+
+       y = a x^b
+
+    The fitting is performed in log10-space:
+
+    .. math::
+
+       \log_{10}(y) = a_0 + b \log_{10}(x)
+
+    where :math:`a = 10^{a_0}`.
+
+    Parameters
+    ----------
+    x : array-like
+        Independent variable values. Must be positive.
+    y : array-like
+        Dependent variable values. Must be positive.
+    sigma : array-like
+        Standard deviation of ``y`` values, used as weights in the fit.
+        Values are transformed to log10-space for fitting.
+
+    Returns
+    -------
+    params : tuple of float
+        Estimated parameters ``(a, b)`` of the power-law relationship.
+    params_std : tuple of float
+        One standard deviation uncertainties ``(a_std, b_std)`` estimated from
+        the covariance matrix of the fit.
+
+    Notes
+    -----
+    - The function uses ``scipy.optimize.curve_fit`` with the Levenberg-Marquardt
+      method for optimization.
+    - Uncertainties are propagated from log10-space back to linear space.
+    - The transformation :math:`\sigma_{\log_{10}(y)} = \sigma_y / (y \ln(10))`
+      is used for the weights.
+
+    See Also
+    --------
+    fit_powerlaw : Main power-law fitting function with binning and outlier removal.
+    fit_powerlaw_with_ransac : Fit power law using RANSAC algorithm.
+    """
+
+    def _linear_model(lx, a0, b):
+        return a0 + b * lx
+
+    # Transform sigma_y -> sigma_log10(y)
+    sigma_log = sigma / (y * np.log(10))
+
+    # Fit
+    (a0, b), pcov = curve_fit(
+        _linear_model,
+        np.log10(x),
+        np.log10(y),
+        method="lm",
+        sigma=sigma_log,
+        absolute_sigma=True,
+        maxfev=10_000,  # max n iterations
+    )
+    a0_std, b_std = np.sqrt(np.diag(pcov))
+
+    # Convert back to classical power-law form
+    a = 10**a0
+    a_std = np.log(10) * a * a0_std  # error propagation
+    return (float(a), float(b)), (float(a_std), float(b_std))
+
+
+def fit_powerlaw_with_ransac(x, y):
+    r"""Fit a power-law relationship using the RANSAC algorithm.
+
+    This function fits a power-law model :math:`y = a x^b` by performing
+    linear regression in log10-space using the Random Sample Consensus (RANSAC)
+    algorithm, which is robust to outliers.
+
+    .. math::
+
+       y = a x^b
+
+    The fitting is performed in log10-space:
+
+    .. math::
+
+       \log_{10}(y) = a_0 + b \log_{10}(x)
+
+    where :math:`a = 10^{a_0}`.
+
+    Parameters
+    ----------
+    x : array-like
+        Independent variable values. Must be positive.
+    y : array-like
+        Dependent variable values. Must be positive.
+
+    Returns
+    -------
+    params : tuple of float
+        Estimated parameters ``(a, b)`` of the power-law relationship.
+    params_std : tuple of None
+        Placeholder for standard deviations ``(None, None)``.
+        Parameter uncertainties are not computed with RANSAC.
+
+    Notes
+    -----
+    - Requires scikit-learn to be installed.
+    - RANSAC is robust to outliers by iteratively fitting random subsets
+      of the data and selecting the model with the most inliers.
+    - The residual threshold for inlier classification is set to 0.3 in log10-space.
+    - Parameter uncertainties are not provided by RANSAC and are returned as None.
+
+    See Also
+    --------
+    fit_powerlaw : Main power-law fitting function with binning and outlier removal.
+    fit_powerlaw_with_wnls : Fit power law using weighted nonlinear least squares.
+    """
+    from sklearn.linear_model import LinearRegression, RANSACRegressor
+
+    x = np.asanyarray(x)
+    y = np.asanyarray(y)
+    X = np.log10(x).reshape(-1, 1)
+    Y = np.log10(y)
+    ransac = RANSACRegressor(
+        estimator=LinearRegression(),
+        min_samples=0.5,
+        residual_threshold=0.3,
+        random_state=42,
+    )
+    ransac.fit(X, Y)
+    b = ransac.estimator_.coef_[0]  # slope
+    loga = ransac.estimator_.intercept_  # intercept
+    a = 10**loga
+
+    a_std = None
+    b_std = None
     return (float(a), float(b)), (a_std, b_std)
 
 
-def predict_from_powerlaw(x, a, b):
+def fit_logquadratic_powerlaw_with_wnls(x, y, sigma):
+    r"""Fit a log-quadratic power-law using Weighted Nonlinear Least Squares (WNLS).
+
+    This function fits a log-quadratic (log-parabolic) power-law model
+    by performing weighted regression in log10-space with the Levenberg-Marquardt
+    algorithm.
+
+    The fitted model in original space is:
+
+    .. math::
+
+       y = a x^b 10^{c (\log_{10} x)^2}
+
+    where the fitting is performed in log10-space:
+
+    .. math::
+
+       \log_{10}(y) = a_0 + b \log_{10}(x) + c (\log_{10} x)^2
+
+    with :math:`a = 10^{a_0}`.
+
+    Parameters
+    ----------
+    x : array-like
+        Independent variable values. Must be positive.
+    y : array-like
+        Dependent variable values. Must be positive.
+    sigma : array-like
+        Standard deviation of ``y`` values, used as weights in the fit.
+        Values are transformed to log10-space for fitting.
+
+    Returns
+    -------
+    params : tuple of float
+        Estimated parameters ``(a, b, c)`` of the log-quadratic power law.
+    params_std : tuple of float
+        One standard deviation uncertainties ``(a_std, b_std, c_std)`` estimated
+        from the covariance matrix of the fit.
+
+    Notes
+    -----
+    - The function uses ``scipy.optimize.curve_fit`` with the Levenberg-Marquardt
+      method for optimization.
+    - Uncertainties are propagated from log10-space back to linear space.
+    - If :math:`c = 0`, the model reduces to a classical power law :math:`y = a x^b`.
+    - The transformation :math:`\sigma_{\log_{10}(y)} = \sigma_y / (y \ln(10))`
+      is used for the weights.
+
+    See Also
+    --------
+    fit_powerlaw : Main power-law fitting function with binning and outlier removal.
+    fit_logquadratic_powerlaw_with_ransac : Fit log-quadratic power law using RANSAC.
+    predict_from_logquadratic_powerlaw : Predict values from the fitted model.
     """
-    Predict values from a power-law relationship ``y = a * x**b``.
+
+    def _linear_model(lx, a0, b, c):
+        return a0 + b * lx + c * lx**2
+
+    # Transform sigma_y -> sigma_log10(y)
+    sigma_log = sigma / (y * np.log(10))
+
+    # Fit
+    (a0, b, c), pcov = curve_fit(
+        _linear_model,
+        np.log10(x),
+        np.log10(y),
+        method="lm",
+        sigma=sigma_log,
+        absolute_sigma=True,
+        maxfev=10_000,  # max n iterations
+    )
+    a0_std, b_std, c_std = np.sqrt(np.diag(pcov))
+    a = 10**a0
+    a_std = np.log(10) * a * a0_std  # error propagation
+
+    return (float(a), float(b), float(c)), (float(a_std), float(b_std), float(c_std))
+
+
+def fit_logquadratic_powerlaw_with_ransac(x, y):
+    r"""Fit a log-quadratic power-law model using RANSAC regression.
+
+    This function fits a log-quadratic (log-parabolic) power-law model
+    by performing linear regression in log10-space using the Random Sample
+    Consensus (RANSAC) algorithm, which is robust to outliers.
+
+    The fitted model in original space is:
+
+    .. math::
+
+       y = a x^b 10^{c (\log_{10} x)^2}
+
+    where the fitting is performed in log10-space:
+
+    .. math::
+
+       \log_{10}(y) = a_0 + b \log_{10}(x) + c (\log_{10} x)^2
+
+    with :math:`a = 10^{a_0}`.
+
+    This model (also known as a log-parabolic power law) extends the
+    classical power law by allowing smooth curvature in log-log space.
+    The effective scale-dependent exponent is:
+
+    .. math::
+
+       \frac{d(\log_{10} y)}{d(\log_{10} x)} = b + 2c \log_{10}(x)
+
+    Parameters
+    ----------
+    x : array-like
+        Independent variable values. Must be strictly positive.
+    y : array-like
+        Dependent variable values. Must be strictly positive.
+
+    Returns
+    -------
+    params : tuple of float
+        Estimated parameters ``(a, b, c)`` of the log-quadratic power law.
+    params_std : tuple of None
+        Placeholder for standard deviations ``(None, None, None)``.
+        Parameter uncertainties are not computed with RANSAC.
+
+    Notes
+    -----
+    - Requires scikit-learn to be installed.
+    - The fitting is performed in log10-space using RANSAC with
+      a linear regression estimator.
+    - Non-positive x or y values are removed prior to fitting.
+    - If :math:`c = 0`, the model reduces to a pure power law :math:`y = a x^b`.
+    - The residual threshold for inlier classification is set to 0.3 in log10-space.
+    - Parameter uncertainties are not provided by RANSAC and are returned as None.
+
+    See Also
+    --------
+    fit_powerlaw : Main power-law fitting function with binning and outlier removal.
+    fit_logquadratic_powerlaw_with_wnls : Fit log-quadratic power law using WNLS.
+    predict_from_logquadratic_powerlaw : Predict values from the fitted model.
+    """
+    import numpy as np
+    from sklearn.linear_model import LinearRegression, RANSACRegressor
+
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    mask = (x > 0) & (y > 0)
+    x = x[mask]
+    y = y[mask]
+
+    lx = np.log10(x)
+    Y = np.log10(y)
+
+    X = np.column_stack(
+        [
+            lx,
+            lx**2,
+        ],
+    )
+
+    ransac = RANSACRegressor(
+        estimator=LinearRegression(),
+        min_samples=0.5,
+        residual_threshold=0.3,
+        random_state=42,
+    )
+
+    ransac.fit(X, Y)
+
+    b = ransac.estimator_.coef_[0]
+    c = ransac.estimator_.coef_[1]
+    a0 = ransac.estimator_.intercept_
+
+    a = np.power(10, a0)
+
+    a_std = None
+    b_std = None
+    c_std = None
+    return (float(a), float(b), float(c)), (a_std, b_std, c_std)
+
+
+def predict_from_powerlaw(x, a, b):
+    r"""Predict values from a power-law relationship.
+
+    This function computes predictions using the power-law model:
+
+    .. math::
+
+       y = a x^b
 
     Parameters
     ----------
@@ -660,23 +1022,87 @@ def predict_from_powerlaw(x, a, b):
     -----
     This function does not check for invalid (negative or zero) ``x`` values.
     Ensure that ``x`` is compatible with the model before calling.
+
+    See Also
+    --------
+    fit_powerlaw : Fit a power-law relationship to data.
+    predict_from_logquadratic_powerlaw : Predict from log-quadratic power law.
     """
     return a * np.power(x, b)
 
 
-def inverse_powerlaw_parameters(a, b):
-    """
-    Compute parameters of the inverse power-law relationship.
+def predict_from_logquadratic_powerlaw(x, a, b, c):
+    r"""Predict values from a log-quadratic power-law model.
 
-    Given a model ``y = a * x**b``, this returns parameters ``(A, B)``
-    such that the inverse relation ``x = A * y**B`` holds.
+    This function computes predictions using the log-quadratic power-law model:
+
+    .. math::
+
+       y = a x^b 10^{c (\log_{10} x)^2}
+
+    Parameters
+    ----------
+    x : array-like
+        Independent variable values. Must be positive.
+    a : float
+        Multiplicative coefficient in original space.
+    b : float
+        Linear log10 slope coefficient.
+    c : float
+        Quadratic log10 curvature coefficient.
+
+    Returns
+    -------
+    y : numpy.ndarray
+        Predicted dependent variable values.
+
+    Notes
+    -----
+    If :math:`c = 0`, the model reduces to the classical power law:
+
+    .. math::
+
+       y = a x^b
+
+    See Also
+    --------
+    fit_powerlaw : Fit a power-law relationship to data.
+    predict_from_powerlaw : Predict from classical power law.
+    fit_logquadratic_powerlaw_with_wnls : Fit log-quadratic power law using WNLS.
+    fit_logquadratic_powerlaw_with_ransac : Fit log-quadratic power law using RANSAC.
+    """
+    logx = np.log10(x)
+    return a * np.power(10, b * logx + c * logx**2)
+
+
+def inverse_powerlaw_parameters(a, b):
+    r"""Compute parameters of the inverse power-law relationship.
+
+    Given a power-law model:
+
+    .. math::
+
+       y = a x^b
+
+    this function returns parameters :math:`(A, B)` such that the inverse
+    relation holds:
+
+    .. math::
+
+       x = A y^B
+
+    where:
+
+    .. math::
+
+       A = a^{-1/b}, \quad B = 1/b
 
     Parameters
     ----------
     a : float
-        Power-law coefficient in ``y = a * x**b``.
+        Power-law coefficient in :math:`y = a x^b`.
     b : float
-        Power-law exponent in ``y = a * x**b``.
+        Power-law exponent in :math:`y = a x^b`.
 
     Returns
     -------
@@ -684,6 +1110,11 @@ def inverse_powerlaw_parameters(a, b):
         Coefficient of the inverse power-law model.
     B : float
         Exponent of the inverse power-law model.
+
+    See Also
+    --------
+    fit_powerlaw : Fit a power-law relationship to data.
+    predict_from_inverse_powerlaw : Predict using inverse power-law parameters.
     """
     A = 1 / (a ** (1 / b))
     B = 1 / b
@@ -691,16 +1122,24 @@ def inverse_powerlaw_parameters(a, b):
 
 
 def predict_from_inverse_powerlaw(x, a, b):
-    """
-    Predict values from the inverse power-law relationship.
+    r"""Predict values from the inverse power-law relationship.
 
-    Given parameters ``a`` and ``b`` from ``x = a * y**b``, this function computes
-    ``y`` given ``x``.
+    Given an inverse power-law model:
+
+    .. math::
+
+       x = a y^b
+
+    this function solves for :math:`y` given :math:`x`:
+
+    .. math::
+
+       y = (x / a)^{1/b} = x^{1/b} \cdot a^{-1/b}
 
     Parameters
     ----------
     x : array-like
-        Values of ``x`` (independent variable in the original power law).
+        Values of ``x`` (independent variable in the inverse power law).
     a : float
         Power-law coefficient of the inverse power-law model.
     b : float
@@ -710,8 +1149,96 @@ def predict_from_inverse_powerlaw(x, a, b):
     -------
     y : numpy.ndarray
         Predicted dependent variable values.
+
+    See Also
+    --------
+    inverse_powerlaw_parameters : Compute parameters of the inverse power law.
+    predict_from_powerlaw : Predict from the original power law.
     """
     return (x ** (1 / b)) / (a ** (1 / b))
+
+
+def _define_coeff_string(a):
+    # Format a coefficient as m * 10^{e}
+    m_str, e_str = f"{a:.2e}".split("e")
+    m, e = float(m_str), int(e_str)
+    # Build coefficient string
+    a_str = f"{a:.2f}" if e >= -1 else f"{m:.2f} \\times 10^{{{e}}}"
+    return a_str
+
+
+def define_powerlaw_legend_str(x_symbol, y_symbol, a, b):
+    r"""Build two-line LaTeX legend string for y = a x^b and x = A y^B.
+
+    Parameters
+    ----------
+    x_symbol : str
+        Symbol of independent variable (e.g. 'R', 'z', 'A_H', '\\mathrm{KED}')
+    y_symbol : str
+        Symbol of dependent variable
+    a : float
+        Power-law coefficient
+    b : float
+        Power-law exponent
+
+    Returns
+    -------
+    legend_str : str
+        LaTeX formatted legend string (two lines)
+    """
+    # Inverse parameters
+    A, B = inverse_powerlaw_parameters(a, b)
+
+    # Format coefficients
+    a_str = _define_coeff_string(a)
+    A_str = _define_coeff_string(A)
+
+    legend_str = (
+        rf"${y_symbol} = {a_str}\, {x_symbol}^{{{b:.2f}}}$" "\n" rf"${x_symbol} = {A_str}\, {y_symbol}^{{{B:.2f}}}$"
+    )
+    return legend_str
+
+
+def define_logquadratic_powerlaw_legend_str(
+    x_symbol,
+    y_symbol,
+    a,
+    b,
+    c,
+):
+    r"""Build LaTeX legend string for log-quadratic power law.
+
+    .. math::
+
+       y = a x^b 10^{c (\log_{10} x)^2}
+
+    Parameters
+    ----------
+    x_symbol : str
+        Symbol of independent variable (e.g. 'R')
+    y_symbol : str
+        Symbol of dependent variable
+    a : float
+        Multiplicative coefficient in original space.
+    b : float
+        Linear log10 slope coefficient
+    c : float
+        Quadratic log10 curvature coefficient.
+        If c = 0, the model reduces to the classical power law.
+
+    Returns
+    -------
+    legend_str : str
+        LaTeX formatted legend string
+    """
+    # Format coefficients
+    a_str = _define_coeff_string(a)
+    c_str = f"{c:.3f}"
+    b_str = f"{b:.2f}"
+
+    legend_str = rf"${y_symbol} = {a_str}\, {x_symbol}^{{{b_str}}}" rf"\, 10^{{{c_str}(\log_{{10}} {x_symbol})^2}}$"
+
+    return legend_str
 
 
 ####-------------------------------------------------------------------
@@ -751,7 +1278,7 @@ def create_nd_dataframe(ds, variables=None):
     return df_nd
 
 
-def plot_normalized_dsd_density(df_nd, x="D/D50", figsize=(8, 8), dpi=300):
+def plot_normalized_dsd_density(df_nd, x="D/D50", figsize=(3.4, 3.0), dpi=300):
     """Plot normalized DSD N(D)/Nw ~ D/D50 (or D/Dm) density."""
     ds_stats = compute_2d_histogram(
         df_nd,
@@ -785,7 +1312,7 @@ def plot_normalized_dsd_density(df_nd, x="D/D50", figsize=(8, 8), dpi=300):
     return p
 
 
-def plot_dsd_density(df_nd, diameter_bin_edges, figsize=(8, 8), dpi=300):
+def plot_dsd_density(df_nd, diameter_bin_edges, figsize=(3.4, 3.0), dpi=300):
     """Plot N(D) ~ D density."""
     ds_stats = compute_2d_histogram(
         df_nd,
@@ -807,7 +1334,7 @@ def plot_dsd_density(df_nd, diameter_bin_edges, figsize=(8, 8), dpi=300):
     return p
 
 
-def plot_dsd_with_dense_lines(drop_number_concentration, r, figsize=(8, 8), dpi=300):
+def plot_dsd_with_dense_lines(drop_number_concentration, r, figsize=(3.4, 3.0), dpi=300):
     """Plot N(D) ~ D using dense lines."""
     # Define intervals for rain rates
     r_bins = [0, 2, 5, 10, 50, 100, 500]
@@ -983,7 +1510,7 @@ def plot_dsd_params_relationships(df, add_nt=False, log_step=0.05, dpi=300):
     # Define normalizations for each variable
     norm_counts = LogNorm(1, None)
     norm_lwc = LogNorm(0.01, 10)
-    norm_r = LogNorm(0.1, 500)
+    norm_r = LogNorm(0.2, 500)
     # norm_nw = LogNorm(10, 100000)
     norm_nt = LogNorm(1, 10000)
 
@@ -996,17 +1523,17 @@ def plot_dsd_params_relationships(df, add_nt=False, log_step=0.05, dpi=300):
 
     # Define figure size
     if add_nt:
-        figsize = (16, 16)
+        figsize = (6.9, 6.9)
         nrows = 4
-        height_ratios = [0.2, 1, 1, 1, 1]
+        height_ratios = [0.40, 1, 1, 1, 1]
     else:
-        figsize = (16, 12)
+        figsize = (6.9, 5.8)
         nrows = 3
-        height_ratios = [0.2, 1, 1, 1]
+        height_ratios = [0.40, 1, 1, 1]
 
     # Create figure with 4x4 subplots
     fig = plt.figure(figsize=figsize, dpi=dpi)
-    gs = fig.add_gridspec(nrows + 1, 4, height_ratios=height_ratios, hspace=0.05, wspace=0.02)
+    gs = fig.add_gridspec(nrows + 1, 4, height_ratios=height_ratios, hspace=0.0, wspace=0.02)
     axes = np.empty((nrows + 1, 4), dtype=object)
 
     # Create colorbar axes in the bottom row of the gridspec
@@ -1274,9 +1801,9 @@ def plot_dsd_params_relationships(df, add_nt=False, log_step=0.05, dpi=300):
             extend="both",
             yscale="log",
             add_colorbar=False,
-            ax=axes[4, 2],
+            ax=axes[4, 3],
         )
-        axes[4, 3].set_xlabel(r"$D_m$ [mm]")
+        axes[4, 3].set_xlabel("$D_m$ [mm]")
         axes[4, 3].set_xlim(*dm_lim)
         axes[4, 3].set_ylim(nt_lim)
         axes[4, 3].set_yticklabels([])
@@ -1298,6 +1825,26 @@ def plot_dsd_params_relationships(df, add_nt=False, log_step=0.05, dpi=300):
                 axes[i, j].set_yticks([])
                 axes[i, j].set_yticklabels([])
                 axes[i, j].set_ylabel("")
+                axes[i, j].tick_params(which="both", left=False)
+
+    # Clear overlapping ticks between Nt and R
+    if add_nt:
+        ylim = axes[4, 0].get_ylim()
+        yticks = axes[4, 0].get_yticks()
+        yticks = yticks[(yticks <= 20_000)]
+        axes[4, 0].set_yticks(yticks)
+        axes[4, 0].set_ylim(*ylim)
+
+    # Add Dm label in the center
+    for j in range(4):
+        axes[-1, j].set_xlabel("")
+    fig.text(0.5, 0.05, r"$D_m$ [mm]", ha="center", va="center")
+
+    # Add gray background to subplots
+    for i in range(1, nrows + 1):
+        for j in range(4):
+            axes[i, j].set_facecolor("#e6e6e6")  # strong gray
+            # axes[i, j].set_facecolor("#f2f2f2")   # light gray
 
     # -------------------------------------------------.
     # Add colorbars
@@ -1305,22 +1852,31 @@ def plot_dsd_params_relationships(df, add_nt=False, log_step=0.05, dpi=300):
     cbar1 = plt.colorbar(im_counts, cax=cbar_axes[0], orientation="horizontal", extend="both")
     cbar1.set_label("Counts", fontweight="bold")
     cbar1.ax.xaxis.set_label_position("top")
-    cbar1.ax.set_aspect(0.25)
+    cbar1.ax.tick_params(axis="x", pad=2)
+    cbar1.ax.set_aspect(0.2)
     # - LWC colorbar
     cbar2 = plt.colorbar(im_lwc, cax=cbar_axes[1], orientation="horizontal", extend="both")
     cbar2.set_label("Median LWC [g/m³]", fontweight="bold")
     cbar2.ax.xaxis.set_label_position("top")
+    cbar2.ax.tick_params(axis="x", pad=2)
     cbar2.ax.set_aspect(0.25)
     # - R colorbar
     cbar3 = plt.colorbar(im_r, cax=cbar_axes[2], orientation="horizontal", extend="both")
     cbar3.set_label("Median R [mm/h]", fontweight="bold")
     cbar3.ax.xaxis.set_label_position("top")
+    cbar3.ax.tick_params(axis="x", pad=2)
     cbar3.ax.set_aspect(0.3)
     # - Nt colorbar
     cbar4 = plt.colorbar(im_nt, cax=cbar_axes[3], orientation="horizontal", extend="both")
     cbar4.set_label("Median $N_t$ [m$^{-3}$]", fontweight="bold")
     cbar4.ax.xaxis.set_label_position("top")
+    cbar4.ax.tick_params(axis="x", pad=2)
     cbar4.ax.set_aspect(0.3)
+
+    # -------------------------------------------------.
+    # Align labels
+    fig.align_xlabels()
+    fig.align_ylabels()
 
     # -------------------------------------------------.
     # Return figure
@@ -1334,7 +1890,7 @@ def plot_dsd_params_density(
     log_normalize=False,
     log_step=0.05,
     linear_step=0.1,
-    figsize=(10, 10),
+    figsize=(6.9, 7.2),
     dpi=300,
 ):
     """Generate a figure with various DSD relationships.
@@ -1364,7 +1920,8 @@ def plot_dsd_params_density(
     # Common parameters
     cmap = plt.get_cmap("Spectral_r").copy()
     norm = Normalize(0, 1)  # Normalized data goes from 0 to 1
-
+    ylabelpad = 0
+    moment_labelpad = -2
     # Define the water variable based on lwc flag
     df["LWC"] = df["LWC"]
     water_var = "LWC" if lwc else "R"
@@ -1523,7 +2080,7 @@ def plot_dsd_params_density(
         ax=axes[0, 0],
     )
     axes[0, 0].set_xlabel("")  # Hide x labels except for bottom row
-    axes[0, 0].set_ylabel(r"$N_t$ [m$^{-3}$]")
+    axes[0, 0].set_ylabel(r"$N_t$ [m$^{-3}$]", labelpad=ylabelpad)
     axes[0, 0].set_xlim(*dm_lim)
     axes[0, 0].set_ylim(*nt_lim)
     axes[0, 0].set_title(r"$D_m$ vs $N_t$")
@@ -1541,7 +2098,7 @@ def plot_dsd_params_density(
         ax=axes[1, 0],
     )
     axes[1, 0].set_xlabel("")  # Hide x labels except for bottom row
-    axes[1, 0].set_ylabel(r"$N_w$ [mm$^{-1}$ m$^{-3}$]")
+    axes[1, 0].set_ylabel(r"$N_w$ [mm$^{-1}$ m$^{-3}$]", labelpad=ylabelpad)
     axes[1, 0].set_xlim(*dm_lim)
     axes[1, 0].set_ylim(*nw_lim)
     axes[1, 0].set_title(r"$D_m$ vs $N_w$")
@@ -1559,7 +2116,7 @@ def plot_dsd_params_density(
         ax=axes[2, 0],
     )
     axes[2, 0].set_xlabel(r"$D_m$ [mm]")
-    axes[2, 0].set_ylabel(water_label)
+    axes[2, 0].set_ylabel(water_label, labelpad=ylabelpad)
     axes[2, 0].set_xlim(*dm_lim)
     if lwc:
         axes[2, 0].set_ylim(*water_lim)
@@ -1574,7 +2131,7 @@ def plot_dsd_params_density(
 
     # COLUMN 2: All plots with LWC/R as x-axis
     # 4. LWC/R vs Nt (0,1)
-    _ = ds_stats_w_nt["normalized"].plot.pcolormesh(
+    mappable = ds_stats_w_nt["normalized"].plot.pcolormesh(
         x=water_var,
         y="Nt",
         cmap=cmap,
@@ -1586,7 +2143,7 @@ def plot_dsd_params_density(
         ax=axes[0, 1],
     )
     axes[0, 1].set_xlabel("")  # Hide x labels except for bottom row
-    axes[0, 1].set_ylabel(r"$N_t$ [m$^{-3}$]")
+    axes[0, 1].set_ylabel(r"$N_t$ [m$^{-3}$]", labelpad=ylabelpad)
     if lwc:
         axes[0, 1].set_xlim(*water_lim)
         axes[0, 1].set_xticks([0.01, 0.1, 1, 10])
@@ -1609,7 +2166,7 @@ def plot_dsd_params_density(
         ax=axes[1, 1],
     )
     axes[1, 1].set_xlabel("")  # Hide x labels except for bottom row
-    axes[1, 1].set_ylabel(r"$N_w$ [mm$^{-1}$ m$^{-3}$]")
+    axes[1, 1].set_ylabel(r"$N_w$ [mm$^{-1}$ m$^{-3}$]", labelpad=ylabelpad)
     if lwc:
         axes[1, 1].set_xlim(*water_lim)
         axes[1, 1].set_xticks([0.01, 0.1, 1, 10])
@@ -1631,7 +2188,7 @@ def plot_dsd_params_density(
         ax=axes[2, 1],
     )
     axes[2, 1].set_xlabel(water_label)
-    axes[2, 1].set_ylabel(r"$\sigma_m$ [mm]")
+    axes[2, 1].set_ylabel(r"$\sigma_m$ [mm]", labelpad=ylabelpad)
     if lwc:
         axes[2, 1].set_xlim(*water_lim)
         axes[2, 1].set_xticks([0.01, 0.1, 1, 10])
@@ -1656,7 +2213,7 @@ def plot_dsd_params_density(
         ax=axes[0, 2],
     )
     axes[0, 2].set_xlabel("")  # Hide x labels except for bottom row
-    axes[0, 2].set_ylabel(r"M4 [m$^{-3}$ mm$^{4}$]")
+    axes[0, 2].set_ylabel(r"M4 [m$^{-3}$ mm$^{4}$]", labelpad=moment_labelpad)
     axes[0, 2].set_xlim(1, 10_000)
     axes[0, 2].set_ylim(1, 40_000)
     axes[0, 2].set_title(r"M2 vs M4")
@@ -1674,7 +2231,7 @@ def plot_dsd_params_density(
         ax=axes[1, 2],
     )
     axes[1, 2].set_xlabel("")  # Hide x labels except for bottom row
-    axes[1, 2].set_ylabel(r"M6 [m$^{-3}$ mm$^{6}$]")
+    axes[1, 2].set_ylabel(r"M6 [m$^{-3}$ mm$^{6}$]", labelpad=moment_labelpad)
     axes[1, 2].set_xlim(1, 10_000)
     axes[1, 2].set_ylim(0.1, 1000_000)
     axes[1, 2].set_title(r"M3 vs M6")
@@ -1692,7 +2249,7 @@ def plot_dsd_params_density(
         ax=axes[2, 2],
     )
     axes[2, 2].set_xlabel(r"M* [m$^{-3}$ mm$^{*}$]")
-    axes[2, 2].set_ylabel(r"M6 [m$^{-3}$ mm$^{6}$]")
+    axes[2, 2].set_ylabel(r"M6 [m$^{-3}$ mm$^{6}$]", labelpad=moment_labelpad)
     axes[2, 2].set_xlim(1, 10_000)
     axes[2, 2].set_ylim(0.1, 1000_000)
     axes[2, 2].set_title(r"M2 vs M6")
@@ -1717,13 +2274,59 @@ def plot_dsd_params_density(
             0.95,
             ax.get_title(),
             transform=ax.transAxes,
-            fontsize=11,
+            fontsize=9,
             #  fontweight='bold',
             ha="left",
             va="top",
             bbox=title_bbox_dict,
         )
         ax.set_title("")
+
+    # --------------------------------------
+    # Add colorbar
+    ax_cbar_parent = axes[0, 1]
+
+    # Create inset axis in axis-fraction coordinates
+    x_pos_cbar = 0.40
+    y_pos_cbar = 0.09
+    cbar_width = 0.55
+    cbar_height = 0.055
+    cbar_fontsize = 6
+    cax = ax_cbar_parent.inset_axes(
+        [
+            x_pos_cbar,  # e.g. 0.45
+            y_pos_cbar,  # e.g. 0.08
+            cbar_width,  # e.g. 0.5
+            cbar_height,  # e.g. 0.06
+        ],
+    )
+
+    cb = fig.colorbar(
+        mappable,
+        cax=cax,
+        orientation="horizontal",
+    )
+
+    cb.ax.tick_params(labelsize=5)
+    cb.ax.tick_params(pad=-1)
+
+    # Label on top
+    cb.ax.xaxis.set_label_position("top")
+
+    if log_normalize:
+        cbar_label = r"$\frac{\log_{10}(\mathrm{count})}" r"{\max\left(\log_{10}(\mathrm{count})\right)}$"
+    else:
+        cbar_label = r"$\frac{\mathrm{count}}" r"{\max\left(\mathrm{count}\right)}$"
+    cb.set_label(
+        cbar_label,
+        fontsize=cbar_fontsize,
+        labelpad=6,
+    )
+
+    # -------------------------------------------------.
+    # Align labels
+    fig.align_xlabels()
+    fig.align_ylabels()
 
     return fig
 
@@ -1788,26 +2391,17 @@ def plot_dmax_relationships(df, diameter_bin_edges, dmax="Dmax", diameter_max=10
     norm = LogNorm(1, norm_vmax)
 
     # Create figure with 2x2 subplots
-    figsize = (8, 6)
-    fig = plt.figure(figsize=figsize, dpi=dpi)
+    figsize = (6.9, 5.2)
+    # fig = plt.figure(figsize=figsize, dpi=dpi)
 
-    # Create main gridspec with larger space between plots and colorbar
-    # - Horizontal colorbar
-    main_gs = fig.add_gridspec(2, 1, height_ratios=[1, 0.20], hspace=0.15)
-
-    # - Vertical colorbar
-    # main_gs = fig.add_gridspec(1, 2, width_ratios=[1, 0.20], wspace=0.15)
-
-    # Create nested gridspec for the 2x2 subplots with smaller internal spacing
-    subplots_gs = main_gs[0].subgridspec(2, 2, hspace=0.05, wspace=0.05)
-
-    # Create the 2x2 subplot grid
-    axes = np.array(
-        [
-            [fig.add_subplot(subplots_gs[0, 0]), fig.add_subplot(subplots_gs[0, 1])],
-            [fig.add_subplot(subplots_gs[1, 0]), fig.add_subplot(subplots_gs[1, 1])],
-        ],
+    fig, axes = plt.subplots(
+        2,
+        2,
+        figsize=figsize,
+        dpi=dpi,
+        gridspec_kw={"hspace": 0.05, "wspace": 0.045},
     )
+    axes = np.asarray(axes)
 
     # - Dmax vs R (top-left)
     ax1 = axes[0, 0]
@@ -1935,18 +2529,23 @@ def plot_dmax_relationships(df, diameter_bin_edges, dmax="Dmax", diameter_max=10
         bbox=title_bbox_dict,
     )
 
-    # Add colorbar
-    cax = fig.add_subplot(main_gs[1])
-    # - Horizontal colorbar
-    cbar = fig.colorbar(p1, cax=cax, extend="max", orientation="horizontal")
-    cbar.set_label("Counts", labelpad=10)
-    cbar.ax.set_aspect(0.1)
+    # Add colorbar as legend
+    cax = ax1.inset_axes([0.52, 0.15, 0.43, 0.06])  # [x0, y0, width, height]
+    cbar = fig.colorbar(
+        p1,
+        cax=cax,
+        orientation="horizontal",
+        extend="max",
+    )
+
+    cbar.set_label("Counts", fontsize=9, labelpad=2)
+    cbar.ax.tick_params(labelsize=8, pad=1)
     cbar.ax.xaxis.set_label_position("top")
 
-    # - Vertical colorbar
-    # cbar = fig.colorbar(p2, cax=cax, extend="max")
-    # cbar.set_label('Count', rotation=270, labelpad=10)
-    # cbar.ax.set_aspect(10)
+    # Align labels
+    fig.align_xlabels()
+    fig.align_ylabels()
+
     return fig
 
 
@@ -1954,13 +2553,19 @@ def plot_dmax_relationships(df, diameter_bin_edges, dmax="Dmax", diameter_max=10
 #### Radar plots
 
 
-def _define_coeff_string(a):
-    # - Format a coefficient as m * 10^{e}
-    m_str, e_str = f"{a:.2e}".split("e")
-    m, e = float(m_str), int(e_str)
-    # Build coefficient string
-    a_str = f"{a:.2f}" if e >= -1 else f"{m:.2f} \\times 10^{{{e}}}"
-    return a_str
+def add_legend_powerlaw(ax, legend_str, legend_fontsize):
+    """Add legend fitted powerlaw relationship to plot."""
+    legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+    ax.text(
+        0.05,
+        0.955,
+        legend_str,
+        transform=ax.transAxes,
+        ha="left",
+        va="top",
+        fontsize=legend_fontsize,
+        bbox=legend_bbox_dict,
+    )
 
 
 def get_symbol_str(symbol, pol=""):
@@ -1994,9 +2599,13 @@ def plot_A_R(
     pol="",
     title=None,
     ax=None,
-    figsize=(8, 8),
+    figsize=(3.4, 3.0),
     dpi=300,
-    legend_fontsize=14,
+    fit_linewidth=1,
+    fit_linestyle="dashed",
+    legend_fontsize=None,
+    xlabel_pad=None,
+    ylabel_pad=None,
 ):
     """Create a 2D histogram of A vs R."""
     # Define a_min and a_max
@@ -2049,8 +2658,8 @@ def plot_A_R(
         yscale="log",
         cbar_kwargs={"label": "Counts"} if add_colorbar else {},
     )
-    ax.set_xlabel(r"$R$ [mm h$^{-1}$]")
-    ax.set_ylabel(rf"${a_symbol}$ [dB km$^{{-1}}$]")
+    ax.set_xlabel(r"$R$ [mm h$^{-1}$]", labelpad=xlabel_pad)
+    ax.set_ylabel(rf"${a_symbol}$ [dB km$^{{-1}}$]", labelpad=ylabel_pad)
     ax.set_ylim(a_min, a_max)
     ax.set_xlim(*rlims)
     ax.set_xticks(r_ticks)
@@ -2061,30 +2670,17 @@ def plot_A_R(
     if add_fit:
         try:
             # Fit powerlaw k = a * R ** b
-            (a_c, b), _ = fit_powerlaw(x=df[r], y=df[a], xbins=r_bins, x_in_db=False)
-            # Invert for R = A * k ** B
-            A_c, B = inverse_powerlaw_parameters(a_c, b)
-            # Define legend title
-            a_str = _define_coeff_string(a_c)
-            A_str = _define_coeff_string(A_c)
-            legend_str = rf"${a_symbol} =  {a_str} \, R^{{{b:.2f}}}$" "\n" rf"$R = {A_str} \, {a_symbol}^{{{B:.2f}}}$"
+            (a_c, b), _ = fit_powerlaw(x=df[r], y=df[a], xbins=r_bins, ybins=None, x_in_db=False)
+            # Define legend string
+            legend_str = define_powerlaw_legend_str("R", a_symbol, a_c, b)
             # Get power law predictions
             x_pred = np.arange(*rlims)
             r_pred = predict_from_powerlaw(x_pred, a=a_c, b=b)
             # Add fitted power law
-            ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
+            ax.plot(x_pred, r_pred, linewidth=fit_linewidth, linestyle=fit_linestyle, color="black")
             # Add legend
-            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-            ax.text(
-                0.05,
-                0.95,
-                legend_str,
-                transform=ax.transAxes,
-                ha="left",
-                va="top",
-                fontsize=legend_fontsize,
-                bbox=legend_bbox_dict,
-            )
+            add_legend_powerlaw(ax=ax, legend_str=legend_str, legend_fontsize=legend_fontsize)
+
         except Exception as e:
             warnings.warn(f"Could not fit power law in plot_A_R: {e!s}", UserWarning, stacklevel=2)
     return p
@@ -2103,9 +2699,13 @@ def plot_A_Z(
     ax=None,
     a_lim=(0.0001, 10),
     z_lim=(0, 70),
-    figsize=(8, 8),
+    figsize=(3.4, 3.0),
     dpi=300,
-    legend_fontsize=14,
+    fit_linewidth=1,
+    fit_linestyle="dashed",
+    legend_fontsize=None,
+    xlabel_pad=None,
+    ylabel_pad=None,
 ):
     """Create a 2D histogram of A vs Z."""
     # Define bins
@@ -2157,8 +2757,8 @@ def plot_A_Z(
         yscale="log",
         cbar_kwargs={"label": "Counts"} if add_colorbar else {},
     )
-    ax.set_xlabel(rf"${z_symbol}$ [dBZ]")
-    ax.set_ylabel(rf"${a_symbol}$ [dB km$^{{-1}}$]")
+    ax.set_xlabel(rf"${z_symbol}$ [dBZ]", labelpad=xlabel_pad)
+    ax.set_ylabel(rf"${a_symbol}$ [dB km$^{{-1}}$]", labelpad=ylabel_pad)
     ax.set_xlim(*z_lim)
     ax.set_ylim(*a_lim)
     ax.set_yticks(a_ticks)
@@ -2173,35 +2773,19 @@ def plot_A_Z(
                 x=df[z],
                 y=df[a],
                 xbins=z_bins,
+                ybins=a_bins,
                 x_in_db=True,
             )
-            # Invert for Z = A * k ** B
-            A_c, B = inverse_powerlaw_parameters(a_c, b)
-            # Legend text
-            a_str = _define_coeff_string(a_c)
-            A_str = _define_coeff_string(A_c)
-            legend_str = (
-                rf"${a_symbol} = {a_str} \, {z_lower_symbol}^{{{b:.2f}}}$"
-                "\n"
-                rf"${z_lower_symbol} = {A_str} \, {a_symbol}^{{{B:.2f}}}$"
-            )
+            # Define legend string
+            legend_str = define_powerlaw_legend_str(z_lower_symbol, a_symbol, a_c, b)
             # Predictions
             x_pred = np.arange(*z_lim)
             x_pred_linear = disdrodb.idecibel(x_pred)  # convert to linear for prediction
             y_pred = predict_from_powerlaw(x_pred_linear, a=a_c, b=b)
-            ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
+            ax.plot(x_pred, y_pred, linewidth=fit_linewidth, linestyle=fit_linestyle, color="black")
             # Add legend
-            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-            ax.text(
-                0.05,
-                0.95,
-                legend_str,
-                transform=ax.transAxes,
-                ha="left",
-                va="top",
-                fontsize=legend_fontsize,
-                bbox=legend_bbox_dict,
-            )
+            add_legend_powerlaw(ax=ax, legend_str=legend_str, legend_fontsize=legend_fontsize)
+
         except Exception as e:
             warnings.warn(f"Could not fit power law in plot_A_Z: {e!s}", UserWarning, stacklevel=2)
     return p
@@ -2222,9 +2806,13 @@ def plot_A_KDP(
     add_colorbar=True,
     add_fit=True,
     title=None,
-    figsize=(8, 8),
+    figsize=(3.4, 3.0),
     dpi=300,
-    legend_fontsize=14,
+    legend_fontsize=None,
+    xlabel_pad=None,
+    ylabel_pad=None,
+    fit_linewidth=1,
+    fit_linestyle="dashed",
 ):
     """Create a 2D histogram of k(H/V) vs KDP."""
     # Bins & limits for a
@@ -2289,8 +2877,8 @@ def plot_A_KDP(
         yscale=yscale,
         cbar_kwargs={"label": "Counts"} if add_colorbar else {},
     )
-    ax.set_xlabel(r"$K_{\mathrm{DP}}$ [deg km$^{-1}$]")
-    ax.set_ylabel(rf"${a_symbol}$ [dB km$^{{-1}}$]")
+    ax.set_xlabel(r"$K_{\mathrm{DP}}$ [deg km$^{-1}$]", labelpad=xlabel_pad)
+    ax.set_ylabel(rf"${a_symbol}$ [dB km$^{{-1}}$]", labelpad=ylabel_pad)
     ax.set_xlim(*kdp_lim)
     ax.set_ylim(*a_lim)
     if kdp_ticks is not None:
@@ -2308,18 +2896,11 @@ def plot_A_KDP(
                 x=df[kdp],
                 y=df[a],
                 xbins=kdp_bins,
+                ybins=a_bins,
                 x_in_db=False,
             )
-            # Invert: KDP = A * k^B
-            A_c, B = inverse_powerlaw_parameters(a_c, b)
-
-            a_str = _define_coeff_string(a_c)
-            A_str = _define_coeff_string(A_c)
-            legend_str = (
-                rf"${a_symbol} = {a_str}\,K_{{\mathrm{{DP}}}}^{{{b:.2f}}}$"
-                "\n"
-                rf"$K_{{\mathrm{{DP}}}} = {A_str}\,{a_symbol}^{{{B:.2f}}}$"
-            )
+            # Define legend string
+            legend_str = define_powerlaw_legend_str("K_{\\mathrm{DP}}", a_symbol, a_c, b)
 
             # Predictions along KDP axis
             if log_kdp:
@@ -2328,19 +2909,10 @@ def plot_A_KDP(
                 x_pred = np.arange(kdp_lim[0], kdp_lim[1], 0.05)
             y_pred = predict_from_powerlaw(x_pred, a=a_c, b=b)
 
-            ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
+            ax.plot(x_pred, y_pred, linewidth=fit_linewidth, linestyle=fit_linestyle, color="black")
             # Add legend
-            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-            ax.text(
-                0.05,
-                0.95,
-                legend_str,
-                transform=ax.transAxes,
-                ha="left",
-                va="top",
-                fontsize=legend_fontsize,
-                bbox=legend_bbox_dict,
-            )
+            add_legend_powerlaw(ax=ax, legend_str=legend_str, legend_fontsize=legend_fontsize)
+
         except Exception as e:
             warnings.warn(f"Could not fit power law in plot_A_KDP: {e!s}", UserWarning, stacklevel=2)
 
@@ -2358,22 +2930,32 @@ def plot_R_Z(
     pol="",
     title=None,
     ax=None,
-    figsize=(8, 8),
+    figsize=(3.4, 3.0),
     dpi=300,
-    legend_fontsize=14,
+    fit_linewidth=1,
+    fit_linestyle="dashed",
+    legend_fontsize=None,
+    xlabel_pad=None,
+    ylabel_pad=None,
 ):
     """Create a 2D histogram of Z vs R."""
     # Define axis limits
     z_lims = (0, 70)
     r_lims = (0.1, 500)
 
+    z_bins = np.arange(0.01, 500, 0.5)
+    r_bins = log_arange(0.01, 500, log_step=0.05, base=10)
+
+    z_bins_fit = np.arange(0, 50, 1)
+    r_bins_fit = log_arange(0.01, 500, log_step=0.05, base=10)
+
     # Compute 2d histogram
     ds_stats = compute_2d_histogram(
         df,
         x=z,
         y=r,
-        x_bins=np.arange(*z_lims, 0.5),
-        y_bins=log_arange(*r_lims, log_step=0.05, base=10),
+        x_bins=z_bins,
+        y_bins=r_bins,
     )
 
     # Define colormap and norm
@@ -2409,8 +2991,8 @@ def plot_R_Z(
         yscale="log",
         cbar_kwargs={"label": "Counts"} if add_colorbar else {},
     )
-    ax.set_ylabel(r"$R$ [mm h$^{-1}$]")
-    ax.set_xlabel(rf"${z_symbol}$ [dBZ]")
+    ax.set_ylabel(r"$R$ [mm h$^{-1}$]", labelpad=ylabel_pad)
+    ax.set_xlabel(rf"${z_symbol}$ [dBZ]", labelpad=xlabel_pad)
     ax.set_xlim(*z_lims)
     ax.set_ylim(*r_lims)
     ax.set_yticks(r_ticks)
@@ -2421,33 +3003,18 @@ def plot_R_Z(
     if add_fit:
         try:
             # Fit powerlaw R = a * z ** b
-            (a, b), _ = fit_powerlaw(x=df[z], y=df[r], xbins=np.arange(10, 50, 1), x_in_db=True)
-            # Invert for z = A * R ** B
-            A, B = inverse_powerlaw_parameters(a, b)
-            # Define legend title
-            a_str = _define_coeff_string(a)
-            A_str = _define_coeff_string(A)
-            legend_str = (
-                rf"$R = {a_str} \, {z_lower_symbol}^{{{b:.2f}}}$" "\n" rf"${z_lower_symbol} = {A_str} \, R^{{{B:.2f}}}$"
-            )
+            (a, b), _ = fit_powerlaw(x=df[z], y=df[r], xbins=z_bins_fit, ybins=r_bins_fit, x_in_db=True)
+            # Define legend string
+            legend_str = define_powerlaw_legend_str(z_lower_symbol, "R", a, b)
             # Get power law predictions
             x_pred = np.arange(*z_lims)
             x_pred_linear = disdrodb.idecibel(x_pred)
             r_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
             # Add fitted powerlaw
-            ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
+            ax.plot(x_pred, r_pred, linewidth=fit_linewidth, linestyle=fit_linestyle, color="black")
             # Add legend
-            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-            ax.text(
-                0.05,
-                0.95,
-                legend_str,
-                transform=ax.transAxes,
-                ha="left",
-                va="top",
-                fontsize=legend_fontsize,
-                bbox=legend_bbox_dict,
-            )
+            add_legend_powerlaw(ax=ax, legend_str=legend_str, legend_fontsize=legend_fontsize)
+
         except Exception as e:
             warnings.warn(f"Could not fit power law in plot_R_Z: {e!s}", UserWarning, stacklevel=2)
     return p
@@ -2466,9 +3033,13 @@ def plot_R_KDP(
     add_fit=True,
     title=None,
     ax=None,
-    figsize=(8, 8),
+    figsize=(3.4, 3.0),
     dpi=300,
-    legend_fontsize=14,
+    legend_fontsize=None,
+    xlabel_pad=None,
+    ylabel_pad=None,
+    fit_linewidth=1,
+    fit_linestyle="dashed",
 ):
     """Create a 2D histogram of KDP vs R."""
     # Define bins
@@ -2480,7 +3051,7 @@ def plot_R_KDP(
         xscale = None
         yscale = None
     else:
-        kdp_lim = (0.1, 10) if kdp_lim is None else kdp_lim
+        kdp_lim = (0.01, 10) if kdp_lim is None else kdp_lim
         r_lim = (0.1, 500) if r_lim is None else r_lim
         xbins = log_arange(*kdp_lim, log_step=0.05, base=10)
         ybins = log_arange(*r_lim, log_step=0.05, base=10)
@@ -2524,8 +3095,8 @@ def plot_R_KDP(
         extend="max",
         cbar_kwargs={"label": "Counts"} if add_colorbar else {},
     )
-    ax.set_ylabel(r"$R$ [mm h$^{-1}$]")
-    ax.set_xlabel(r"$K_{\mathrm{DP}}$ [deg km$^{-1}$]")
+    ax.set_ylabel(r"$R$ [mm h$^{-1}$]", labelpad=ylabel_pad)
+    ax.set_xlabel(r"$K_{\mathrm{DP}}$ [deg km$^{-1}$]", labelpad=xlabel_pad)
     ax.set_xlim(*kdp_lim)
     ax.set_ylim(*r_lim)
     ax.set_title(title)
@@ -2534,34 +3105,17 @@ def plot_R_KDP(
     if add_fit:
         try:
             # Fit powerlaw R = a * KDP ** b
-            (a, b), _ = fit_powerlaw(x=df[kdp], y=df[r], xbins=xbins, x_in_db=False)
-            # Invert for KDP = A * R ** B
-            A, B = inverse_powerlaw_parameters(a, b)
-            # Define legend title
-            a_str = _define_coeff_string(a)
-            A_str = _define_coeff_string(A)
-            legend_str = (
-                rf"$R = {a_str} \, K_{{\mathrm{{DP}}}}^{{{b:.2f}}}$"
-                "\n"
-                rf"$K_{{\mathrm{{DP}}}} = {A_str} \, R^{{{B:.2f}}}$"
-            )
+            (a, b), _ = fit_powerlaw(x=df[kdp], y=df[r], xbins=xbins, ybins=ybins, x_in_db=False)
+            # Define legend string
+            legend_str = define_powerlaw_legend_str("K_{\\mathrm{DP}}", "R", a, b)
             # Get power law predictions
             x_pred = np.arange(*kdp_lim)
             r_pred = predict_from_powerlaw(x_pred, a=a, b=b)
             # Add fitted line
-            ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
+            ax.plot(x_pred, r_pred, linewidth=fit_linewidth, linestyle=fit_linestyle, color="black")
             # Add legend
-            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-            ax.text(
-                0.05,
-                0.95,
-                legend_str,
-                transform=ax.transAxes,
-                ha="left",
-                va="top",
-                fontsize=legend_fontsize,
-                bbox=legend_bbox_dict,
-            )
+            add_legend_powerlaw(ax=ax, legend_str=legend_str, legend_fontsize=legend_fontsize)
+
         except Exception as e:
             warnings.warn(f"Could not fit power law in plot_R_KDP: {e!s}", UserWarning, stacklevel=2)
     return p
@@ -2576,22 +3130,29 @@ def plot_ZDR_Z(
     cmap=None,
     norm=None,
     add_colorbar=True,
-    add_fit=True,
+    add_fit=False,
     pol="",
     title=None,
     ax=None,
-    figsize=(8, 8),
+    figsize=(3.4, 3.0),
     dpi=300,
-    legend_fontsize=14,
+    legend_fontsize=None,
+    xlabel_pad=None,
+    ylabel_pad=None,
+    fit_linewidth=1,
+    fit_linestyle="dashed",
 ):
     """Create a 2D histogram of Zdr vs Z."""
+    z_bins = np.arange(*z_lim, 0.5)
+    zdr_bins = np.arange(*zdr_lim, 0.025)
+
     # Compute 2d histogram
     ds_stats = compute_2d_histogram(
         df,
         x=z,
         y=zdr,
-        x_bins=np.arange(*z_lim, 0.5),
-        y_bins=np.arange(*zdr_lim, 0.025),
+        x_bins=z_bins,
+        y_bins=zdr_bins,
     )
 
     # Define colormap and norm
@@ -2623,8 +3184,8 @@ def plot_ZDR_Z(
         extend="max",
         cbar_kwargs={"label": "Counts"} if add_colorbar else {},
     )
-    ax.set_xlabel(rf"${z_symbol}$ [dBZ]")
-    ax.set_ylabel(r"$Z_{DR}$ [dB]")
+    ax.set_xlabel(rf"${z_symbol}$ [dBZ]", labelpad=xlabel_pad)
+    ax.set_ylabel(r"$Z_{DR}$ [dB]", labelpad=ylabel_pad)
     ax.set_xlim(*z_lim)
     ax.set_ylim(*zdr_lim)
     ax.set_title(title)
@@ -2636,37 +3197,21 @@ def plot_ZDR_Z(
             (a, b), _ = fit_powerlaw(
                 x=df[z],
                 y=df[zdr],
-                xbins=np.arange(5, 40, 1),
+                xbins=z_bins,
+                ybins=zdr_bins,
                 x_in_db=True,
             )
-            # Invert for Z = A * ZDR ** B
-            A, B = inverse_powerlaw_parameters(a, b)
-            # Define legend title
-            a_str = _define_coeff_string(a)
-            A_str = _define_coeff_string(A)
-            legend_str = (
-                rf"$Z_{{\mathrm{{DR}}}} = {a_str} \, {z_lower_symbol}^{{{b:.2f}}}$"
-                "\n"
-                rf"${z_lower_symbol} = {A_str} \, Z_{{\mathrm{{DR}}}}^{{{B:.2f}}}$"
-            )
+            # Define legend string
+            legend_str = define_powerlaw_legend_str(z_lower_symbol, "Z_{\\mathrm{DR}}", a, b)
             # Get power law predictions
             x_pred = np.arange(0, 70)
             x_pred_linear = disdrodb.idecibel(x_pred)
             r_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
             # Add fitted line
-            ax.plot(x_pred, r_pred, linestyle="dashed", color="black")
+            ax.plot(x_pred, r_pred, linewidth=fit_linewidth, linestyle=fit_linestyle, color="black")
             # Add legend
-            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-            ax.text(
-                0.05,
-                0.95,
-                legend_str,
-                transform=ax.transAxes,
-                ha="left",
-                va="top",
-                fontsize=legend_fontsize,
-                bbox=legend_bbox_dict,
-            )
+            add_legend_powerlaw(ax=ax, legend_str=legend_str, legend_fontsize=legend_fontsize)
+
         except Exception as e:
             warnings.warn(f"Could not fit power law in plot_ZDR_Z: {e!s}", UserWarning, stacklevel=2)
     return p
@@ -2686,9 +3231,13 @@ def plot_KDP_Z(
     pol="",
     title=None,
     ax=None,
-    figsize=(8, 8),
+    figsize=(3.4, 3.0),
     dpi=300,
-    legend_fontsize=14,
+    legend_fontsize=None,
+    xlabel_pad=None,
+    ylabel_pad=None,
+    fit_linewidth=1,
+    fit_linestyle="dashed",
 ):
     """Create a 2D histogram of KDP vs Z."""
     # Bins & limits
@@ -2744,8 +3293,8 @@ def plot_KDP_Z(
         yscale=yscale,
         cbar_kwargs={"label": "Counts"} if add_colorbar else {},
     )
-    ax.set_xlabel(rf"${z_symbol}$ [dBZ]")
-    ax.set_ylabel(r"$K_{\mathrm{DP}}$ [deg km$^{-1}$]")
+    ax.set_xlabel(rf"${z_symbol}$ [dBZ]", labelpad=xlabel_pad)
+    ax.set_ylabel(r"$K_{\mathrm{DP}}$ [deg km$^{-1}$]", labelpad=ylabel_pad)
     ax.set_xlim(*z_lim)
     ax.set_ylim(*kdp_lim)
     if kdp_ticks is not None:
@@ -2760,39 +3309,22 @@ def plot_KDP_Z(
             (a, b), _ = fit_powerlaw(
                 x=df[z],
                 y=df[kdp],
-                xbins=np.arange(15, 50),
+                xbins=z_bins,
+                ybins=kdp_bins,
                 x_in_db=True,
             )
-            # Invert: Z = A * KDP^B
-            A, B = inverse_powerlaw_parameters(a, b)
-
-            # Define legend title
-            a_str = _define_coeff_string(a)
-            A_str = _define_coeff_string(A)
-            legend_str = (
-                rf"$K_{{\mathrm{{DP}}}} = {a_str}\,{z_lower_symbol}^{{{b:.2f}}}$"
-                "\n"
-                rf"${z_lower_symbol} = {A_str}\,K_{{\mathrm{{DP}}}}^{{{B:.2f}}}$"
-            )
+            # Define legend string
+            legend_str = define_powerlaw_legend_str(z_lower_symbol, "K_{\\mathrm{DP}}", a, b)
 
             # Get power law predictions
             x_pred = np.arange(*z_lim)
             x_pred_linear = disdrodb.idecibel(x_pred)
             y_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
             # Add fitted power law
-            ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
+            ax.plot(x_pred, y_pred, linewidth=fit_linewidth, linestyle=fit_linestyle, color="black")
             # Add legend
-            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-            ax.text(
-                0.05,
-                0.95,
-                legend_str,
-                transform=ax.transAxes,
-                ha="left",
-                va="top",
-                fontsize=legend_fontsize,
-                bbox=legend_bbox_dict,
-            )
+            add_legend_powerlaw(ax=ax, legend_str=legend_str, legend_fontsize=legend_fontsize)
+
         except Exception as e:
             warnings.warn(f"Could not fit power law in plot_KDP_Z: {e!s}", UserWarning, stacklevel=2)
 
@@ -2811,8 +3343,10 @@ def plot_ADP_KDP_ZDR(
     add_colorbar=True,
     title=None,
     ax=None,
-    figsize=(8, 8),
+    figsize=(3.4, 3.0),
     dpi=300,
+    xlabel_pad=None,
+    ylabel_pad=None,
 ):
     """Create a 2D histogram of ADP/KDP vs ZDR.
 
@@ -2864,8 +3398,8 @@ def plot_ADP_KDP_ZDR(
         extend="max",
         cbar_kwargs={"label": "Counts"} if add_colorbar else {},
     )
-    ax.set_xlabel(r"$Z_{\mathrm{DR}}$ [dB]")
-    ax.set_ylabel(r"$A_{\mathrm{DP}}  /  K_{\mathrm{DP}}$ [dB deg$^{{-1}}$]")
+    ax.set_xlabel(r"$Z_{\mathrm{DR}}$ [dB]", labelpad=xlabel_pad)
+    ax.set_ylabel(r"$A_{\mathrm{DP}}  /  K_{\mathrm{DP}}$ [dB deg$^{{-1}}$]", labelpad=ylabel_pad)
     ax.set_xlim(*zdr_lim)
     ax.set_ylim(*y_lim)
     ax.set_title(title)
@@ -2886,8 +3420,10 @@ def plot_A_KDP_ZDR(
     pol="",
     title=None,
     ax=None,
-    figsize=(8, 8),
+    figsize=(3.4, 3.0),
     dpi=300,
+    xlabel_pad=None,
+    ylabel_pad=None,
 ):
     """Create a 2D histogram of k/KDP vs ZDR.
 
@@ -2942,8 +3478,8 @@ def plot_A_KDP_ZDR(
         extend="max",
         cbar_kwargs={"label": "Counts"} if add_colorbar else {},
     )
-    ax.set_xlabel(r"$Z_{\mathrm{DR}}$ [dB]")
-    ax.set_ylabel(rf"${a_symbol} / K_{{\mathrm{{DP}}}}$ [dB/deg]")
+    ax.set_xlabel(r"$Z_{\mathrm{DR}}$ [dB]", labelpad=xlabel_pad)
+    ax.set_ylabel(rf"${a_symbol} / K_{{\mathrm{{DP}}}}$ [dB/deg]", labelpad=ylabel_pad)
     ax.set_xlim(*zdr_lim)
     ax.set_ylim(*y_lim)
     ax.set_title(title)
@@ -2964,8 +3500,10 @@ def plot_KDP_Z_ZDR(
     add_colorbar=True,
     title=None,
     ax=None,
-    figsize=(8, 8),
+    figsize=(3.4, 3.0),
     dpi=300,
+    xlabel_pad=None,
+    ylabel_pad=None,
 ):
     """Create a 2D histogram of (KDP/Z) vs ZDR with log-scale y-axis (no fit)."""
     # Define y limits and KDP/Z
@@ -3019,8 +3557,8 @@ def plot_KDP_Z_ZDR(
         yscale="log",
         cbar_kwargs={"label": "Counts"} if add_colorbar else {},
     )
-    ax.set_xlabel(r"$Z_{\mathrm{DR}}$ [dB]")
-    ax.set_ylabel(y_label)
+    ax.set_xlabel(r"$Z_{\mathrm{DR}}$ [dB]", labelpad=xlabel_pad)
+    ax.set_ylabel(y_label, labelpad=ylabel_pad)
     ax.set_xlim(*zdr_lim)
     ax.set_ylim(*y_lim)
     ax.set_title(title)
@@ -3037,11 +3575,16 @@ def plot_KED_R(
     add_colorbar=True,
     title=None,
     ax=None,
-    legend_fontsize=14,
-    figsize=(8, 8),
+    legend_fontsize=None,
+    figsize=(3.4, 3.0),
     dpi=300,
+    xlabel_pad=None,
+    ylabel_pad=None,
+    fit_linewidth=1,
+    fit_linestyle="dashed",
 ):
     """Create a 2D histogram of KED vs R."""
+    # R settings
     if log_r:
         r_bins = log_arange(0.1, 500, log_step=0.05, base=10)
         r_lims = (0.1, 500)
@@ -3052,10 +3595,17 @@ def plot_KED_R(
         r_lims = (0, 500)
         r_ticks = None
         xscale = "linear"
+
+    # KED settings
     if log_ked:
-        ked_bins = log_arange(1, 50, log_step=0.025, base=10)
-        ked_lims = (1, 50)
-        ked_ticks = [1, 10, 50]
+        ked_bins = log_arange(1, 100, log_step=0.025, base=10)
+        if log_r:
+            ked_lims = (2, 100)
+            ked_ticks = [5, 10, 50, 100]
+
+        else:
+            ked_lims = (1, 50)
+            ked_ticks = [1, 10, 50]
         yscale = "log"
     else:
         ked_bins = np.arange(0, 50, step=1)
@@ -3099,8 +3649,8 @@ def plot_KED_R(
         yscale=yscale,
         cbar_kwargs={"label": "Counts"} if add_colorbar else {},
     )
-    ax.set_xlabel(r"$R$ [mm h$^{-1}$]")
-    ax.set_ylabel(r"KED [J m$^{-2}$ mm$^{-1}$]")
+    ax.set_xlabel(r"$R$ [mm h$^{-1}$]", labelpad=xlabel_pad)
+    ax.set_ylabel(r"KED [J m$^{-2}$ mm$^{-1}$]", labelpad=ylabel_pad)
     ax.set_xlim(*r_lims)
     ax.set_ylim(*ked_lims)
     if r_ticks is not None:
@@ -3109,7 +3659,8 @@ def plot_KED_R(
     if ked_ticks is not None:
         ax.set_yticks(ked_ticks)
         ax.set_yticklabels([str(v) for v in ked_ticks])
-    ax.set_title("KED vs R")
+        ax.tick_params(axis="y", which="both", left=True)
+    ax.set_title(title)
     # Fit and plot a powerlaw
     if add_fit:
         try:
@@ -3118,33 +3669,19 @@ def plot_KED_R(
                 x=df["R"],
                 y=df["KED"],
                 xbins=r_bins,
+                ybins=ked_bins,
                 x_in_db=False,
             )
-            # Invert for R = A * KED**B
-            A, B = inverse_powerlaw_parameters(a, b)
             # Define legend string
-            a_str = _define_coeff_string(a)
-            A_str = _define_coeff_string(A)
-            legend_str = (
-                rf"$\mathrm{{KED}} = {a_str}\,R^{{{b:.2f}}}$" "\n" rf"$R = {A_str}\,\mathrm{{KED}}^{{{B:.2f}}}$"
-            )
+            legend_str = define_powerlaw_legend_str("R", "\\mathrm{KED}", a, b)
             # Get power law predictions
             x_pred = np.arange(r_lims[0], r_lims[1])
             y_pred = predict_from_powerlaw(x_pred, a=a, b=b)
             # Add fitted powerlaw
-            ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
+            ax.plot(x_pred, y_pred, linewidth=fit_linewidth, linestyle=fit_linestyle, color="black")
             # Add legend
-            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-            ax.text(
-                0.05,
-                0.95,
-                legend_str,
-                transform=ax.transAxes,
-                ha="left",
-                va="top",
-                fontsize=legend_fontsize,
-                bbox=legend_bbox_dict,
-            )
+            add_legend_powerlaw(ax=ax, legend_str=legend_str, legend_fontsize=legend_fontsize)
+
         except Exception as e:
             warnings.warn(f"Could not fit power law in plot_KED_R: {e!s}", UserWarning, stacklevel=2)
 
@@ -3161,9 +3698,13 @@ def plot_KEF_R(
     add_colorbar=True,
     title=None,
     ax=None,
-    legend_fontsize=14,
-    figsize=(8, 8),
+    legend_fontsize=None,
+    figsize=(3.4, 3.0),
     dpi=300,
+    xlabel_pad=None,
+    ylabel_pad=None,
+    fit_linewidth=1,
+    fit_linestyle="dashed",
 ):
     """Create a 2D histogram of KEF vs R."""
     if log_r:
@@ -3223,8 +3764,8 @@ def plot_KEF_R(
         yscale=yscale,
         cbar_kwargs={"label": "Counts"} if add_colorbar else {},
     )
-    ax.set_xlabel(r"$R$ [mm h$^{-1}$]")
-    ax.set_ylabel(r"KEF [J m$^{-2}$ h$^{-1}$]")
+    ax.set_xlabel(r"$R$ [mm h$^{-1}$]", labelpad=xlabel_pad)
+    ax.set_ylabel(r"KEF [J m$^{-2}$ h$^{-1}$]", labelpad=ylabel_pad)
     ax.set_xlim(*r_lims)
     ax.set_ylim(*kef_lims)
     if r_ticks is not None:
@@ -3244,33 +3785,19 @@ def plot_KEF_R(
                 x=df["R"],
                 y=df["KEF"],
                 xbins=r_bins,
+                ybins=kef_bins,
                 x_in_db=False,
             )
-            # Invert parameters for R = A * KEF ** B
-            A, B = inverse_powerlaw_parameters(a, b)
             # Define legend string
-            a_str = _define_coeff_string(a)
-            A_str = _define_coeff_string(A)
-            legend_str = (
-                rf"$\mathrm{{KEF}} = {a_str}\,R^{{{b:.2f}}}$" "\n" rf"$R = {A_str}\,\mathrm{{KEF}}^{{{B:.2f}}}$"
-            )
+            legend_str = define_powerlaw_legend_str("R", "\\mathrm{KEF}", a, b)
             # Get power law predictions
             x_pred = np.arange(*r_lims)
             kef_pred = predict_from_powerlaw(x_pred, a=a, b=b)
             # Add fitted powerlaw
-            ax.plot(x_pred, kef_pred, linestyle="dashed", color="black")
+            ax.plot(x_pred, kef_pred, linewidth=fit_linewidth, linestyle=fit_linestyle, color="black")
             # Add legend
-            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-            ax.text(
-                0.05,
-                0.95,
-                legend_str,
-                transform=ax.transAxes,
-                ha="left",
-                va="top",
-                fontsize=legend_fontsize,
-                bbox=legend_bbox_dict,
-            )
+            add_legend_powerlaw(ax=ax, legend_str=legend_str, legend_fontsize=legend_fontsize)
+
         except Exception as e:
             warnings.warn(f"Could not fit power law in plot_KEF_R: {e!s}", UserWarning, stacklevel=2)
     return p
@@ -3287,9 +3814,13 @@ def plot_KEF_Z(
     add_colorbar=True,
     title=None,
     ax=None,
-    legend_fontsize=14,
-    figsize=(8, 8),
+    legend_fontsize=None,
+    figsize=(3.4, 3.0),
     dpi=300,
+    xlabel_pad=None,
+    ylabel_pad=None,
+    fit_linewidth=1,
+    fit_linestyle="dashed",
 ):
     """Create a 2D histogram of KEF vs Z."""
     # Define limits and bins
@@ -3346,8 +3877,8 @@ def plot_KEF_Z(
         yscale=yscale,
         cbar_kwargs={"label": "Counts"} if add_colorbar else {},
     )
-    ax.set_xlabel(rf"${z_symbol}$ [dB]")
-    ax.set_ylabel(r"KEF [$J$ m$^{-2}$ h$^{-1}$]")
+    ax.set_xlabel(rf"${z_symbol}$ [dB]", labelpad=xlabel_pad)
+    ax.set_ylabel(r"KEF [$J$ m$^{-2}$ h$^{-1}$]", labelpad=ylabel_pad)
     ax.set_xlim(*z_lims)
     ax.set_ylim(*kef_lims)
     if kef_ticks is not None:
@@ -3363,36 +3894,20 @@ def plot_KEF_Z(
                 x=df[z],
                 y=df["KEF"],
                 xbins=z_bins,
+                ybins=kef_bins,
                 x_in_db=True,
             )
-            # Invert parameters for Z = A * KEF ** B
-            A, B = inverse_powerlaw_parameters(a, b)
             # Define legend string
-            a_str = _define_coeff_string(a)
-            A_str = _define_coeff_string(A)
-            legend_str = (
-                rf"$\mathrm{{KEF}} = {a_str}\;{z_lower_symbol}^{{{b:.2f}}}$"
-                "\n"
-                rf"${z_lower_symbol} = {A_str}\;\mathrm{{KEF}}^{{{B:.2f}}}$"
-            )
+            legend_str = define_powerlaw_legend_str(z_lower_symbol, "\\mathrm{KEF}", a, b)
             # Get power law predictions
             x_pred = np.arange(*z_lims)
             x_pred_linear = disdrodb.idecibel(x_pred)
             kef_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
             # Add fitted powerlaw
-            ax.plot(x_pred, kef_pred, linestyle="dashed", color="black")
+            ax.plot(x_pred, kef_pred, linewidth=fit_linewidth, linestyle=fit_linestyle, color="black")
             # Add legend
-            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-            ax.text(
-                0.05,
-                0.95,
-                legend_str,
-                transform=ax.transAxes,
-                ha="left",
-                va="top",
-                fontsize=legend_fontsize,
-                bbox=legend_bbox_dict,
-            )
+            add_legend_powerlaw(ax=ax, legend_str=legend_str, legend_fontsize=legend_fontsize)
+
         except Exception as e:
             warnings.warn(f"Could not fit power law in plot_KEF_Z: {e!s}", UserWarning, stacklevel=2)
 
@@ -3409,9 +3924,13 @@ def plot_TKE_Z(
     add_colorbar=True,
     title=None,
     ax=None,
-    legend_fontsize=14,
-    figsize=(8, 8),
+    legend_fontsize=None,
+    figsize=(3.4, 3.0),
     dpi=300,
+    xlabel_pad=None,
+    ylabel_pad=None,
+    fit_linewidth=1,
+    fit_linestyle="dashed",
 ):
     """Create a 2D histogram of TKE vs Z."""
     z_bins = np.arange(0, 70, step=1)
@@ -3462,8 +3981,8 @@ def plot_TKE_Z(
         yscale=yscale,
         cbar_kwargs={"label": "Counts"} if add_colorbar else {},
     )
-    ax.set_xlabel(r"$Z$ [dB]")
-    ax.set_ylabel(r"TKE [$J$ m$^{-2}$]")
+    ax.set_xlabel(r"$Z$ [dB]", labelpad=xlabel_pad)
+    ax.set_ylabel(r"TKE [$J$ m$^{-2}$]", labelpad=ylabel_pad)
     ax.set_xlim(*z_lims)
     ax.set_ylim(*tke_lims)
     if tke_ticks is not None:
@@ -3479,34 +3998,20 @@ def plot_TKE_Z(
                 x=df[z],
                 y=df["TKE"],
                 xbins=z_bins,
+                ybins=tke_bins,
                 x_in_db=True,
             )
-            # Invert parameters for Z = A * KEF ** B
-            A, B = inverse_powerlaw_parameters(a, b)
             # Define legend string
-            a_str = _define_coeff_string(a)
-            A_str = _define_coeff_string(A)
-            legend_str = (
-                rf"$\mathrm{{TKE}} = {a_str}\;z^{{{b:.2f}}}$" "\n" rf"$z = {A_str}\;\mathrm{{TKE}}^{{{B:.2f}}}$"
-            )
+            legend_str = define_powerlaw_legend_str("z", "\\mathrm{TKE}", a, b)
             # Get power law predictions
             x_pred = np.arange(*z_lims)
             x_pred_linear = disdrodb.idecibel(x_pred)
             y_pred = predict_from_powerlaw(x_pred_linear, a=a, b=b)
             # Add fitted powerlaw
-            ax.plot(x_pred, y_pred, linestyle="dashed", color="black")
+            ax.plot(x_pred, y_pred, linewidth=fit_linewidth, linestyle=fit_linestyle, color="black")
             # Add legend
-            legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
-            ax.text(
-                0.05,
-                0.95,
-                legend_str,
-                transform=ax.transAxes,
-                ha="left",
-                va="top",
-                fontsize=legend_fontsize,
-                bbox=legend_bbox_dict,
-            )
+            add_legend_powerlaw(ax=ax, legend_str=legend_str, legend_fontsize=legend_fontsize)
+
         except Exception as e:
             warnings.warn(f"Could not fit power law in plot_TKE_Z: {e!s}", UserWarning, stacklevel=2)
 
@@ -3518,67 +4023,77 @@ def plot_TKE_Z(
 
 
 def plot_radar_relationships(df, band):
-    """Create 3x3 multipanel figure with radar relationships."""
-    # Check band
+    """Create 3x3 radar relationships figure formatted for AMT journal."""
     if band not in {"X", "C", "S"}:
         raise ValueError("Plotting function developed only for bands: 'X', 'C', 'S'.")
 
+    # --------------------------------------------------
+    # Styling parameters
+    # --------------------------------------------------
+    plt.rcParams.update(
+        {
+            "font.size": 8,
+            "axes.labelsize": 8,
+            "axes.titlesize": 8,
+            "xtick.labelsize": 7,
+            "ytick.labelsize": 7,
+        },
+    )
+
+    # Appearance
+    norm = LogNorm(1, None)
+    add_colorbar = False
+    legend_fontsize = 8
+    xlabel_pad = -0.5
+    ylabel_pad = -1
+
+    # --------------------------------------------------
     # Define columns
+    # --------------------------------------------------
     z = f"DBZH_{band}"
     zdr = f"ZDR_{band}"
     kdp = f"KDP_{band}"
     a = f"AH_{band}"
     adp = f"ADP_{band}"
 
-    # Define limits
     adp_kdp_ylim_dict = {
         "X": (0.0, 0.05),
         "C": (0.0, 0.05),
         "S": (0.0, 0.015),
     }
-    adp_kdp_ylim = adp_kdp_ylim_dict[band]
 
     a_ylim_dict = {
         "S": (0.00001, 1),
         "C": (0.0001, 10),
         "X": (0.0001, 10),
     }
+
+    adp_kdp_ylim = adp_kdp_ylim_dict[band]
     a_ylim = a_ylim_dict[band]
 
-    # Define plotting settings
-    add_colorbar = False
-    norm = LogNorm(1, None)
-    legend_fontsize = 12
+    # --------------------------------------------------
+    # Figure size
+    # --------------------------------------------------
+    fig = plt.figure(figsize=(6.9, 9), dpi=300)
 
-    # Initialize figure
-    fig = plt.figure(figsize=(10, 12), dpi=300)  # Slightly taller to accommodate colorbar
-    # fig.suptitle(f'C-band Polarimetric Radar Variables Relationships', fontsize=16, y=0.96)
-
-    # Create gridspec with space for colorbar at bottom
     gs = GridSpec(
         4,
         3,
         figure=fig,
         height_ratios=[1, 1, 1, 0.05],
-        hspace=0.35,
-        wspace=0.35,
-        left=0.05,
-        right=0.95,
-        top=0.93,
-        bottom=0.08,
+        hspace=0.38,
+        wspace=0.32,
+        left=0.085,
+        right=0.985,
+        top=0.975,
+        bottom=0.03,
     )
 
-    # Create subplots using gridspec
-    axes = []
-    for i in range(3):
-        for j in range(3):
-            ax = fig.add_subplot(gs[i, j])
-            axes.append(ax)
+    axes = np.array([[fig.add_subplot(gs[i, j]) for j in range(3)] for i in range(3)])
 
-    # Flatten axes for easier indexing
-    ax = np.array(axes).flatten()
-
-    # - R vs Z_H
+    # ==================================================
+    # Row 1
+    # ==================================================
     p = plot_R_Z(
         df,
         z=z,
@@ -3587,154 +4102,328 @@ def plot_radar_relationships(df, band):
         norm=norm,
         add_colorbar=add_colorbar,
         legend_fontsize=legend_fontsize,
-        ax=ax[0],
+        xlabel_pad=xlabel_pad,
+        ylabel_pad=ylabel_pad,
+        ax=axes[0, 0],
     )
 
-    # - Define norm for other plots
     norm = p.norm
 
-    # - R vs K_DP
     plot_R_KDP(
         df,
         kdp=kdp,
         r="R",
         log_scale=True,
-        legend_fontsize=legend_fontsize,
         norm=norm,
         add_colorbar=add_colorbar,
-        ax=ax[1],
-    )
-
-    # - Z_DR vs Z_H
-    plot_ZDR_Z(
-        df,
-        z=z,
-        zdr=zdr,
-        pol="H",
         legend_fontsize=legend_fontsize,
-        norm=norm,
-        add_colorbar=add_colorbar,
-        ax=ax[2],
+        xlabel_pad=xlabel_pad,
+        ylabel_pad=ylabel_pad,
+        ax=axes[0, 1],
     )
 
-    # - A_H vs Z_H
-    plot_A_Z(
-        df,
-        a=a,
-        z=z,
-        pol="H",
-        legend_fontsize=legend_fontsize,
-        norm=norm,
-        add_colorbar=add_colorbar,
-        a_lim=a_ylim,
-        ax=ax[3],
-    )
-
-    # - A_H vs K_DP
-    plot_A_KDP(
-        df,
-        a=a,
-        kdp=kdp,
-        pol="H",
-        legend_fontsize=legend_fontsize,
-        norm=norm,
-        add_colorbar=add_colorbar,
-        ax=ax[4],
-    )
-    # plot_A_KDP(df, a=a, kdp=kdp, log_a=True, log_kdp=True,
-    #            legend_fontsize=legend_fontsize, norm=norm, add_colorbar=add_colorbar, ax=ax[4]))
-
-    # - A_H vs R
-    plot_A_R(df, a=a, r="R", pol="H", legend_fontsize=legend_fontsize, norm=norm, add_colorbar=add_colorbar, ax=ax[5])
-
-    # - K_DP vs Z_H
     plot_KDP_Z(
         df,
         kdp=kdp,
         z=z,
         pol="H",
-        legend_fontsize=legend_fontsize,
+        log_kdp=True,
         norm=norm,
         add_colorbar=add_colorbar,
-        log_kdp=True,
-        ax=ax[6],
+        legend_fontsize=legend_fontsize,
+        xlabel_pad=xlabel_pad,
+        ylabel_pad=ylabel_pad,
+        ax=axes[0, 2],
     )
 
-    # - A_DP/K_DP vs Z_DR
-    plot_ADP_KDP_ZDR(df, adp=adp, kdp=kdp, zdr=zdr, norm=norm, add_colorbar=add_colorbar, y_lim=adp_kdp_ylim, ax=ax[7])
-    # plot_A_KDP_ZDR(df, a=a, kdp=kdp, zdr=zdr, y_lim=(0, 0.3), norm=norm, add_colorbar=add_colorbar)
+    # ==================================================
+    # Row 2
+    # ==================================================
+    plot_A_Z(
+        df,
+        a=a,
+        z=z,
+        pol="H",
+        norm=norm,
+        add_colorbar=add_colorbar,
+        a_lim=a_ylim,
+        legend_fontsize=legend_fontsize,
+        xlabel_pad=xlabel_pad,
+        ylabel_pad=ylabel_pad,
+        ax=axes[1, 0],
+    )
 
-    # - K_DP/Z vs Z_DR
-    p = plot_KDP_Z_ZDR(df, kdp=kdp, z=z, zdr=zdr, norm=norm, add_colorbar=add_colorbar, z_linear=False, ax=ax[8])
-    # plot_KDP_Z_ZDR(df, kdp=kdp, z=z, zdr=zdr, norm=norm, add_colorbar=add_colorbar, z_linear=True, ax=ax[8])
+    plot_A_KDP(
+        df,
+        a=a,
+        kdp=kdp,
+        pol="H",
+        norm=norm,
+        add_colorbar=add_colorbar,
+        legend_fontsize=legend_fontsize,
+        xlabel_pad=xlabel_pad,
+        ylabel_pad=ylabel_pad,
+        ax=axes[1, 1],
+    )
 
-    # - Add colorbar
-    cax = fig.add_subplot(gs[3, :])  # Spans all columns in the bottom row
-    cbar = plt.colorbar(p, cax=cax, orientation="horizontal", extend="max", extendfrac=0.025)
-    cbar.ax.set_aspect(0.1)
-    cbar.set_label("Counts", fontsize=12, labelpad=6)
-    cbar.ax.tick_params(labelsize=12)
+    plot_A_R(
+        df,
+        a=a,
+        r="R",
+        pol="H",
+        norm=norm,
+        add_colorbar=add_colorbar,
+        legend_fontsize=legend_fontsize,
+        xlabel_pad=xlabel_pad,
+        ylabel_pad=ylabel_pad,
+        ax=axes[1, 2],
+    )
+
+    # ==================================================
+    # Row 3
+    # ==================================================
+    plot_ZDR_Z(
+        df,
+        z=z,
+        zdr=zdr,
+        pol="H",
+        norm=norm,
+        add_fit=False,
+        add_colorbar=add_colorbar,
+        legend_fontsize=legend_fontsize,
+        xlabel_pad=xlabel_pad,
+        ylabel_pad=ylabel_pad,
+        ax=axes[2, 0],
+    )
+
+    plot_ADP_KDP_ZDR(
+        df,
+        adp=adp,
+        kdp=kdp,
+        zdr=zdr,
+        norm=norm,
+        add_colorbar=add_colorbar,
+        y_lim=adp_kdp_ylim,
+        xlabel_pad=xlabel_pad,
+        ylabel_pad=ylabel_pad,
+        ax=axes[2, 1],
+    )
+
+    p = plot_KDP_Z_ZDR(
+        df,
+        kdp=kdp,
+        z=z,
+        zdr=zdr,
+        norm=norm,
+        add_colorbar=add_colorbar,
+        z_linear=False,
+        xlabel_pad=xlabel_pad,
+        ylabel_pad=ylabel_pad,
+        ax=axes[2, 2],
+    )
+
+    # ==================================================
+    # Bottom colorbar (shortened)
+    # ==================================================
+    cax_full = fig.add_subplot(gs[3, :])
+    cax_full.axis("off")
+
+    cax = inset_axes(
+        cax_full,
+        width="40%",
+        height="100%",
+        loc="center",
+    )
+
+    cbar = fig.colorbar(
+        p,
+        cax=cax,
+        orientation="horizontal",
+        extend="max",
+        extendfrac=0.02,
+    )
+
+    cbar.set_label("Counts", labelpad=6)
+    cbar.ax.tick_params(labelsize=7)
     cbar.ax.xaxis.set_label_position("top")
+
+    fig.align_xlabels()
+    fig.align_ylabels()
+
     return fig
 
 
 def plot_kinetic_energy_relationships(df):
-    """Create a 2x2 multipanel figure showing kinetic energy relationships."""
-    # Define plotting settings
+    """Create a 2x2 multipanel figure showing kinetic energy relationships (AMT format)."""
+    # --------------------------------------------------
+    # Plot styling
+    # --------------------------------------------------
+    plt.rcParams.update(
+        {
+            "font.size": 8,
+            "axes.labelsize": 8,
+            "axes.titlesize": 8,
+            "xtick.labelsize": 7,
+            "ytick.labelsize": 7,
+            "legend.fontsize": 8,
+        },
+    )
+
+    # Appearance
     add_colorbar = False
     norm = LogNorm(1, None)
-    legend_fontsize = 12
-    # Initialize figure
-    fig = plt.figure(figsize=(9, 10), dpi=300)
+    legend_fontsize = 8
+    xlabel_pad = None
+    ylabel_pad = 2
 
-    # Create gridspec with space for colorbar at bottom
+    # --------------------------------------------------
+    # Figure (A4 width - some margin)
+    # --------------------------------------------------
+    fig = plt.figure(figsize=(6.9, 5.8), dpi=300)
+
     gs = GridSpec(
         3,
         2,
         figure=fig,
-        height_ratios=[1, 1, 0.05],
-        hspace=0.3,
-        wspace=0.25,
-        left=0.05,
-        right=0.95,
-        top=0.93,
-        bottom=0.08,
+        height_ratios=[1, 1, 0.1],
+        hspace=0.0,
+        wspace=0.24,
+        left=0.10,
+        right=0.98,
+        top=0.97,
+        bottom=0.05,
     )
 
-    # Create subplots using gridspec
-    axes = []
-    for i in range(2):
-        for j in range(2):
-            ax = fig.add_subplot(gs[i, j])
-            axes.append(ax)
+    # --------------------------------------------------
+    # Create axes
+    # --------------------------------------------------
+    ax11 = fig.add_subplot(gs[0, 0])
+    ax21 = fig.add_subplot(gs[1, 0])
 
-    # Flatten axes for easier indexing
-    ax = np.array(axes).flatten()
+    ax12 = fig.add_subplot(gs[0, 1])
+    ax22 = fig.add_subplot(gs[1, 1])
 
-    # Plot the specific functions you requested:
+    # ==================================================
+    # ax11 — R vs KED
+    # ==================================================
+    p = plot_KED_R(
+        df,
+        log_ked=True,
+        log_r=True,
+        norm=norm,
+        legend_fontsize=legend_fontsize,
+        xlabel_pad=xlabel_pad,
+        ylabel_pad=ylabel_pad,
+        add_colorbar=add_colorbar,
+        title="",
+        ax=ax11,
+    )
 
-    # KED vs R (linear KED)
-    p = plot_KED_R(df, norm=norm, legend_fontsize=legend_fontsize, add_colorbar=add_colorbar, ax=ax[0])
-
-    # Define norm for other plots based on first plot
     norm = p.norm
 
-    # KEF vs R
-    plot_KEF_R(df, norm=norm, legend_fontsize=legend_fontsize, add_colorbar=add_colorbar, ax=ax[1])
+    # ==================================================
+    # ax12 — Z vs TKE
+    # ==================================================
+    plot_TKE_Z(
+        df,
+        z="Z",
+        norm=norm,
+        legend_fontsize=legend_fontsize,
+        xlabel_pad=xlabel_pad,
+        ylabel_pad=ylabel_pad,
+        add_colorbar=add_colorbar,
+        title="",
+        ax=ax12,
+    )
 
-    # KEF vs Z_H
-    plot_KEF_Z(df, z="Z", norm=norm, legend_fontsize=legend_fontsize, add_colorbar=add_colorbar, ax=ax[2])
+    # ==================================================
+    # ax21 — R vs KEF
+    # ==================================================
+    plot_KEF_R(
+        df,
+        log_kef=True,
+        log_r=True,
+        norm=norm,
+        legend_fontsize=legend_fontsize,
+        xlabel_pad=xlabel_pad,
+        ylabel_pad=ylabel_pad,
+        add_colorbar=add_colorbar,
+        title="",
+        ax=ax21,
+    )
 
-    # TKE vs Z_H
-    p_last = plot_TKE_Z(df, z="Z", norm=norm, legend_fontsize=legend_fontsize, add_colorbar=add_colorbar, ax=ax[3])
+    # ==================================================
+    # ax22 — Z vs KEF
+    # ==================================================
+    p_last = plot_KEF_Z(
+        df,
+        z="Z",
+        norm=norm,
+        legend_fontsize=legend_fontsize,
+        xlabel_pad=xlabel_pad,
+        ylabel_pad=ylabel_pad,
+        add_colorbar=add_colorbar,
+        title="",
+        ax=ax22,
+    )
 
-    # Add colorbar at the bottom
-    cax = fig.add_subplot(gs[2, :])  # Spans all columns in the bottom row
-    cbar = plt.colorbar(p_last, cax=cax, orientation="horizontal", extend="max", extendfrac=0.025)
-    cbar.ax.set_aspect(0.1)
-    cbar.set_label("Counts", fontsize=12, labelpad=10)
-    cbar.ax.tick_params(labelsize=12)
+    # ==================================================
+    # Clean axis
+    # ==================================================
+    # Remove x-tick labels and xticks from first row
+    for ax in [ax11, ax12]:
+        ax.set_xticklabels([])
+        ax.set_xlabel("")
+        ax.tick_params(axis="x", which="both", left=False)
+
+    # Clear overlapping ticks between ax11 and ax21
+    ylim = ax21.get_ylim()
+    yticks = ax21.get_yticks()
+    yticks = yticks[(yticks <= 5000)]
+    ax21.set_yticks(yticks)
+    ax21.set_ylim(*ylim)
+
+    # Clear overlapping ticks between ax11 and ax21
+    ylim = ax22.get_ylim()
+    yticks = ax22.get_yticks()
+    yticks = yticks[(yticks <= 5000)]
+    ax22.set_yticks(yticks)
+    ax22.set_ylim(*ylim)
+
+    # Remove redundant labels
+    ax11.set_xlabel("")
+    ax12.set_xlabel("")
+
+    # ==================================================
+    # Colorbar inside ax21 (bottom-left)
+    # ==================================================
+    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
+    cax = inset_axes(
+        ax21,
+        width="65%",  # length of colorbar
+        height="6%",  # thickness
+        loc="lower right",
+        borderpad=2.4,
+    )
+
+    cbar = fig.colorbar(
+        p_last,
+        cax=cax,
+        orientation="horizontal",
+        extend="max",
+        extendfrac=0.05,
+    )
+
+    # Label above colorbar
     cbar.ax.xaxis.set_label_position("top")
+    cbar.set_label("Counts", labelpad=4)
+    cbar.ax.tick_params(labelsize=7)
+
+    # -------------------------------------
+    # - Align labels
+    fig.align_xlabels()
+    fig.align_ylabels()
 
     return fig
 
@@ -3865,8 +4554,10 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             station_name=station_name,
             temporal_resolution=temporal_resolution,
         )
-        p = plot_spectrum(raw_drop_number, title="Raw Drop Spectrum")
-        p.figure.savefig(os.path.join(summary_dir_path, filename))
+        fig, ax = plt.subplots(1, 1, figsize=(3.4, 2.8), dpi=300)
+        p = plot_spectrum(raw_drop_number, ax=ax, title="Raw Drop Spectrum")
+        p.figure.tight_layout()
+        p.figure.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
         plt.close()
 
         # - Filtered
@@ -3878,8 +4569,10 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             station_name=station_name,
             temporal_resolution=temporal_resolution,
         )
-        p = plot_spectrum(drop_number, title="Filtered Drop Spectrum")
-        p.figure.savefig(os.path.join(summary_dir_path, filename))
+        fig, ax = plt.subplots(1, 1, figsize=(3.4, 2.8), dpi=300)
+        p = plot_spectrum(drop_number, ax=ax, title="Filtered Drop Spectrum")
+        p.figure.tight_layout()
+        p.figure.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
         plt.close()
 
         # Create figure comparing raw and filtered spectrum
@@ -3893,7 +4586,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         )
 
         fig = plot_raw_and_filtered_spectra(ds)
-        fig.savefig(os.path.join(summary_dir_path, filename))
+        fig.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
         plt.close()
 
     ####---------------------------------------------------------------------.
@@ -4169,8 +4862,9 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             temporal_resolution=temporal_resolution,
         )
 
-        p = plot_R_Z(df, z="Z", r="R", title=r"$Z$ vs $R$")
-        p.figure.savefig(os.path.join(summary_dir_path, filename))
+        p = plot_R_Z(df, z="Z", r="R", pol="Rayleigh", title=r"$Z_{Rayleigh}$ vs $R$")
+        p.figure.tight_layout()
+        p.figure.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
         plt.close()
 
         #### ---------------------------------------------------------------------.
@@ -4198,7 +4892,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             temporal_resolution=temporal_resolution,
         )
         fig = plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=False)
-        fig.savefig(os.path.join(summary_dir_path, filename))
+        fig.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
         plt.close()
 
         filename = define_filename(
@@ -4210,7 +4904,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             temporal_resolution=temporal_resolution,
         )
         fig = plot_dsd_params_density(df, log_dm=True, lwc=True, log_normalize=False)
-        fig.savefig(os.path.join(summary_dir_path, filename))
+        fig.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
         plt.close()
 
         filename = define_filename(
@@ -4222,7 +4916,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             temporal_resolution=temporal_resolution,
         )
         fig = plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=True)
-        fig.savefig(os.path.join(summary_dir_path, filename))
+        fig.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
         plt.close()
 
         filename = define_filename(
@@ -4234,7 +4928,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             temporal_resolution=temporal_resolution,
         )
         fig = plot_dsd_params_density(df, log_dm=True, lwc=True, log_normalize=True)
-        fig.savefig(os.path.join(summary_dir_path, filename))
+        fig.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
         plt.close()
 
         ###------------------------------------------------------------------------.
@@ -4248,7 +4942,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             temporal_resolution=temporal_resolution,
         )
         fig = plot_dsd_params_density(df, log_dm=False, lwc=False, log_normalize=False)
-        fig.savefig(os.path.join(summary_dir_path, filename))
+        fig.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
         plt.close()
 
         filename = define_filename(
@@ -4260,7 +4954,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             temporal_resolution=temporal_resolution,
         )
         fig = plot_dsd_params_density(df, log_dm=True, lwc=False, log_normalize=False)
-        fig.savefig(os.path.join(summary_dir_path, filename))
+        fig.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
         plt.close()
 
         filename = define_filename(
@@ -4272,7 +4966,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             temporal_resolution=temporal_resolution,
         )
         fig = plot_dsd_params_density(df, log_dm=False, lwc=False, log_normalize=True)
-        fig.savefig(os.path.join(summary_dir_path, filename))
+        fig.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
         plt.close()
 
         filename = define_filename(
@@ -4284,7 +4978,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             temporal_resolution=temporal_resolution,
         )
         fig = plot_dsd_params_density(df, log_dm=True, lwc=False, log_normalize=True)
-        fig.savefig(os.path.join(summary_dir_path, filename))
+        fig.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
         plt.close()
 
         ###------------------------------------------------------------------------.
@@ -4298,7 +4992,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             temporal_resolution=temporal_resolution,
         )
         fig = plot_dsd_params_relationships(df, add_nt=True)
-        fig.savefig(os.path.join(summary_dir_path, filename))
+        fig.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
         plt.close()
 
         ###------------------------------------------------------------------------.
@@ -4312,7 +5006,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             temporal_resolution=temporal_resolution,
         )
         fig = plot_dmax_relationships(df, diameter_bin_edges=diameter_bin_edges, dmax="Dmax", diameter_max=10)
-        fig.savefig(os.path.join(summary_dir_path, filename))
+        fig.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
         plt.close()
 
         #### ---------------------------------------------------------------------.
@@ -4338,7 +5032,8 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         temporal_resolution=temporal_resolution,
     )
     p = plot_dsd_density(df_nd, diameter_bin_edges=diameter_bin_edges)
-    p.figure.savefig(os.path.join(summary_dir_path, filename))
+    p.figure.tight_layout()
+    p.figure.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
     plt.close()
 
     #### - Plot N(D)/Nw vs D/Dm
@@ -4351,7 +5046,8 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         temporal_resolution=temporal_resolution,
     )
     p = plot_normalized_dsd_density(df_nd)
-    p.figure.savefig(os.path.join(summary_dir_path, filename))
+    p.figure.tight_layout()
+    p.figure.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
     plt.close()
 
     #### Free space - Remove df_nd from memory
@@ -4375,7 +5071,8 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         temporal_resolution=temporal_resolution,
     )
     p = plot_dsd_with_dense_lines(drop_number_concentration=drop_number_concentration, r=r)
-    p.figure.savefig(os.path.join(summary_dir_path, filename))
+    p.figure.tight_layout()
+    p.figure.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
     plt.close()
 
 
