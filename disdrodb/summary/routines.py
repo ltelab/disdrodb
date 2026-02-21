@@ -4484,11 +4484,10 @@ def prepare_summary_dataset(ds, velocity_method="theoretical_velocity", source="
         ds = ds.sel(source=source)
 
     # Select only timesteps with R > 0
-    # - We save R with 2 decimals accuracy ... so 0.01 is the smallest value
     if "Rm" in ds:  # in L2E
-        rainy_timesteps = np.logical_and(ds["Rm"].compute() >= 0.01, ds["R"].compute() >= 0.01)
+        rainy_timesteps = np.logical_and(ds["Rm"].compute() > 0, ds["R"].compute() > 0)
     else:  # L2M without Rm
-        rainy_timesteps = ds["R"].compute() >= 0.01
+        rainy_timesteps = ds["R"].compute() > 0
 
     ds = ds.isel(time=rainy_timesteps)
     return ds
@@ -4501,7 +4500,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
 
     ####---------------------------------------------------------------------.
     #### Prepare dataset
-    ds = prepare_summary_dataset(ds)
+    ds = prepare_summary_dataset(ds)  # Select only rainy timesteps
 
     # Ensure all data are in memory
     ds = ds.compute()
@@ -4509,22 +4508,27 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
     # Filter dataset to remove noisy timesteps
     # - Keep only timesteps with at least 3 Nbins to remove noise
     # - Keep only timesteps with sigma_m >= 0.2
-    mask = (ds["Nbins"] >= 3) & (ds["sigma_m"] >= 0.2) & (ds["Nbins_missing_fraction"] <= 0.3) & (ds["Dmin"] <= 1)
+    mask = (
+        (ds["Nbins"] >= 3)
+        & (ds["sigma_m"] >= 0.2)
+        & (ds["Nbins_missing_fraction"] <= 0.3)
+        & (ds["Dmin"] <= 1)(ds["R"] > 0.01)
+    )
     valid_idx = np.where(mask)[0]
-    ds = ds.isel(time=valid_idx)
+    ds_filtered = ds.isel(time=valid_idx)
 
     ####---------------------------------------------------------------------.
     #### Create drop spectrum figures and statistics
-    if VELOCITY_DIMENSION in ds.dims:
+    if VELOCITY_DIMENSION in ds_filtered.dims:
         # Compute sum of raw and filtered spectrum over time
-        raw_drop_number = ds["raw_drop_number"].sum(dim="time")
-        drop_number = ds["drop_number"].sum(dim="time")
+        raw_drop_number = ds_filtered["raw_drop_number"].sum(dim="time")
+        drop_number = ds_filtered["drop_number"].sum(dim="time")
 
         # Define theoretical and measured average velocity
-        if "time" in ds["fall_velocity"].dims:
-            theoretical_average_velocity = ds["fall_velocity"].mean(dim="time")
+        if "time" in ds_filtered["fall_velocity"].dims:
+            theoretical_average_velocity = ds_filtered["fall_velocity"].mean(dim="time")
         else:
-            theoretical_average_velocity = ds["fall_velocity"]
+            theoretical_average_velocity = ds_filtered["fall_velocity"]
         measured_average_velocity = get_drop_average_velocity(drop_number)
 
         # Save raw and filtered spectrum over time & theoretical and measured average fall velocity
@@ -4585,16 +4589,16 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
             temporal_resolution=temporal_resolution,
         )
 
-        fig = plot_raw_and_filtered_spectra(ds)
+        fig = plot_raw_and_filtered_spectra(ds_filtered)
         fig.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
         plt.close()
 
     ####---------------------------------------------------------------------.
     #### Create L2E dataframe
-    df = create_l2_dataframe(ds)
+    df = create_l2_dataframe(ds_filtered)
 
     # Define diameter bin edges
-    diameter_bin_edges = get_diameter_bin_edges(ds)
+    diameter_bin_edges = get_diameter_bin_edges(ds_filtered)
 
     # ---------------------------------------------------------------------.
     #### Save L2E Parquet
@@ -4720,7 +4724,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         )
 
     ####---------------------------------------------------------------------.
-    #### Create events quicklooks
+    #### Create events quicklooks (using unfiltered dataset !)
     if table_events_summary is not None:
         # Define number of quicklooks
         n_quicklooks = 10
@@ -4812,6 +4816,9 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
                 quicklook_filepath = os.path.join(quicklook_dir, quicklook_filename)
                 fig.savefig(quicklook_filepath, bbox_inches="tight")
                 plt.close()
+
+        # Remove unfiltered dataset (as not used anymore)
+        del ds
 
     #### ---------------------------------------------------------------------.
     #### Create L2E RADAR Summary Plots
@@ -5020,7 +5027,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
 
     ####------------------------------------------------------------------------.
     #### Create N(D) densities
-    df_nd = create_nd_dataframe(ds)
+    df_nd = create_nd_dataframe(ds_filtered)
 
     #### - Plot N(D) vs D
     filename = define_filename(
@@ -5056,9 +5063,9 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
 
     #### - Plot N(D) vs D with DenseLines
     # Extract required variables and free memory
-    drop_number_concentration = ds["drop_number_concentration"].compute().copy()
-    r = ds["R"].compute().copy()
-    del ds
+    drop_number_concentration = ds_filtered["drop_number_concentration"].compute().copy()
+    r = ds_filtered["R"].compute().copy()
+    del ds_filtered
     gc.collect()
 
     # Create figure

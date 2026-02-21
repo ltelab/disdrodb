@@ -28,10 +28,57 @@ from matplotlib.lines import Line2D
 
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l2.empirical_dsd import get_drop_average_velocity
-from disdrodb.utils.time import ensure_sample_interval_in_seconds, regularize_dataset
+from disdrodb.l2.processing import get_mask_contour
+
+# TODO FIX: XARRAY PCOLORMESH IS CURRENTLY INACCURATE
+
+# IMPROVEMENTS
+# plot_filtering_boundary()
+# plot_spectrum(add theoreticall_fall_velocity,
+#               add_tolerance_fraction=0.5,
+#               add_tolerance_=0.5)
+# Add plot_raw_and_filtered_spectra(animation=True, legend_variables on first axes)
+
 
 ####-------------------------------------------------------------------------------------------------------
-#### N(D) visualizations
+#### N(D) and n(D) visualizations
+
+
+L0_ND_VARIABLES = ["raw_drop_concentration"]
+L1_ND_VARIABLES = ["raw_particle_counts"]
+L2_ND_VARIABLES = ["drop_number_concentration", "drop_counts", "raw_drop_number_concentration", "raw_drop_counts"]
+ND_VARIABLES = [*L2_ND_VARIABLES, *L1_ND_VARIABLES, *L0_ND_VARIABLES]
+
+ND_LABEL_DICT = {
+    # L0
+    "raw_spectrum": "$n_{raw}(D,V)$ [#]",  # FUTURE
+    "raw_drop_concentration": "$N_{raw}(D)$ [# $m^{-3} mm^{-1}$]",  # FUTURE: raw_particle_number_concentration
+    # L1
+    # raw_spectrum
+    "raw_particle_counts": "$n_{raw}(D)$ [#]",
+    # L2
+    "raw_drop_number": "$n_{raw}(D,V)$ [#]",  # FUTURE: raw spectrum
+    "drop_number": "$n(D,V)$ [#]",  # FUTURE: spectrum
+    "raw_drop_counts": "$n_{raw}(D)$ [#]",
+    "drop_counts": "$n(D)$ [#]",
+    "raw_drop_number_concentration": "$N_{raw}(D)$ [# $m^{-3} mm^{-1}$]",
+    "drop_number_concentration": "$N(D)$ [# $m^{-3} mm^{-1}$]",
+}
+
+ND_TITLE_DICT = {
+    # L0
+    "raw_spectrum": "Raw spectrum n(D,V)",
+    "raw_drop_concentration": "Raw particle number concentration N(D)",  # FUTURE: raw_particle_number_concentration
+    # L1
+    "raw_particle_counts": "Raw particle counts n(D)",
+    # L2
+    "raw_drop_number": "Raw spectrum n(D,V)",
+    "drop_number": "Spectrum n(D,V)",
+    "raw_drop_counts": "Raw drop counts n(D)",
+    "drop_counts": "Drop counts n(D)",
+    "raw_number_concentration": "Raw drop number concentration N(D)",
+    "drop_number_concentration": "Drop number concentration N(D)",
+}
 
 
 def _get_nd_labels(variable_name, da=None):
@@ -49,19 +96,14 @@ def _get_nd_labels(variable_name, da=None):
     dict
         Dictionary with 'ylabel', 'cbar_label', and 'title' keys.
     """
-    if variable_name == "drop_number_concentration":
+    # Retrieve for DISDRODB N(D) or n(D) variables
+    if variable_name in ND_LABEL_DICT:
         return {
-            "ylabel": "N(D) [m-3 mm-1]",
-            "cbar_label": "N(D) [m-3 mm-1]",
-            "title": "Drop number concentration (N(D))",
+            "ylabel": ND_LABEL_DICT[variable_name],
+            "cbar_label": ND_LABEL_DICT[variable_name],
+            "title": ND_TITLE_DICT[variable_name],
         }
-    if variable_name in ["raw_particle_counts", "raw_drop_counts", "drop_counts"]:
-        variable_name = variable_name.replace("_", " ").capitalize()
-        return {
-            "ylabel": f"{variable_name} [#]",
-            "cbar_label": f"{variable_name} [#]",
-            "title": f"{variable_name} distribution",
-        }
+
     # Generic fallback - try to extract units from DataArray attributes
     units = None
     if da is not None and hasattr(da, "attrs") and "units" in da.attrs:
@@ -119,8 +161,28 @@ def _check_has_diameter_dims(da):
     return da
 
 
-def _get_nd_variable(xr_obj, variable=None):
-    """Get N(D) or drop counts variable from xarray object.
+def get_dataset_nd_variable_name(ds, variables=None):
+    """Return N(D) or n(D) variable name present in the xarray.Dataset."""
+    variables = ND_VARIABLES if variables is None else variables
+    # Search for candidate variables
+    variable = None
+    for var in variables:
+        if var in ds:
+            variable = var
+            break
+    if variable is None:
+        raise ValueError(
+            "Any n(D) or N(D) variable found in the dataset. "
+            f"Searched for any of {variables} variables. "
+            "Please specify the variable explicitly.",
+        )
+    return variable
+
+
+def get_nd_variable(xr_obj, variable=None):
+    """Return N(D), n(d) DataArray.
+
+    If N(D) or n(d) not available, derive n(d) from n(D,V).
 
     Parameters
     ----------
@@ -130,47 +192,40 @@ def _get_nd_variable(xr_obj, variable=None):
          Variable name to extract from the xarray object.
         If xr_obj is a DataArray, will return the DataArray and its name directly'.
         If xr_obj is a Dataset, if None, will search for candidate variables in order:
-        ['drop_number_concentration', 'drop_counts', 'raw_drop_counts', 'raw_particle_counts', 'raw_drop_concentration'].
+        ['drop_number_concentration', 'drop_counts', 'raw_drop_counts',
+         'raw_particle_counts', 'raw_drop_concentration'].
 
     Returns
     -------
     tuple
         (DataArray, variable_name)
-    """  # noqa: E501
+    """
     if not isinstance(xr_obj, (xr.Dataset, xr.DataArray)):
         raise TypeError("Expecting xarray object as input.")
 
     if isinstance(xr_obj, xr.DataArray):
         # If DataArray provided, use it directly
         da = xr_obj
-        variable_name = da.name
     else:
         # xr.Dataset provided
         if variable is None:
-            # Search for candidate variables
-            l0_variables = ["raw_drop_concentration"]
-            l1_variables = ["raw_particle_counts"]
-            l2e_variables = ["drop_number_concentration", "drop_counts", "raw_drop_counts"]
-            candidate_variables = [*l2e_variables, *l1_variables, *l0_variables]
-            for var in candidate_variables:
-                if var in xr_obj:
-                    variable = var
-                    break
-            if variable is None:
-                raise ValueError(
-                    f"None of the candidate variables {candidate_variables} found in the dataset. "
-                    "Please specify the variable explicitly.",
-                )
+            variable = get_dataset_nd_variable_name(xr_obj, variables=[*ND_VARIABLES, "raw_drop_number"])
         elif variable not in xr_obj:
             raise ValueError(f"The dataset does not include {variable=}.")
 
+        # Extract DataArray
         da = xr_obj[variable]
-        variable_name = variable
+
+        # Deal with raw_drop_number (in future raw_spectrum)
+        # --> Compute raw_particle_counts on the fly
+        if variable == "raw_drop_number" and VELOCITY_DIMENSION in da.dims:
+            da = da.sum(dim=VELOCITY_DIMENSION)
+            da.name = "raw_particle_counts"
 
     if VELOCITY_DIMENSION in da.dims:
         raise ValueError("N(D) must not have the velocity dimension.")
     da = _check_has_diameter_dims(da)
-    return da, variable_name
+    return da
 
 
 def plot_nd(
@@ -182,7 +237,7 @@ def plot_nd(
     ax=None,
     velocity_method="theoretical_velocity",
 ):
-    """Plot drop number concentration N(D) or drop counts timeseries.
+    """Plot drop number concentration N(D) or drop counts n(D) timeseries.
 
     Parameters
     ----------
@@ -213,9 +268,12 @@ def plot_nd(
     if "velocity_method" in xr_obj.dims:
         xr_obj = xr_obj.sel(velocity_method=velocity_method)
 
-    # Retrieve N(D)
-    da_nd, variable_name = _get_nd_variable(xr_obj, variable=variable)
+    # Retrieve N(D) or n(D)
+    da_nd = get_nd_variable(xr_obj, variable=variable)
     da_nd = da_nd.compute()
+
+    # Retrieve label
+    variable_name = da_nd.name
     labels = _get_nd_labels(variable_name, da=da_nd)
 
     # Check only time and diameter dimensions are specified
@@ -245,8 +303,9 @@ def plot_nd(
     if cmap is None:
         cmap = plt.get_cmap("Spectral_r").copy()
 
-    vmin = np.nanmax(da_nd.min().item(), 1e-8)  # avoid crash with all NaN values
-    norm = LogNorm(vmin, None) if norm is None else norm
+    if norm is None:
+        vmin = np.maximum(da_nd.min().item(), 1e-1)  # 0 is set to np.nan before
+        norm = Normalize() if np.isnan(vmin) else LogNorm(vmin, None)
 
     # Plot N(D) or drop counts
     cbar_kwargs = {"label": labels["cbar_label"]}
@@ -271,18 +330,19 @@ def plot_nd(
 
 
 def plot_nd_quicklook(
-    ds,
+    xr_obj,
     # Plot layout
     hours_per_slice=5,
     max_rows=6,
     aligned=True,
-    verbose=True,
+    verbose=False,
     # Spectrum options
-    variable="drop_number_concentration",
-    cbar_label="N(D) [# $m^{-3} mm^{-1}$]",
+    variable=None,
+    cbar_label=None,
     cmap=None,
     norm=None,
     d_lim=(0.3, 5),
+    d_label="Diameter [mm]",
     # Colorbar options
     cbar_as_legend=True,
     # Rain type options
@@ -305,6 +365,40 @@ def plot_nd_quicklook(
     """Display multi-rows quicklook of N(D)."""
     from pycolorbar.utils.mpl_legend import add_fancybox, get_tightbbox_position
 
+    # ------------------------------------------------------------------------.
+    # Check inputs and variables to plot. Ensure to create Dataset if input is DataArray
+    if isinstance(xr_obj, xr.Dataset):
+        ds = xr_obj
+        if "Dm" not in ds:
+            add_dm = False
+        if "sigma_m" not in ds:
+            add_sigma_m = False
+        if "R" not in ds:
+            add_r = False
+        if add_rain_type not in ds:
+            add_rain_type = None
+    if isinstance(xr_obj, xr.DataArray):
+        variable = xr_obj.name
+        ds = xr_obj.to_dataset()
+        add_dm = False
+        add_sigma_m = False
+        add_r = False
+        add_rain_type = None
+
+    # ------------------------------------------------------------------------.
+    # Select velocity_method
+    if "velocity_method" in ds.dims:
+        velocity_method = ds["velocity_method"].to_numpy()[0]
+        print(f"Selecting velocity_method '{velocity_method}")
+        ds = ds.sel(velocity_method=velocity_method)
+
+    # ------------------------------------------------------------------------.
+    # Derive N(D) variable
+    da_nd = get_nd_variable(ds, variable=variable)
+    variable = da_nd.name
+    ds[da_nd.name] = da_nd  # might have computed n(d) on-the-fly from N(D,V)
+
+    # ------------------------------------------------------------------------.
     # Colormap & normalization
     if cmap is None:
         cmap = plt.get_cmap("Spectral_r").copy()
@@ -312,14 +406,29 @@ def plot_nd_quicklook(
     if norm is None:
         norm = LogNorm(vmin=1, vmax=10_000)
 
-    # Compute event Rmax, Ptot, and event duration
-    r_max = ds["R"].max().item()
-    p_tot = ds["P"].sum().item()
+    # ------------------------------------------------------------------------.
+    # Define cbar label
+    if cbar_label is None:
+        if variable in ND_LABEL_DICT:
+            cbar_label = ND_LABEL_DICT[variable]
+        else:
+            units = ds[variable].attrs.get("units", "-")
+            cbar_label = f"{variable} [{units}]"
 
+    # ------------------------------------------------------------------------.
+    # Compute event Rmax, Ptot, and define legend string
+    if "R" in ds and "P" in ds:
+        r_max = ds["R"].max().item()
+        p_tot = ds["P"].sum().item()
+        left_title_str = f"$R_{{max}}$={r_max:.1f} mm/h  $P_{{tot}}$={p_tot:.1f} mm"
+    else:
+        left_title_str = None
+
+    # ------------------------------------------------------------------------.
     # Calculate event duration
     duration = ds.disdrodb.end_time - ds.disdrodb.start_time
 
-    # ---------------------------
+    # ------------------------------------------------------------------------.
     # Define temporal slices
     # - Align to closest <hours_per_slice> time
     # - For hours_per_slice=3 --> 00, 03, 06, ...
@@ -346,6 +455,7 @@ def plot_nd_quicklook(
     n_total_slices = len(time_bins) - 1
     n_slices = min(n_total_slices, max_rows)
 
+    # ------------------------------------------------------------------------.
     # Print info on event quicklook
     if verbose:
         print("=== N(D) Event Quicklook ===")
@@ -356,11 +466,9 @@ def plot_nd_quicklook(
             last_plotted_end = time_bins[max_rows]
             print(f"Unplotted period  : {last_plotted_end} → {t_end}")
 
+    # ------------------------------------------------------------------------.
     # Regularize dataset to match bin start_time and end_time
-    sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"].to_numpy()).item()
-    ds = regularize_dataset(
-        ds,
-        freq=f"{sample_interval}s",
+    ds = ds.disdrodb.regularize(
         start_time=time_bins[0],
         end_time=time_bins[-1],
         fill_value=np.nan,
@@ -374,7 +482,7 @@ def plot_nd_quicklook(
     if n_slices <= 2:
         cbar_as_legend = True
 
-    # ------------------------------------------------------------
+    # ------------------------------------------------------------------------.
     #### - Define figure with GridSpec
     # - If cbar_as_legend=False: reserve extra row for colorbar
     # - If cbar_as_legend=True: no extra row needed
@@ -405,7 +513,7 @@ def plot_nd_quicklook(
         )
         axes = [fig.add_subplot(gs[i, 0]) for i in range(n_slices)]
 
-    # ---------------------------------------------------------------
+    # ------------------------------------------------------------------------.
     #### - Plot each slice
     for i in range(n_slices):
         # Extract dataset slice
@@ -550,7 +658,7 @@ def plot_nd_quicklook(
 
     axes[n_slices - 1].set_xlabel("Time (UTC)", fontsize=12)
 
-    # ---------------------------------------------------------------
+    # ------------------------------------------------------------------------.
     #### - Add title
     # Format duration as "XhYmin" or "Xmin"
     total_minutes = int(duration.total_seconds() / 60)
@@ -577,12 +685,12 @@ def plot_nd_quicklook(
     )
 
     # Add left title with Rmax and Ptot
-    left_title_str = f"$R_{{max}}$={r_max:.1f} mm/h  $P_{{tot}}$={p_tot:.1f} mm"
-    axes[0].set_title(
-        left_title_str,
-        fontsize=13,
-        loc="left",
-    )
+    if left_title_str is not None:
+        axes[0].set_title(
+            left_title_str,
+            fontsize=13,
+            loc="left",
+        )
 
     # Add right title with event duration
     axes[0].set_title(
@@ -591,12 +699,12 @@ def plot_nd_quicklook(
         loc="right",
     )
 
-    # --------------------------------------------------------------
+    # ------------------------------------------------------------------------.
     #### - Add centered y-labels in the middle of the figure (closer to axes)
     fig.text(
         0.09,
         0.5,
-        "Diameter [mm]",
+        d_label,
         va="center",
         rotation="vertical",
         fontsize=15,
@@ -613,7 +721,7 @@ def plot_nd_quicklook(
             color=r_color,
         )
 
-    # --------------------------------------------------------------
+    # ------------------------------------------------------------------------.
     #### - Add legend
     # Collect legend handles from both axes
     handles, labels = ax.get_legend_handles_labels()
@@ -623,18 +731,19 @@ def plot_nd_quicklook(
         handles += handles_r
         labels += labels_r
 
-    axes[0].legend(
-        handles,
-        labels,
-        loc="upper left",
-        bbox_to_anchor=(0, 0.98),
-        fontsize=12,
-        frameon=True,
-        fancybox=False,
-        edgecolor="black",
-    )
+    if np.any([add_r, add_sigma_m, add_dm]):
+        axes[0].legend(
+            handles,
+            labels,
+            loc="upper left",
+            bbox_to_anchor=(0, 0.98),
+            fontsize=12,
+            frameon=True,
+            fancybox=False,
+            edgecolor="black",
+        )
 
-    # --------------------------------------------------------------
+    # ------------------------------------------------------------------------.
     #### - Add colorbar
     if cbar_as_legend:
         # Add colorbar as a legend in the last subplot with background box
@@ -900,7 +1009,6 @@ def plot_spectrum(
         p.axes.set_title(title)
     else:
         p.set_axis_labels("Diameter [mm]", "Fall velocity [m/s]")
-
     return p
 
 
@@ -979,6 +1087,33 @@ def plot_raw_and_filtered_spectra(
         ax2.legend(loc="lower right", frameon=False)
 
     return fig
+
+
+####---------------------------------------------------------------------------.
+#### Mask utilities
+
+
+def plot_contour(contour, ax=None, **kwargs):
+    """Plot contour [X,Y]."""
+    if ax is None:
+        fig, ax = plt.subplots(1, 1)
+    label = kwargs.pop("label", None)
+    for i, seg in enumerate(contour):
+        if label is not None and i == len(contour) - 1:
+            kwargs["label"] = label
+        ax.plot(seg[:, 0], seg[:, 1], **kwargs)
+
+
+def plot_mask_contour(mask, ax=None, **kwargs):
+    """Plot mask contour."""
+    contour = get_mask_contour(mask)
+    if ax is None:
+        fig, ax = plt.subplots(1, 1)
+    label = kwargs.pop("label", None)
+    for i, seg in enumerate(contour):
+        if label is not None and i == len(contour) - 1:
+            kwargs["label"] = label
+        ax.plot(seg[:, 0], seg[:, 1], **kwargs)
 
 
 ####-------------------------------------------------------------------------------------------------------

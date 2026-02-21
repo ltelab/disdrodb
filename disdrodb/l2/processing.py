@@ -80,6 +80,123 @@ def define_velocity_array(ds):
 #### Extract drop spectrum
 
 
+def get_mask_contour(mask, x_dim=DIAMETER_DIMENSION, y_dim=VELOCITY_DIMENSION):
+    """Extract exact stair-step boundary of True region from boolean DataArray."""
+    # Ensure orientation (V, D)
+    mask = mask.transpose(y_dim, x_dim)
+
+    # Extract bin edges
+    y_edges = mask.disdrodb.velocity_bin_edges
+    x_edges = mask.disdrodb.diameter_bin_edges
+
+    # Retrieve contours
+    mask = mask.to_numpy().astype(bool)
+    ny, nx = mask.shape
+
+    segments = []
+    for j in range(ny):
+        for i in range(nx):
+
+            if not mask[j, i]:
+                continue  # Only trace True region
+
+            # LEFT boundary
+            if i == 0 or not mask[j, i - 1]:
+                segments.append(
+                    np.array(
+                        [
+                            [x_edges[i], y_edges[j]],
+                            [x_edges[i], y_edges[j + 1]],
+                        ],
+                    ),
+                )
+
+            # RIGHT boundary
+            if i == nx - 1 or not mask[j, i + 1]:
+                segments.append(
+                    np.array(
+                        [
+                            [x_edges[i + 1], y_edges[j]],
+                            [x_edges[i + 1], y_edges[j + 1]],
+                        ],
+                    ),
+                )
+
+            # BOTTOM boundary
+            if j == 0 or not mask[j - 1, i]:
+                segments.append(
+                    np.array(
+                        [
+                            [x_edges[i], y_edges[j]],
+                            [x_edges[i + 1], y_edges[j]],
+                        ],
+                    ),
+                )
+
+            # TOP boundary
+            if j == ny - 1 or not mask[j + 1, i]:
+                segments.append(
+                    np.array(
+                        [
+                            [x_edges[i], y_edges[j + 1]],
+                            [x_edges[i + 1], y_edges[j + 1]],
+                        ],
+                    ),
+                )
+
+    return segments
+
+
+def get_spectrum_mask_boundary(
+    ds,
+    above_velocity_fraction=None,
+    above_velocity_tolerance=None,
+    below_velocity_fraction=None,
+    below_velocity_tolerance=None,
+    maintain_drops_smaller_than=1,
+    maintain_drops_slower_than=2.5,
+    maintain_smallest_drops=False,
+    fall_velocity_model="Beard1976",
+):
+    """Return the boundary of the spectrum mask."""
+    # Retrieve environment dataset
+    ds_env = load_env_dataset(ds)
+
+    # Retrieve spectrum
+    raw_spectrum = ds["raw_drop_number"].copy()
+
+    # Retrieve coordinates
+    diameter_upper = raw_spectrum["diameter_bin_upper"]
+    diameter_lower = raw_spectrum["diameter_bin_lower"]
+
+    # Define rainfall mask
+    raindrop_fall_velocity_upper = get_rain_fall_velocity(
+        diameter=diameter_upper,
+        model=fall_velocity_model,
+        ds_env=ds_env,
+    )
+    raindrop_fall_velocity_lower = get_rain_fall_velocity(
+        diameter=diameter_lower,
+        model=fall_velocity_model,
+        ds_env=ds_env,
+    )
+    rain_mask = define_rain_spectrum_mask(
+        drop_number=raw_spectrum,
+        fall_velocity_lower=raindrop_fall_velocity_lower,
+        fall_velocity_upper=raindrop_fall_velocity_upper,
+        above_velocity_fraction=above_velocity_fraction,
+        above_velocity_tolerance=above_velocity_tolerance,
+        below_velocity_fraction=below_velocity_fraction,
+        below_velocity_tolerance=below_velocity_tolerance,
+        maintain_drops_smaller_than=maintain_drops_smaller_than,
+        maintain_drops_slower_than=maintain_drops_slower_than,
+        maintain_smallest_drops=maintain_smallest_drops,
+    )
+    # Retrieve mask boundary
+    mask_boundary = get_mask_contour(rain_mask, x_dim=DIAMETER_DIMENSION, y_dim=VELOCITY_DIMENSION)
+    return mask_boundary
+
+
 def retrieve_drop_spectrum(
     ds,
     ds_env,
@@ -94,8 +211,6 @@ def retrieve_drop_spectrum(
     fall_velocity_model="Beard1976",
 ):
     """Retrieve the drop spectrum from the DISDRODB L1 product."""
-    from disdrodb.fall_velocity.rain import get_rain_fall_velocity
-
     # Retrieve spectrum
     raw_spectrum = ds["raw_drop_number"].copy()
 
@@ -431,6 +546,7 @@ def generate_l2e(
 
     # -------------------------------------------------------
     # Retrieve filtered spectrum and drop counts (summing over velocity dimension if present)
+    raw_drop_number = ds["raw_drop_number"]
     if has_velocity_dimension:
         drop_number = retrieve_drop_spectrum(
             ds=ds,
@@ -446,11 +562,11 @@ def generate_l2e(
             fall_velocity_model=fall_velocity_model,
         )
         drop_counts = drop_number.sum(dim=VELOCITY_DIMENSION)  # 1D (diameter)
-        drop_counts_raw = ds["raw_drop_number"].sum(dim=VELOCITY_DIMENSION)  # 1D (diameter)
+        drop_counts_raw = raw_drop_number.sum(dim=VELOCITY_DIMENSION)  # 1D (diameter)
     else:
-        drop_number = ds["raw_drop_number"]  # no filtering applied
-        drop_counts = ds["raw_drop_number"]  # 1D (diameter)
-        drop_counts_raw = ds["raw_drop_number"]
+        drop_number = raw_drop_number  # no filtering applied
+        drop_counts = raw_drop_number  # 1D (diameter)
+        drop_counts_raw = raw_drop_number
 
     ds["drop_number"] = drop_number
     ds["drop_counts"] = drop_counts
@@ -516,7 +632,8 @@ def generate_l2e(
         "raw_drop_number",  # 2D V x D
         "drop_number",  # 2D V x D
         # Drop statistics
-        "drop_counts",  # 1D D
+        "raw_drop_counts",  # D
+        "drop_counts",  # D
         "N",
         "Nremoved",
         "Nraw",
@@ -562,6 +679,15 @@ def generate_l2e(
         sampling_area=sampling_area,
     )
     ds_l2["drop_number_concentration"] = drop_number_concentration
+
+    raw_drop_number_concentration = get_drop_number_concentration(
+        drop_number=raw_drop_number,
+        velocity=velocity,
+        diameter_bin_width=diameter_bin_width,
+        sample_interval=sample_interval,
+        sampling_area=sampling_area,
+    )
+    ds_l2["raw_drop_number_concentration"] = raw_drop_number_concentration
 
     # -------------------------------------------------------
     #### Compute R, LWC, KE and Z spectra

@@ -56,18 +56,14 @@ Nt:
   fletcher32: false
   contiguous: false
 R:
-  dtype: uint16
-  scale_factor: 0.01
-  _FillValue: 65535
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true
   fletcher32: false
   contiguous: false
 Rm:
-  dtype: uint16
-  scale_factor: 0.01
-  _FillValue: 65535
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true

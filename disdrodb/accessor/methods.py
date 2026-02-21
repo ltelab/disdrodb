@@ -72,12 +72,12 @@ class DISDRODB_Base_Accessor:
 
         return get_velocity_bin_edges(self._obj)
 
-    def regularize(self):
+    def regularize(self, **kwargs):
         """Regularize timesteps."""
         from disdrodb.utils.time import regularize_dataset
 
         sample_interval = self._obj.disdrodb.sample_interval
-        return regularize_dataset(self._obj, freq=f"{sample_interval}s")
+        return regularize_dataset(self._obj, freq=f"{sample_interval}s", **kwargs)
 
     def isel(self, indexers=None, drop=False, **indexers_kwargs):
         """Perform index-based dimension selection."""
@@ -109,10 +109,16 @@ class DISDRODB_Base_Accessor:
         return plot_spectrum(self._obj, **kwargs)
 
     def plot_nd(self, **kwargs):
-        """Plot drop number concentration N(D) timeseries."""
+        """Plot DSD n(D) or N(D) timeseries."""
         from disdrodb.viz.plots import plot_nd
 
         return plot_nd(self._obj, **kwargs)
+
+    def plot_nd_quicklook(self, **kwargs):
+        """Plot DSD n(D) or N(D) timeseries in quicklook mode."""
+        from disdrodb.viz.plots import plot_nd_quicklook
+
+        return plot_nd_quicklook(self._obj, **kwargs)
 
 
 @xr.register_dataset_accessor("disdrodb")
