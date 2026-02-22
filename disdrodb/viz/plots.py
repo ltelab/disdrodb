@@ -25,6 +25,7 @@ import xarray as xr
 from matplotlib.colors import BoundaryNorm, ListedColormap, LogNorm, Normalize
 from matplotlib.gridspec import GridSpec
 from matplotlib.lines import Line2D
+from matplotlib.ticker import MaxNLocator
 
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l2.empirical_dsd import get_drop_average_velocity
@@ -153,8 +154,8 @@ def _single_plot_nd_distribution(
     return ax
 
 
-def _check_has_diameter_dims(da):
-    if DIAMETER_DIMENSION not in da.dims:
+def _check_has_diameter_dims(da, diameter_dim):
+    if diameter_dim not in da.dims:
         raise ValueError(f"The DataArray must have dimension '{DIAMETER_DIMENSION}'.")
     if "diameter_bin_width" not in da.coords:
         raise ValueError("The DataArray must have coordinate 'diameter_bin_width'.")
@@ -179,7 +180,7 @@ def get_dataset_nd_variable_name(ds, variables=None):
     return variable
 
 
-def get_nd_variable(xr_obj, variable=None):
+def get_nd_variable(xr_obj, variable=None, diameter_dim=DIAMETER_DIMENSION):
     """Return N(D), n(d) DataArray.
 
     If N(D) or n(d) not available, derive n(d) from n(D,V).
@@ -224,7 +225,7 @@ def get_nd_variable(xr_obj, variable=None):
 
     if VELOCITY_DIMENSION in da.dims:
         raise ValueError("N(D) must not have the velocity dimension.")
-    da = _check_has_diameter_dims(da)
+    da = _check_has_diameter_dims(da, diameter_dim=diameter_dim)
     return da
 
 
@@ -332,7 +333,7 @@ def plot_nd(
 def plot_nd_quicklook(
     xr_obj,
     # Plot layout
-    hours_per_slice=5,
+    hours_per_slice=3,
     max_rows=6,
     aligned=True,
     verbose=False,
@@ -341,7 +342,8 @@ def plot_nd_quicklook(
     cbar_label=None,
     cmap=None,
     norm=None,
-    d_lim=(0.3, 5),
+    d_dim=DIAMETER_DIMENSION,
+    d_lim=(0.3, 5.5),
     d_label="Diameter [mm]",
     # Colorbar options
     cbar_as_legend=True,
@@ -357,13 +359,38 @@ def plot_nd_quicklook(
     r_scale="log",
     r_color="black",
     r_alpha=1,
-    r_linewidth=1.8,
+    r_linewidth=1,
     r_linestyle=":",
+    sigma_label=r"$2\sigma_m$",
+    sigma_linewidth=0.5,
+    dm_linewidth=0.5,
     # Figure options
+    cbar_xpos=0.73,
+    cbar_width=0.25,
     dpi=300,
 ):
     """Display multi-rows quicklook of N(D)."""
     from pycolorbar.utils.mpl_legend import add_fancybox, get_tightbbox_position
+
+    # Figure settings
+    plt.rcParams.update(
+        {
+            "font.size": 8,
+            "axes.labelsize": 8,
+            "axes.titlesize": 8,
+            "xtick.labelsize": 7,
+            "ytick.labelsize": 7,
+        },
+    )
+
+    legend_fontsize = 8
+    title_fontsize = 8
+    side_title_fontsize = 6
+    axis_label_fontsize = 8
+    cbar_fontsize = 9
+    cbar_labelpad = 6
+    cbar_ypos = 0.7
+    time_ticklabel_pad = 2
 
     # ------------------------------------------------------------------------.
     # Check inputs and variables to plot. Ensure to create Dataset if input is DataArray
@@ -379,7 +406,8 @@ def plot_nd_quicklook(
             add_rain_type = None
     if isinstance(xr_obj, xr.DataArray):
         variable = xr_obj.name
-        ds = xr_obj.to_dataset()
+        variable = "unknown DSD" if variable is None else variable
+        ds = xr_obj.to_dataset(name=variable)
         add_dm = False
         add_sigma_m = False
         add_r = False
@@ -394,7 +422,7 @@ def plot_nd_quicklook(
 
     # ------------------------------------------------------------------------.
     # Derive N(D) variable
-    da_nd = get_nd_variable(ds, variable=variable)
+    da_nd = get_nd_variable(ds, variable=variable, diameter_dim=d_dim)
     variable = da_nd.name
     ds[da_nd.name] = da_nd  # might have computed n(d) on-the-fly from N(D,V)
 
@@ -420,7 +448,7 @@ def plot_nd_quicklook(
     if "R" in ds and "P" in ds:
         r_max = ds["R"].max().item()
         p_tot = ds["P"].sum().item()
-        left_title_str = f"$R_{{max}}$={r_max:.1f} mm/h  $P_{{tot}}$={p_tot:.1f} mm"
+        left_title_str = f"$R_{{MAX}}$={r_max:.1f} mm/h  $P_{{TOT}}$={p_tot:.1f} mm"
     else:
         left_title_str = None
 
@@ -486,7 +514,7 @@ def plot_nd_quicklook(
     #### - Define figure with GridSpec
     # - If cbar_as_legend=False: reserve extra row for colorbar
     # - If cbar_as_legend=True: no extra row needed
-    fig = plt.figure(figsize=(14, 2.8 * n_slices), dpi=dpi)
+    fig = plt.figure(figsize=(6.9, 1.9 * n_slices), dpi=dpi)
 
     if cbar_as_legend:
         # No extra row for colorbar
@@ -529,7 +557,7 @@ def plot_nd_quicklook(
         p = da_nd.plot.pcolormesh(
             ax=ax,
             x="time",
-            y="diameter_bin_center",
+            y=d_dim,
             norm=norm,
             cmap=cmap,
             shading="auto",
@@ -545,7 +573,7 @@ def plot_nd_quicklook(
                 x="time",
                 color="black",
                 linestyle="-",
-                linewidth=1.2,
+                linewidth=dm_linewidth,
                 label="$D_m$",
             )
 
@@ -556,8 +584,8 @@ def plot_nd_quicklook(
                 x="time",
                 color="black",
                 linestyle="--",
-                linewidth=1.2,
-                label=r"$2\sigma_m$",
+                linewidth=sigma_linewidth,
+                label=sigma_label,
             )
 
         # Remove xarray default title
@@ -600,6 +628,8 @@ def plot_nd_quicklook(
                 ax_r.axhline(y=r_ref, color="gray", alpha=0.2, linewidth=1, linestyle="-", zorder=0)
 
         ax.set_ylim(*d_lim)
+        ax.tick_params(axis="x", pad=time_ticklabel_pad)
+        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
         #### - Add rain type strip at the top of the subplot as inset axes
         if add_rain_type and add_rain_type in ds_slice:
@@ -646,7 +676,7 @@ def plot_nd_quicklook(
             ax_rain.axhline(
                 y=0,
                 color="black",
-                linewidth=0.8,
+                linewidth=1,
                 alpha=1.0,
             )
 
@@ -656,7 +686,7 @@ def plot_nd_quicklook(
             for spine in ax_rain.spines.values():
                 spine.set_visible(False)
 
-    axes[n_slices - 1].set_xlabel("Time (UTC)", fontsize=12)
+    axes[n_slices - 1].set_xlabel("Time (UTC)", fontsize=axis_label_fontsize)
 
     # ------------------------------------------------------------------------.
     #### - Add title
@@ -679,7 +709,7 @@ def plot_nd_quicklook(
     # Set center title
     axes[0].set_title(
         title_str,
-        fontsize=14,
+        fontsize=title_fontsize,
         fontweight="bold",
         loc="center",
     )
@@ -688,36 +718,36 @@ def plot_nd_quicklook(
     if left_title_str is not None:
         axes[0].set_title(
             left_title_str,
-            fontsize=13,
+            fontsize=side_title_fontsize,
             loc="left",
         )
 
     # Add right title with event duration
     axes[0].set_title(
         duration_str,
-        fontsize=13,
+        fontsize=side_title_fontsize,
         loc="right",
     )
 
     # ------------------------------------------------------------------------.
     #### - Add centered y-labels in the middle of the figure (closer to axes)
     fig.text(
-        0.09,
+        0.08,
         0.5,
         d_label,
         va="center",
         rotation="vertical",
-        fontsize=15,
+        fontsize=axis_label_fontsize,
     )
 
     if add_r:
         fig.text(
-            0.94,
+            0.945,
             0.5,
             "Rain rate [mm h$^{-1}$]",
             va="center",
             rotation="vertical",
-            fontsize=15,
+            fontsize=axis_label_fontsize,
             color=r_color,
         )
 
@@ -737,7 +767,7 @@ def plot_nd_quicklook(
             labels,
             loc="upper left",
             bbox_to_anchor=(0, 0.98),
-            fontsize=12,
+            fontsize=legend_fontsize,
             frameon=True,
             fancybox=False,
             edgecolor="black",
@@ -747,7 +777,7 @@ def plot_nd_quicklook(
     #### - Add colorbar
     if cbar_as_legend:
         # Add colorbar as a legend in the last subplot with background box
-        cax = axes[-1].inset_axes([0.73, 0.70, 0.25, 0.12])  # [x, y, width, height] in axes coords
+        cax = axes[-1].inset_axes([cbar_xpos, cbar_ypos, cbar_width, 0.10])  # [x, y, width, height] in axes coords
 
         # # Raise z-order so the colorbar is on top and fancybox behind
         fancybox_zorder = cax.get_zorder() + 1
@@ -760,7 +790,7 @@ def plot_nd_quicklook(
             extend="max",
         )
         # Move label above colorbar
-        cbar.ax.set_xlabel(cbar_label, fontsize=12, labelpad=8)
+        cbar.ax.set_xlabel(cbar_label, fontsize=cbar_fontsize, labelpad=cbar_labelpad)
         cbar.ax.xaxis.set_label_position("top")
         cbar.ax.tick_params(labelsize=9)
 
@@ -791,7 +821,7 @@ def plot_nd_quicklook(
             fraction=cbar_fraction,
             extend="max",
         )
-        cbar.set_label(cbar_label, fontsize=11)
+        cbar.set_label(cbar_label, fontsize=cbar_fontsize)
 
     # Return figure
     return fig

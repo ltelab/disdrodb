@@ -3173,9 +3173,14 @@ def fit_ngg_on_normalized_space(
     x = np.asarray(x)
     ND_norm = np.asarray(ND_norm)
 
+    # Remove obs with NaN values
+    valid_data = ~np.isnan(ND_norm)
+    ND_norm = ND_norm[valid_data]
+    x = x[valid_data]
+
     # Define search space
     if mu is None:
-        mu = np.arange(-6, 20, step=0.1)
+        mu = np.arange(-1, 20, step=0.1)
     if c is None:
         c = np.arange(0.01, 20, step=0.1)
 

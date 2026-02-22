@@ -23,7 +23,7 @@ from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.utils.xarray import unstack_datarray_dimension
 
 
-def define_diameter_datarray(bounds):
+def define_diameter_datarray(bounds, dim="diameter_bin_center"):
     """Define diameter DataArray."""
     diameters_bin_lower = bounds[:-1]
     diameters_bin_upper = bounds[1:]
@@ -31,18 +31,18 @@ def define_diameter_datarray(bounds):
     diameters_bin_center = diameters_bin_lower + diameters_bin_width / 2
     da = xr.DataArray(
         diameters_bin_center,
-        dims="diameter_bin_center",
+        dims=dim,
         coords={
-            "diameter_bin_width": ("diameter_bin_center", diameters_bin_width),
-            "diameter_bin_lower": ("diameter_bin_center", diameters_bin_lower),
-            "diameter_bin_upper": ("diameter_bin_center", diameters_bin_upper),
-            "diameter_bin_center": ("diameter_bin_center", diameters_bin_center),
+            "diameter_bin_width": (dim, diameters_bin_width),
+            "diameter_bin_lower": (dim, diameters_bin_lower),
+            "diameter_bin_upper": (dim, diameters_bin_upper),
+            dim: (dim, diameters_bin_center),
         },
     )
     return da
 
 
-def define_velocity_datarray(bounds):
+def define_velocity_datarray(bounds, dim="velocity_bin_center"):
     """Define velocity DataArray."""
     velocitys_bin_lower = bounds[:-1]
     velocitys_bin_upper = bounds[1:]
@@ -50,12 +50,12 @@ def define_velocity_datarray(bounds):
     velocitys_bin_center = velocitys_bin_lower + velocitys_bin_width / 2
     da = xr.DataArray(
         velocitys_bin_center,
-        dims="velocity_bin_center",
+        dims=dim,
         coords={
-            "velocity_bin_width": ("velocity_bin_center", velocitys_bin_width),
-            "velocity_bin_lower": ("velocity_bin_center", velocitys_bin_lower),
-            "velocity_bin_upper": ("velocity_bin_center", velocitys_bin_upper),
-            "velocity_bin_center": ("velocity_bin_center", velocitys_bin_center),
+            "velocity_bin_width": (dim, velocitys_bin_width),
+            "velocity_bin_lower": (dim, velocitys_bin_lower),
+            "velocity_bin_upper": (dim, velocitys_bin_upper),
+            dim: (dim, velocitys_bin_center),
         },
     )
     return da
@@ -248,11 +248,165 @@ def get_diameter_coords_dict_from_bin_edges(diameter_bin_edges):
     return coords_dict
 
 
-def resample_drop_number_concentration(drop_number_concentration, diameter_bin_edges, method="linear"):
+def resample_drop_number_concentration(drop_number_concentration, diameter_bin_edges):
     """Resample drop number concentration N(D) DataArray to high resolution diameter bins."""
-    diameters_bin_center = diameter_bin_edges[:-1] + np.diff(diameter_bin_edges) / 2
+    da_dst_d_bin_centers = define_diameter_datarray(diameter_bin_edges, dim="d_new")
+    da_resampled = resample_density(
+        da_density=drop_number_concentration,
+        d_src=drop_number_concentration["diameter_bin_center"],
+        d_dst=da_dst_d_bin_centers,
+        dim="diameter_bin_center",
+        new_dim="d_new",
+        dD_src=drop_number_concentration["diameter_bin_width"],
+        dD_dst=da_dst_d_bin_centers["diameter_bin_width"],
+    )
+    da_resampled = da_resampled.rename({"d_new": "diameter_bin_center"})
+    return da_resampled
 
-    da = drop_number_concentration.interp(coords={"diameter_bin_center": diameters_bin_center}, method=method)
-    coords_dict = get_diameter_coords_dict_from_bin_edges(diameter_bin_edges)
-    da = da.assign_coords(coords_dict)
-    return da
+
+def resample_density(
+    da_density,
+    d_src,
+    d_dst,
+    dim,
+    new_dim,
+    dD_src,
+    dD_dst,
+):
+    """Conservative resampling of density.
+
+    Parameters
+    ----------
+    da_density : xr.DataArray
+        Density defined per unit diameter.
+    d_src : xr.DataArray
+        Source diameter centers (can be 2D: time, D).
+    d_dst : xr.DataArray
+        Destination diameter centers (1D).
+    dim : str
+        Source diameter dimension.
+    new_dim : str
+        Destination dimension name.
+    dD_src : xr.DataArray
+        Source bin widths (same dim as dim).
+    dD_dst : xr.DataArray
+        Destination bin widths (same dim as new_dim).
+
+    Returns
+    -------
+    xr.DataArray
+        Remapped density conserving total number.
+    """
+
+    def _conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
+        # Source edges
+        src_left = d_src - 0.5 * dD_src
+        src_right = d_src + 0.5 * dD_src
+
+        # Destination edges
+        dst_left = d_dst - 0.5 * dD_dst
+        dst_right = d_dst + 0.5 * dD_dst
+
+        # Overlap matrix (Ns, Nd)
+        overlap = np.minimum(src_right[:, None], dst_right[None, :]) - np.maximum(src_left[:, None], dst_left[None, :])
+
+        overlap = np.clip(overlap, 0.0, None)
+
+        # Integrated number in destination bins
+        N_dst = (y_src[:, None] * overlap).sum(axis=0)
+
+        # Convert back to density
+        return N_dst / dD_dst
+
+    da_density_new = xr.apply_ufunc(
+        _conservative_remapping,
+        da_density,
+        d_src,
+        d_dst,
+        dD_src,
+        dD_dst,
+        input_core_dims=[[dim], [dim], [new_dim], [dim], [new_dim]],
+        output_core_dims=[[new_dim]],
+        vectorize=True,
+        dask="parallelized",
+        output_dtypes=[float],
+    )
+
+    # Assign coordinate
+    da_density_new = da_density_new.assign_coords({new_dim: d_dst})
+    da_density_new.name = da_density.name
+    return da_density_new
+
+
+def remap_to_diameter(
+    da,
+    d_src,
+    d_dst,
+    dim,
+    new_dim,
+):
+    """Remap DataArray da from coordinate d_src to new coordinate d_dst.
+
+    Parameters
+    ----------
+    da : xr.DataArray
+        DataArray with dimension `dim` and typically another dim (e.g., time).
+    d_old : xr.DataArray
+        Old diameter coordinate (can be 2D, e.g., D/Dm (time, D)).
+        Must share dimensions with da.
+    d_new : xr.DataArray
+        1D target coordinate.
+    dim : str
+        Original diameter dimension.
+    new_dim_name : str
+        Name of output diameter dimension.
+
+    Returns
+    -------
+    xr.DataArray
+    """
+
+    def _interp_1d(x_new, x_old, y_old):
+        return np.interp(x_new, x_old, y_old, left=np.nan, right=np.nan)
+
+    da_out = xr.apply_ufunc(
+        _interp_1d,
+        d_dst,
+        d_src,
+        da,
+        input_core_dims=[[new_dim], [dim], [dim]],
+        output_core_dims=[[new_dim]],
+        vectorize=True,
+        dask="parallelized",
+        output_dtypes=[float],
+    )
+
+    da_out = da_out.assign_coords({new_dim: d_dst})
+    return da_out
+
+
+def compute_normalized_dsd_datarray(ds, Nc="Nw", Dc="Dm"):
+    """Compute normalized DSD and remap to regular D/Dc dimension."""
+    # Compute Normalized DSD and normalized diameter
+    ds["N(D)/Nc"] = ds["drop_number_concentration"] / ds[Nc]
+    ds["D/Dc"] = ds["diameter_bin_center"] / ds[Dc]
+    ds["dD/Dc"] = ds["diameter_bin_width"] / ds[Dc]
+
+    ds["D/Dc"] = ds["D/Dc"].transpose("diameter_bin_center", "time")
+    ds["N(D)/Nc"] = ds["N(D)/Nc"].transpose("diameter_bin_center", "time")
+
+    # Define normalized diameter coordinate
+    da_normalized_diameter = define_diameter_datarray(np.arange(0, 5, 0.01), dim="D/Dc")
+
+    # Map N(D)/Nc value for each D/Dc to regular D/Dc array
+    da_nd_norm = remap_to_diameter(
+        da=ds["N(D)/Nc"],
+        d_src=ds["D/Dc"],
+        d_dst=da_normalized_diameter,
+        dim="diameter_bin_center",
+        new_dim="D/Dc",
+    )
+
+    da_nd_norm = da_nd_norm.assign_coords({"diameter_bin_width": da_normalized_diameter["diameter_bin_width"]})
+    da_nd_norm.name = "N(D)/Nc"
+    return da_nd_norm

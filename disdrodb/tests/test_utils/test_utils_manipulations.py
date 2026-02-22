@@ -280,7 +280,7 @@ class TestGetDiameterCoordsDictFromBinEdges:
         assert ds.sizes[DIAMETER_DIMENSION] == 2
 
 
-def test_resample_drop_number_concentration_linear():
+def test_resample_drop_number_concentration():
     """It resamples drop_number_concentration onto higher resolution bins."""
     ds = create_template_l2e_dataset()
 
@@ -288,7 +288,6 @@ def test_resample_drop_number_concentration_linear():
     da_resampled = resample_drop_number_concentration(
         ds["drop_number_concentration"],
         diameter_bin_edges=new_edges,
-        method="linear",
     )
 
     # New coordinates should exist
@@ -297,3 +296,8 @@ def test_resample_drop_number_concentration_linear():
 
     # Shape consistency: new bin centers = len(edges)-1
     assert da_resampled.sizes["diameter_bin_center"] == len(new_edges) - 1
+
+    # Assert that total drop number concentration is conserved (within numerical precision)
+    Nt_original = (ds["drop_number_concentration"] * ds["diameter_bin_width"]).sum(dim="diameter_bin_center")
+    Nt_resampled = (da_resampled * da_resampled.coords["diameter_bin_width"]).sum(dim="diameter_bin_center")
+    np.testing.assert_allclose(Nt_original.to_numpy(), Nt_resampled.to_numpy(), rtol=1e-6)

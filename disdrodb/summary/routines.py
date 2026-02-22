@@ -1344,11 +1344,10 @@ def plot_dsd_with_dense_lines(drop_number_concentration, r, figsize=(3.4, 3.0), 
     diameter_bin_edges = np.arange(0, 8, 0.01)
 
     # Resample N(D) to high resolution !
-    # - quadratic, pchip
+    # - Conservative resampling to conserve Nt
     da = resample_drop_number_concentration(
         drop_number_concentration.compute(),
         diameter_bin_edges=diameter_bin_edges,
-        method="linear",
     )
     ds_resampled = xr.Dataset(
         {
@@ -4460,7 +4459,7 @@ def create_l2_dataframe(ds):
     return df
 
 
-def prepare_summary_dataset(ds, velocity_method="theoretical_velocity", source="drop_number"):
+def prepare_summary_dataset(ds, velocity_method="theoretical_velocity", source="drop_number", minimum_rain_rate=0):
     """Prepare the L2E or L2M dataset to be converted to a dataframe."""
     # Select fall velocity method
     if "velocity_method" in ds.dims:
@@ -4483,11 +4482,11 @@ def prepare_summary_dataset(ds, velocity_method="theoretical_velocity", source="
     if "source" in ds.dims:
         ds = ds.sel(source=source)
 
-    # Select only timesteps with R > 0
+    # Select only timesteps with R > minimum_rain_rate
     if "Rm" in ds:  # in L2E
-        rainy_timesteps = np.logical_and(ds["Rm"].compute() > 0, ds["R"].compute() > 0)
+        rainy_timesteps = np.logical_and(ds["Rm"].compute() > minimum_rain_rate, ds["R"].compute() > minimum_rain_rate)
     else:  # L2M without Rm
-        rainy_timesteps = ds["R"].compute() > 0
+        rainy_timesteps = ds["R"].compute() > minimum_rain_rate
 
     ds = ds.isel(time=rainy_timesteps)
     return ds
@@ -4512,7 +4511,8 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         (ds["Nbins"] >= 3)
         & (ds["sigma_m"] >= 0.2)
         & (ds["Nbins_missing_fraction"] <= 0.3)
-        & (ds["Dmin"] <= 1)(ds["R"] > 0.01)
+        & (ds["Dmin"] <= 1)
+        & (ds["R"] > 0.01)
     )
     valid_idx = np.where(mask)[0]
     ds_filtered = ds.isel(time=valid_idx)
