@@ -15,14 +15,38 @@ relative_wind_direction:
   long_name: Relative wind direction
   units: "degrees"
 weather_code_synop_4677:
-  description: SYNOP weather code according to table 4677 of Parsivel documentation
+  description: SYNOP weather code according to table 4677
   long_name: Weather code SYNOP 4677
   units: ""
+  flag_values: [-2, -1, 0, 51, 53, 55, 58, 59, 61, 63, 65, 68, 69, 71, 73, 75, 77, 87, 88, 89, 90]
+  flag_meanings: >
+    missing
+    noise
+    no_precipitation
+    drizzle_light
+    drizzle_moderate
+    drizzle_heavy
+    drizzle_with_rain_light
+    drizzle_with_rain_moderate_or_heavy
+    rain_light
+    rain_moderate
+    rain_heavy
+    rain_or_drizzle_with_snow_light
+    rain_or_drizzle_with_snow_heavy
+    snow_light
+    snow_moderate
+    snow_heavy
+    snow_grains
+    ice_pellets_light
+    ice_pellets_moderate_or_heavy
+    hail_light
+    hail_heavy
+  comment: WMO SYNOP present weather codes (Table 4677, ww).
 precip_flag:
   description: Precipitation classification
   long_name: Precipitation flag
   flag_meanings: "true_zero_value rain snow mixed_phase"
-  flag_values: "-1 0 1 2 3"
+  flag_values: [-1, 0, 1, 2, 3]
   units: ""
 raw_drop_number:
   description: Precipitation spectrum

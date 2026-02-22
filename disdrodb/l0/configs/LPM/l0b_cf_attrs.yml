@@ -2,14 +2,94 @@ weather_code_synop_4677_5min:
   description: 5M SYNOP Tab.4677 (5 minutes mean value) (NN)
   long_name: 5 min SYNOP Tab.4677
   units: ""
+  flag_values: [-2, -1, 0, 51, 53, 55, 58, 59, 61, 63, 65, 68, 69, 71, 73, 75, 77, 87, 88, 89, 90]
+  flag_meanings: >
+    missing
+    noise
+    no_precipitation
+    drizzle_light
+    drizzle_moderate
+    drizzle_heavy
+    drizzle_with_rain_light
+    drizzle_with_rain_moderate_or_heavy
+    rain_light
+    rain_moderate
+    rain_heavy
+    rain_or_drizzle_with_snow_light
+    rain_or_drizzle_with_snow_heavy
+    snow_light
+    snow_moderate
+    snow_heavy
+    snow_grains
+    ice_pellets_light
+    ice_pellets_moderate_or_heavy
+    hail_light
+    hail_heavy
+  comment: WMO SYNOP present weather codes (Table 4677, ww).
 weather_code_synop_4680_5min:
   description: 5M SYNOP Tab.4680 (5 minutes mean value) (NN)
   long_name: 5 min SYNOP Tab.4680
   units: ""
+  flag_values: [-2, -1, 0, 51, 52, 53, 57, 58, 61, 62, 63, 67, 68, 71, 72, 73, 74, 75, 76, 77, 89, 90]
+  flag_meanings: >
+    missing
+    noise
+    no_precipitation
+    drizzle_light
+    drizzle_moderate
+    drizzle_heavy
+    drizzle_with_rain_light
+    drizzle_with_rain_moderate_or_heavy
+    rain_light
+    rain_moderate
+    rain_heavy
+    rain_or_drizzle_with_snow_light
+    rain_or_drizzle_with_snow_heavy
+    snow_light
+    snow_moderate
+    snow_heavy
+    ice_pellets_light
+    ice_pellets_moderate
+    ice_pellets_heavy
+    snow_grains
+    hail_light
+    hail_heavy
+  comment: WMO SYNOP present weather codes (Table 4680, wawa).
 weather_code_metar_4678_5min:
   description: 5M METAR Tab.4678 (5 minutes mean value) (AAAAA)
   long_name: 5 min METAR Tab.4678
   units: ""
+  flag_values: ["NP", "-DZ", "DZ", "+DZ", "-RADZ", "RADZ", "+RADZ",
+              "-RA", "RA", "+RA", "-RASN", "RASN", "+RASN",
+              "-SN", "SN", "+SN", "SG",
+              "-PL", "PL", "+PL", "-GS", "GS", "+GS", "-GR", "GR"]
+  flag_meanings: >
+    no_precipitation
+    drizzle_light
+    drizzle_moderate
+    drizzle_heavy
+    drizzle_with_rain_light
+    drizzle_with_rain_moderate
+    drizzle_with_rain_heavy
+    rain_light
+    rain_moderate
+    rain_heavy
+    rain_or_drizzle_with_snow_light
+    rain_or_drizzle_with_snow_moderate
+    rain_or_drizzle_with_snow_heavy
+    snow_light
+    snow_moderate
+    snow_heavy
+    snow_grains
+    ice_pellets_light
+    ice_pellets_moderate
+    ice_pellets_heavy
+    graupel_light
+    graupel_moderate
+    graupel_heavy
+    hail_light
+    hail_moderate
+  comment: METAR present weather codes (WMO No. 306).
 precipitation_rate_5min:
   description: "5M Intensit\xE4t [mm/h] (5 minutes mean value) (NNN.NNN)"
   long_name: 5 min precipitation rate
@@ -18,14 +98,94 @@ weather_code_synop_4677:
   description: 1M SYNOP Tab.4677 (1 minute value) (NN)
   long_name: SYNOP Tab.4677
   units: ""
+  flag_values: [-2, -1, 0, 51, 53, 55, 58, 59, 61, 63, 65, 68, 69, 71, 73, 75, 77, 87, 88, 89, 90]
+  flag_meanings: >
+    missing
+    noise
+    no_precipitation
+    drizzle_light
+    drizzle_moderate
+    drizzle_heavy
+    drizzle_with_rain_light
+    drizzle_with_rain_moderate_or_heavy
+    rain_light
+    rain_moderate
+    rain_heavy
+    rain_or_drizzle_with_snow_light
+    rain_or_drizzle_with_snow_heavy
+    snow_light
+    snow_moderate
+    snow_heavy
+    snow_grains
+    ice_pellets_light
+    ice_pellets_moderate_or_heavy
+    hail_light
+    hail_heavy
+  comment: WMO SYNOP present weather codes (Table 4677, ww).
 weather_code_synop_4680:
   description: 1M SYNOP Tab.4680 (1 minute value) (NN)
   long_name: SYNOP Tab.4680
   units: ""
+  flag_values: [-2, -1, 0, 51, 52, 53, 57, 58, 61, 62, 63, 67, 68, 71, 72, 73, 74, 75, 76, 77, 89, 90]
+  flag_meanings: >
+    missing
+    noise
+    no_precipitation
+    drizzle_light
+    drizzle_moderate
+    drizzle_heavy
+    drizzle_with_rain_light
+    drizzle_with_rain_moderate_or_heavy
+    rain_light
+    rain_moderate
+    rain_heavy
+    rain_or_drizzle_with_snow_light
+    rain_or_drizzle_with_snow_heavy
+    snow_light
+    snow_moderate
+    snow_heavy
+    ice_pellets_light
+    ice_pellets_moderate
+    ice_pellets_heavy
+    snow_grains
+    hail_light
+    hail_heavy
+  comment: WMO SYNOP present weather codes (Table 4680, wawa).
 weather_code_metar_4678:
   description: 1M METAR Tab.4678 (1 minute value) (AAAAA)
   long_name: METAR Tab.4678
   units: ""
+  flag_values: ["NP", "-DZ", "DZ", "+DZ", "-RADZ", "RADZ", "+RADZ",
+              "-RA", "RA", "+RA", "-RASN", "RASN", "+RASN",
+              "-SN", "SN", "+SN", "SG",
+              "-PL", "PL", "+PL", "-GS", "GS", "+GS", "-GR", "GR"]
+  flag_meanings: >
+    no_precipitation
+    drizzle_light
+    drizzle_moderate
+    drizzle_heavy
+    drizzle_with_rain_light
+    drizzle_with_rain_moderate
+    drizzle_with_rain_heavy
+    rain_light
+    rain_moderate
+    rain_heavy
+    rain_or_drizzle_with_snow_light
+    rain_or_drizzle_with_snow_moderate
+    rain_or_drizzle_with_snow_heavy
+    snow_light
+    snow_moderate
+    snow_heavy
+    snow_grains
+    ice_pellets_light
+    ice_pellets_moderate
+    ice_pellets_heavy
+    graupel_light
+    graupel_moderate
+    graupel_heavy
+    hail_light
+    hail_moderate
+  comment: METAR present weather codes (WMO No. 306).
 precipitation_rate:
   description: 1M Intensity [mm/h] total precipitation (1 minute value) (NNN.NNN)
   long_name: Total precipitation intensity
