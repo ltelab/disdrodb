@@ -4747,7 +4747,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
                     aligned=False,
                     verbose=False,
                     cbar_as_legend=True,
-                    add_rain_type="rain_type",
+                    add_precipitation_type="rain_type",
                     d_lim=(0.3, 7),
                     # Figure options
                     dpi=300,
@@ -4791,7 +4791,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
                     aligned=False,
                     verbose=False,
                     cbar_as_legend=True,
-                    add_rain_type="rain_type",
+                    add_precipitation_type="rain_type",
                     d_lim=(0.3, 7),
                     # Figure options
                     dpi=300,

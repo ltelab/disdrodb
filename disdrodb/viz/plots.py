@@ -25,6 +25,7 @@ import xarray as xr
 from matplotlib.colors import BoundaryNorm, ListedColormap, LogNorm, Normalize
 from matplotlib.gridspec import GridSpec
 from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 from matplotlib.ticker import MaxNLocator
 
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
@@ -39,6 +40,100 @@ from disdrodb.l2.processing import get_mask_contour, get_spectrum_mask_boundary
 #               add_tolerance_fraction=0.5,
 #               add_tolerance_=0.5)
 # Add plot_raw_and_filtered_spectra(animation=True, legend_variables on first axes)
+
+
+####-------------------------------------------------------------------------------------------------------
+
+
+def get_precipitation_legend_style(name):
+    """Return (colors_dict, labels_dict) for supported categorical variables.
+
+    Supported:
+        - rain_type
+        - precipitation_type
+        - hydrometeor_type
+    """
+    if name == "rain_type":
+        colors = {
+            0: "white",
+            1: "dodgerblue",  # stratiform
+            2: "orangered",  # convective
+        }
+        labels = {
+            0: "No precipitation",
+            1: "Stratiform",
+            2: "Convective",
+        }
+
+    elif name == "precipitation_type":
+        colors = {
+            -2: "lightgray",  # undefined
+            -1: "white",  # no_precip
+            0: "#0050b5",  # rainfall (deep blue)
+            1: "#00bcd4",  # snowfall (cyan)
+            2: "#8e44ad",  # mixed_phase (purple)
+        }
+        labels = {
+            -2: "Undefined",
+            -1: "No precipitation",
+            0: "Rainfall",
+            1: "Snowfall",
+            2: "Mixed phase",
+        }
+
+    elif name == "hydrometeor_type":
+        colors = {
+            -2: "white",  # no_hydrometeor
+            -1: "lightgray",  # undefined
+            0: "white",  # no_precipitation
+            # 🌧 Liquid family (blue gradient)
+            1: "#4a90e2",  # drizzle (light blue)
+            2: "#0057d9",  # drizzle + rain (strong blue)
+            3: "#002f8a",  # rain (deep royal blue)
+            # 1: "#6baed6",   # drizzle (light blue)
+            # 2: "#2171b5",   # drizzle + rain (medium blue)
+            # 3: "#08306b",   # rain (deep navy blue)
+            # 🟣 Mixed
+            4: "#9b59b6",  # mixed (purple)
+            # ❄️ Frozen family (teal / aqua gradient — shifted hue)
+            5: "#1abc6c",  # snow (green-teal)
+            6: "#9be7c4",  # snow grains (pale mint)
+            # 5: "#1abc9c",   # snow (teal)
+            # 6: "#76eec6",   # snow grains (light aqua)
+            # 🟠 Ice family
+            7: "#f39c12",  # ice pellets
+            8: "#e67e22",  # graupel
+            # 🔴 Severe
+            9: "#c0392b",  # hail
+            # 1: "lightskyblue",     # drizzle
+            # 2: "dodgerblue",       # drizzle_and_rain
+            # 3: "royalblue",        # rain
+            # 4: "mediumorchid",     # mixed
+            # 5: "deepskyblue",      # snow
+            # 6: "paleturquoise",    # snow_grains
+            # 7: "darkorange",       # ice_pellets
+            # 8: "orange",           # graupel
+            # 9: "red",              # hail
+        }
+        labels = {
+            -2: "No hydrometeor",
+            -1: "Undefined",
+            0: "No precipitation",
+            1: "Drizzle",
+            2: "Drizzle + Rain",
+            3: "Rain",
+            4: "Mixed",
+            5: "Snow",
+            6: "Snow grains",
+            7: "Ice pellets",
+            8: "Graupel",
+            9: "Hail",
+        }
+
+    else:
+        raise ValueError(f"Unsupported categorical variable: {name}")
+
+    return colors, labels
 
 
 ####-------------------------------------------------------------------------------------------------------
@@ -346,17 +441,21 @@ def plot_nd_quicklook(
     cbar_label=None,
     cmap=None,
     norm=None,
+    # Diameter axis options
     d_dim=DIAMETER_DIMENSION,
     d_lim=(0.3, 5.5),
     d_label="Diameter [mm]",
     # Colorbar options
     cbar_as_legend=True,
-    # Rain type options
-    add_rain_type=None,
-    rain_type_colors=None,
-    # Add Dm and sigma_m
-    add_dm=True,
-    add_sigma_m=True,
+    cbar_xpos=0.73,
+    cbar_width=0.25,
+    # Precipitation type options
+    add_precipitation_type=None,
+    precipitation_legend_fontsize=7,
+    precipitation_legend_colors=None,
+    precipitation_legend_labels=None,
+    precipitation_legend_ncol=None,
+    precipitation_legend_height=0.3,  # inches
     # Rain rate options
     add_r=True,
     r_lim=(0.1, 200),
@@ -365,12 +464,13 @@ def plot_nd_quicklook(
     r_alpha=1,
     r_linewidth=1,
     r_linestyle=":",
+    # Diameter axis variables
+    add_dm=True,
+    add_sigma_m=True,
     sigma_label=r"$2\sigma_m$",
     sigma_linewidth=0.5,
     dm_linewidth=0.5,
     # Figure options
-    cbar_xpos=0.73,
-    cbar_width=0.25,
     dpi=300,
 ):
     """Display multi-rows quicklook of N(D)."""
@@ -406,8 +506,8 @@ def plot_nd_quicklook(
             add_sigma_m = False
         if "R" not in ds:
             add_r = False
-        if add_rain_type not in ds:
-            add_rain_type = None
+        if add_precipitation_type not in ds:
+            add_precipitation_type = None
     if isinstance(xr_obj, xr.DataArray):
         variable = xr_obj.name
         variable = "unknown DSD" if variable is None else variable
@@ -415,7 +515,7 @@ def plot_nd_quicklook(
         add_dm = False
         add_sigma_m = False
         add_r = False
-        add_rain_type = None
+        add_precipitation_type = None
 
     # ------------------------------------------------------------------------.
     # Select velocity_method
@@ -429,6 +529,17 @@ def plot_nd_quicklook(
     da_nd = get_nd_variable(ds, variable=variable, diameter_dim=d_dim)
     variable = da_nd.name
     ds[da_nd.name] = da_nd  # might have computed n(d) on-the-fly from N(D,V)
+
+    # ------------------------------------------------------------------------.
+    # Define precipitation type classification (colors and legend)
+    add_precipitation_legend = add_precipitation_type is not None
+    if add_precipitation_legend:
+        if precipitation_legend_colors is None:
+            precipitation_legend_colors, precipitation_legend_labels = get_precipitation_legend_style(
+                add_precipitation_type,
+            )
+        if precipitation_legend_ncol is None:
+            precipitation_legend_ncol = len(precipitation_legend_labels)
 
     # ------------------------------------------------------------------------.
     # Colormap & normalization
@@ -514,36 +625,45 @@ def plot_nd_quicklook(
     if n_slices <= 2:
         cbar_as_legend = True
 
-    # ------------------------------------------------------------------------.
-    #### - Define figure with GridSpec
+    ####-----------------------------------------------------------------------.
+    #### Define figure with GridSpec
     # - If cbar_as_legend=False: reserve extra row for colorbar
     # - If cbar_as_legend=True: no extra row needed
-    fig = plt.figure(figsize=(6.9, 1.9 * n_slices), dpi=dpi)
+    # - If add_precipitation_legend True, add extra row for precipitation classification legend
 
-    if cbar_as_legend:
-        # No extra row for colorbar
-        gs = GridSpec(
-            nrows=n_slices,
-            ncols=1,
-            figure=fig,
-            hspace=0.15,
-        )
-        axes = [fig.add_subplot(gs[i, 0]) for i in range(n_slices)]
-    else:
-        # Extra row for colorbar at bottom
-        # Scale colorbar row height based on number of subplots
-        # - More subplots = relatively smaller colorbar row
-        cbar_height_ratio = 0.2 if n_slices == 3 else 0.15
+    # Define number of extra rows
+    extra_rows = 1 if (not cbar_as_legend) else 0
+    extra_rows += 1 if add_precipitation_legend else 0
 
-        height_ratios = [1] * n_slices + [cbar_height_ratio]
-        gs = GridSpec(
-            nrows=n_slices + 1,
-            ncols=1,
-            figure=fig,
-            height_ratios=height_ratios,
-            hspace=0.15,
-        )
-        axes = [fig.add_subplot(gs[i, 0]) for i in range(n_slices)]
+    # Define figure size
+    fig_width = 6.9
+    subplot_height = 1.9
+    fig_height = subplot_height * n_slices + (precipitation_legend_height if add_precipitation_legend else 0)
+    figsize = (fig_width, fig_height)
+
+    # Define height ratios
+    hspace = 0.15
+    height_ratios = [1] * n_slices
+    if not cbar_as_legend:
+        cbar_height_ratio = 0.2 if n_slices == 3 else 0.15  # more subplots = relatively smaller colorbar row
+        height_ratios.append(cbar_height_ratio)
+
+    if add_precipitation_legend:
+        height_ratio_precipitation_legend = precipitation_legend_height / subplot_height
+        height_ratios.append(height_ratio_precipitation_legend)
+        hspace = 0.2
+
+    # Create figure
+    fig = plt.figure(figsize=figsize, dpi=dpi)
+    gs = GridSpec(
+        nrows=n_slices + extra_rows,
+        ncols=1,
+        figure=fig,
+        height_ratios=height_ratios,
+        hspace=hspace,
+    )
+
+    axes = [fig.add_subplot(gs[i, 0]) for i in range(n_slices)]
 
     # ------------------------------------------------------------------------.
     #### - Plot each slice
@@ -636,26 +756,34 @@ def plot_nd_quicklook(
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
         #### - Add rain type strip at the top of the subplot as inset axes
-        if add_rain_type and add_rain_type in ds_slice:
+        if add_precipitation_legend:
             # Get rain_type values for this time slice
-            rain_type = ds_slice[add_rain_type]
-
-            # Define colors for rain types (0: transparent, 1: stratiform, 2: convective)
-            if rain_type_colors is None:
-                rain_type_colors = {
-                    0: "none",  # No precipitation
-                    1: "dodgerblue",  # Stratiform
-                    2: "orangered",  # Convective
-                }
+            rain_type = ds_slice[add_precipitation_type]
 
             # Create inset axes at the top (sharing x-axis with main plot)
             # [x0, y0, width, height] in axes coordinates
             ax_rain = ax.inset_axes([0, 0.95, 1, 0.05], sharex=ax)
 
             # Define colormap and norm
-            colors = [rain_type_colors.get(i, "white") for i in range(3)]
+            # - Sort category values
+            values = np.array(sorted(precipitation_legend_colors.keys()))
+
+            # - Extract colors in same order
+            colors = [precipitation_legend_colors[v] for v in values]
+
+            # - Create colormap
             cmap_rain = ListedColormap(colors)
-            norm_rain = BoundaryNorm([-0.5, 0.5, 1.5, 2.5], cmap_rain.N)
+
+            # - Build automatic boundaries
+            # Works even for negative or non-consecutive values
+            boundaries = np.concatenate(
+                [
+                    [values[0] - 0.5],
+                    (values[:-1] + values[1:]) / 2,
+                    [values[-1] + 0.5],
+                ],
+            )
+            norm_rain = BoundaryNorm(boundaries, cmap_rain.N)
 
             # Plot 1-pixel-high strip
             t = rain_type["time"].to_numpy()
@@ -690,7 +818,9 @@ def plot_nd_quicklook(
             for spine in ax_rain.spines.values():
                 spine.set_visible(False)
 
-    axes[n_slices - 1].set_xlabel("Time (UTC)", fontsize=axis_label_fontsize)
+    # Add time xlabel
+    if add_precipitation_type is None:
+        axes[n_slices - 1].set_xlabel("Time (UTC)", fontsize=axis_label_fontsize)
 
     # ------------------------------------------------------------------------.
     #### - Add title
@@ -826,6 +956,28 @@ def plot_nd_quicklook(
             extend="max",
         )
         cbar.set_label(cbar_label, fontsize=cbar_fontsize)
+
+    #### Add classification legend
+    if add_precipitation_legend:
+        legend_patches = [
+            Patch(facecolor=precipitation_legend_colors[k], edgecolor="black", label=precipitation_legend_labels[k])
+            for k in sorted(precipitation_legend_colors.keys())
+        ]
+
+        # Select last row in GridSpec
+        rain_ax = fig.add_subplot(gs[-1, 0])
+        rain_ax.axis("off")
+
+        rain_ax.legend(
+            handles=legend_patches,
+            loc="center left",
+            bbox_to_anchor=(-0.01, 0.5),
+            ncol=precipitation_legend_ncol,
+            frameon=False,
+            fontsize=precipitation_legend_fontsize,
+            columnspacing=1.2,
+            handlelength=0.8,
+        )
 
     # Return figure
     return fig

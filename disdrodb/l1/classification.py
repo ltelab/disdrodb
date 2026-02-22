@@ -1,4 +1,19 @@
 # -----------------------------------------------------------------------------.
+# Copyright (c) 2021-2026 DISDRODB developers
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# -----------------------------------------------------------------------------.
 """DISDRODB hydrometeor classification and QC module."""
 
 import numpy as np
@@ -301,6 +316,29 @@ def define_graupel_mask(
     )
     mask = np.logical_and(mask_diameter, mask_velocity)
     return mask
+
+
+def define_precipitation_type_from_hydrometeor_type(hydrometeor_type):
+    """Define precipitation_type from hydrometeor_type."""
+    precipitation_type = xr.ones_like(hydrometeor_type["time"], dtype=float) * -2
+    precipitation_type = xr.where(hydrometeor_type.isin([0]), -1, precipitation_type)
+    precipitation_type = xr.where(
+        hydrometeor_type.isin([1, 2, 3, 9]),
+        0,
+        precipitation_type,
+    )  # 9 hail in rainfall class currently
+    precipitation_type = xr.where(hydrometeor_type.isin([5, 6, 7, 8]), 1, precipitation_type)
+    precipitation_type = xr.where(hydrometeor_type.isin([4]), 2, precipitation_type)
+    precipitation_type.attrs.update(
+        {
+            "long_name": "precipitation phase classification",
+            "standard_name": "precipitation_phase",
+            "units": "1",
+            "flag_values": [-2, -1, 0, 1, 2],
+            "flag_meanings": "undefined no_precipitation rainfall snowfall mixed_phase",
+        },
+    )
+    return precipitation_type
 
 
 def classify_raw_spectrum(
@@ -763,24 +801,7 @@ def classify_raw_spectrum(
 
     # ------------------------------------------------------------------------.
     #### Define precipitation type variable
-    precipitation_type = xr.ones_like(ds["time"], dtype=float) * -2
-    precipitation_type = xr.where(hydrometeor_type.isin([0]), -1, precipitation_type)
-    precipitation_type = xr.where(
-        hydrometeor_type.isin([1, 2, 3, 9]),
-        0,
-        precipitation_type,
-    )  # 9 hail in rainfall class currently
-    precipitation_type = xr.where(hydrometeor_type.isin([5, 6, 7, 8]), 1, precipitation_type)
-    precipitation_type = xr.where(hydrometeor_type.isin([4]), 2, precipitation_type)
-    precipitation_type.attrs.update(
-        {
-            "long_name": "precipitation phase classification",
-            "standard_name": "precipitation_phase",
-            "units": "1",
-            "flag_values": [-2, -1, 0, 1, 2],
-            "flag_meanings": "undefined no_precipitation rainfall snowfall mixed_phase",
-        },
-    )
+    precipitation_type = define_precipitation_type_from_hydrometeor_type(hydrometeor_type)
 
     # ------------------------------------------------------------------------.
     #### Define flag graupel
