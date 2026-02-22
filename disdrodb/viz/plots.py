@@ -29,7 +29,7 @@ from matplotlib.ticker import MaxNLocator
 
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l2.empirical_dsd import get_drop_average_velocity
-from disdrodb.l2.processing import get_mask_contour
+from disdrodb.l2.processing import get_mask_contour, get_spectrum_mask_boundary
 
 # TODO FIX: XARRAY PCOLORMESH IS CURRENTLY INACCURATE
 
@@ -272,6 +272,10 @@ def plot_nd(
     # Retrieve N(D) or n(D)
     da_nd = get_nd_variable(xr_obj, variable=variable)
     da_nd = da_nd.compute()
+
+    # Check not empty object
+    if da_nd.size == 0:
+        raise ValueError("No data to plot.")
 
     # Retrieve label
     variable_name = da_nd.name
@@ -850,7 +854,15 @@ def _get_spectrum_variable(xr_obj, variable):
     return xr_obj
 
 
-def plot_spectrum_evolution(ds, legend_variables=None, legend_ncol=1, xlim=None, ylim=None, **plot_kwargs):
+def plot_spectrum_evolution(
+    ds,
+    legend_variables=None,
+    legend_ncol=1,
+    xlim=None,
+    ylim=None,
+    plot_hc_rain_mask_boundary=False,
+    **plot_kwargs,
+):
     """Plot the evolution of disdrodb spectra over time.
 
     Parameters
@@ -866,6 +878,10 @@ def plot_spectrum_evolution(ds, legend_variables=None, legend_ncol=1, xlim=None,
     plot_kwargs : dict
         Additional keyword arguments passed to plot_spectrum().
     """
+    # Check timestep available
+    if "time" not in ds.dims or ds.sizes["time"] == 0:
+        raise ValueError("No timesteps available.")
+
     # Define legend formatting
     # --> Define decimals per variable
     decimals = {}
@@ -873,6 +889,8 @@ def plot_spectrum_evolution(ds, legend_variables=None, legend_ncol=1, xlim=None,
         for var in legend_variables:
             if var not in ds:
                 raise KeyError(f"Variable '{var}' not found in dataset")
+
+            ds[var] = ds[var].compute()  # Ensure variable is loaded in memory
 
             values = ds[var].to_numpy()
 
@@ -885,6 +903,19 @@ def plot_spectrum_evolution(ds, legend_variables=None, legend_ncol=1, xlim=None,
             else:
                 decimals[var] = 2
 
+    # Precompute hc rain mask contour
+    if plot_hc_rain_mask_boundary:
+        contour = get_spectrum_mask_boundary(
+            ds,
+            above_velocity_tolerance=2,
+            below_velocity_fraction=None,
+            below_velocity_tolerance=3,
+            maintain_drops_smaller_than=1,  # 1,   # 2
+            maintain_drops_slower_than=2.5,  # 2.5, # 3
+            maintain_smallest_drops=False,
+            fall_velocity_model="Beard1976",
+        )
+
     # Loop over time
     for i in range(ds.sizes["time"]):
         ds_i = ds.isel(time=i)
@@ -893,7 +924,10 @@ def plot_spectrum_evolution(ds, legend_variables=None, legend_ncol=1, xlim=None,
         fig, ax = plt.subplots()
 
         # Plot spectrum
-        plot_spectrum(ds_i, ax=ax, **plot_kwargs)
+        plot_spectrum(ds_i, ax=ax, plot_hc_rain_mask_boundary=False, **plot_kwargs)
+
+        if plot_hc_rain_mask_boundary:
+            plot_contour(contour, ax=ax, color="black", linestyle="--")
 
         # Set title
         title_str = pd.to_datetime(ds_i["time"].to_numpy()).strftime("%Y-%m-%d %H:%M:%S")
@@ -940,6 +974,7 @@ def plot_spectrum(
     add_colorbar=True,
     cbar_kwargs=None,
     title=None,
+    plot_hc_rain_mask_boundary=False,
     **plot_kwargs,
 ):
     """Plot the spectrum.
@@ -988,8 +1023,13 @@ def plot_spectrum(
     # Check if FacetGrid
     is_facetgrid = "col" in plot_kwargs or "row" in plot_kwargs
 
+    # Check not empty object
+    if drop_number.size == 0:
+        raise ValueError("No data to plot.")
+
     # Define start_time and end_time if time coordinate is present
-    if "time" in drop_number.coords:
+    drop_number = drop_number.squeeze()
+    if "time" in drop_number.dims:
         start_time = pd.to_datetime(drop_number.disdrodb.start_time).strftime("%Y-%m-%d %H:%M:%S")
         end_time = pd.to_datetime(drop_number.disdrodb.end_time).strftime("%Y-%m-%d %H:%M:%S")
     else:
@@ -1033,6 +1073,20 @@ def plot_spectrum(
         cbar_kwargs=cbar_kwargs,
         **plot_kwargs,
     )
+
+    if plot_hc_rain_mask_boundary:
+        contour = get_spectrum_mask_boundary(
+            xr_obj,
+            above_velocity_tolerance=2,
+            below_velocity_fraction=None,
+            below_velocity_tolerance=3,
+            maintain_drops_smaller_than=1,  # 1,   # 2
+            maintain_drops_slower_than=2.5,  # 2.5, # 3
+            maintain_smallest_drops=False,
+            fall_velocity_model="Beard1976",
+        )
+        plot_contour(contour, ax=ax, color="black", linestyle="--")
+
     if not is_facetgrid:
         p.axes.set_xlabel("Diamenter [mm]")
         p.axes.set_ylabel("Fall velocity [m/s]")

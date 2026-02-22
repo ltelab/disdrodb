@@ -163,7 +163,7 @@ def get_spectrum_mask_boundary(
     ds_env = load_env_dataset(ds)
 
     # Retrieve spectrum
-    raw_spectrum = ds["raw_drop_number"].copy()
+    raw_spectrum = ds["raw_drop_number"].copy() if isinstance(ds, xr.Dataset) else ds
 
     # Retrieve coordinates
     diameter_upper = raw_spectrum["diameter_bin_upper"]

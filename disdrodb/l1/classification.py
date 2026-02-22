@@ -615,7 +615,7 @@ def classify_raw_spectrum(
     # (cond & (label == -1)).sum()
 
     # ---------------------------------
-    # Mixed
+    # Mixed (when R > 1 mm/hr)
     # --> FUTURE: Better clarified the meaning
     # --> FUTURE: R computed with particles only above 3 m/s would help disentagle snow from mixed !
     # --> When R > 1 mm/hr and no splash - solid_liquid_ratio > XXX
@@ -673,12 +673,13 @@ def classify_raw_spectrum(
 
     # ------------------------------------------------------------------------.
     # Improve classification using temperature information if available
+    # - Currently problematic for PARSIVEL when using sensor_temperature when actually snowing
     if temperature is not None:
         temperature = temperature.compute()
         qc_temperature = define_qc_temperature(temperature, sample_interval=sample_interval, threshold_minutes=1440)
 
-        is_surely_rain = (temperature >= snow_temperature_upper_limit) & (qc_temperature == 0)
-        is_surely_snow = (temperature <= rain_temperature_lower_limit) & (qc_temperature == 0)
+        is_surely_rain_given_temperature = (temperature >= snow_temperature_upper_limit) & (qc_temperature == 0)
+        is_surely_snow_given_temperature = (temperature <= rain_temperature_lower_limit) & (qc_temperature == 0)
         is_mixed = label.isin([4, 41])
         is_snow = label.isin([5, 51])
         is_drizzle = label.isin([1])
@@ -689,27 +690,27 @@ def classify_raw_spectrum(
         # Improve mixed classification (4, 41)
         # - If T > snow_temperature_upper_limit --> rain
         # - If T < -5 rain_temperature_lower_limit --> snow
-        label = xr.where(is_surely_rain & is_mixed, 24, label)
-        label = xr.where(is_surely_snow & is_mixed, 52, label)
+        label = xr.where(is_surely_rain_given_temperature & is_mixed, 24, label)
+        label = xr.where(is_surely_snow_given_temperature & is_mixed, 52, label)
+
+        # Improve drizzle classification
+        label = xr.where(is_surely_snow_given_temperature & is_drizzle, 61, label)
 
         # Improve snow classification
         # - If T > snow_temperature_upper_limit --> No hydrometeors
-        label = xr.where(is_surely_rain & is_snow, -21, label)
-
-        # Improve drizzle classification
-        label = xr.where(is_surely_snow & is_drizzle, 61, label)
+        label = xr.where(is_surely_rain_given_temperature & is_snow, -21, label)
 
         # Improve snow grains classification
         # --> If T > snow_temperature_upper_limit --> No hydrometeors
-        label = xr.where(is_surely_rain & is_snow_grain, -21, label)
+        label = xr.where(is_surely_rain_given_temperature & is_snow_grain, -21, label)
 
         # Improve rain classification
         # If T < rain_temperature_lower_limit --> No hydrometeors
-        label = xr.where(is_surely_snow & is_rain, -21, label)
+        label = xr.where(is_surely_snow_given_temperature & is_rain, -21, label)
 
         # Improve graupel classification
         # If T < rain_temperature_lower_limit --> Ice pellets / Sleets
-        label = xr.where(is_surely_snow & is_graupel, 7, label)
+        label = xr.where(is_surely_snow_given_temperature & is_graupel, 7, label)
 
     # ------------------------------------------------------------------------.
     # Define hydrometeor_typevariable
