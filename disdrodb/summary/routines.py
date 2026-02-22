@@ -1244,7 +1244,7 @@ def define_logquadratic_powerlaw_legend_str(
 #### N(D) Climatological plots
 
 
-def create_nd_dataframe(ds, variables=None):
+def create_dsd_dataframe(ds, variables=None):
     """Create pandas Dataframe with N(D) data."""
     # Define variables to select
     if isinstance(variables, str):
@@ -1263,24 +1263,24 @@ def create_nd_dataframe(ds, variables=None):
         "sample_interval",
         *RADAR_OPTIONS,
     ]
-    df_nd = ds_stack.to_dask_dataframe().drop(columns=coords_to_drop, errors="ignore").compute()
-    df_nd["D"] = df_nd["diameter_bin_center"]
-    df_nd["N(D)"] = df_nd["drop_number_concentration"]
-    df_nd = df_nd[df_nd["R"] != 0]
-    df_nd = df_nd[df_nd["N(D)"] != 0]
+    df_dsd = ds_stack.to_dask_dataframe().drop(columns=coords_to_drop, errors="ignore").compute()
+    df_dsd["D"] = df_dsd["diameter_bin_center"]
+    df_dsd["N(D)"] = df_dsd["drop_number_concentration"]
+    df_dsd = df_dsd[df_dsd["R"] != 0]
+    df_dsd = df_dsd[df_dsd["N(D)"] != 0]
 
     # Compute normalized density
-    df_nd["D/D50"] = df_nd["D"] / df_nd["D50"]
-    df_nd["D/Dm"] = df_nd["D"] / df_nd["Dm"]
-    df_nd["N(D)/Nw"] = df_nd["N(D)"] / df_nd["Nw"]
-    df_nd["log10[N(D)/Nw]"] = np.log10(df_nd["N(D)/Nw"])
-    return df_nd
+    df_dsd["D/D50"] = df_dsd["D"] / df_dsd["D50"]
+    df_dsd["D/Dm"] = df_dsd["D"] / df_dsd["Dm"]
+    df_dsd["N(D)/Nw"] = df_dsd["N(D)"] / df_dsd["Nw"]
+    df_dsd["log10[N(D)/Nw]"] = np.log10(df_dsd["N(D)/Nw"])
+    return df_dsd
 
 
-def plot_normalized_dsd_density(df_nd, x="D/D50", figsize=(3.4, 3.0), dpi=300):
+def plot_normalized_dsd_density(df_dsd, x="D/D50", figsize=(3.4, 3.0), dpi=300):
     """Plot normalized DSD N(D)/Nw ~ D/D50 (or D/Dm) density."""
     ds_stats = compute_2d_histogram(
-        df_nd,
+        df_dsd,
         x=x,
         y="N(D)/Nw",
         x_bins=np.arange(0, 4, 0.025),
@@ -1311,10 +1311,10 @@ def plot_normalized_dsd_density(df_nd, x="D/D50", figsize=(3.4, 3.0), dpi=300):
     return p
 
 
-def plot_dsd_density(df_nd, diameter_bin_edges, figsize=(3.4, 3.0), dpi=300):
+def plot_dsd_density(df_dsd, diameter_bin_edges, figsize=(3.4, 3.0), dpi=300):
     """Plot N(D) ~ D density."""
     ds_stats = compute_2d_histogram(
-        df_nd,
+        df_dsd,
         x="D",
         y="N(D)",
         x_bins=diameter_bin_edges,
@@ -4738,7 +4738,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
                 ds_event["rain_type"] = bringi_nw_dm_classification(ds_event["Dm"], ds_event["Nw"])
 
                 # Plot quicklook
-                fig = ds_event.disdrodb.plot_nd_quicklook(
+                fig = ds_event.disdrodb.plot_dsd_quicklook(
                     # Plot layout
                     hours_per_slice=3,
                     max_rows=6,
@@ -4781,7 +4781,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
                 ds_event["rain_type"] = bringi_nw_dm_classification(ds_event["Dm"], ds_event["Nw"])
 
                 # Plot quicklook
-                fig = ds_event.disdrodb.plot_nd_quicklook(
+                fig = ds_event.disdrodb.plot_dsd_quicklook(
                     # Plot layout
                     hours_per_slice=3,
                     max_rows=6,
@@ -5024,7 +5024,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
 
     ####------------------------------------------------------------------------.
     #### Create N(D) densities
-    df_nd = create_nd_dataframe(ds_filtered)
+    df_dsd = create_dsd_dataframe(ds_filtered)
 
     #### - Plot N(D) vs D
     filename = define_filename(
@@ -5035,7 +5035,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         station_name=station_name,
         temporal_resolution=temporal_resolution,
     )
-    p = plot_dsd_density(df_nd, diameter_bin_edges=diameter_bin_edges)
+    p = plot_dsd_density(df_dsd, diameter_bin_edges=diameter_bin_edges)
     p.figure.tight_layout()
     p.figure.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
     plt.close()
@@ -5049,13 +5049,13 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         station_name=station_name,
         temporal_resolution=temporal_resolution,
     )
-    p = plot_normalized_dsd_density(df_nd)
+    p = plot_normalized_dsd_density(df_dsd)
     p.figure.tight_layout()
     p.figure.savefig(os.path.join(summary_dir_path, filename), bbox_inches="tight")
     plt.close()
 
-    #### Free space - Remove df_nd from memory
-    del df_nd
+    #### Free space - Remove df_dsd from memory
+    del df_dsd
     gc.collect()
 
     #### - Plot N(D) vs D with DenseLines

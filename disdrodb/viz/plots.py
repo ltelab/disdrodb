@@ -180,7 +180,7 @@ ND_TITLE_DICT = {
 }
 
 
-def _get_nd_labels(variable_name, da=None):
+def _get_dsd_labels(variable_name, da=None):
     """Get appropriate labels based on the variable type.
 
     Parameters
@@ -225,7 +225,7 @@ def _get_nd_labels(variable_name, da=None):
     }
 
 
-def _single_plot_nd_distribution(
+def _single_plot_dsd_distribution(
     data,
     diameter,
     diameter_bin_width,
@@ -235,7 +235,7 @@ def _single_plot_nd_distribution(
 ):
     if ax is None:
         fig, ax = plt.subplots(1, 1)
-    labels = _get_nd_labels(variable_name, da=data)
+    labels = _get_dsd_labels(variable_name, da=data)
     ax.bar(
         diameter,
         data,
@@ -260,7 +260,7 @@ def _check_has_diameter_dims(da, diameter_dim):
     return da
 
 
-def get_dataset_nd_variable_name(ds, variables=None):
+def get_dataset_dsd_variable_name(ds, variables=None):
     """Return N(D) or n(D) variable name present in the xarray.Dataset."""
     variables = ND_VARIABLES if variables is None else variables
     # Search for candidate variables
@@ -278,7 +278,7 @@ def get_dataset_nd_variable_name(ds, variables=None):
     return variable
 
 
-def get_nd_variable(xr_obj, variable=None, diameter_dim=DIAMETER_DIMENSION):
+def get_dsd_variable(xr_obj, variable=None, diameter_dim=DIAMETER_DIMENSION):
     """Return N(D), n(d) DataArray.
 
     If N(D) or n(d) not available, derive n(d) from n(D,V).
@@ -308,7 +308,7 @@ def get_nd_variable(xr_obj, variable=None, diameter_dim=DIAMETER_DIMENSION):
     else:
         # xr.Dataset provided
         if variable is None:
-            variable = get_dataset_nd_variable_name(xr_obj, variables=[*ND_VARIABLES, "raw_drop_number"])
+            variable = get_dataset_dsd_variable_name(xr_obj, variables=[*ND_VARIABLES, "raw_drop_number"])
         elif variable not in xr_obj:
             raise ValueError(f"The dataset does not include {variable=}.")
 
@@ -327,7 +327,7 @@ def get_nd_variable(xr_obj, variable=None, diameter_dim=DIAMETER_DIMENSION):
     return da
 
 
-def plot_nd(
+def plot_dsd(
     xr_obj,
     variable=None,
     cmap=None,
@@ -368,26 +368,26 @@ def plot_nd(
         xr_obj = xr_obj.sel(velocity_method=velocity_method)
 
     # Retrieve N(D) or n(D)
-    da_nd = get_nd_variable(xr_obj, variable=variable)
-    da_nd = da_nd.compute()
+    da_dsd = get_dsd_variable(xr_obj, variable=variable)
+    da_dsd = da_dsd.compute()
 
     # Check not empty object
-    if da_nd.size == 0:
+    if da_dsd.size == 0:
         raise ValueError("No data to plot.")
 
     # Retrieve label
-    variable_name = da_nd.name
-    labels = _get_nd_labels(variable_name, da=da_nd)
+    variable_name = da_dsd.name
+    labels = _get_dsd_labels(variable_name, da=da_dsd)
 
     # Check only time and diameter dimensions are specified
-    if "time" not in da_nd.dims:
-        ax = _single_plot_nd_distribution(
-            data=da_nd.isel(velocity_method=0, missing_dims="ignore"),
+    if "time" not in da_dsd.dims:
+        ax = _single_plot_dsd_distribution(
+            data=da_dsd.isel(velocity_method=0, missing_dims="ignore"),
             diameter=(
-                xr_obj["diameter_bin_center"] if isinstance(xr_obj, xr.Dataset) else da_nd["diameter_bin_center"]
+                xr_obj["diameter_bin_center"] if isinstance(xr_obj, xr.Dataset) else da_dsd["diameter_bin_center"]
             ),
             diameter_bin_width=(
-                xr_obj["diameter_bin_width"] if isinstance(xr_obj, xr.Dataset) else da_nd["diameter_bin_width"]
+                xr_obj["diameter_bin_width"] if isinstance(xr_obj, xr.Dataset) else da_dsd["diameter_bin_width"]
             ),
             variable_name=variable_name,
             yscale=yscale,
@@ -396,23 +396,23 @@ def plot_nd(
         return ax
 
     # Regularize input if sample_interval is available to ensure consistent time steps
-    if "sample_interval" in da_nd.coords:
-        da_nd = da_nd.disdrodb.regularize()
+    if "sample_interval" in da_dsd.coords:
+        da_dsd = da_dsd.disdrodb.regularize()
 
     # Set 0 values to np.nan
-    da_nd = da_nd.where(da_nd > 0)
+    da_dsd = da_dsd.where(da_dsd > 0)
 
     # Define cmap an norm
     if cmap is None:
         cmap = plt.get_cmap("Spectral_r").copy()
 
     if norm is None:
-        vmin = np.maximum(da_nd.min().item(), 1e-1)  # 0 is set to np.nan before
+        vmin = np.maximum(da_dsd.min().item(), 1e-1)  # 0 is set to np.nan before
         norm = Normalize() if np.isnan(vmin) else LogNorm(vmin, None)
 
     # Plot N(D) or drop counts
     cbar_kwargs = {"label": labels["cbar_label"]}
-    p = da_nd.plot.pcolormesh(x="time", norm=norm, cmap=cmap, extend="max", cbar_kwargs=cbar_kwargs, ax=ax)
+    p = da_dsd.plot.pcolormesh(x="time", norm=norm, cmap=cmap, extend="max", cbar_kwargs=cbar_kwargs, ax=ax)
     p.axes.set_title(labels["title"])
     p.axes.set_ylabel("Drop diameter (mm)")
 
@@ -432,13 +432,13 @@ def plot_nd(
     return p
 
 
-def plot_l1_nd_quicklook(xr_obj, precipitation_type="precipitation_type", **kwargs):
+def plot_l1_dsd_quicklook(xr_obj, precipitation_type="precipitation_type", **kwargs):
     """Define L1 DSD default quicklook."""
-    fig = plot_nd_quicklook(xr_obj, precipitation_type=precipitation_type, **kwargs)
+    fig = plot_dsd_quicklook(xr_obj, precipitation_type=precipitation_type, **kwargs)
     return fig
 
 
-def plot_l2_nd_quicklook(
+def plot_l2_dsd_quicklook(
     xr_obj,
     secondary_var="R",
     secondary_label=None,
@@ -455,7 +455,7 @@ def plot_l2_nd_quicklook(
         secondary_label = secondary_label if secondary_label is not None else r"R [$mm hr^{-1}$]"
         secondary_hlines = secondary_hlines if secondary_hlines is not None else (1, 10, 100)
 
-    fig = plot_nd_quicklook(
+    fig = plot_dsd_quicklook(
         xr_obj,
         secondary_var=secondary_var,
         secondary_ylim=secondary_ylim,
@@ -467,7 +467,7 @@ def plot_l2_nd_quicklook(
     return fig
 
 
-def plot_nd_quicklook(
+def plot_dsd_quicklook(
     xr_obj,
     # Plot layout
     hours_per_slice=3,
@@ -589,9 +589,9 @@ def plot_nd_quicklook(
 
     # ------------------------------------------------------------------------.
     # Derive N(D) variable
-    da_nd = get_nd_variable(ds, variable=variable, diameter_dim=d_dim)
-    variable = da_nd.name
-    ds[da_nd.name] = da_nd  # might have computed n(d) on-the-fly from N(D,V)
+    da_dsd = get_dsd_variable(ds, variable=variable, diameter_dim=d_dim)
+    variable = da_dsd.name
+    ds[da_dsd.name] = da_dsd  # might have computed n(d) on-the-fly from N(D,V)
 
     # ------------------------------------------------------------------------.
     # Define precipitation type classification (colors and legend)
@@ -727,13 +727,13 @@ def plot_nd_quicklook(
         t0 = time_bins[i]
         t1 = time_bins[i + 1]
         ds_slice = ds.sel(time=slice(t0, t1))
-        da_nd = ds_slice[variable]
+        da_dsd = ds_slice[variable]
 
         # Define plot ax
         ax = axes[i]
 
         # Plot N(D)
-        p = da_nd.plot.pcolormesh(
+        p = da_dsd.plot.pcolormesh(
             ax=ax,
             x="time",
             y=d_dim,

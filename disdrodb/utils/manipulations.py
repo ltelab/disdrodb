@@ -513,7 +513,7 @@ def compute_normalized_dsd_datarray(ds, Nc="Nw", Dc="Dm", d_min=0, d_max=6, d_st
     da_normalized_diameter = define_diameter_datarray(np.arange(d_min, d_max, d_step), dim="D/Dc")
 
     # Map N(D)/Nc value for each D/Dc to regular D/Dc array
-    da_nd_norm = remap_to_diameter(
+    da_dsd_norm = remap_to_diameter(
         da=ds["N(D)/Nc"],
         d_src=ds["D/Dc"],
         d_dst=da_normalized_diameter,
@@ -521,6 +521,6 @@ def compute_normalized_dsd_datarray(ds, Nc="Nw", Dc="Dm", d_min=0, d_max=6, d_st
         new_dim="D/Dc",
     )
 
-    da_nd_norm = da_nd_norm.assign_coords({"diameter_bin_width": da_normalized_diameter["diameter_bin_width"]})
-    da_nd_norm.name = "N(D)/Nc"
-    return da_nd_norm
+    da_dsd_norm = da_dsd_norm.assign_coords({"diameter_bin_width": da_normalized_diameter["diameter_bin_width"]})
+    da_dsd_norm.name = "N(D)/Nc"
+    return da_dsd_norm

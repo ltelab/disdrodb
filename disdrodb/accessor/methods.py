@@ -108,11 +108,11 @@ class DISDRODB_Base_Accessor:
             return None
         return plot_spectrum(self._obj, **kwargs)
 
-    def plot_nd(self, **kwargs):
+    def plot_dsd(self, **kwargs):
         """Plot DSD n(D) or N(D) timeseries."""
-        from disdrodb.viz.plots import plot_nd
+        from disdrodb.viz.plots import plot_dsd
 
-        return plot_nd(self._obj, **kwargs)
+        return plot_dsd(self._obj, **kwargs)
 
 
 @xr.register_dataset_accessor("disdrodb")
@@ -140,18 +140,18 @@ class DISDRODB_Dataset_Accessor(DISDRODB_Base_Accessor):
 
         return plot_raw_and_filtered_spectra(self._obj, **kwargs)
 
-    def plot_nd_quicklook(self, **kwargs):
+    def plot_dsd_quicklook(self, **kwargs):
         """Plot DSD n(D) or N(D) timeseries in quicklook mode."""
-        from disdrodb.viz.plots import plot_l1_nd_quicklook, plot_l2_nd_quicklook, plot_nd_quicklook
+        from disdrodb.viz.plots import plot_dsd_quicklook, plot_l1_dsd_quicklook, plot_l2_dsd_quicklook
 
         # TODO: plot_l0_quicklook
         ## - plot_l0_quicklook   # remap weather codes to hydrometeor_type, find R if available
 
         if self._obj.attrs.get("disdrodb_product", "") == "L1":
-            return plot_l1_nd_quicklook(self._obj, **kwargs)
+            return plot_l1_dsd_quicklook(self._obj, **kwargs)
         if self._obj.attrs.get("disdrodb_product", "") in ["L2E", "L2M"]:
-            return plot_l2_nd_quicklook(self._obj, **kwargs)
-        return plot_nd_quicklook(self._obj, **kwargs)
+            return plot_l2_dsd_quicklook(self._obj, **kwargs)
+        return plot_dsd_quicklook(self._obj, **kwargs)
 
     @property
     def psd(self):
@@ -185,8 +185,8 @@ class DISDRODB_DataArray_Accessor(DISDRODB_Base_Accessor):
     def __init__(self, xarray_obj):
         super().__init__(xarray_obj)
 
-    def plot_nd_quicklook(self, **kwargs):
+    def plot_dsd_quicklook(self, **kwargs):
         """Plot DSD n(D) or N(D) timeseries in quicklook mode."""
-        from disdrodb.viz.plots import plot_nd_quicklook
+        from disdrodb.viz.plots import plot_dsd_quicklook
 
-        return plot_nd_quicklook(self._obj, **kwargs)
+        return plot_dsd_quicklook(self._obj, **kwargs)
