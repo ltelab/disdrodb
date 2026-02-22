@@ -458,33 +458,74 @@ def remap_to_diameter(
     d_dst,
     dim,
     new_dim,
+    interpolation_method="linear",
 ):
-    """Remap DataArray da from coordinate d_src to new coordinate d_dst.
+    """Remap DataArray from source to destination diameter coordinate.
 
     Parameters
     ----------
     da : xr.DataArray
         DataArray with dimension `dim` and typically another dim (e.g., time).
-    d_old : xr.DataArray
-        Old diameter coordinate (can be 2D, e.g., D/Dm (time, D)).
+    d_src : xr.DataArray
+        Source diameter coordinate (can be 2D, e.g., D/Dm (time, D)).
         Must share dimensions with da.
-    d_new : xr.DataArray
+    d_dst : xr.DataArray
         1D target coordinate.
     dim : str
         Original diameter dimension.
-    new_dim_name : str
+    new_dim : str
         Name of output diameter dimension.
+    interpolation_method : {"linear", "pchip"}
+        Interpolation method used for remapping.
 
     Returns
     -------
     xr.DataArray
     """
+    if interpolation_method not in {"linear", "pchip"}:
+        msg = f"Unknown {interpolation_method!r}. Valid options are: linear, pchip."
+        raise ValueError(msg)
 
-    def _interp_1d(x_new, x_old, y_old):
-        return np.interp(x_new, x_old, y_old, left=np.nan, right=np.nan)
+    def _interp_1d_linear(x_new, x_old, y_old):
+        valid = np.isfinite(x_old) & np.isfinite(y_old)
+        if np.count_nonzero(valid) == 0:
+            return np.full_like(x_new, np.nan, dtype=float)
+
+        x_old = np.asarray(x_old[valid], dtype=float)
+        y_old = np.asarray(y_old[valid], dtype=float)
+        order = np.argsort(x_old)
+        x_old = x_old[order]
+        y_old = y_old[order]
+
+        # np.interp expects increasing xp. Duplicate xp values are collapsed.
+        x_old_unique, unique_idx = np.unique(x_old, return_index=True)
+        y_old_unique = y_old[unique_idx]
+        return np.interp(x_new, x_old_unique, y_old_unique, left=np.nan, right=np.nan)
+
+    def _interp_1d_pchip(x_new, x_old, y_old):
+        valid = np.isfinite(x_old) & np.isfinite(y_old)
+        if np.count_nonzero(valid) < 2:
+            return _interp_1d_linear(x_new, x_old, y_old)
+
+        x_old = np.asarray(x_old[valid], dtype=float)
+        y_old = np.asarray(y_old[valid], dtype=float)
+        order = np.argsort(x_old)
+        x_old = x_old[order]
+        y_old = y_old[order]
+
+        # PCHIP requires strictly increasing x values.
+        x_old_unique, unique_idx = np.unique(x_old, return_index=True)
+        y_old_unique = y_old[unique_idx]
+        if x_old_unique.size < 2:
+            return _interp_1d_linear(x_new, x_old_unique, y_old_unique)
+
+        pchip = PchipInterpolator(x_old_unique, y_old_unique, extrapolate=False)
+        return pchip(x_new)
+
+    interp_func = _interp_1d_linear if interpolation_method == "linear" else _interp_1d_pchip
 
     da_out = xr.apply_ufunc(
-        _interp_1d,
+        interp_func,
         d_dst,
         d_src,
         da,

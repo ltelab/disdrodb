@@ -19,6 +19,7 @@
 import numpy as np
 import pytest
 import xarray as xr
+from scipy.interpolate import PchipInterpolator
 
 import disdrodb
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
@@ -34,6 +35,7 @@ from disdrodb.utils.manipulations import (
     filter_velocity_bins,
     get_diameter_bin_edges,
     get_diameter_coords_dict_from_bin_edges,
+    remap_to_diameter,
     resample_density,
     resample_drop_number_concentration,
     unstack_radar_variables,
@@ -411,3 +413,39 @@ def test_resample_density_log_pchip_keeps_edge_half_bins():
     nt_src = float((y_src * dD_src).sum())
     nt_smooth = float((da_smooth * dD_dst).sum())
     np.testing.assert_allclose(nt_smooth, nt_src, rtol=1e-12, atol=1e-12)
+
+
+def test_remap_to_diameter_pchip():
+    """It remaps with shape-preserving cubic interpolation when method='pchip'."""
+    d_src = xr.DataArray([0.0, 1.0, 2.0, 3.0], dims=("diameter_bin_center",))
+    d_dst = xr.DataArray([0.5, 1.5, 2.5], dims=("D/Dc",))
+    da = xr.DataArray([0.0, 1.0, 4.0, 9.0], dims=("diameter_bin_center",))
+
+    da_out = remap_to_diameter(
+        da=da,
+        d_src=d_src,
+        d_dst=d_dst,
+        dim="diameter_bin_center",
+        new_dim="D/Dc",
+        interpolation_method="pchip",
+    )
+
+    expected = PchipInterpolator(d_src.to_numpy(), da.to_numpy(), extrapolate=False)(d_dst.to_numpy())
+    np.testing.assert_allclose(da_out.to_numpy(), expected, rtol=1e-12, atol=1e-12)
+
+
+def test_remap_to_diameter_raises_on_unknown_method():
+    """It raises if an unsupported interpolation method is requested."""
+    d_src = xr.DataArray([0.0, 1.0], dims=("diameter_bin_center",))
+    d_dst = xr.DataArray([0.5], dims=("D/Dc",))
+    da = xr.DataArray([1.0, 2.0], dims=("diameter_bin_center",))
+
+    with pytest.raises(ValueError):
+        remap_to_diameter(
+            da=da,
+            d_src=d_src,
+            d_dst=d_dst,
+            dim="diameter_bin_center",
+            new_dim="D/Dc",
+            interpolation_method="not_a_method",
+        )
