@@ -1343,8 +1343,8 @@ def plot_dsd_with_dense_lines(drop_number_concentration, r, figsize=(3.4, 3.0), 
     y_bins = log_arange(1, 20_000, log_step=0.025, base=10)
     diameter_bin_edges = np.arange(0, 8, 0.01)
 
-    # Resample N(D) to high resolution !
-    # - Conservative resampling to conserve Nt
+    # Interpolate N(D) to high resolution !
+    # - For better visualization of dense lines
     da = resample_drop_number_concentration(
         drop_number_concentration.compute(),
         diameter_bin_edges=diameter_bin_edges,

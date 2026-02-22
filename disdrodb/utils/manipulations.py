@@ -18,6 +18,7 @@
 
 import numpy as np
 import xarray as xr
+from scipy.interpolate import PchipInterpolator
 
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.utils.xarray import unstack_datarray_dimension
@@ -248,7 +249,11 @@ def get_diameter_coords_dict_from_bin_edges(diameter_bin_edges):
     return coords_dict
 
 
-def resample_drop_number_concentration(drop_number_concentration, diameter_bin_edges):
+def resample_drop_number_concentration(
+    drop_number_concentration,
+    diameter_bin_edges,
+    remapping_method="log_pchip",
+):
     """Resample drop number concentration N(D) DataArray to high resolution diameter bins."""
     da_dst_d_bin_centers = define_diameter_datarray(diameter_bin_edges, dim="d_new")
     da_resampled = resample_density(
@@ -259,9 +264,116 @@ def resample_drop_number_concentration(drop_number_concentration, diameter_bin_e
         new_dim="d_new",
         dD_src=drop_number_concentration["diameter_bin_width"],
         dD_dst=da_dst_d_bin_centers["diameter_bin_width"],
+        remapping_method=remapping_method,
     )
     da_resampled = da_resampled.rename({"d_new": "diameter_bin_center"})
     return da_resampled
+
+
+# def interpolate_drop_number_concentration(drop_number_concentration, diameter_bin_edges, method="linear"):
+#     """Interpolate drop number concentration N(D) DataArray to high resolution diameter bins.
+
+#     This should be done only for visualization purposes as it change the distribution moments.
+#     """
+#     diameters_bin_center = diameter_bin_edges[:-1] + np.diff(diameter_bin_edges) / 2
+
+#     da = drop_number_concentration.interp(coords={"diameter_bin_center": diameters_bin_center}, method=method)
+#     coords_dict = get_diameter_coords_dict_from_bin_edges(diameter_bin_edges)
+#     da = da.assign_coords(coords_dict)
+#     return da
+
+
+def _conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
+    # Source edges
+    src_left = d_src - 0.5 * dD_src
+    src_right = d_src + 0.5 * dD_src
+
+    # Destination edges
+    dst_left = d_dst - 0.5 * dD_dst
+    dst_right = d_dst + 0.5 * dD_dst
+
+    # Overlap matrix (Ns, Nd)
+    overlap = np.minimum(src_right[:, None], dst_right[None, :]) - np.maximum(src_left[:, None], dst_left[None, :])
+
+    overlap = np.clip(overlap, 0.0, None)
+
+    # # Convert density to bin-integrated number
+    # N_src = y_src * dD_src
+
+    # # Redistribute integrated number conservatively
+    # N_dst = (N_src[:, None] * overlap / dD_src[:, None]).sum(axis=0)
+
+    # Integrated number in destination bins
+    N_dst = (y_src[:, None] * overlap).sum(axis=0)
+
+    # Convert back to density
+    return N_dst / dD_dst
+
+
+def _log_pchip_conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
+    """Smooth remapping in log-space, scaled to conserve global integrated number."""
+    y_src = np.asarray(y_src, dtype=float)
+    d_src = np.asarray(d_src, dtype=float)
+    d_dst = np.asarray(d_dst, dtype=float)
+    dD_src = np.asarray(dD_src, dtype=float)
+    dD_dst = np.asarray(dD_dst, dtype=float)
+
+    y_src = np.where(np.isfinite(y_src), y_src, 0.0)
+    y_src = np.clip(y_src, 0.0, None)
+
+    valid_src = np.isfinite(d_src) & np.isfinite(dD_src) & (dD_src > 0)
+    if np.count_nonzero(valid_src) == 0:
+        return np.zeros_like(d_dst, dtype=float)
+
+    y_src = y_src[valid_src]
+    d_src = d_src[valid_src]
+    dD_src = dD_src[valid_src]
+
+    order = np.argsort(d_src)
+    y_src = y_src[order]
+    d_src = d_src[order]
+    dD_src = dD_src[order]
+
+    n_src_total = np.sum(y_src * dD_src)
+    if n_src_total <= 0:
+        return np.zeros_like(d_dst, dtype=float)
+
+    positive = y_src > 0
+    if np.count_nonzero(positive) < 2:
+        return _conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst)
+
+    log_interp = PchipInterpolator(
+        d_src[positive],
+        np.log(y_src[positive]),
+        extrapolate=False,
+    )
+    y_dst = np.exp(log_interp(d_dst))
+    y_dst = np.where(np.isfinite(y_dst), y_dst, 0.0)
+
+    # Keep signal only where destination bins overlap support of positive source bins.
+    src_left = d_src - 0.5 * dD_src
+    src_right = d_src + 0.5 * dD_src
+    support_left = np.min(src_left[positive])
+    support_right = np.max(src_right[positive])
+    dst_left = d_dst - 0.5 * dD_dst
+    dst_right = d_dst + 0.5 * dD_dst
+    overlaps_support = (dst_right > support_left) & (dst_left < support_right)
+
+    # Fill boundary half-bins that overlap support but lie outside interpolation center range.
+    first_center = d_src[positive][0]
+    last_center = d_src[positive][-1]
+    first_value = y_src[positive][0]
+    last_value = y_src[positive][-1]
+    left_boundary = overlaps_support & (d_dst < first_center)
+    right_boundary = overlaps_support & (d_dst > last_center)
+    y_dst[left_boundary] = first_value
+    y_dst[right_boundary] = last_value
+    y_dst[~overlaps_support] = 0.0
+
+    n_dst_total = np.sum(y_dst * dD_dst)
+    if n_dst_total > 0:
+        y_dst *= n_src_total / n_dst_total
+    return np.clip(y_dst, 0.0, None)
 
 
 def resample_density(
@@ -272,6 +384,7 @@ def resample_density(
     new_dim,
     dD_src,
     dD_dst,
+    remapping_method="log_pchip",
 ):
     """Conservative resampling of density.
 
@@ -291,6 +404,13 @@ def resample_density(
         Source bin widths (same dim as dim).
     dD_dst : xr.DataArray
         Destination bin widths (same dim as new_dim).
+    remapping_method : str or callable
+        Remapping strategy used within ``xr.apply_ufunc``.
+        If str, available methods are:
+        - ``"constant"``: first-order conservative remapping (piecewise constant in source bins).
+        - ``"log_pchip"``: conservative, smooth remapping using PCHIP in log-density space.
+        If callable, it must have signature
+        ``f(y_src, d_src, d_dst, dD_src, dD_dst)`` and return remapped destination density.
 
     Returns
     -------
@@ -299,34 +419,21 @@ def resample_density(
     """
     da_density = da_density.where(da_density > 0, 0)
 
-    def _conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
-        # Source edges
-        src_left = d_src - 0.5 * dD_src
-        src_right = d_src + 0.5 * dD_src
-
-        # Destination edges
-        dst_left = d_dst - 0.5 * dD_dst
-        dst_right = d_dst + 0.5 * dD_dst
-
-        # Overlap matrix (Ns, Nd)
-        overlap = np.minimum(src_right[:, None], dst_right[None, :]) - np.maximum(src_left[:, None], dst_left[None, :])
-
-        overlap = np.clip(overlap, 0.0, None)
-
-        # # Convert density to bin-integrated number
-        # N_src = y_src * dD_src
-
-        # # Redistribute integrated number conservatively
-        # N_dst = (N_src[:, None] * overlap / dD_src[:, None]).sum(axis=0)
-
-        # Integrated number in destination bins
-        N_dst = (y_src[:, None] * overlap).sum(axis=0)
-
-        # Convert back to density
-        return N_dst / dD_dst
+    remapping_methods = {
+        "constant": _conservative_remapping,
+        "log_pchip": _log_pchip_conservative_remapping,
+    }
+    if callable(remapping_method):
+        remapping_func = remapping_method
+    else:
+        if remapping_method not in remapping_methods:
+            valid_methods = ", ".join(remapping_methods)
+            msg = f"Unknown {remapping_method!r}. Valid options are: {valid_methods}."
+            raise ValueError(msg)
+        remapping_func = remapping_methods[remapping_method]
 
     da_density_new = xr.apply_ufunc(
-        _conservative_remapping,
+        remapping_func,
         da_density,
         d_src,
         d_dst,

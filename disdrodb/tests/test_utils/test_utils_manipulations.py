@@ -34,6 +34,7 @@ from disdrodb.utils.manipulations import (
     filter_velocity_bins,
     get_diameter_bin_edges,
     get_diameter_coords_dict_from_bin_edges,
+    resample_density,
     resample_drop_number_concentration,
     unstack_radar_variables,
 )
@@ -301,3 +302,112 @@ def test_resample_drop_number_concentration():
     Nt_original = (ds["drop_number_concentration"] * ds["diameter_bin_width"]).sum(dim="diameter_bin_center")
     Nt_resampled = (da_resampled * da_resampled.coords["diameter_bin_width"]).sum(dim="diameter_bin_center")
     np.testing.assert_allclose(Nt_original.to_numpy(), Nt_resampled.to_numpy(), rtol=1e-6)
+
+
+def test_resample_density_log_pchip_conservative_irregular_bins():
+    """It remaps irregular bins smoothly in log-space while conserving total number."""
+    # Irregular source grid with contiguous edges
+    d_src = xr.DataArray(
+        [0.2, 0.55, 1.05, 1.9, 3.2, 4.8],
+        dims=("diameter_bin_center",),
+    )
+    dD_src = xr.DataArray(
+        [0.2, 0.5, 0.5, 1.2, 1.4, 1.8],
+        dims=("diameter_bin_center",),
+    )
+    y_src = xr.DataArray(
+        [3.0e4, 1.2e4, 4.0e3, 9.0e2, 1.5e2, 8.0],
+        dims=("diameter_bin_center",),
+        coords={"diameter_bin_center": d_src},
+    )
+
+    # Regular destination grid covering the same support
+    d_dst_edges = np.arange(0.1, 5.7 + 0.1, 0.1)
+    d_dst = define_diameter_datarray(d_dst_edges, dim="d_new")
+    dD_dst = d_dst["diameter_bin_width"]
+
+    da_constant = resample_density(
+        da_density=y_src,
+        d_src=d_src,
+        d_dst=d_dst,
+        dim="diameter_bin_center",
+        new_dim="d_new",
+        dD_src=dD_src,
+        dD_dst=dD_dst,
+        remapping_method="constant",
+    )
+    da_smooth = resample_density(
+        da_density=y_src,
+        d_src=d_src,
+        d_dst=d_dst,
+        dim="diameter_bin_center",
+        new_dim="d_new",
+        dD_src=dD_src,
+        dD_dst=dD_dst,
+        remapping_method="log_pchip",
+    )
+
+    nt_src = float((y_src * dD_src).sum())
+    nt_smooth = float((da_smooth * dD_dst).sum())
+    np.testing.assert_allclose(nt_smooth, nt_src, rtol=1e-12, atol=1e-12)
+    assert np.all(np.isfinite(da_smooth))
+    assert np.all(da_smooth >= 0)
+
+    # The smooth method should not reproduce staircase-like constant segments.
+    n_unique_constant = np.unique(np.round(da_constant.to_numpy(), decimals=8)).size
+    n_unique_smooth = np.unique(np.round(da_smooth.to_numpy(), decimals=8)).size
+    assert n_unique_smooth > n_unique_constant
+
+
+def test_resample_density_raises_on_unknown_method():
+    """It raises if an unsupported remapping method is requested."""
+    da_density = xr.DataArray([10.0, 5.0], dims=("diameter_bin_center",))
+    d_src = xr.DataArray([0.25, 0.75], dims=("diameter_bin_center",))
+    dD_src = xr.DataArray([0.5, 0.5], dims=("diameter_bin_center",))
+    d_dst = define_diameter_datarray(np.array([0.0, 0.5, 1.0]), dim="d_new")
+
+    with pytest.raises(ValueError):
+        resample_density(
+            da_density=da_density,
+            d_src=d_src,
+            d_dst=d_dst,
+            dim="diameter_bin_center",
+            new_dim="d_new",
+            dD_src=dD_src,
+            dD_dst=d_dst["diameter_bin_width"],
+            remapping_method="not_a_method",
+        )
+
+
+def test_resample_density_log_pchip_keeps_edge_half_bins():
+    """It keeps non-zero values in destination bins overlapping source edge half-bins."""
+    d_src = xr.DataArray([1.0, 2.0], dims=("diameter_bin_center",))
+    dD_src = xr.DataArray([1.0, 1.0], dims=("diameter_bin_center",))
+    y_src = xr.DataArray([100.0, 10.0], dims=("diameter_bin_center",), coords={"diameter_bin_center": d_src})
+
+    # Destination bins overlap source support [0.5, 2.5] but have centers outside [1.0, 2.0] at the edges.
+    d_dst = define_diameter_datarray(np.array([0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]), dim="d_new")
+    dD_dst = d_dst["diameter_bin_width"]
+
+    da_smooth = resample_density(
+        da_density=y_src,
+        d_src=d_src,
+        d_dst=d_dst,
+        dim="diameter_bin_center",
+        new_dim="d_new",
+        dD_src=dD_src,
+        dD_dst=dD_dst,
+        remapping_method="log_pchip",
+    )
+
+    dst_left = d_dst.to_numpy() - 0.5 * dD_dst.to_numpy()
+    dst_right = d_dst.to_numpy() + 0.5 * dD_dst.to_numpy()
+    overlap_support = (dst_right > 0.5) & (dst_left < 2.5)
+    no_overlap_support = ~overlap_support
+
+    assert np.all(da_smooth.to_numpy()[overlap_support] > 0)
+    assert np.allclose(da_smooth.to_numpy()[no_overlap_support], 0)
+
+    nt_src = float((y_src * dD_src).sum())
+    nt_smooth = float((da_smooth * dD_dst).sum())
+    np.testing.assert_allclose(nt_smooth, nt_src, rtol=1e-12, atol=1e-12)
