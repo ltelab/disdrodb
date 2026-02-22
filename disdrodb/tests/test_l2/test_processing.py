@@ -20,10 +20,18 @@ import numpy as np
 import pytest
 import xarray as xr
 
+import disdrodb.l2.processing as l2_processing
 import disdrodb.psd
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.fall_velocity import available_rain_fall_velocity_models
-from disdrodb.l2.processing import check_l2e_input_dataset, define_rain_spectrum_mask, generate_l2e, generate_l2m
+from disdrodb.l2.processing import (
+    check_l2e_input_dataset,
+    define_rain_spectrum_mask,
+    generate_l2e,
+    generate_l2m,
+    get_mask_contour,
+    get_spectrum_mask_boundary,
+)
 from disdrodb.scattering import RADAR_OPTIONS
 from disdrodb.tests.fake_datasets import create_template_dataset, create_template_l2e_dataset
 from disdrodb.utils.warnings import suppress_warnings
@@ -43,6 +51,128 @@ def create_test_dataset():
     ds = ds.rename({"diameter": DIAMETER_DIMENSION, "velocity": VELOCITY_DIMENSION})
     ds = ds.set_coords(["diameter_bin_lower", "diameter_bin_upper", "velocity_bin_lower", "velocity_bin_upper"])
     return ds
+
+
+def create_test_mask(mask_values):
+    """Create a small mask with explicit bin edge coordinates."""
+    return xr.DataArray(
+        np.asarray(mask_values, dtype=bool),
+        dims=(VELOCITY_DIMENSION, DIAMETER_DIMENSION),
+        coords={
+            VELOCITY_DIMENSION: [0.5, 1.5],
+            DIAMETER_DIMENSION: [0.5, 1.5],
+            "velocity_bin_lower": (VELOCITY_DIMENSION, [0.0, 10.0]),
+            "velocity_bin_upper": (VELOCITY_DIMENSION, [10.0, 20.0]),
+            "diameter_bin_lower": (DIAMETER_DIMENSION, [0.0, 1.0]),
+            "diameter_bin_upper": (DIAMETER_DIMENSION, [1.0, 2.0]),
+        },
+    )
+
+
+def _segment_as_tuple(segment):
+    """Convert a segment array to a rounded hashable tuple."""
+    return tuple(map(tuple, np.round(np.asarray(segment), 6)))
+
+
+class TestSpectrumBoundaryExtraction:
+    """Unit tests for mask boundary extraction routines."""
+
+    def test_get_mask_contour_returns_four_edges_for_single_true_bin(self):
+        """Check contour extraction returns the four boundary edges for one active bin."""
+        mask = create_test_mask([[True, False], [False, False]])
+        segments = get_mask_contour(mask)
+        expected = [
+            np.array([[0.0, 0.0], [0.0, 10.0]]),
+            np.array([[1.0, 0.0], [1.0, 10.0]]),
+            np.array([[0.0, 0.0], [1.0, 0.0]]),
+            np.array([[0.0, 10.0], [1.0, 10.0]]),
+        ]
+        assert len(segments) == 4
+        for segment, exp in zip(segments, expected, strict=False):
+            np.testing.assert_allclose(segment, exp)
+
+    def test_get_mask_contour_drops_internal_edges_for_adjacent_bins(self):
+        """Check contour extraction removes shared edges between neighboring true bins."""
+        mask = create_test_mask([[True, True], [False, False]])
+        segments = get_mask_contour(mask)
+        expected = [
+            np.array([[0.0, 0.0], [0.0, 10.0]]),
+            np.array([[0.0, 0.0], [1.0, 0.0]]),
+            np.array([[0.0, 10.0], [1.0, 10.0]]),
+            np.array([[2.0, 0.0], [2.0, 10.0]]),
+            np.array([[1.0, 0.0], [2.0, 0.0]]),
+            np.array([[1.0, 10.0], [2.0, 10.0]]),
+        ]
+        internal_edge = np.array([[1.0, 0.0], [1.0, 10.0]])
+        assert len(segments) == 6
+        for segment, exp in zip(segments, expected, strict=False):
+            np.testing.assert_allclose(segment, exp)
+        assert not any(np.allclose(segment, internal_edge) for segment in segments)
+
+    def test_get_spectrum_mask_boundary_returns_outer_domain_edges_for_full_mask(self):
+        """Check full rain-mask case returns only the outer spectrum boundary segments."""
+        ds = create_template_dataset(with_velocity=True)
+        segments = get_spectrum_mask_boundary(ds)
+        tuple_segments = {_segment_as_tuple(segment) for segment in segments}
+        assert len(segments) == 14
+        assert ((0.1, 0.0), (0.1, 0.4)) in tuple_segments
+        assert ((0.9, 0.6), (0.9, 1.4)) in tuple_segments
+        assert ((0.3, 0.0), (0.5, 0.0)) in tuple_segments
+        assert ((0.5, 1.4), (0.7, 1.4)) in tuple_segments
+
+    def test_get_spectrum_mask_boundary_forwards_filter_options(self, monkeypatch):
+        """Check boundary retrieval forwards velocity filtering arguments to mask creation."""
+        ds = create_template_dataset(with_velocity=True)
+        records = {}
+        sentinel_boundary = [np.array([[0.0, 0.0], [1.0, 1.0]])]
+
+        def fake_load_env_dataset(ds_input):
+            records["env_input"] = ds_input
+            return xr.Dataset({"dummy_env": xr.DataArray(1)})
+
+        def fake_get_rain_fall_velocity(diameter, model, ds_env):
+            records.setdefault("diameter_calls", []).append(diameter.name)
+            records.setdefault("models", []).append(model)
+            assert "dummy_env" in ds_env
+            return xr.ones_like(diameter)
+
+        def fake_define_rain_spectrum_mask(drop_number, **kwargs):
+            records["drop_number_name"] = drop_number.name
+            records["mask_kwargs"] = kwargs
+            return create_test_mask([[True, False], [False, False]])
+
+        def fake_get_mask_contour(mask, x_dim, y_dim):
+            records["contour_dims"] = (x_dim, y_dim)
+            records["contour_mask_dims"] = mask.dims
+            return sentinel_boundary
+
+        monkeypatch.setattr(l2_processing, "load_env_dataset", fake_load_env_dataset)
+        monkeypatch.setattr(l2_processing, "get_rain_fall_velocity", fake_get_rain_fall_velocity)
+        monkeypatch.setattr(l2_processing, "define_rain_spectrum_mask", fake_define_rain_spectrum_mask)
+        monkeypatch.setattr(l2_processing, "get_mask_contour", fake_get_mask_contour)
+
+        output = get_spectrum_mask_boundary(
+            ds,
+            above_velocity_fraction=0.25,
+            below_velocity_tolerance=0.5,
+            maintain_drops_smaller_than=0.8,
+            maintain_drops_slower_than=1.2,
+            maintain_smallest_drops=True,
+            fall_velocity_model="Brandes2002",
+        )
+
+        assert output == sentinel_boundary
+        assert records["env_input"] is ds
+        assert records["diameter_calls"] == ["diameter_bin_upper", "diameter_bin_lower"]
+        assert records["models"] == ["Brandes2002", "Brandes2002"]
+        assert records["drop_number_name"] == "raw_drop_number"
+        assert records["mask_kwargs"]["above_velocity_fraction"] == 0.25
+        assert records["mask_kwargs"]["below_velocity_tolerance"] == 0.5
+        assert records["mask_kwargs"]["maintain_drops_smaller_than"] == 0.8
+        assert records["mask_kwargs"]["maintain_drops_slower_than"] == 1.2
+        assert records["mask_kwargs"]["maintain_smallest_drops"] is True
+        assert records["contour_dims"] == (DIAMETER_DIMENSION, VELOCITY_DIMENSION)
+        assert records["contour_mask_dims"] == (VELOCITY_DIMENSION, DIAMETER_DIMENSION)
 
 
 class TestDefineRainDropSpectrumMask:
