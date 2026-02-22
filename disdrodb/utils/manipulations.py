@@ -297,6 +297,7 @@ def resample_density(
     xr.DataArray
         Remapped density conserving total number.
     """
+    da_density = da_density.where(da_density > 0, 0)
 
     def _conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
         # Source edges
@@ -311,6 +312,12 @@ def resample_density(
         overlap = np.minimum(src_right[:, None], dst_right[None, :]) - np.maximum(src_left[:, None], dst_left[None, :])
 
         overlap = np.clip(overlap, 0.0, None)
+
+        # # Convert density to bin-integrated number
+        # N_src = y_src * dD_src
+
+        # # Redistribute integrated number conservatively
+        # N_dst = (N_src[:, None] * overlap / dD_src[:, None]).sum(axis=0)
 
         # Integrated number in destination bins
         N_dst = (y_src[:, None] * overlap).sum(axis=0)
@@ -385,7 +392,7 @@ def remap_to_diameter(
     return da_out
 
 
-def compute_normalized_dsd_datarray(ds, Nc="Nw", Dc="Dm"):
+def compute_normalized_dsd_datarray(ds, Nc="Nw", Dc="Dm", d_min=0, d_max=6, d_step=0.001):
     """Compute normalized DSD and remap to regular D/Dc dimension."""
     # Compute Normalized DSD and normalized diameter
     ds["N(D)/Nc"] = ds["drop_number_concentration"] / ds[Nc]
@@ -396,7 +403,7 @@ def compute_normalized_dsd_datarray(ds, Nc="Nw", Dc="Dm"):
     ds["N(D)/Nc"] = ds["N(D)/Nc"].transpose("diameter_bin_center", "time")
 
     # Define normalized diameter coordinate
-    da_normalized_diameter = define_diameter_datarray(np.arange(0, 5, 0.01), dim="D/Dc")
+    da_normalized_diameter = define_diameter_datarray(np.arange(d_min, d_max, d_step), dim="D/Dc")
 
     # Map N(D)/Nc value for each D/Dc to regular D/Dc array
     da_nd_norm = remap_to_diameter(
