@@ -790,10 +790,11 @@ def plot_dsd_quicklook(
             ax_sec.set_title("")
             ax_sec.set_yscale(secondary_yscale)
             # Display playnumbers instead of scientific notation
-            yticks = ax_sec.get_yticks()
-            ytick_labels = [f"{t:g}" for t in yticks]
-            ax_sec.set_yticks(yticks)
-            ax_sec.set_yticklabels(ytick_labels)
+            if secondary_yscale == "log":
+                yticks = ax_sec.get_yticks()
+                ytick_labels = [f"{t:g}" for t in yticks]
+                ax_sec.set_yticks(yticks)
+                ax_sec.set_yticklabels(ytick_labels)
             if secondary_ylim is not None:
                 ax_sec.set_ylim(secondary_ylim)
 
