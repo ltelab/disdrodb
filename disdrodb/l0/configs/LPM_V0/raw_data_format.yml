@@ -100,7 +100,7 @@ temperature_interior:
   data_range:
     - -30
     - 999
-  nan_flags: null
+  nan_flags: 999
   field_number: "11"
 laser_temperature:
   n_digits: 2

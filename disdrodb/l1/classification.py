@@ -34,7 +34,7 @@ from disdrodb.utils.xarray import xr_remap_numeric_array
 DICT_TEMPERATURES = {
     "air_temperature": 6,  # generic and PWS100
     "air_temperature_min": 6,  # PWS100
-    "temperature_ambient": 6,  # LPM
+    "temperature_ambient": 6,  # LPM  (often 99999)
     "temperature_interior": 10,  # LPM
     "sensor_temperature": 10,  # PARSIVEL and SWS250
 }
