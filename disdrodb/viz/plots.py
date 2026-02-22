@@ -1413,6 +1413,63 @@ def plot_mask_contour(mask, ax=None, **kwargs):
 
 
 ####-------------------------------------------------------------------------------------------------------
+#### Confusion matrix
+
+
+def plot_confusion_matrix(cm, labels, cmap="Blues", norm=None, xlabel="", ylabel="", title="", add_colorbar=False):
+    """Plot confusion matrix."""
+    fig, ax = plt.subplots(figsize=(6, 6))
+
+    cm_img = cm.copy().astype(float)
+    cm_img[cm_img == 0] = np.nan  # better than small constant
+
+    im = ax.imshow(
+        cm_img,
+        cmap=cmap,
+        norm=norm,
+    )
+
+    # Add grid lines between cells
+    ax.set_xticks(np.arange(cm.shape[1] + 1) - 0.5, minor=True)
+    ax.set_yticks(np.arange(cm.shape[0] + 1) - 0.5, minor=True)
+
+    ax.grid(which="minor", color="gray", linestyle="-", linewidth=0.5)
+    ax.tick_params(which="minor", bottom=False, left=False)
+
+    # Ticks
+    ax.set_xticks(np.arange(len(labels)))
+    ax.set_yticks(np.arange(len(labels)))
+    ax.set_xticklabels(labels, rotation=45, ha="right")
+    ax.set_yticklabels(labels)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+
+    # Add counts in each cell
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            value = cm[i, j]
+            if value > 0:
+                ax.text(
+                    j,
+                    i,
+                    f"{int(value)}",
+                    ha="center",
+                    va="center",
+                    color="black" if value < np.nanmax(cm) / 5 else "white",
+                    fontsize=9,
+                )
+
+    # Colorbar
+    if add_colorbar:
+        cbar = plt.colorbar(im, ax=ax)
+        cbar.set_label("Counts")
+
+    plt.tight_layout()
+    plt.show()
+
+
+####-------------------------------------------------------------------------------------------------------
 #### DenseLines
 
 
