@@ -540,7 +540,15 @@ def remap_to_diameter(
     return da_out
 
 
-def compute_normalized_dsd_datarray(ds, Nc="Nw", Dc="Dm", d_min=0, d_max=6, d_step=0.001):
+def compute_normalized_dsd_datarray(
+    ds,
+    Nc="Nw",
+    Dc="Dm",
+    d_min=0,
+    d_max=6,
+    d_step=0.001,
+    interpolation_method="linear",
+):
     """Compute normalized DSD and remap to regular D/Dc dimension."""
     # Compute Normalized DSD and normalized diameter
     ds["N(D)/Nc"] = ds["drop_number_concentration"] / ds[Nc]
@@ -560,6 +568,7 @@ def compute_normalized_dsd_datarray(ds, Nc="Nw", Dc="Dm", d_min=0, d_max=6, d_st
         d_dst=da_normalized_diameter,
         dim="diameter_bin_center",
         new_dim="D/Dc",
+        interpolation_method=interpolation_method,
     )
 
     da_dsd_norm = da_dsd_norm.assign_coords({"diameter_bin_width": da_normalized_diameter["diameter_bin_width"]})

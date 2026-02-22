@@ -35,8 +35,8 @@ DICT_TEMPERATURES = {
     "air_temperature": 6,  # generic and PWS100
     "air_temperature_min": 6,  # PWS100
     "temperature_ambient": 6,  # LPM  (often 99999)
-    "temperature_interior": 10,  # LPM
-    "sensor_temperature": 10,  # PARSIVEL and SWS250
+    "temperature_interior": 10,  # LPM (maybe could be reduced)
+    "sensor_temperature": 15,  # PARSIVEL and SWS250
 }
 TEMPERATURE_VARIABLES = list(DICT_TEMPERATURES)
 
