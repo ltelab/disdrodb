@@ -42,20 +42,86 @@ TEMPERATURE_VARIABLES = list(DICT_TEMPERATURES)
 
 
 def get_temperature(ds):
-    """Retrieve temperature variable from L0C product."""
+    """Retrieve temperature variable from L0C product.
+
+    This function extracts temperature data from DISDRODB L0C product.
+    The temperature variable chosen varies with sensor types.
+    It prioritize air_temperature when available, but can fallback to internal sensor temperature
+    if more reliable variables are not present.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        DISDRODB L0C dataset containing one or more temperature variables defined
+        in ``DICT_TEMPERATURES``. Expected temperature variables include:
+        'air_temperature', 'air_temperature_min', 'temperature_ambient',
+        'temperature_interior', or 'sensor_temperature'.
+
+    Returns
+    -------
+    temperature : xarray.DataArray or None
+        Temperature time series [°C] with invalid values removed. Returns ``None``
+        if no temperature variable is available in the dataset. Values are set to
+        NaN for timesteps with unrealistic values or large sensor disagreement.
+    snow_temperature_limit : xarray.DataArray or None
+        Snow/rain temperature threshold [°C] corresponding to the selected
+        temperature variable for each timestep. Returns ``None`` if no temperature
+        variable is available.
+
+    Notes
+    -----
+    The function applies the following processing steps:
+
+    1. **Variable Selection Priority**: Searches for temperature variables in the
+       order defined by ``DICT_TEMPERATURES``. Each variable has an associated
+       snow temperature limit (e.g., air_temperature: 6°C, sensor_temperature: 10°C).
+
+    2. **Quality Filtering**: Filters out physically unrealistic temperature values
+       outside the range [-40°C, 35°C].
+
+    3. **Preference Handling**: For each timestep, selects the first available valid
+       temperature following the priority order in ``DICT_TEMPERATURES``. This ensures
+       more reliable variables (e.g., air_temperature) are preferred over less
+       reliable ones (e.g., sensor_temperature).
+
+    4. **Sensor Consistency Check**: Computes the temperature spread across all
+       available sensors at each timestep. If the spread exceeds 10°C, that timestep
+       is flagged as inconsistent and set to NaN, indicating unreliable measurements.
+
+    5. **Snow Limit Assignment**: Returns the temperature threshold for snow/rain
+       discrimination corresponding to the selected temperature variable for each
+       timestep.
+
+    """
     # Check temperature variable is available, otherwise return None
     if not any(var in ds.data_vars for var in DICT_TEMPERATURES):
         return None, None
 
-    # Define temperature available
-    for var, thr in DICT_TEMPERATURES.items():
-        if var in ds:
-            temperature = ds[var]
-            snow_temperature_limit = thr
-            break
+    # Build a (temperature_variable, time) array preserving DICT_TEMPERATURES order.
+    list_da_temperature = []
+    for var, snow_limit in DICT_TEMPERATURES.items():
+        if var in ds.data_vars:
+            da_temperature = ds[var].copy()
+            da_temperature = da_temperature.where((da_temperature >= -40) & (da_temperature <= 35))
+            da_temperature = da_temperature.expand_dims(dim={"temperature_variable": [var]})
+            da_snow_limit = (xr.ones_like(da_temperature) * snow_limit).where(~np.isnan(da_temperature))
+            da_temperature = da_temperature.assign_coords({"snow_limit": da_snow_limit})
+            list_da_temperature.append(da_temperature)
 
-    # Fill NaNs
-    temperature = temperature.ffill("time").bfill("time")
+    # Concatenate variables, then select first valid value per timestep.
+    da_temperature_stack = xr.concat(list_da_temperature, dim="temperature_variable")
+    temperature = da_temperature_stack.bfill("temperature_variable").isel(temperature_variable=0, drop=True)
+    snow_temperature_limit = (
+        da_temperature_stack["snow_limit"].bfill("temperature_variable").isel(temperature_variable=0, drop=True)
+    )
+
+    # Reject timesteps with large disagreement across available temperature sensors.
+    temperature_spread = da_temperature_stack.max(dim="temperature_variable") - da_temperature_stack.min(
+        dim="temperature_variable",
+    )
+    is_inconsistent = temperature_spread > 10
+    temperature = temperature.where(~is_inconsistent)
+    snow_temperature_limit = snow_temperature_limit.where(~is_inconsistent)
     return temperature, snow_temperature_limit
 
 
@@ -339,6 +405,27 @@ def define_precipitation_type_from_hydrometeor_type(hydrometeor_type):
         },
     )
     return precipitation_type
+
+
+def add_hydrometeor_type_attrs(hydrometeor_type):
+    """Add CF-attributes to hydrometeor_type DataArray."""
+    hydrometeor_type.attrs = hydrometeor_type.attrs.copy()
+    hydrometeor_type.attrs.update(
+        {
+            "description": "DISDRODB hydrometeor class",
+            "long_name": "hydrometeor type classification",
+            "standard_name": "hydrometeor_classification",
+            "units": "1",
+            "flag_values": [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+            "flag_meanings": (
+                "no_hydrometeor undefined no_precipitation "
+                "drizzle drizzle_and_rain rain mixed "
+                "snow snow_grains ice_pellets graupel hail"
+            ),
+            "comment": "DISDRODB hydrometeor class",
+        },
+    )
+    return hydrometeor_type
 
 
 def classify_raw_spectrum(
@@ -784,20 +871,8 @@ def classify_raw_spectrum(
     hydrometeor_type = xr.where(hydrometeor_type.isin([7]), 7, hydrometeor_type)
     # Graupel
     hydrometeor_type = xr.where(hydrometeor_type.isin([8]), 8, hydrometeor_type)
-    # Add CF-attributes
-    hydrometeor_type.attrs.update(
-        {
-            "long_name": "hydrometeor type classification",
-            "standard_name": "hydrometeor_classification",
-            "units": "1",
-            "flag_values": [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-            "flag_meanings": (
-                "no_hydrometeor undefined no_precipitation "
-                "drizzle drizzle_and_rain rain mixed "
-                "snow snow_grains ice_pellets graupel hail"
-            ),
-        },
-    )
+    #  Add CF-attributes
+    hydrometeor_type = add_hydrometeor_type_attrs(hydrometeor_type)
 
     # ------------------------------------------------------------------------.
     #### Define precipitation type variable

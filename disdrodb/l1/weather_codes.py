@@ -12,11 +12,14 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <http://SYNOP_4677_WWw.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB weather codes module."""
 
-WW_HYDROCLASS = {
+from disdrodb.l1.classification import add_hydrometeor_type_attrs
+from disdrodb.utils.xarray import xr_remap_numeric_array
+
+SYNOP_4677_WW_HYDROCLASS = {
     # Special
     -2: -2,  # missing
     -1: -1,  # noise
@@ -49,7 +52,7 @@ WW_HYDROCLASS = {
     90: 9,  # hail               (D ≥ 8 mm)
 }
 
-WAWA_HYDROCLASS = {
+SYNOP_4680_WAWA_HYDROCLASS = {
     -2: -2,  # missing
     -1: -1,  # noise
     0: 0,  # no precipitation
@@ -82,7 +85,7 @@ WAWA_HYDROCLASS = {
     90: 9,
 }
 
-METAR_HYDROCLASS = {
+METAR_4678_HYDROCLASS = {
     # No precipitation
     "NP": 0,
     # Drizzle (0-0.25, 0.25-0.5, >0.5)
@@ -120,7 +123,6 @@ METAR_HYDROCLASS = {
     "GR": 9,
 }
 
-
 NWS_HYDROCLASS = {
     # No precipitation
     "C": 0,
@@ -153,3 +155,27 @@ NWS_HYDROCLASS = {
     # Hail
     "A": 9,
 }
+
+WEATHER_CODES_HYDROCLASS_DICT = {
+    "weather_code_synop_4680": SYNOP_4680_WAWA_HYDROCLASS,
+    "weather_code_synop_4677": SYNOP_4677_WW_HYDROCLASS,
+    "weather_code_metar_4678": METAR_4678_HYDROCLASS,
+    "weather_code_nws": NWS_HYDROCLASS,
+    "weather_code_synop_4680_5min": SYNOP_4680_WAWA_HYDROCLASS,
+    "weather_code_synop_4677_5min": SYNOP_4677_WW_HYDROCLASS,
+    "weather_code_metar_4678_5min": METAR_4678_HYDROCLASS,
+}
+
+
+def get_hydroclass_from_weather_code(ds, weather_code):
+    """Convert weather code to DISDRODB hydrometeor type using predefined mapping dictionaries."""
+    if weather_code not in ds.data_vars:
+        raise ValueError(f"{weather_code} is not a Dataset variable.")
+    if weather_code not in WEATHER_CODES_HYDROCLASS_DICT:
+        valid_weather_codes = list(WEATHER_CODES_HYDROCLASS_DICT)
+        raise ValueError(f"Invalid {weather_code}. Accepted weather codes are  {valid_weather_codes}")
+    mapping_dict = WEATHER_CODES_HYDROCLASS_DICT[weather_code]
+    da_weather_code = ds[weather_code]
+    hydromeor_type = xr_remap_numeric_array(da_weather_code, mapping_dict)
+    hydromeor_type = add_hydrometeor_type_attrs(hydromeor_type)
+    return hydromeor_type
