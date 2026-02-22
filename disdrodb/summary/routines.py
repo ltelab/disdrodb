@@ -52,7 +52,6 @@ from disdrodb.utils.yaml import write_yaml
 from disdrodb.viz.plots import (
     compute_dense_lines,
     max_blend_images,
-    plot_nd_quicklook,
     plot_raw_and_filtered_spectra,
     plot_spectrum,
     to_rgba,
@@ -4739,15 +4738,14 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
                 ds_event["rain_type"] = bringi_nw_dm_classification(ds_event["Dm"], ds_event["Nw"])
 
                 # Plot quicklook
-                fig = plot_nd_quicklook(
-                    ds_event,
+                fig = ds_event.disdrodb.plot_nd_quicklook(
                     # Plot layout
                     hours_per_slice=3,
                     max_rows=6,
                     aligned=False,
                     verbose=False,
                     cbar_as_legend=True,
-                    add_precipitation_type="rain_type",
+                    precipitation_type="rain_type",
                     d_lim=(0.3, 7),
                     # Figure options
                     dpi=300,
@@ -4783,15 +4781,14 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
                 ds_event["rain_type"] = bringi_nw_dm_classification(ds_event["Dm"], ds_event["Nw"])
 
                 # Plot quicklook
-                fig = plot_nd_quicklook(
-                    ds_event,
+                fig = ds_event.disdrodb.plot_nd_quicklook(
                     # Plot layout
                     hours_per_slice=3,
                     max_rows=6,
                     aligned=False,
                     verbose=False,
                     cbar_as_legend=True,
-                    add_precipitation_type="rain_type",
+                    precipitation_type="rain_type",
                     d_lim=(0.3, 7),
                     # Figure options
                     dpi=300,

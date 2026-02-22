@@ -41,6 +41,9 @@ from disdrodb.l2.processing import get_mask_contour, get_spectrum_mask_boundary
 #               add_tolerance_=0.5)
 # Add plot_raw_and_filtered_spectra(animation=True, legend_variables on first axes)
 
+# TODO: plot_l0_quicklook
+## - plot_l0_quicklook   # remap weather codes to hydrometeor_type, find R if available
+
 
 ####-------------------------------------------------------------------------------------------------------
 
@@ -429,6 +432,41 @@ def plot_nd(
     return p
 
 
+def plot_l1_nd_quicklook(xr_obj, precipitation_type="precipitation_type", **kwargs):
+    """Define L1 DSD default quicklook."""
+    fig = plot_nd_quicklook(xr_obj, precipitation_type=precipitation_type, **kwargs)
+    return fig
+
+
+def plot_l2_nd_quicklook(
+    xr_obj,
+    secondary_var="R",
+    secondary_label=None,
+    secondary_ylim=None,
+    secondary_hlines=None,
+    secondary_yscale=None,
+    secondary_linestyle=":",
+    **kwargs,
+):
+    """Define L2 DSD default quicklook."""
+    if secondary_var == "R" and secondary_var in xr_obj:
+        secondary_ylim = secondary_ylim if secondary_ylim is not None else (0.1, 200)
+        secondary_yscale = secondary_yscale if secondary_yscale is not None else "log"
+        secondary_label = secondary_label if secondary_label is not None else r"R [$mm hr^{-1}$]"
+        secondary_hlines = secondary_hlines if secondary_hlines is not None else (1, 10, 100)
+
+    fig = plot_nd_quicklook(
+        xr_obj,
+        secondary_var=secondary_var,
+        secondary_ylim=secondary_ylim,
+        secondary_yscale=secondary_yscale,
+        secondary_linestyle=secondary_linestyle,
+        secondary_hlines=secondary_hlines,
+        **kwargs,
+    )
+    return fig
+
+
 def plot_nd_quicklook(
     xr_obj,
     # Plot layout
@@ -449,21 +487,23 @@ def plot_nd_quicklook(
     cbar_as_legend=True,
     cbar_xpos=0.73,
     cbar_width=0.25,
+    # Secondary time-series overlay options
+    secondary_var=None,
+    secondary_ylim=None,
+    secondary_yscale="linear",
+    secondary_color="black",
+    secondary_alpha=1,
+    secondary_linewidth=1,
+    secondary_linestyle="-",
+    secondary_label=None,
+    secondary_hlines=None,
     # Precipitation type options
-    add_precipitation_type=None,
+    precipitation_type=None,
     precipitation_legend_fontsize=7,
     precipitation_legend_colors=None,
     precipitation_legend_labels=None,
     precipitation_legend_ncol=None,
     precipitation_legend_height=0.3,  # inches
-    # Rain rate options
-    add_r=True,
-    r_lim=(0.1, 200),
-    r_scale="log",
-    r_color="black",
-    r_alpha=1,
-    r_linewidth=1,
-    r_linestyle=":",
     # Diameter axis variables
     add_dm=True,
     add_sigma_m=True,
@@ -497,25 +537,48 @@ def plot_nd_quicklook(
     time_ticklabel_pad = 2
 
     # ------------------------------------------------------------------------.
-    # Check inputs and variables to plot. Ensure to create Dataset if input is DataArray
+    # Ensure to create Dataset if input is DataArray
     if isinstance(xr_obj, xr.Dataset):
         ds = xr_obj
-        if "Dm" not in ds:
-            add_dm = False
-        if "sigma_m" not in ds:
-            add_sigma_m = False
-        if "R" not in ds:
-            add_r = False
-        if add_precipitation_type not in ds:
-            add_precipitation_type = None
-    if isinstance(xr_obj, xr.DataArray):
+    elif isinstance(xr_obj, xr.DataArray):
         variable = xr_obj.name
         variable = "unknown DSD" if variable is None else variable
         ds = xr_obj.to_dataset(name=variable)
+        # Set options to False
+        precipitation_type = None
+        secondary_var = None
         add_dm = False
         add_sigma_m = False
-        add_r = False
-        add_precipitation_type = None
+
+    else:
+        raise TypeError("Expecting xarray.Dataset or xarray.DataArray as input.")
+
+    # ------------------------------------------------------------------------.
+    # Validate generic secondary axis and precipitation classification options
+    if secondary_var is not None:
+        if not isinstance(secondary_var, str):
+            raise TypeError("secondary_var must be a string or None.")
+        if secondary_var not in ds:
+            raise ValueError(f"{secondary_var} not found in dataset.")
+
+    if secondary_ylim is not None and not (isinstance(secondary_ylim, (tuple, list)) and len(secondary_ylim) == 2):
+        raise ValueError("secondary_ylim must be a tuple/list of length 2.")
+
+    if secondary_hlines is not None and not isinstance(secondary_hlines, (list, tuple)):
+        raise TypeError("secondary_hlines must be a list or tuple.")
+
+    if precipitation_type is not None:
+        if not isinstance(precipitation_type, str):
+            raise TypeError("precipitation_type must be a string or None.")
+        if precipitation_type not in ds:
+            raise ValueError(f"{precipitation_type} not found in dataset.")
+
+    # ------------------------------------------------------------------------.
+    # Disable overlays when required variables are missing
+    if "Dm" not in ds:
+        add_dm = False
+    if "sigma_m" not in ds:
+        add_sigma_m = False
 
     # ------------------------------------------------------------------------.
     # Select velocity_method
@@ -532,11 +595,11 @@ def plot_nd_quicklook(
 
     # ------------------------------------------------------------------------.
     # Define precipitation type classification (colors and legend)
-    add_precipitation_legend = add_precipitation_type is not None
+    add_precipitation_legend = precipitation_type is not None
     if add_precipitation_legend:
         if precipitation_legend_colors is None:
             precipitation_legend_colors, precipitation_legend_labels = get_precipitation_legend_style(
-                add_precipitation_type,
+                precipitation_type,
             )
         if precipitation_legend_ncol is None:
             precipitation_legend_ncol = len(precipitation_legend_labels)
@@ -557,15 +620,6 @@ def plot_nd_quicklook(
         else:
             units = ds[variable].attrs.get("units", "-")
             cbar_label = f"{variable} [{units}]"
-
-    # ------------------------------------------------------------------------.
-    # Compute event Rmax, Ptot, and define legend string
-    if "R" in ds and "P" in ds:
-        r_max = ds["R"].max().item()
-        p_tot = ds["P"].sum().item()
-        left_title_str = f"$R_{{MAX}}$={r_max:.1f} mm/h  $P_{{TOT}}$={p_tot:.1f} mm"
-    else:
-        left_title_str = None
 
     # ------------------------------------------------------------------------.
     # Calculate event duration
@@ -664,6 +718,7 @@ def plot_nd_quicklook(
     )
 
     axes = [fig.add_subplot(gs[i, 0]) for i in range(n_slices)]
+    ax_sec_for_legend = None
 
     # ------------------------------------------------------------------------.
     #### - Plot each slice
@@ -719,50 +774,59 @@ def plot_nd_quicklook(
         ax.set_xlabel("")
         ax.set_ylabel("")
 
-        #### - Add rain rate on secondary axis
-        if add_r:
-            ax_r = ax.twinx()
-            ds_slice["R"].plot(
-                ax=ax_r,
+        #### - Add generic secondary time series on a twin axis
+        if secondary_var is not None:
+            ax_sec = ax.twinx()
+            ds_slice[secondary_var].plot(
+                ax=ax_sec,
                 x="time",
-                color=r_color,
-                alpha=r_alpha,
-                linewidth=r_linewidth,
-                linestyle=r_linestyle,
-                label="R",
+                color=secondary_color,
+                alpha=secondary_alpha,
+                linewidth=secondary_linewidth,
+                linestyle=secondary_linestyle,
+                label=secondary_var,
             )
             # Always remove xarray default title
-            ax_r.set_title("")
-            ax_r.set_yscale(r_scale)
+            ax_sec.set_title("")
+            ax_sec.set_yscale(secondary_yscale)
             # Display playnumbers instead of scientific notation
-            ax_r.set_ylim(r_lim)
-            yticks = ax_r.get_yticks()
+            yticks = ax_sec.get_yticks()
             ytick_labels = [f"{t:g}" for t in yticks]
-            ax_r.set_yticks(yticks)
-            ax_r.set_yticklabels(ytick_labels)
+            ax_sec.set_yticks(yticks)
+            ax_sec.set_yticklabels(ytick_labels)
+            if secondary_ylim is not None:
+                ax_sec.set_ylim(secondary_ylim)
 
-            # Enforce ylim
-            ax_r.set_ylim(r_lim)
             # Remove ylabel from all individual axes
-            ax_r.set_ylabel("")
-            ax_r.tick_params(axis="y", labelcolor=r_color)
+            ax_sec.set_ylabel("")
+            ax_sec.tick_params(axis="y", labelcolor=secondary_color)
 
-            # Add horizontal reference lines at 1, 10, and 100 mm/h
-            for r_ref in [1, 10, 100]:
-                ax_r.axhline(y=r_ref, color="gray", alpha=0.2, linewidth=1, linestyle="-", zorder=0)
+            if secondary_hlines is not None:
+                for y in secondary_hlines:
+                    ax_sec.axhline(
+                        y=y,
+                        color="gray",
+                        alpha=0.2,
+                        linewidth=1,
+                        linestyle="-",
+                        zorder=0,
+                    )
+
+            if ax_sec_for_legend is None:
+                ax_sec_for_legend = ax_sec
 
         ax.set_ylim(*d_lim)
         ax.tick_params(axis="x", pad=time_ticklabel_pad)
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
-        #### - Add rain type strip at the top of the subplot as inset axes
+        #### - Add precipitation classification strip at the top of the subplot as inset axes
         if add_precipitation_legend:
-            # Get rain_type values for this time slice
-            rain_type = ds_slice[add_precipitation_type]
+            # Get classification values for this time slice
+            precip_type = ds_slice[precipitation_type]
 
             # Create inset axes at the top (sharing x-axis with main plot)
             # [x0, y0, width, height] in axes coordinates
-            ax_rain = ax.inset_axes([0, 0.95, 1, 0.05], sharex=ax)
+            ax_precip = ax.inset_axes([0, 0.95, 1, 0.05], sharex=ax)
 
             # Define colormap and norm
             # - Sort category values
@@ -772,7 +836,7 @@ def plot_nd_quicklook(
             colors = [precipitation_legend_colors[v] for v in values]
 
             # - Create colormap
-            cmap_rain = ListedColormap(colors)
+            cmap_precip = ListedColormap(colors)
 
             # - Build automatic boundaries
             # Works even for negative or non-consecutive values
@@ -783,10 +847,10 @@ def plot_nd_quicklook(
                     [values[-1] + 0.5],
                 ],
             )
-            norm_rain = BoundaryNorm(boundaries, cmap_rain.N)
+            norm_precip = BoundaryNorm(boundaries, cmap_precip.N)
 
             # Plot 1-pixel-high strip
-            t = rain_type["time"].to_numpy()
+            t = precip_type["time"].to_numpy()
             dt = np.diff(t)  # timedelta64
             t_edges = np.concatenate(
                 [
@@ -796,16 +860,16 @@ def plot_nd_quicklook(
                 ],
             )
 
-            ax_rain.pcolormesh(
+            ax_precip.pcolormesh(
                 t_edges,
                 [0, 1],
-                rain_type.to_numpy()[np.newaxis, :],
-                cmap=cmap_rain,
-                norm=norm_rain,
+                precip_type.to_numpy()[np.newaxis, :],
+                cmap=cmap_precip,
+                norm=norm_precip,
                 shading="flat",
             )
             # Add 'axis' line
-            ax_rain.axhline(
+            ax_precip.axhline(
                 y=0,
                 color="black",
                 linewidth=1,
@@ -813,13 +877,13 @@ def plot_nd_quicklook(
             )
 
             # Remove ticks and ticklabels
-            ax_rain.set_yticks([])
-            ax_rain.xaxis.set_visible(False)
-            for spine in ax_rain.spines.values():
+            ax_precip.set_yticks([])
+            ax_precip.xaxis.set_visible(False)
+            for spine in ax_precip.spines.values():
                 spine.set_visible(False)
 
     # Add time xlabel
-    if add_precipitation_type is None:
+    if precipitation_type is None:
         axes[n_slices - 1].set_xlabel("Time (UTC)", fontsize=axis_label_fontsize)
 
     # ------------------------------------------------------------------------.
@@ -848,14 +912,6 @@ def plot_nd_quicklook(
         loc="center",
     )
 
-    # Add left title with Rmax and Ptot
-    if left_title_str is not None:
-        axes[0].set_title(
-            left_title_str,
-            fontsize=side_title_fontsize,
-            loc="left",
-        )
-
     # Add right title with event duration
     axes[0].set_title(
         duration_str,
@@ -874,28 +930,31 @@ def plot_nd_quicklook(
         fontsize=axis_label_fontsize,
     )
 
-    if add_r:
+    if secondary_var is not None:
+        if secondary_label is None:
+            units = ds[secondary_var].attrs.get("units", "")
+            secondary_label = f"{secondary_var} [{units}]" if units else secondary_var
         fig.text(
             0.945,
             0.5,
-            "Rain rate [mm h$^{-1}$]",
+            secondary_label,
             va="center",
             rotation="vertical",
             fontsize=axis_label_fontsize,
-            color=r_color,
+            color=secondary_color,
         )
 
     # ------------------------------------------------------------------------.
     #### - Add legend
     # Collect legend handles from both axes
-    handles, labels = ax.get_legend_handles_labels()
+    handles, labels = axes[0].get_legend_handles_labels()
 
-    if add_r:
-        handles_r, labels_r = ax_r.get_legend_handles_labels()
-        handles += handles_r
-        labels += labels_r
+    if secondary_var is not None and ax_sec_for_legend is not None:
+        handles_sec, labels_sec = ax_sec_for_legend.get_legend_handles_labels()
+        handles += handles_sec
+        labels += labels_sec
 
-    if np.any([add_r, add_sigma_m, add_dm]):
+    if np.any([secondary_var is not None, add_sigma_m, add_dm]):
         axes[0].legend(
             handles,
             labels,
@@ -965,10 +1024,10 @@ def plot_nd_quicklook(
         ]
 
         # Select last row in GridSpec
-        rain_ax = fig.add_subplot(gs[-1, 0])
-        rain_ax.axis("off")
+        precip_ax = fig.add_subplot(gs[-1, 0])
+        precip_ax.axis("off")
 
-        rain_ax.legend(
+        precip_ax.legend(
             handles=legend_patches,
             loc="center left",
             bbox_to_anchor=(-0.01, 0.5),
