@@ -252,7 +252,7 @@ def get_diameter_coords_dict_from_bin_edges(diameter_bin_edges):
 def resample_drop_number_concentration(
     drop_number_concentration,
     diameter_bin_edges,
-    remapping_method="log_pchip",
+    method="log_pchip",
 ):
     """Resample drop number concentration N(D) DataArray to high resolution diameter bins."""
     da_dst_d_bin_centers = define_diameter_datarray(diameter_bin_edges, dim="d_new")
@@ -264,7 +264,7 @@ def resample_drop_number_concentration(
         new_dim="d_new",
         dD_src=drop_number_concentration["diameter_bin_width"],
         dD_dst=da_dst_d_bin_centers["diameter_bin_width"],
-        remapping_method=remapping_method,
+        method=method,
     )
     da_resampled = da_resampled.rename({"d_new": "diameter_bin_center"})
     return da_resampled
@@ -384,7 +384,7 @@ def resample_density(
     new_dim,
     dD_src,
     dD_dst,
-    remapping_method="log_pchip",
+    method="log_pchip",
 ):
     """Conservative resampling of density.
 
@@ -404,7 +404,7 @@ def resample_density(
         Source bin widths (same dim as dim).
     dD_dst : xr.DataArray
         Destination bin widths (same dim as new_dim).
-    remapping_method : str or callable
+    method : str or callable
         Remapping strategy used within ``xr.apply_ufunc``.
         If str, available methods are:
         - ``"constant"``: first-order conservative remapping (piecewise constant in source bins).
@@ -417,23 +417,27 @@ def resample_density(
     xr.DataArray
         Remapped density conserving total number.
     """
+    if len(d_dst) < len(d_src) and method != "constant":  # coarsening
+        print("Resampling method set to 'constant' for coarsening.")
+        method = "constant"
+
     da_density = da_density.where(da_density > 0, 0)
 
-    remapping_methods = {
+    methods = {
         "constant": _conservative_remapping,
         "log_pchip": _log_pchip_conservative_remapping,
     }
-    if callable(remapping_method):
-        remapping_func = remapping_method
+    if callable(method):
+        resampling_func = method
     else:
-        if remapping_method not in remapping_methods:
-            valid_methods = ", ".join(remapping_methods)
-            msg = f"Unknown {remapping_method!r}. Valid options are: {valid_methods}."
+        if method not in methods:
+            valid_methods = ", ".join(methods)
+            msg = f"Unknown {method!r}. Valid options are: {valid_methods}."
             raise ValueError(msg)
-        remapping_func = remapping_methods[remapping_method]
+        resampling_func = methods[method]
 
     da_density_new = xr.apply_ufunc(
-        remapping_func,
+        resampling_func,
         da_density,
         d_src,
         d_dst,
@@ -447,8 +451,9 @@ def resample_density(
     )
 
     # Assign coordinate
+    name = da_density.name
     da_density_new = da_density_new.assign_coords({new_dim: d_dst})
-    da_density_new.name = da_density.name
+    da_density_new.name = name if name is not None else "drop_number_concentration"
     return da_density_new
 
 
@@ -458,7 +463,7 @@ def remap_to_diameter(
     d_dst,
     dim,
     new_dim,
-    interpolation_method="linear",
+    method="linear",
 ):
     """Remap DataArray from source to destination diameter coordinate.
 
@@ -475,15 +480,15 @@ def remap_to_diameter(
         Original diameter dimension.
     new_dim : str
         Name of output diameter dimension.
-    interpolation_method : {"linear", "pchip"}
+    method : {"linear", "pchip"}
         Interpolation method used for remapping.
 
     Returns
     -------
     xr.DataArray
     """
-    if interpolation_method not in {"linear", "pchip"}:
-        msg = f"Unknown {interpolation_method!r}. Valid options are: linear, pchip."
+    if method not in {"linear", "pchip"}:
+        msg = f"Unknown {method!r}. Valid options are: linear, pchip."
         raise ValueError(msg)
 
     def _interp_1d_linear(x_new, x_old, y_old):
@@ -522,7 +527,7 @@ def remap_to_diameter(
         pchip = PchipInterpolator(x_old_unique, y_old_unique, extrapolate=False)
         return pchip(x_new)
 
-    interp_func = _interp_1d_linear if interpolation_method == "linear" else _interp_1d_pchip
+    interp_func = _interp_1d_linear if method == "linear" else _interp_1d_pchip
 
     da_out = xr.apply_ufunc(
         interp_func,
@@ -547,7 +552,7 @@ def compute_normalized_dsd_datarray(
     d_min=0,
     d_max=6,
     d_step=0.001,
-    interpolation_method="linear",
+    method="linear",
 ):
     """Compute normalized DSD and remap to regular D/Dc dimension."""
     # Compute Normalized DSD and normalized diameter
@@ -568,7 +573,7 @@ def compute_normalized_dsd_datarray(
         d_dst=da_normalized_diameter,
         dim="diameter_bin_center",
         new_dim="D/Dc",
-        interpolation_method=interpolation_method,
+        method=method,
     )
 
     da_dsd_norm = da_dsd_norm.assign_coords({"diameter_bin_width": da_normalized_diameter["diameter_bin_width"]})

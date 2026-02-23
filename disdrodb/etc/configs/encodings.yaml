@@ -294,6 +294,20 @@ drop_number_concentration:
   shuffle: true
   fletcher32: false
   contiguous: false
+particle_number_concentration:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+raw_drop_number_concentration:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
 drop_volume:
   dtype: float32
   zlib: true

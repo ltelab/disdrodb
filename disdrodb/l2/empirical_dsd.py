@@ -274,6 +274,75 @@ def get_bin_dimensions(xr_obj):
     return sorted([k for k in [DIAMETER_DIMENSION, VELOCITY_DIMENSION] if k in xr_obj.dims])
 
 
+def get_particle_number_concentration(particle_number, velocity, diameter_bin_width, sampling_area, sample_interval):
+    r"""
+    Calculate the volumetric particle number concentration \\( N(D) \\) per diameter class.
+
+    Computes the particle number concentration \\( N(D) \\) [m⁻³·mm⁻¹] for each diameter
+    class based on the measured particle counts and sensor parameters.
+    This represents the number of particles per unit volume per unit diameter interval.
+    It is also referred to as the particle size distribution N(D) per cubic metre per millimetre [m-3 mm-1]
+
+    Parameters
+    ----------
+    velocity : xarray.DataArray
+        Array of particle fall velocities \\( v(D) \\) corresponding to each diameter bin in meters per second (m/s).
+        Typically the estimated fall velocity is used.
+        But one can also pass the velocity bin center of the optical disdrometer, which get broadcasted
+        along the diameter bin dimension.
+    diameter_bin_width : xarray.DataArray
+        Width of each diameter bin \\( \\Delta D \\) in millimeters (mm).
+    particle_number : xarray.DataArray
+        Array of particle counts \\(  n(D) or n(D,v) \\) per diameter (and velocity if available)
+        bins over the measurement interval.
+    sample_interval : float or xarray.DataArray
+        Time over which the particles are counted \\( \\Delta t \\) in seconds (s).
+    sampling_area : float or xarray.DataArray
+        The effective sampling area \\( A \\) of the sensor in square meters (m²).
+
+    Returns
+    -------
+    particle_number_concentration : xarray.DataArray or numpy.ndarray
+        Array of particle number concentrations \\( N(D) \\) in m⁻³·mm⁻¹, representing
+        the number of particles per unit volume per unit diameter interval.
+
+    Notes
+    -----
+    The particle number concentration \\( N(D) \\) is calculated using:
+
+    .. math::
+
+        N(D) = \frac{n(D)}{A_{\text{eff}}(D) \\cdot \\Delta D \\cdot \\Delta t \\cdot v(D)}
+
+    where:
+
+    - \\( n(D,v) \\): Number of particles counted in diameter (and velocity) bins.
+    - \\( A_{\text{eff}}(D) \\): Effective sampling area of the sensor for diameter \\( D \\) in square meters (m²).
+    - \\( \\Delta D \\): Diameter bin width in millimeters (mm).
+    - \\( \\Delta t \\): Measurement interval in seconds (s).
+    - \\( v(D) \\): Fall velocity of particles in diameter bin \\( D \\) in meters per second (m/s).
+
+    The effective sampling area \\( A_{\text{eff}}(D) \\) depends on the sensor and may vary with particle diameter.
+    """
+    # Ensure velocity is 2D (diameter, velocity)
+    velocity = xr.ones_like(particle_number) * velocity
+
+    # Create a safe ratio: particle_number / velocity, but 0 where velocity is 0 or NaN
+    safe_ratio = particle_number / velocity
+    safe_ratio = safe_ratio.where((velocity != 0) & (~np.isnan(velocity)), 0)
+
+    # Compute particle number concentration
+    # - For disdrometer with velocity bins
+    if VELOCITY_DIMENSION in particle_number.dims:
+        particle_number_concentration = safe_ratio.sum(dim=VELOCITY_DIMENSION, skipna=False) / (
+            sampling_area * diameter_bin_width * sample_interval
+        )
+    # - For impact disdrometers
+    else:
+        particle_number_concentration = safe_ratio / (sampling_area * diameter_bin_width * sample_interval)
+    return particle_number_concentration
+
+
 def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sampling_area, sample_interval):
     r"""
     Calculate the volumetric drop number concentration \\( N(D) \\) per diameter class.
@@ -324,22 +393,13 @@ def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sam
 
     The effective sampling area \\( A_{\text{eff}}(D) \\) depends on the sensor and may vary with drop diameter.
     """
-    # Ensure velocity is 2D (diameter, velocity)
-    velocity = xr.ones_like(drop_number) * velocity
-
-    # Create a safe ratio: drop_number / velocity, but 0 where velocity is 0 or NaN
-    safe_ratio = drop_number / velocity
-    safe_ratio = safe_ratio.where((velocity != 0) & (~np.isnan(velocity)), 0)
-
-    # Compute drop number concentration
-    # - For disdrometer with velocity bins
-    if VELOCITY_DIMENSION in drop_number.dims:
-        drop_number_concentration = safe_ratio.sum(dim=VELOCITY_DIMENSION, skipna=False) / (
-            sampling_area * diameter_bin_width * sample_interval
-        )
-    # - For impact disdrometers
-    else:
-        drop_number_concentration = safe_ratio / (sampling_area * diameter_bin_width * sample_interval)
+    drop_number_concentration = get_particle_number_concentration(
+        particle_number=drop_number,
+        velocity=velocity,
+        diameter_bin_width=diameter_bin_width,
+        sampling_area=sampling_area,
+        sample_interval=sample_interval,
+    )
     return drop_number_concentration
 
 

@@ -46,7 +46,7 @@ from disdrodb.utils.manipulations import (
 from disdrodb.utils.writer import finalize_product
 
 
-def define_velocity_array(ds):
+def define_velocity_array(ds, spectrum="drop_number"):
     """
     Create the fall velocity DataArray using various methods.
 
@@ -63,7 +63,7 @@ def define_velocity_array(ds):
     -------
     velocity: xarray.DataArray
     """
-    drop_number = ds["drop_number"]
+    drop_number = ds[spectrum]
     if "velocity_bin_center" in ds.dims:
         velocity = xr.Dataset(
             {
@@ -666,6 +666,7 @@ def generate_l2e(
     #     ds["drop_average_velocity"] = get_drop_average_velocity(ds["drop_number"])
 
     # -------------------------------------------------------------------------------------------
+    #### Compute drop number concentration N(D)
     # Define velocity array with dimension 'velocity_method'
     velocity = define_velocity_array(ds)
     velocity = velocity.fillna(0)

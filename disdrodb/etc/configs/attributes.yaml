@@ -183,6 +183,14 @@ drop_number_concentration:
   description: Number concentration of drops per diameter class per unit volume
   long_name: Drop number concentration per diameter class
   units: m-3 mm-1
+raw_drop_number_concentration:
+  description: Number concentration of drops per diameter class per unit volume
+  long_name: Drop number concentration per diameter class
+  units: m-3 mm-1
+raw_particle_number_concentration:
+  description: Number concentration of particles per diameter class per unit volume
+  long_name: Particle number concentration per diameter class
+  units: m-3 mm-1
 drop_volume:
   standard_name: ""
   units: mm3

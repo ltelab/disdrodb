@@ -143,18 +143,19 @@ def get_precipitation_legend_style(name):
 #### N(D) and n(D) visualizations
 
 
-L0_ND_VARIABLES = ["raw_drop_concentration"]
-L1_ND_VARIABLES = ["raw_particle_counts"]
-L2_ND_VARIABLES = ["drop_number_concentration", "drop_counts", "raw_drop_number_concentration", "raw_drop_counts"]
-ND_VARIABLES = [*L2_ND_VARIABLES, *L1_ND_VARIABLES, *L0_ND_VARIABLES]
+L0_DSD_VARIABLES = ["raw_drop_concentration"]
+L1_DSD_VARIABLES = ["raw_particle_number_concentration", "raw_particle_counts"]
+L2_DSD_VARIABLES = ["drop_number_concentration", "drop_counts", "raw_drop_number_concentration", "raw_drop_counts"]
+DSD_VARIABLES = [*L2_DSD_VARIABLES, *L1_DSD_VARIABLES, *L0_DSD_VARIABLES]
 
-ND_LABEL_DICT = {
+DSD_LABEL_DICT = {
     # L0
     "raw_spectrum": "$n_{raw}(D,V)$ [#]",  # FUTURE
     "raw_drop_concentration": "$N_{raw}(D)$ [# $m^{-3} mm^{-1}$]",  # FUTURE: raw_particle_number_concentration
     # L1
     # raw_spectrum
     "raw_particle_counts": "$n_{raw}(D)$ [#]",
+    "raw_particle_number_concentration": "$N_{raw}(D)$ [# $m^{-3} mm^{-1}$]",
     # L2
     "raw_drop_number": "$n_{raw}(D,V)$ [#]",  # FUTURE: raw spectrum
     "drop_number": "$n(D,V)$ [#]",  # FUTURE: spectrum
@@ -164,12 +165,13 @@ ND_LABEL_DICT = {
     "drop_number_concentration": "$N(D)$ [# $m^{-3} mm^{-1}$]",
 }
 
-ND_TITLE_DICT = {
+DSD_TITLE_DICT = {
     # L0
     "raw_spectrum": "Raw spectrum n(D,V)",
     "raw_drop_concentration": "Raw particle number concentration N(D)",  # FUTURE: raw_particle_number_concentration
     # L1
     "raw_particle_counts": "Raw particle counts n(D)",
+    "raw_particle_number_concentration": "Raw particle number concentration N(D)",
     # L2
     "raw_drop_number": "Raw spectrum n(D,V)",
     "drop_number": "Spectrum n(D,V)",
@@ -196,12 +198,15 @@ def _get_dsd_labels(variable_name, da=None):
         Dictionary with 'ylabel', 'cbar_label', and 'title' keys.
     """
     # Retrieve for DISDRODB N(D) or n(D) variables
-    if variable_name in ND_LABEL_DICT:
+    if variable_name in DSD_LABEL_DICT:
         return {
-            "ylabel": ND_LABEL_DICT[variable_name],
-            "cbar_label": ND_LABEL_DICT[variable_name],
-            "title": ND_TITLE_DICT[variable_name],
+            "ylabel": DSD_LABEL_DICT[variable_name],
+            "cbar_label": DSD_LABEL_DICT[variable_name],
+            "title": DSD_TITLE_DICT[variable_name],
         }
+
+    if variable_name is None and da.name is None:
+        raise ValueError("Variable name is not provided and DataArray has no name. Cannot determine labels.")
 
     # Generic fallback - try to extract units from DataArray attributes
     units = None
@@ -262,7 +267,7 @@ def _check_has_diameter_dims(da, diameter_dim):
 
 def get_dataset_dsd_variable_name(ds, variables=None):
     """Return N(D) or n(D) variable name present in the xarray.Dataset."""
-    variables = ND_VARIABLES if variables is None else variables
+    variables = DSD_VARIABLES if variables is None else variables
     # Search for candidate variables
     variable = None
     for var in variables:
@@ -308,7 +313,7 @@ def get_dsd_variable(xr_obj, variable=None, diameter_dim=DIAMETER_DIMENSION):
     else:
         # xr.Dataset provided
         if variable is None:
-            variable = get_dataset_dsd_variable_name(xr_obj, variables=[*ND_VARIABLES, "raw_drop_number"])
+            variable = get_dataset_dsd_variable_name(xr_obj, variables=[*DSD_VARIABLES, "raw_drop_number"])
         elif variable not in xr_obj:
             raise ValueError(f"The dataset does not include {variable=}.")
 
@@ -615,8 +620,8 @@ def plot_dsd_quicklook(
     # ------------------------------------------------------------------------.
     # Define cbar label
     if cbar_label is None:
-        if variable in ND_LABEL_DICT:
-            cbar_label = ND_LABEL_DICT[variable]
+        if variable in DSD_LABEL_DICT:
+            cbar_label = DSD_LABEL_DICT[variable]
         else:
             units = ds[variable].attrs.get("units", "-")
             cbar_label = f"{variable} [{units}]"
@@ -1297,7 +1302,7 @@ def plot_spectrum(
             maintain_smallest_drops=False,
             fall_velocity_model="Beard1976",
         )
-        plot_contour(contour, ax=ax, color="black", linestyle="--")
+        plot_contour(contour, ax=p.axes, color="black", linestyle="--")
 
     if not is_facetgrid:
         p.axes.set_xlabel("Diamenter [mm]")

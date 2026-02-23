@@ -336,7 +336,7 @@ def test_resample_density_log_pchip_conservative_irregular_bins():
         new_dim="d_new",
         dD_src=dD_src,
         dD_dst=dD_dst,
-        remapping_method="constant",
+        method="constant",
     )
     da_smooth = resample_density(
         da_density=y_src,
@@ -346,7 +346,7 @@ def test_resample_density_log_pchip_conservative_irregular_bins():
         new_dim="d_new",
         dD_src=dD_src,
         dD_dst=dD_dst,
-        remapping_method="log_pchip",
+        method="log_pchip",
     )
 
     nt_src = float((y_src * dD_src).sum())
@@ -377,7 +377,7 @@ def test_resample_density_raises_on_unknown_method():
             new_dim="d_new",
             dD_src=dD_src,
             dD_dst=d_dst["diameter_bin_width"],
-            remapping_method="not_a_method",
+            method="not_a_method",
         )
 
 
@@ -399,7 +399,7 @@ def test_resample_density_log_pchip_keeps_edge_half_bins():
         new_dim="d_new",
         dD_src=dD_src,
         dD_dst=dD_dst,
-        remapping_method="log_pchip",
+        method="log_pchip",
     )
 
     dst_left = d_dst.to_numpy() - 0.5 * dD_dst.to_numpy()
@@ -427,7 +427,7 @@ def test_remap_to_diameter_pchip():
         d_dst=d_dst,
         dim="diameter_bin_center",
         new_dim="D/Dc",
-        interpolation_method="pchip",
+        method="pchip",
     )
 
     expected = PchipInterpolator(d_src.to_numpy(), da.to_numpy(), extrapolate=False)(d_dst.to_numpy())
@@ -447,5 +447,5 @@ def test_remap_to_diameter_raises_on_unknown_method():
             d_dst=d_dst,
             dim="diameter_bin_center",
             new_dim="D/Dc",
-            interpolation_method="not_a_method",
+            method="not_a_method",
         )
