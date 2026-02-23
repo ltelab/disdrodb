@@ -9,7 +9,7 @@ ARCHIVE_OPTIONS_EVENT = {
     "strategy": "event",
     "strategy_options": {
         "variable": "n_particles",
-        "detection_threshold": 10,
+        "detection_threshold": 10.1,  # Just to test float are accepted.
         "neighbor_min_size": 5,
         "neighbor_time_interval": "1MIN",
         "event_max_time_gap": "5MIN",

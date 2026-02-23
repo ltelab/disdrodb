@@ -222,7 +222,7 @@ class EventStrategyOptions(CustomBaseModel):
     """Strategy options for event strategy."""
 
     variable: str = Field(..., description="Variable to define events")
-    detection_threshold: int = Field(..., ge=0, description="Minimum number of drops")
+    detection_threshold: float = Field(..., ge=0, description="Minimum number of <variable> to define event timestep")
     neighbor_min_size: int = Field(..., ge=0, description="Minimum neighbor size")
     neighbor_time_interval: str = Field(..., description="Neighbor time interval")
     event_max_time_gap: str = Field(..., description="Maximum time gap for events")

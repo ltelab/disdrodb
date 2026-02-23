@@ -144,13 +144,18 @@ Groups data by precipitation events:
         variable: n_particles
         detection_threshold: 2            # Minimum number of particles to detect precipitation
         neighbor_min_size: 1              # Minimum neighbors to form event
-        neighbor_time_interval: 1min      # Time window for neighbor search
-        event_max_time_gap: 30min         # Maximum gap within event
-        event_min_duration: 1min          # Minimum event duration
+        neighbor_time_interval: 5MIN      # Time window for neighbor search (UPPER CASE!)
+        event_max_time_gap: 30MIN         # Maximum gap within event (UPPER CASE!)
+        event_min_duration: 1MIN          # Minimum event duration (UPPER CASE!)
         event_min_size: 10                # Minimum event size (timesteps)
       folder_partitioning: year/month
 
 Currently, only the ``time_block`` strategy is supported for DISDRODB L0C and L1 products.
+Please note that ``neighbor_time_interval`` must be at least as large as the temporal resolution of the data
+to ensure proper event detection. That is for 1-minute data, ``neighbor_time_interval`` should be at least ``1MIN``,
+for 5-minute data it should be at least ``5MIN``, etc.
+
+
 
 **Folder Partitioning**
 
@@ -250,8 +255,8 @@ For product description, see :ref:`DISDRODB L1 Product <disdrodb_l1>`.
 .. code-block:: yaml
 
     temporal_resolutions:              # List of resolutions to generate
-      - 30S
-      - 1MIN
+      - 30S                            # MUST BE UPPERCASE. 30S. Not 30s
+      - 1MIN                           # MUST BE UPPERCASE. 1MIN. Not 1min
       - 5MIN
       - ROLL10MIN                      # ROLL suffix for rolling windows
 
@@ -266,6 +271,7 @@ For product description, see :ref:`DISDRODB L1 Product <disdrodb_l1>`.
 - ``<N>S``: Fixed N-second intervals (e.g., ``30S``, ``60S``)
 - ``<N>MIN``: Fixed N-minute intervals (e.g., ``1MIN``, ``5MIN``, ``10MIN``)
 - ``ROLL<N>MIN``: Rolling N-minute windows (e.g., ``ROLL5MIN``, ``ROLL10MIN``)
+- All UPPERCASE for consistency and to avoid parsing issues.
 
 Rolling windows use sliding windows for aggregation, reducing "data loss"
 compared to fixed-interval resampling.

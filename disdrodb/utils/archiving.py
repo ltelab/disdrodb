@@ -146,7 +146,9 @@ def identify_events(
     neighbor_time_interval : str
         The time interval around a given a timestep defining the neighborhood.
         Only timesteps that fall within this time interval before or after a timestep are considered neighbors.
-        The neighbor_time_interval must be at least equal to the dataset sampling interval!
+        The neighbor_time_interval must be at least equal to the dataset sampling interval (temporal resolution) !
+        That is for 1-minute data, ``neighbor_time_interval`` should be at least ``1MIN``,
+        for 5-minute data it should be at least ``5MIN``, etc.
     neighbor_min_size : int, optional
         The minimum number of neighboring timesteps required within `neighbor_time_interval` for a
         timestep to be considered non-isolated.  Isolated timesteps are removed !
@@ -179,15 +181,22 @@ def identify_events(
     ds = open_netcdf_files(filepaths, variables=["time", variable], parallel=parallel, compute=True)
     # Sort dataset by time
     ds = ensure_sorted_by_time(ds)
+    # Retrieve variable
+    da_variable = ds[variable]
+    # Ensure no dimensions other than time
+    da_variable = da_variable.isel(velocity_method=0, source=0, missing_dims="ignore")
+    if "time" not in da_variable.dims:
+        raise ValueError(f"The event definition 'variable' {variable} must have the 'time' dimension.")
+    if list(da_variable.dims) != ["time"]:
+        raise ValueError(f"The event definition 'variable' {variable} does not have just the 'time' dimension.")
+
     # Define candidate timesteps to group into events
-    idx_valid = ds[variable].to_numpy() > detection_threshold
+    idx_valid = da_variable.to_numpy() > detection_threshold
     timesteps = ds["time"].to_numpy()[idx_valid]
     if "sample_interval" in ds:
         sample_interval = ds["sample_interval"].compute().item()
         if temporal_resolution_to_seconds(neighbor_time_interval) < sample_interval:
-            msg = (
-                f"'neighbor_time_interval' must be at least equal to the dataset sample interval ({sample_interval} s)"
-            )
+            msg = f"'neighbor_time_interval' must be at least equal to the dataset temporal resolution ({sample_interval} s)"  # noqa
             raise ValueError(msg)
 
     # Define event list

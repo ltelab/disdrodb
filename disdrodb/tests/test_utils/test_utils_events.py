@@ -778,7 +778,7 @@ class TestSplitIntoEvents:
             coords={"time": time},
         )
         ds["sample_interval"] = 1800  # 30 minutes in seconds
-        with pytest.raises(ValueError, match="must be at least equal to the dataset sample interval"):
+        with pytest.raises(ValueError, match="must be at least equal to the dataset"):
             list(
                 ds.disdrodb.split_into_events(
                     variable="N",

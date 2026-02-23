@@ -83,7 +83,9 @@ def split_into_events(
     neighbor_time_interval : str
         The time interval around a given a timestep defining the neighborhood.
         Only timesteps that fall within this time interval before or after a timestep are considered neighbors.
-        The neighbor_time_interval must be at least equal to the dataset sampling interval!
+        The neighbor_time_interval must be at least equal to the dataset sampling interval (temporal resolution)!
+        That is for 1-minute data, ``neighbor_time_interval`` should be at least ``1MIN``,
+        for 5-minute data it should be at least ``5MIN``, etc.
     neighbor_min_size : int, optional
         The minimum number of neighboring timesteps required within `neighbor_time_interval` for a
         timestep to be considered non-isolated.  Isolated timesteps are removed !
@@ -149,9 +151,7 @@ def split_into_events(
     if "sample_interval" in ds:
         sample_interval = ds["sample_interval"].compute().item()
         if temporal_resolution_to_seconds(neighbor_time_interval) < sample_interval:
-            msg = (
-                f"'neighbor_time_interval' must be at least equal to the dataset sample interval ({sample_interval} s)"
-            )
+            msg = f"'neighbor_time_interval' must be at least equal to the dataset temporal resolution ({sample_interval} s)"  # noqa: E501
             raise ValueError(msg)
 
     # Define candidate timesteps to group into events
