@@ -196,7 +196,7 @@ def identify_events(
     if "sample_interval" in ds:
         sample_interval = ds["sample_interval"].compute().item()
         if temporal_resolution_to_seconds(neighbor_time_interval) < sample_interval:
-            msg = f"'neighbor_time_interval' must be at least equal to the dataset temporal resolution ({sample_interval} s)"  # noqa
+            msg = f"'neighbor_time_interval' must be at least equal to the dataset temporal resolution ({sample_interval} s)"  # noqa: E501
             raise ValueError(msg)
 
     # Define event list
