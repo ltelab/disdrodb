@@ -466,6 +466,82 @@ def prepare_latex_table_events_summary(df):
     return df
 
 
+def create_table_l1_event_summary(
+    ds,
+    variable="n_particles",
+    threshold=4,
+    neighbor_min_size=2,
+    neighbor_time_interval="5MIN",
+    event_max_time_gap="1H",
+    event_min_duration="20MIN",
+    event_min_size=5,
+    sortby="duration",
+    sortby_order="decreasing",
+):
+    """Return a table with the hydrometeor statistics for each event."""
+    # Load in memory needed variables
+    ds["precipitation_type"] = ds["precipitation_type"].compute()
+    ds["hydrometeor_type"] = ds["hydrometeor_type"].compute()
+    ds["n_particles"] = ds["n_particles"].compute()
+    ds["flag_hail"] = ds["flag_hail"].compute()
+
+    # Compute stats
+    event_stats = []
+    for ds_event in ds.disdrodb.split_into_events(
+        variable=variable,
+        threshold=threshold,
+        neighbor_min_size=neighbor_min_size,
+        neighbor_time_interval=neighbor_time_interval,
+        event_max_time_gap=event_max_time_gap,
+        event_min_duration=event_min_duration,
+        event_min_size=event_min_size,
+        sortby=sortby,
+        sortby_order=sortby_order,
+    ):
+
+        fraction_precip = np.sum(ds_event["precipitation_type"] >= 0) / len(ds_event["time"])
+        n_rainy = np.sum(ds_event["precipitation_type"] == 0)
+        n_snow = np.sum(ds_event["precipitation_type"] == 1)
+        n_mixed = np.sum(ds_event["precipitation_type"] == 2)
+        n_precip = np.sum(ds_event["precipitation_type"] >= 0)
+        n_undefined = np.sum(ds_event["precipitation_type"] == -2)
+        n_graupel = np.sum(ds_event["hydrometeor_type"] == 8)
+        n_small_hail = np.sum(ds_event["flag_hail"] == 1)
+        n_large_hail = np.sum(ds_event["flag_hail"] == 2)
+        fraction_rain = n_rainy / n_precip
+        fraction_snow = n_snow / n_precip
+        fraction_mixed = n_mixed / n_precip
+        fraction_undefined = n_undefined / n_precip
+        start_time = str(ds_event.disdrodb.start_time)
+        end_time = str(ds_event.disdrodb.end_time)
+        total_particles = np.sum(ds_event["n_particles"])
+        duration_hours = ds_event["duration"].astype(int) / 60 / 60
+        event_stats.append(
+            {
+                "start_time": start_time,
+                "end_time": end_time,
+                "duration_hours": duration_hours,
+                "total_particles": total_particles,
+                "n_rainy": n_rainy.item(),
+                "n_snow": n_snow.item(),
+                "n_mixed": n_mixed.item(),
+                "n_precip": n_precip.item(),
+                "n_undefined": n_undefined.item(),
+                "n_small_hail": n_small_hail.item(),
+                "n_large_hail": n_large_hail.item(),
+                "n_graupel": n_graupel.item(),
+                "fraction_precip": fraction_precip.item(),
+                "fraction_rain": fraction_rain.item(),
+                "fraction_snow": fraction_snow.item(),
+                "fraction_mixed": fraction_mixed.item(),
+                "fraction_undefined": fraction_undefined.item(),
+            },
+        )
+
+    df_events = pd.DataFrame(event_stats).reset_index(drop=True)
+    return df_events
+
+
 ####-------------------------------------------------------------------
 #### Powerlaw routines
 

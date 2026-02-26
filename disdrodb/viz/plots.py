@@ -445,6 +445,7 @@ def plot_l1_dsd_quicklook(xr_obj, precipitation_type="precipitation_type", **kwa
 
 def plot_l2_dsd_quicklook(
     xr_obj,
+    precipitation_type="rain_type",
     secondary_var="R",
     secondary_label=None,
     secondary_ylim=None,
@@ -454,21 +455,44 @@ def plot_l2_dsd_quicklook(
     **kwargs,
 ):
     """Define L2 DSD default quicklook."""
-    if secondary_var == "R" and secondary_var in xr_obj:
-        secondary_ylim = secondary_ylim if secondary_ylim is not None else (0.1, 200)
-        secondary_yscale = secondary_yscale if secondary_yscale is not None else "log"
-        secondary_label = secondary_label if secondary_label is not None else r"R [$mm hr^{-1}$]"
-        secondary_hlines = secondary_hlines if secondary_hlines is not None else (1, 10, 100)
+    from disdrodb.l2.empirical_dsd import bringi_nw_dm_classification
 
+    bottom_right_str = None
+    if isinstance(xr_obj, xr.Dataset):
+        # Compute event Rmax, Ptot, and define legend string
+        if "R" in xr_obj and "P" in xr_obj:
+            r_max = xr_obj["R"].max().item()
+            p_tot = xr_obj["P"].sum().item()
+            bottom_right_str = f"$R_{{MAX}}$={r_max:.1f} mm/h  $P_{{TOT}}$={p_tot:.1f} mm"
+        # Define secondary variable
+        if secondary_var == "R" and secondary_var in xr_obj:
+            secondary_ylim = secondary_ylim if secondary_ylim is not None else (0.1, 200)
+            secondary_yscale = secondary_yscale if secondary_yscale is not None else "log"
+            secondary_label = secondary_label if secondary_label is not None else r"R [$mm hr^{-1}$]"
+            secondary_hlines = secondary_hlines if secondary_hlines is not None else (1, 10, 100)
+        # Compute precipitation type
+        if precipitation_type is not None:
+            if precipitation_type == "rain_type" and precipitation_type not in xr_obj:
+                if "Dm" in xr_obj and "Nw" in xr_obj:
+                    xr_obj["rain_type"] = bringi_nw_dm_classification(xr_obj["Dm"], xr_obj["Nw"])
+                else:
+                    precipitation_type = None
+            if precipitation_type not in xr_obj:
+                raise ValueError(f"Specified precipitation_type {precipitation_type} is not at Dataset variable.")
+
+    # Plot quicklook
     fig = plot_dsd_quicklook(
         xr_obj,
+        precipitation_type=precipitation_type,
         secondary_var=secondary_var,
         secondary_ylim=secondary_ylim,
         secondary_yscale=secondary_yscale,
         secondary_linestyle=secondary_linestyle,
         secondary_hlines=secondary_hlines,
+        bottom_right_str=bottom_right_str,
         **kwargs,
     )
+
     return fig
 
 
@@ -492,6 +516,9 @@ def plot_dsd_quicklook(
     cbar_as_legend=True,
     cbar_xpos=0.73,
     cbar_width=0.25,
+    # Bottom string
+    bottom_right_str=None,
+    bottom_right_str_fontsize=8,
     # Secondary time-series overlay options
     secondary_var=None,
     secondary_ylim=None,
@@ -534,7 +561,7 @@ def plot_dsd_quicklook(
 
     legend_fontsize = 8
     title_fontsize = 8
-    side_title_fontsize = 6
+    side_title_fontsize = 8
     axis_label_fontsize = 8
     cbar_fontsize = 9
     cbar_labelpad = 6
@@ -825,6 +852,13 @@ def plot_dsd_quicklook(
         ax.tick_params(axis="x", pad=time_ticklabel_pad)
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
+        #### - Format time axis
+        locator = mdates.AutoDateLocator(minticks=4, maxticks=8)
+        formatter = mdates.ConciseDateFormatter(locator)
+        ax.xaxis.set_major_locator(locator)
+        ax.xaxis.set_major_formatter(formatter)
+        ax.xaxis.get_offset_text().set_visible(False)
+
         #### - Add precipitation classification strip at the top of the subplot as inset axes
         if add_precipitation_legend:
             # Get classification values for this time slice
@@ -1043,6 +1077,32 @@ def plot_dsd_quicklook(
             columnspacing=1.2,
             handlelength=0.8,
         )
+
+    #### - Add bottom right legend
+    if bottom_right_str is not None:
+
+        # Compute vertical center of last GridSpec row
+        if add_precipitation_legend:
+            # Reuse precipitation legend axis for perfect alignment
+            precip_ax.text(
+                0.99,
+                0.5,
+                bottom_right_str,
+                ha="right",
+                va="center",
+                fontsize=bottom_right_str_fontsize,
+                transform=precip_ax.transAxes,
+            )
+        else:
+            fig.axes[-1].text(
+                0.99,
+                -0.15,
+                bottom_right_str,
+                ha="right",
+                va="top",
+                fontsize=bottom_right_str_fontsize,
+                transform=axes[-1].transAxes,
+            )
 
     # Return figure
     return fig
