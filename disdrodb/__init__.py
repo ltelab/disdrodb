@@ -31,6 +31,7 @@ from disdrodb.api.io import (
     open_logs_directory,
     open_metadata_directory,
     open_product_directory,
+    open_raw_files,
 )
 from disdrodb.api.search import (
     available_campaigns,
@@ -50,6 +51,7 @@ from disdrodb.l0 import (
     generate_l0a,
     generate_l0b,
     generate_l0b_from_nc,
+    generate_l0c,
     get_reader,
     get_station_reader,
 )
@@ -80,6 +82,8 @@ from disdrodb.routines import (
     run_l2m_station,
     run,
     run_station,
+    get_product_options,
+    get_model_options,
 )
 from disdrodb.utils.manipulations import convert_from_decibel as idecibel
 from disdrodb.utils.manipulations import convert_to_decibel as decibel
@@ -141,12 +145,15 @@ __all__ = [
     "generate_l0a",
     "generate_l0b",
     "generate_l0b_from_nc",
+    "generate_l0c",
     "generate_l1",
     "generate_l2_radar",
     "generate_l2e",
     "generate_l2m",
     "get_data_archive_dir",
     "get_metadata_archive_dir",
+    "get_model_options",
+    "get_product_options",
     "get_reader",
     "get_scattering_table_dir",
     "get_station_reader",
@@ -156,6 +163,7 @@ __all__ = [
     "open_logs_directory",
     "open_metadata_directory",
     "open_product_directory",
+    "open_raw_files",
     "open_sensor_documentation",
     "read_metadata_archive",
     "read_station_metadata",

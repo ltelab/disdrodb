@@ -20,6 +20,7 @@ dependencies:
   - flox
   - tectonic
   - matplotlib-base
+  - pycolorbar
   # Docs
   - jupyter
   - sphinx=5.1.1

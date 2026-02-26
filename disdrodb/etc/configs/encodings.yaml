@@ -56,18 +56,14 @@ Nt:
   fletcher32: false
   contiguous: false
 R:
-  dtype: uint16
-  scale_factor: 0.01
-  _FillValue: 65535
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true
   fletcher32: false
   contiguous: false
 Rm:
-  dtype: uint16
-  scale_factor: 0.01
-  _FillValue: 65535
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true
@@ -174,6 +170,22 @@ raw_drop_number:
   fletcher32: false
   contiguous: false
   _FillValue: 65535
+raw_particle_counts:
+  dtype: uint32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  _FillValue: 4294967295
+raw_drop_counts:
+  dtype: uint32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  _FillValue: 4294967295
 drop_counts:
   dtype: uint32
   zlib: true
@@ -276,6 +288,20 @@ fall_velocity:
   fletcher32: false
   contiguous: false
 drop_number_concentration:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+particle_number_concentration:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+raw_drop_number_concentration:
   dtype: float32
   zlib: true
   complevel: 3

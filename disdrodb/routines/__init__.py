@@ -16,6 +16,7 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB L0 software."""
 
+from disdrodb.routines.options import get_model_options, get_product_options
 from disdrodb.routines.wrappers import (
     create_summary,
     create_summary_station,
@@ -40,6 +41,8 @@ from disdrodb.routines.wrappers import (
 __all__ = [
     "create_summary",
     "create_summary_station",
+    "get_model_options",
+    "get_product_options",
     "run",
     "run_l0",
     "run_l0_station",

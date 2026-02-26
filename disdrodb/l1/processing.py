@@ -26,6 +26,11 @@ from disdrodb.l1.classification import (
 )
 from disdrodb.l1.resampling import add_sample_interval
 from disdrodb.l1_env.routines import load_env_dataset
+from disdrodb.l2.empirical_dsd import (
+    get_effective_sampling_area,
+    get_min_max_diameter,
+    get_particle_number_concentration,
+)
 from disdrodb.utils.manipulations import filter_diameter_bins
 from disdrodb.utils.time import ensure_sample_interval_in_seconds, infer_sample_interval
 from disdrodb.utils.writer import finalize_product
@@ -58,7 +63,7 @@ def generate_l1(
     sensor_name = attrs.get("sensor_name", "")
 
     # --------------------------------------------------------------------------
-    # Retrieve sample interval
+    # Retrieve sample interval [s]
     # --> sample_interval is a coordinate of L0C products
     if "sample_interval" in ds:
         sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"].data)
@@ -78,7 +83,20 @@ def generate_l1(
     ds_l1 = xr.Dataset()
 
     # Add raw_drop_number variable to L1 dataset
+    # - If velocity dimension is available, f(D,V)
+    # - If no velocity dimension, f(D) only (e.g. RD-80, ODM-470)
     ds_l1["raw_drop_number"] = ds["raw_drop_number"]
+
+    # Add raw_particle_counts: f(D)
+    if has_velocity_dimension:
+        ds_l1["raw_particle_counts"] = ds_l1["raw_drop_number"].sum(dim=VELOCITY_DIMENSION)
+    else:  # equal to raw_drop_number, but we keep the name for consistency with other sensors
+        ds_l1["raw_particle_counts"] = ds_l1["raw_drop_number"]
+
+    # Add Dmin and Dmax variables
+    Dmin, Dmax = get_min_max_diameter(ds_l1["raw_particle_counts"])
+    ds_l1["Dmin"] = Dmin
+    ds_l1["Dmax"] = Dmax
 
     # Add sample interval as coordinate (in seconds)
     ds_l1 = add_sample_interval(ds_l1, sample_interval=sample_interval)
@@ -96,6 +114,34 @@ def generate_l1(
         # - Could be removed also in L2E, but we save disk space here
         # - If not removed, can alter e.g. L2M model fitting
         ds_l1 = filter_diameter_bins(ds=ds_l1, minimum_diameter=0.2495)  # it includes the 0.2495-0.3745 bin
+
+    # --------------------------------------------------------------------------
+    # Compute raw particle concentration N(D) (if velocity is available)
+    if has_velocity_dimension:
+
+        # Retrieve spectrum
+        raw_drop_number = ds_l1["raw_drop_number"]
+
+        # Retrieve diameter bin center and width
+        diameter = ds["diameter_bin_center"] / 1000  # m
+        diameter_bin_width = ds["diameter_bin_width"]  # mm
+
+        # Retrieve effective sampling area [m2]
+        sampling_area = get_effective_sampling_area(sensor_name=sensor_name, diameter=diameter)  # m2
+
+        # Retrieve measured velocity
+        velocity = xr.ones_like(raw_drop_number) * ds["velocity_bin_center"]
+        velocity = velocity.fillna(0)
+
+        # Compute N(D)
+        raw_particle_number_concentration = get_particle_number_concentration(
+            particle_number=raw_drop_number,
+            velocity=velocity,
+            diameter_bin_width=diameter_bin_width,
+            sample_interval=sample_interval,
+            sampling_area=sampling_area,
+        )
+        ds_l1["raw_particle_number_concentration"] = raw_particle_number_concentration
 
     # --------------------------------------------------------------------------
     # If (diameter, velocity) spectrum is available, run hydrometeor classification

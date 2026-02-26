@@ -327,23 +327,22 @@ def retrieve_raindrop_beard_fall_velocity(
         Diameter of the raindrops in millimeters.
     ds_env : xarray.Dataset
         A dataset containing the following environmental variables:
+
         - 'altitude' :  Altitude in meters (m).
         - 'latitude' :  Latitude in degrees.
         - 'temperature' : Temperature in degrees Kelvin (K).
         - 'relative_humidity' :  Relative humidity between 0 and 1.
-        - 'sea_level_air_pressure' : Standard atmospheric pressure at sea level in Pascals (Pa).
-        The default is 101_325 Pa.
+        - 'sea_level_air_pressure' : Standard atmospheric pressure at sea level in Pascals (Pa). The default is 101_325 Pa.
         - 'air_pressure': Air pressure in Pascals (Pa). If None, air_pressure at altitude is inferred.
-        - 'lapse_rate' : Atmospheric lapse rate in degrees Celsius or Kelvin per meter (°C/m).
-        The default is 0.0065 K/m.
-        - 'gas_constant_dry_air': Gas constant for dry air in J/(kg*K).
-        The default is 287.04 is J/(kg*K).
+        - 'lapse_rate' : Atmospheric lapse rate in degrees Celsius or Kelvin per meter (°C/m). The default is 0.0065 K/m.
+        - 'gas_constant_dry_air': Gas constant for dry air in J/(kg*K). The default is 287.04 is J/(kg*K).
+
 
     Returns
     -------
     fall_velocity : array-like
         Terminal fall velocity for liquid raindrops.
-    """
+    """  # noqa: E501
     from disdrodb.physics.atmosphere import (
         get_air_density,
         get_air_pressure_at_height,
@@ -479,13 +478,16 @@ def get_rain_fall_velocity(diameter, model, ds_env=None):
     ds_env : xarray.Dataset, optional
         Only required if model is 'Beard1976'.
         A dataset containing the following environmental variables:
+
         - 'altitude' (m)
         - 'latitude' (°)
         - 'temperature' : Temperature in degrees Kelvin (K).
         - 'relative_humidity' :  Relative humidity. A value between 0 and 1.
         - 'sea_level_air_pressure' : Sea level air pressure in Pascals (Pa).
         - 'lapse_rate' : Lapse rate in degrees Celsius per meter (°C/m).
+
         If not specified, sensible default values are used.
+
 
     Returns
     -------
@@ -563,11 +565,14 @@ def get_rain_fall_velocity_from_ds(ds, ds_env=None, model="Beard1976", diameter=
     ds_env : xarray.Dataset, optional
         Only required if model is 'Beard1976'.
         A dataset containing the following environmental variables:
+
         - 'temperature' : Temperature in degrees Kelvin (K).
         - 'relative_humidity' :  Relative humidity. A value between 0 and 1.
-        - 'sea_level_air_pressure' : Sea level air pressure in Pascals (Pa).
-        - 'lapse_rate' : Lapse rate in degrees Celsius per meter (°C/m).
+        - 'sea_level_air_pressure' : Sea level air pressure in Pascals (Pa). The default is 101_325 Pa.
+        - 'lapse_rate' : Lapse rate in degrees Celsius per meter (°C/m). The default is 0.0065 K/m.
+
         If not specified, sensible default values are used.
+
 
     Returns
     -------

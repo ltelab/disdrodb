@@ -72,12 +72,12 @@ class DISDRODB_Base_Accessor:
 
         return get_velocity_bin_edges(self._obj)
 
-    def regularize(self):
+    def regularize(self, **kwargs):
         """Regularize timesteps."""
         from disdrodb.utils.time import regularize_dataset
 
         sample_interval = self._obj.disdrodb.sample_interval
-        return regularize_dataset(self._obj, freq=f"{sample_interval}s")
+        return regularize_dataset(self._obj, freq=f"{sample_interval}s", **kwargs)
 
     def isel(self, indexers=None, drop=False, **indexers_kwargs):
         """Perform index-based dimension selection."""
@@ -97,17 +97,22 @@ class DISDRODB_Base_Accessor:
 
         return align(self._obj, *args)
 
-    def plot_spectrum(self, **kwargs):
+    def plot_spectrum(self, animation=False, **kwargs):
         """Plot spectrum."""
-        from disdrodb.viz.plots import plot_spectrum
+        from disdrodb.viz.plots import plot_spectrum, plot_spectrum_evolution
 
+        if animation:
+            # `plot_spectrum_evolution` is called for its side effects (e.g., displaying an animation)
+            # and does not return a meaningful value
+            plot_spectrum_evolution(self._obj, **kwargs)
+            return None
         return plot_spectrum(self._obj, **kwargs)
 
-    def plot_nd(self, **kwargs):
-        """Plot drop number concentration N(D) timeseries."""
-        from disdrodb.viz.plots import plot_nd
+    def plot_dsd(self, **kwargs):
+        """Plot DSD n(D) or N(D) timeseries."""
+        from disdrodb.viz.plots import plot_dsd
 
-        return plot_nd(self._obj, **kwargs)
+        return plot_dsd(self._obj, **kwargs)
 
 
 @xr.register_dataset_accessor("disdrodb")
@@ -135,6 +140,19 @@ class DISDRODB_Dataset_Accessor(DISDRODB_Base_Accessor):
 
         return plot_raw_and_filtered_spectra(self._obj, **kwargs)
 
+    def plot_dsd_quicklook(self, **kwargs):
+        """Plot DSD n(D) or N(D) timeseries in quicklook mode."""
+        from disdrodb.viz.plots import plot_dsd_quicklook, plot_l1_dsd_quicklook, plot_l2_dsd_quicklook
+
+        # TODO: plot_l0_quicklook
+        ## - plot_l0_quicklook   # remap weather codes to hydrometeor_type, find R if available
+
+        if self._obj.attrs.get("disdrodb_product", "") == "L1":
+            return plot_l1_dsd_quicklook(self._obj, **kwargs)
+        if self._obj.attrs.get("disdrodb_product", "") in ["L2E", "L2M"]:
+            return plot_l2_dsd_quicklook(self._obj, **kwargs)
+        return plot_dsd_quicklook(self._obj, **kwargs)
+
     @property
     def psd(self):
         """Return PSD class from DISDRODB L2M product."""
@@ -149,6 +167,16 @@ class DISDRODB_Dataset_Accessor(DISDRODB_Base_Accessor):
 
         return get_parameters_from_dataset(self._obj)
 
+    def split_into_events(self, variable, **kwargs):
+        """Split a DISDRODB product into events."""
+        from disdrodb.utils.event import split_into_events
+
+        return split_into_events(
+            self._obj,
+            variable=variable,
+            **kwargs,
+        )
+
 
 @xr.register_dataarray_accessor("disdrodb")
 class DISDRODB_DataArray_Accessor(DISDRODB_Base_Accessor):
@@ -156,3 +184,9 @@ class DISDRODB_DataArray_Accessor(DISDRODB_Base_Accessor):
 
     def __init__(self, xarray_obj):
         super().__init__(xarray_obj)
+
+    def plot_dsd_quicklook(self, **kwargs):
+        """Plot DSD n(D) or N(D) timeseries in quicklook mode."""
+        from disdrodb.viz.plots import plot_dsd_quicklook
+
+        return plot_dsd_quicklook(self._obj, **kwargs)

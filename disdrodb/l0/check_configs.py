@@ -146,7 +146,7 @@ class L0BEncodingSchema(CustomBaseModel):
     # if contiguous = True, then zlib must be set to False
     @model_validator(mode="before")
     def check_contiguous_and_zlib(cls, values):
-        """Check the the compression value validity."""
+        """Check the compression value validity."""
         contiguous = values.get("contiguous")
         zlib = values.get("zlib")
         if contiguous and zlib:
@@ -258,7 +258,7 @@ class RawDataFormatSchema(CustomBaseModel):
     n_decimals: int | None
     n_naturals: int | None
     data_range: list[float] | None
-    nan_flags: int | float | str | None = None
+    nan_flags: int | float | str | list | None = None
     valid_values: list[float] | None = None
     dimension_order: list[str] | None = None
     n_values: int | None = None
@@ -304,7 +304,10 @@ def check_cf_attributes(sensor_name: str) -> None:
     cf_dict = read_config_file(sensor_name, product="L0A", filename="l0b_cf_attrs.yml")
     for var, attrs_dict in cf_dict.items():
         for key, value in attrs_dict.items():
-            if not isinstance(value, str):
+            if key == "flag_values":
+                if not isinstance(value, list):
+                    raise ValueError(f"{sensor_name} {var} flag_values should be a list.")
+            elif not isinstance(value, str):
                 raise ValueError(f"Wrong value for {key} in {var} for sensor {sensor_name}.")
 
 

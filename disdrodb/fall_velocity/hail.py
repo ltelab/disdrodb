@@ -231,12 +231,14 @@ def get_hail_fall_velocity(diameter, model, ds_env=None, minimum_diameter=4):
        'Laurie1960', 'Knight1983LD', 'Knight1983HD', 'Heymsfield2014', 'Heymsfield2018', 'Fehlmann2020'.
     ds_env : xarray.Dataset, optional
         A dataset containing the following environmental variables:
+
         - 'altitude' (m)
         - 'latitude' (°)
         - 'temperature' : Temperature in degrees Kelvin (K).
         - 'relative_humidity' :  Relative humidity. A value between 0 and 1.
         - 'sea_level_air_pressure' : Sea level air pressure in Pascals (Pa).
         - 'lapse_rate' : Lapse rate in degrees Celsius per meter (°C/m).
+
         If not specified, sensible default values are used.
 
     Returns

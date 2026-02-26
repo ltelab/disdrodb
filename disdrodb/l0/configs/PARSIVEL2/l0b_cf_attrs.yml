@@ -10,18 +10,122 @@ weather_code_synop_4680:
   description: SYNOP weather code according to table 4680 of Parsivel documentation
   long_name: Weather code SYNOP 4680
   units: ""
+  flag_values: [-2, -1, 0, 51, 52, 53, 57, 58, 61, 62, 63, 67, 68, 71, 72, 73, 74, 75, 76, 77, 89, 90]
+  flag_meanings: >
+    missing
+    noise
+    no_precipitation
+    drizzle_light
+    drizzle_moderate
+    drizzle_heavy
+    drizzle_with_rain_light
+    drizzle_with_rain_moderate_or_heavy
+    rain_light
+    rain_moderate
+    rain_heavy
+    rain_or_drizzle_with_snow_light
+    rain_or_drizzle_with_snow_heavy
+    snow_light
+    snow_moderate
+    snow_heavy
+    ice_pellets_light
+    ice_pellets_moderate
+    ice_pellets_heavy
+    snow_grains
+    hail_light
+    hail_heavy
+  comment: WMO SYNOP present weather codes (Table 4680, wawa).
 weather_code_synop_4677:
   description: SYNOP weather code according to table 4677 of Parsivel documentation
   long_name: Weather code SYNOP 4677
   units: ""
+  flag_values: [-2, -1, 0, 51, 53, 55, 58, 59, 61, 63, 65, 68, 69, 71, 73, 75, 77, 87, 88, 89, 90]
+  flag_meanings: >
+    missing
+    noise
+    no_precipitation
+    drizzle_light
+    drizzle_moderate
+    drizzle_heavy
+    drizzle_with_rain_light
+    drizzle_with_rain_moderate_or_heavy
+    rain_light
+    rain_moderate
+    rain_heavy
+    rain_or_drizzle_with_snow_light
+    rain_or_drizzle_with_snow_heavy
+    snow_light
+    snow_moderate
+    snow_heavy
+    snow_grains
+    ice_pellets_light
+    ice_pellets_moderate_or_heavy
+    hail_light
+    hail_heavy
+  comment: WMO SYNOP present weather codes (Table 4677, ww).
 weather_code_metar_4678:
   description: METAR/SPECI weather code according to table 4678 of Parsivel documentation
   long_name: Weather code METAR 4678
   units: ""
+  flag_values: ["NP", "-DZ", "DZ", "+DZ", "-RADZ", "RADZ", "+RADZ",
+              "-RA", "RA", "+RA", "-RASN", "RASN", "+RASN",
+              "-SN", "SN", "+SN", "SG",
+              "-PL", "PL", "+PL", "-GS", "GS", "+GS", "-GR", "GR"]
+  flag_meanings: >
+    no_precipitation
+    drizzle_light
+    drizzle_moderate
+    drizzle_heavy
+    drizzle_with_rain_light
+    drizzle_with_rain_moderate
+    drizzle_with_rain_heavy
+    rain_light
+    rain_moderate
+    rain_heavy
+    rain_or_drizzle_with_snow_light
+    rain_or_drizzle_with_snow_moderate
+    rain_or_drizzle_with_snow_heavy
+    snow_light
+    snow_moderate
+    snow_heavy
+    snow_grains
+    ice_pellets_light
+    ice_pellets_moderate
+    ice_pellets_heavy
+    graupel_light
+    graupel_moderate
+    graupel_heavy
+    hail_light
+    hail_moderate
+  comment: METAR present weather codes (WMO No. 306).
 weather_code_nws:
   description: NWS weather code according to Parsivel documentation
   long_name: Weather code NWS
   units: ""
+  flag_values: ["C", "L-", "L", "L+", "RL-", "RL", "RL+", "R-", "R", "R+",
+                "RLS-", "RLS", "RLS+", "S-", "S", "S+", "SG", "IP", "SP", "A"]
+  flag_meanings: >
+    no_precipitation
+    drizzle_light
+    drizzle_moderate
+    drizzle_heavy
+    drizzle_with_rain_light
+    drizzle_with_rain_moderate
+    drizzle_with_rain_heavy
+    rain_light
+    rain_moderate
+    rain_heavy
+    rain_or_drizzle_with_snow_light
+    rain_or_drizzle_with_snow_moderate
+    rain_or_drizzle_with_snow_heavy
+    snow_light
+    snow_moderate
+    snow_heavy
+    snow_grains
+    ice_pellets
+    graupel
+    hail
+  comment: NWS categorical present weather codes.
 reflectivity_32bit:
   description: Radar reflectivity
   long_name: Reflectivity 32 bit
@@ -149,7 +253,7 @@ list_particles:
 raw_drop_concentration:
   description: Particle number concentrations per diameter class
   long_name: Raw drop concentration
-  units: log10 1/(m3*mm)
+  units: 1/(m3*mm)
 raw_drop_average_velocity:
   description: Average particle velocities for each diameter class
   long_name: Raw drop average velocity

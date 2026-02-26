@@ -146,8 +146,10 @@ def validate_temporal_resolution_consistency(products_configs_dir):
     Validate temporal resolution consistency across products for each sensor.
 
     Raises warnings if:
+
     - L1 temporal_resolutions doesn't include all L2E and L2M temporal resolutions
     - L2E temporal_resolutions doesn't include all L2M temporal resolutions
+
     """
     sensor_names = available_sensor_names()
     for sensor_name in sensor_names:
@@ -220,7 +222,7 @@ class EventStrategyOptions(CustomBaseModel):
     """Strategy options for event strategy."""
 
     variable: str = Field(..., description="Variable to define events")
-    detection_threshold: int = Field(..., ge=0, description="Minimum number of drops")
+    detection_threshold: float = Field(..., ge=0, description="Minimum number of <variable> to define event timestep")
     neighbor_min_size: int = Field(..., ge=0, description="Minimum neighbor size")
     neighbor_time_interval: str = Field(..., description="Neighbor time interval")
     event_max_time_gap: str = Field(..., description="Maximum time gap for events")

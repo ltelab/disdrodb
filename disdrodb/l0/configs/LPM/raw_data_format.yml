@@ -482,7 +482,7 @@ temperature_ambient:
   data_range:
     - -999.9
     - 99999.0
-  nan_flags: null
+  nan_flags: 99999
   field_number: "46"
 current_heating_voltage_supply:
   n_digits: 3

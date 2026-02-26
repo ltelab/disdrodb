@@ -213,11 +213,15 @@ def unstack_datarray_dimension(da, dim, coord_handling="keep", prefix="", suffix
 #### Fill Values Utilities
 
 
-def define_dataarray_fill_value(da):
+def define_dataarray_fill_value(da):  # noqa: PLR0911
     """Define the fill value for a numerical xarray.DataArray."""
     if np.issubdtype(da.dtype, np.floating):
         return dtypes.NA
-    if np.issubdtype(da.dtype, np.integer):
+    if np.issubdtype(da.dtype, np.datetime64):
+        return np.datetime64("NaT")
+    if np.issubdtype(da.dtype, np.timedelta64):
+        return np.timedelta64("NaT")
+    if np.issubdtype(da.dtype, np.integer):  # datetime and timedelta are subtype of integer !
         if "_FillValue" in da.attrs:
             return da.attrs["_FillValue"]
         if "_FillValue" in da.encoding:

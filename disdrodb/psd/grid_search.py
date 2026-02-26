@@ -23,7 +23,7 @@ MOMENTS = {"M0", "M1", "M2", "M3", "M4", "M5", "M6"}
 INTEGRAL_TARGETS = {"Z", "R", "LWC"} | MOMENTS
 TARGETS = DISTRIBUTION_TARGETS | INTEGRAL_TARGETS
 
-TRANSFORMATIONS = {"identity", "log", "sqrt"}
+TRANSFORMATIONS = {"identity", "log", "log10", "sqrt"}
 CENSORING = {"none", "left", "right", "both"}
 
 DISTRIBUTION_METRICS = {"SSE", "SAE", "MAE", "MSE", "RMSE", "relMAE", "KLDiv", "WD", "JSD", "KS"}
@@ -132,11 +132,13 @@ def check_objectives(objectives):
     ----------
     objectives : list of dict
         List of objective dictionaries, each containing:
+
         - 'target' : str, Target variable (N(D), H(x), R, Z, LWC, or M<p>)
         - 'transformation' : str, Transformation type (identity, log, sqrt)
         - 'censoring' : str, Censoring type (none, left, right, both)
         - 'loss' : str, Error metric (SSE, SAE, MAE, MSE, RMSE, etc.)
         - 'loss_weight' : float, optional, Weight for weighted optimization (auto-set to 1.0 for single objective)
+
 
     Returns
     -------
@@ -450,7 +452,7 @@ def apply_transformation(obs, pred, transformation):
     pred : numpy.ndarray
         Predicted values
     transformation : str
-        Transformation type: 'identity', 'log', or 'sqrt'.
+        Transformation type: 'identity', 'log', 'log10', or 'sqrt'.
 
     Returns
     -------
@@ -459,6 +461,8 @@ def apply_transformation(obs, pred, transformation):
     """
     if transformation == "log":
         return np.log(obs + 1), np.log(pred + 1)
+    if transformation == "log10":
+        return np.log10(obs + 1), np.log10(pred + 1)
     if transformation == "sqrt":
         return np.sqrt(obs), np.sqrt(pred)
     # if transformation == "identity":
@@ -866,6 +870,7 @@ def compute_loss(
     loss : str
         Loss function.
         If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
+
         - ``SSE``: Sum of Squared Errors
         - ``SAE``: Sum of Absolute Errors
         - ``MAE``: Mean Absolute Error
@@ -876,9 +881,12 @@ def compute_loss(
         - ``WD``: Wasserstein Distance
         - ``JSD``: Jensen-Shannon Distance
         - ``KS``: Kolmogorov-Smirnov Statistic
+
         If target is one of ``"R"``, ``"Z"``, ``"LWC"``, or ``"M<p>"``, valid options are:
+
         - ``AE``: Absolute Error
         - ``SE``: Squared Error
+
     check_arguments : bool, optional
         If True, validate input arguments. Default is True.
 
@@ -961,7 +969,8 @@ def compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives, Nc=None):
             Valid options:
 
             - ``"identity"`` : No transformation
-            - ``"log"`` : Logarithmic transformation
+            - ``"log"`` : Natural logarithm transformation
+            - ``"log10"`` : Base-10 logarithmic transformation
             - ``"sqrt"`` : Square root transformation
 
         censoring : str

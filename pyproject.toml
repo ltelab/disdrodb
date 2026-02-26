@@ -48,6 +48,7 @@ dependencies = [
     "bottleneck",
     "flox",
     "matplotlib",
+    "pycolorbar",
 
 ]
 requires-python = ">=3.11"

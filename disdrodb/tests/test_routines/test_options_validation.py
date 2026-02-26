@@ -87,7 +87,7 @@ class TestEventStrategyOptions:
         """Test valid event strategy options."""
         data = copy.deepcopy(ARCHIVE_OPTIONS_EVENT["strategy_options"])
         options = EventStrategyOptions(**data)
-        assert options.detection_threshold == 10
+        assert options.detection_threshold == 10.1
         assert options.neighbor_time_interval == "1MIN"
 
     def test_negative_values_rejected(self):

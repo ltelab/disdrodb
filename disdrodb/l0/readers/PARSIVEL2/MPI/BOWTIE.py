@@ -70,7 +70,7 @@ def add_gps_coordinates(df, filepath):
         return df
 
     # Retrieve station base directory
-    station_base_dir = os.path.join(os.path.sep, *filepath.split(os.path.sep)[:-2])
+    station_base_dir = os.path.join(os.path.sep, *filepath.split(os.path.sep)[:-1])
     # Define GPS files to read
     tracks_filepaths = [os.path.join(station_base_dir, f"{tracks_id}_mastertrack.zip") for tracks_id in tracks_ids]
     # Read GPS files

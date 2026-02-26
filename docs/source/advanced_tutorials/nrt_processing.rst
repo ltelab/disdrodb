@@ -46,9 +46,6 @@ Setup and Configuration
     import numpy as np
     import xarray as xr
     import disdrodb
-    from disdrodb.l0.l0c_processing import finalize_l0c_dataset
-    from disdrodb.routines.options import get_product_options, get_model_options
-    from disdrodb.configs import get_products_configs_dir
 
 **Configure Station**
 
@@ -65,7 +62,7 @@ Setup and Configuration
     temporal_resolution = "1MIN"
 
     # Load products configuration directory (or specify custom path)
-    products_configs_dir = get_products_configs_dir()
+    products_configs_dir = disdrodb.config.get("products_configs_dir")
 
     # Read station metadata
     metadata = disdrodb.read_station_metadata(
@@ -86,7 +83,7 @@ Here we illustrate how to manually generate the L0A DataFrame from specific raw 
 
     # Extract metadata
     sensor_name = metadata["sensor_name"]
-    sample_interval = metadata["measurement_interval"]
+    measurement_interval = metadata["measurement_interval"]
 
     # Get station-specific reader
     reader = disdrodb.get_station_reader(
@@ -111,6 +108,14 @@ Here we illustrate how to manually generate the L0A DataFrame from specific raw 
         reader=reader,
         sensor_name=sensor_name,
         verbose=verbose,
+    )
+
+Alternatively you can also use:
+
+.. code-block:: python
+
+    df = disdrodb.open_raw_files(
+        filepaths=filepaths, data_source=data_source, campaign_name=campaign_name, station_name=station_name
     )
 
 .. tip::
@@ -151,16 +156,24 @@ Ensure temporal consistency by regularizing timestamps and validating measuremen
 
 .. code-block:: python
 
-    # Finalize L0C dataset
+    # Create L0C dataset
     # - Regularizes trailing seconds in timestamps
     # - Validates measurement interval consistency
     # - Computes quality control flags
-    ds_l0c = finalize_l0c_dataset(
+    ds_l0c = disdrodb.generate_l0c(
         ds_l0b,
-        sensor_name=sensor_name,
-        sample_interval=sample_interval,
+        measurement_interval=measurement_interval,
         verbose=verbose,
     )
+
+
+What L0C Processing Does:
+- Drops timesteps with invalid measurement interval (if 'sample_interval' variable exists)
+- Regularizes timestamps to ensure consistent trailing seconds (e.g., 00, 30 for 30s interval)
+- Remove duplicate timesteps if they exist
+- Adds sample_interval coordinate and updates attributes
+- Computes quality control flags for temporal consistency and measurement validity
+
 
 .. note::
 
@@ -172,10 +185,10 @@ Ensure temporal consistency by regularizing timestamps and validating measuremen
    - Removes duplicate timesteps across file boundaries
    - Splits datasets if measurement intervals change
 
-   For NRT processing of individual files, ``finalize_l0c_dataset()`` provides
+   For NRT processing of individual files, ``generate_l0c()`` provides
    the essential time consistency checks without file consolidation.
 
-See :func:`disdrodb.l0.l0c_processing.finalize_l0c_dataset` for implementation details.
+See :func:`disdrodb.l0.l0c_processing.generate_l0c` for implementation details.
 
 **Subset Data for Testing**
 
@@ -235,7 +248,7 @@ Compute empirical rainfall parameters and radar observables from classified L1 d
 .. code-block:: python
 
     # Load L2E processing options
-    l2e_options = get_product_options(
+    l2e_options = disdrodb.get_product_options(
         product="L2E",
         temporal_resolution=temporal_resolution,
         products_configs_dir=products_configs_dir,
@@ -291,7 +304,7 @@ Fit parametric DSD models to derive modeled rainfall parameters.
 .. code-block:: python
 
     # Load L2M processing options
-    l2m_options = get_product_options(
+    l2m_options = disdrodb.get_product_options(
         product="L2M",
         temporal_resolution=temporal_resolution,
         products_configs_dir=products_configs_dir,
@@ -314,8 +327,8 @@ Load configuration for specific parametric model:
 .. code-block:: python
 
     # Load model configuration
-    model_options = get_model_options(
-        model_name="NGAMMA_GS_ND_SSE",  # GAMMA_ML, etc.
+    model_options = disdrodb.get_model_options(
+        model_name="GAMMA_ML",  # GAMMA_ML, NGAMMA_GS_ND_SSE, etc.
         products_configs_dir=products_configs_dir,
     )
 

@@ -343,7 +343,7 @@ def available_stations(
         If None, no filtering on campaign is applied. The default is is ``None``.
     station_names : str or list of str, optional
         One or more station names to include.
-        If None, all stations matching other filters are considered. The default is is ``None``.
+        If None, all stations matching other filters are considered. The default is ``None``.
     available_data : bool, optional
 
         If ``product`` is not specified:
@@ -353,10 +353,10 @@ def available_stations(
 
         If ``product`` is specified:
 
-        - if ``available_data=False``, return stations where the product directory exists in the in the local DISDRODB Data Archive
-        - if ``available_data=True``, return stations where product data exists in the in the local DISDRODB Data Archive.
+        - if ``available_data=False``, return stations where the product directory exists in the local DISDRODB Data Archive
+        - if ``available_data=True``, return stations where product data exists in the local DISDRODB Data Archive.
 
-        The default is is False.
+        The default is False.
 
     return_tuple : bool, optional
         If True, return a list of tuples ``(data_source, campaign_name, station_name)``.
@@ -373,6 +373,7 @@ def available_stations(
         - 'warn'  : emit a warning, then ignore invalid entries
         - 'ignore': silently drop invalid entries
 
+
     data_archive_dir : str or Path-like, optional
         Path to the root of the local DISDRODB Data Archive.
         Required only if ``product`` is specified.
@@ -384,7 +385,7 @@ def available_stations(
         Additional arguments required for some products.
         It must be specified only for product L1, L2E and L2M products !
         For L1, L2E and L2M products, ``temporal_resolution`` is required.
-        FOr L2M product, ``model_name`` is required.
+        For L2M product, ``model_name`` is required.
 
     Returns
     -------

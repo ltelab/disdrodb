@@ -1,4 +1,19 @@
 # -----------------------------------------------------------------------------.
+# Copyright (c) 2021-2026 DISDRODB developers
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# -----------------------------------------------------------------------------.
 """DISDRODB hydrometeor classification and QC module."""
 
 import numpy as np
@@ -19,28 +34,94 @@ from disdrodb.utils.xarray import xr_remap_numeric_array
 DICT_TEMPERATURES = {
     "air_temperature": 6,  # generic and PWS100
     "air_temperature_min": 6,  # PWS100
-    "temperature_ambient": 6,  # LPM
-    "temperature_interior": 10,  # LPM
-    "sensor_temperature": 10,  # PARSIVEL and SWS250
+    "temperature_ambient": 6,  # LPM  (often 99999)
+    "temperature_interior": 10,  # LPM (maybe could be reduced)
+    "sensor_temperature": 15,  # PARSIVEL and SWS250
 }
 TEMPERATURE_VARIABLES = list(DICT_TEMPERATURES)
 
 
 def get_temperature(ds):
-    """Retrieve temperature variable from L0C product."""
+    """Retrieve temperature variable from L0C product.
+
+    This function extracts temperature data from DISDRODB L0C product.
+    The temperature variable chosen varies with sensor types.
+    It prioritize air_temperature when available, but can fallback to internal sensor temperature
+    if more reliable variables are not present.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        DISDRODB L0C dataset containing one or more temperature variables defined
+        in ``DICT_TEMPERATURES``. Expected temperature variables include:
+        'air_temperature', 'air_temperature_min', 'temperature_ambient',
+        'temperature_interior', or 'sensor_temperature'.
+
+    Returns
+    -------
+    temperature : xarray.DataArray or None
+        Temperature time series [°C] with invalid values removed. Returns ``None``
+        if no temperature variable is available in the dataset. Values are set to
+        NaN for timesteps with unrealistic values or large sensor disagreement.
+    snow_temperature_limit : xarray.DataArray or None
+        Snow/rain temperature threshold [°C] corresponding to the selected
+        temperature variable for each timestep. Returns ``None`` if no temperature
+        variable is available.
+
+    Notes
+    -----
+    The function applies the following processing steps:
+
+    1. **Variable Selection Priority**: Searches for temperature variables in the
+       order defined by ``DICT_TEMPERATURES``. Each variable has an associated
+       snow temperature limit (e.g., air_temperature: 6°C, sensor_temperature: 10°C).
+
+    2. **Quality Filtering**: Filters out physically unrealistic temperature values
+       outside the range [-40°C, 35°C].
+
+    3. **Preference Handling**: For each timestep, selects the first available valid
+       temperature following the priority order in ``DICT_TEMPERATURES``. This ensures
+       more reliable variables (e.g., air_temperature) are preferred over less
+       reliable ones (e.g., sensor_temperature).
+
+    4. **Sensor Consistency Check**: Computes the temperature spread across all
+       available sensors at each timestep. If the spread exceeds 10°C, that timestep
+       is flagged as inconsistent and set to NaN, indicating unreliable measurements.
+
+    5. **Snow Limit Assignment**: Returns the temperature threshold for snow/rain
+       discrimination corresponding to the selected temperature variable for each
+       timestep.
+
+    """
     # Check temperature variable is available, otherwise return None
     if not any(var in ds.data_vars for var in DICT_TEMPERATURES):
         return None, None
 
-    # Define temperature available
-    for var, thr in DICT_TEMPERATURES.items():
-        if var in ds:
-            temperature = ds[var]
-            snow_temperature_limit = thr
-            break
+    # Build a (temperature_variable, time) array preserving DICT_TEMPERATURES order.
+    list_da_temperature = []
+    for var, snow_limit in DICT_TEMPERATURES.items():
+        if var in ds.data_vars:
+            da_temperature = ds[var].copy()
+            da_temperature = da_temperature.where((da_temperature >= -40) & (da_temperature <= 35))
+            da_temperature = da_temperature.expand_dims(dim={"temperature_variable": [var]})
+            da_snow_limit = (xr.ones_like(da_temperature) * snow_limit).where(~np.isnan(da_temperature))
+            da_temperature = da_temperature.assign_coords({"snow_limit": da_snow_limit})
+            list_da_temperature.append(da_temperature)
 
-    # Fill NaNs
-    temperature = temperature.ffill("time").bfill("time")
+    # Concatenate variables, then select first valid value per timestep.
+    da_temperature_stack = xr.concat(list_da_temperature, dim="temperature_variable")
+    temperature = da_temperature_stack.bfill("temperature_variable").isel(temperature_variable=0, drop=True)
+    snow_temperature_limit = (
+        da_temperature_stack["snow_limit"].bfill("temperature_variable").isel(temperature_variable=0, drop=True)
+    )
+
+    # Reject timesteps with large disagreement across available temperature sensors.
+    temperature_spread = da_temperature_stack.max(dim="temperature_variable") - da_temperature_stack.min(
+        dim="temperature_variable",
+    )
+    is_inconsistent = temperature_spread > 10
+    temperature = temperature.where(~is_inconsistent)
+    snow_temperature_limit = snow_temperature_limit.where(~is_inconsistent)
     return temperature, snow_temperature_limit
 
 
@@ -301,6 +382,50 @@ def define_graupel_mask(
     )
     mask = np.logical_and(mask_diameter, mask_velocity)
     return mask
+
+
+def define_precipitation_type_from_hydrometeor_type(hydrometeor_type):
+    """Define precipitation_type from hydrometeor_type."""
+    precipitation_type = xr.ones_like(hydrometeor_type["time"], dtype=float) * -2
+    precipitation_type = xr.where(hydrometeor_type.isin([0]), -1, precipitation_type)
+    precipitation_type = xr.where(
+        hydrometeor_type.isin([1, 2, 3, 9]),
+        0,
+        precipitation_type,
+    )  # 9 hail in rainfall class currently
+    precipitation_type = xr.where(hydrometeor_type.isin([5, 6, 7, 8]), 1, precipitation_type)
+    precipitation_type = xr.where(hydrometeor_type.isin([4]), 2, precipitation_type)
+    precipitation_type.attrs.update(
+        {
+            "long_name": "precipitation phase classification",
+            "standard_name": "precipitation_phase",
+            "units": "1",
+            "flag_values": [-2, -1, 0, 1, 2],
+            "flag_meanings": "undefined no_precipitation rainfall snowfall mixed_phase",
+        },
+    )
+    return precipitation_type
+
+
+def add_hydrometeor_type_attrs(hydrometeor_type):
+    """Add CF-attributes to hydrometeor_type DataArray."""
+    hydrometeor_type.attrs = hydrometeor_type.attrs.copy()
+    hydrometeor_type.attrs.update(
+        {
+            "description": "DISDRODB hydrometeor class",
+            "long_name": "hydrometeor type classification",
+            "standard_name": "hydrometeor_classification",
+            "units": "1",
+            "flag_values": [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+            "flag_meanings": (
+                "no_hydrometeor undefined no_precipitation "
+                "drizzle drizzle_and_rain rain mixed "
+                "snow snow_grains ice_pellets graupel hail"
+            ),
+            "comment": "DISDRODB hydrometeor class",
+        },
+    )
+    return hydrometeor_type
 
 
 def classify_raw_spectrum(
@@ -615,7 +740,7 @@ def classify_raw_spectrum(
     # (cond & (label == -1)).sum()
 
     # ---------------------------------
-    # Mixed
+    # Mixed (when R > 1 mm/hr)
     # --> FUTURE: Better clarified the meaning
     # --> FUTURE: R computed with particles only above 3 m/s would help disentagle snow from mixed !
     # --> When R > 1 mm/hr and no splash - solid_liquid_ratio > XXX
@@ -673,12 +798,13 @@ def classify_raw_spectrum(
 
     # ------------------------------------------------------------------------.
     # Improve classification using temperature information if available
+    # - Currently problematic for PARSIVEL when using sensor_temperature when actually snowing
     if temperature is not None:
         temperature = temperature.compute()
         qc_temperature = define_qc_temperature(temperature, sample_interval=sample_interval, threshold_minutes=1440)
 
-        is_surely_rain = (temperature >= snow_temperature_upper_limit) & (qc_temperature == 0)
-        is_surely_snow = (temperature <= rain_temperature_lower_limit) & (qc_temperature == 0)
+        is_surely_rain_given_temperature = (temperature >= snow_temperature_upper_limit) & (qc_temperature == 0)
+        is_surely_snow_given_temperature = (temperature <= rain_temperature_lower_limit) & (qc_temperature == 0)
         is_mixed = label.isin([4, 41])
         is_snow = label.isin([5, 51])
         is_drizzle = label.isin([1])
@@ -689,27 +815,27 @@ def classify_raw_spectrum(
         # Improve mixed classification (4, 41)
         # - If T > snow_temperature_upper_limit --> rain
         # - If T < -5 rain_temperature_lower_limit --> snow
-        label = xr.where(is_surely_rain & is_mixed, 24, label)
-        label = xr.where(is_surely_snow & is_mixed, 52, label)
+        label = xr.where(is_surely_rain_given_temperature & is_mixed, 24, label)
+        label = xr.where(is_surely_snow_given_temperature & is_mixed, 52, label)
+
+        # Improve drizzle classification
+        label = xr.where(is_surely_snow_given_temperature & is_drizzle, 61, label)
 
         # Improve snow classification
         # - If T > snow_temperature_upper_limit --> No hydrometeors
-        label = xr.where(is_surely_rain & is_snow, -21, label)
-
-        # Improve drizzle classification
-        label = xr.where(is_surely_snow & is_drizzle, 61, label)
+        label = xr.where(is_surely_rain_given_temperature & is_snow, -21, label)
 
         # Improve snow grains classification
         # --> If T > snow_temperature_upper_limit --> No hydrometeors
-        label = xr.where(is_surely_rain & is_snow_grain, -21, label)
+        label = xr.where(is_surely_rain_given_temperature & is_snow_grain, -21, label)
 
         # Improve rain classification
         # If T < rain_temperature_lower_limit --> No hydrometeors
-        label = xr.where(is_surely_snow & is_rain, -21, label)
+        label = xr.where(is_surely_snow_given_temperature & is_rain, -21, label)
 
         # Improve graupel classification
         # If T < rain_temperature_lower_limit --> Ice pellets / Sleets
-        label = xr.where(is_surely_snow & is_graupel, 7, label)
+        label = xr.where(is_surely_snow_given_temperature & is_graupel, 7, label)
 
     # ------------------------------------------------------------------------.
     # Define hydrometeor_typevariable
@@ -745,41 +871,12 @@ def classify_raw_spectrum(
     hydrometeor_type = xr.where(hydrometeor_type.isin([7]), 7, hydrometeor_type)
     # Graupel
     hydrometeor_type = xr.where(hydrometeor_type.isin([8]), 8, hydrometeor_type)
-    # Add CF-attributes
-    hydrometeor_type.attrs.update(
-        {
-            "long_name": "hydrometeor type classification",
-            "standard_name": "hydrometeor_classification",
-            "units": "1",
-            "flag_values": [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-            "flag_meanings": (
-                "no_hydrometeor undefined no_precipitation "
-                "drizzle drizzle_and_rain rain mixed "
-                "snow snow_grains ice_pellets graupel hail"
-            ),
-        },
-    )
+    #  Add CF-attributes
+    hydrometeor_type = add_hydrometeor_type_attrs(hydrometeor_type)
 
     # ------------------------------------------------------------------------.
     #### Define precipitation type variable
-    precipitation_type = xr.ones_like(ds["time"], dtype=float) * -2
-    precipitation_type = xr.where(hydrometeor_type.isin([0]), -1, precipitation_type)
-    precipitation_type = xr.where(
-        hydrometeor_type.isin([1, 2, 3, 9]),
-        0,
-        precipitation_type,
-    )  # 9 hail in rainfall class currently
-    precipitation_type = xr.where(hydrometeor_type.isin([5, 6, 7, 8]), 1, precipitation_type)
-    precipitation_type = xr.where(hydrometeor_type.isin([4]), 2, precipitation_type)
-    precipitation_type.attrs.update(
-        {
-            "long_name": "precipitation phase classification",
-            "standard_name": "precipitation_phase",
-            "units": "1",
-            "flag_values": [-2, -1, 0, 1, 2],
-            "flag_meanings": "undefined no_precipitation rainfall snowfall mixed_phase",
-        },
-    )
+    precipitation_type = define_precipitation_type_from_hydrometeor_type(hydrometeor_type)
 
     # ------------------------------------------------------------------------.
     #### Define flag graupel
@@ -846,18 +943,24 @@ def classify_raw_spectrum(
 
     flag_splashing = xr.where((precipitation_type == 0) & (fraction_splash >= 0.1), 1, 0)
     flag_wind_artefacts = xr.where((precipitation_type == 0) & (n_wind_artefacts >= 1), 1, 0)
+
     flag_noise = xr.where((hydrometeor_type == -2), 1, 0)
     flag_spikes = qc_spikes_isolated_precip(hydrometeor_type, sample_interval=sample_interval)
 
     # ------------------------------------------------------------------------.
     #### Define n_particles_<hydro_class>
-    n_graupel_ld_final = xr.where(flag_graupel == 1, n_graupel_ld, 0)
-    n_graupel_hd_final = xr.where(flag_graupel == 2, n_graupel_hd, 0)
+    n_graupel_ld_final = xr.where(flag_graupel > 0, n_graupel_ld, 0)
+    n_graupel_hd_final = xr.where(flag_graupel > 0, n_graupel_hd, 0)
 
-    n_small_hail_final = xr.where(flag_hail == 1, n_small_hail, 0)
-    n_large_hail_final = xr.where(flag_hail == 2, n_large_hail, 0)
+    n_small_hail_final = xr.where(flag_hail > 0, n_small_hail, 0)
+    n_large_hail_final = xr.where(flag_hail > 0, n_large_hail, 0)
     n_margin_fallers_final = xr.where(precipitation_type == 0, n_margin_fallers, 0)
     n_splashing_final = xr.where(flag_splashing == 1, n_splashing, 0)
+    n_wind_artefacts_final = xr.where(
+        (flag_wind_artefacts == 1) & (precipitation_type == 0),
+        n_wind_artefacts,
+        0,
+    )  # maybe when R > XXX ?
 
     # ------------------------------------------------------------------------.
     # Create HC and QC dataset
@@ -876,6 +979,7 @@ def classify_raw_spectrum(
     ds_class["n_large_hail"] = n_large_hail_final
     ds_class["n_margin_fallers"] = n_margin_fallers_final
     ds_class["n_splashing"] = n_splashing_final
+    ds_class["n_wind_artefacts"] = n_wind_artefacts_final
 
     # fraction_splash
     # fraction_margin_fallers
