@@ -19,131 +19,183 @@ An open-source python software for standardized processing, sharing, and analysi
 
 [**Slack**](https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA) | [**Documentation**](https://disdrodb.readthedocs.io/en/latest/)
 
-DISDRODB is an international joint effort to index, collect and homogenize drop size distribution (DSD) data from around the world.
-DISDRODB aims to establish a global standard for sharing disdrometer observations.
-Built on FAIR data principles and Climate & Forecast (CF) conventions, DISDRODB standards facilitate the processing, analysis and visualization of disdrometer data.
+## 📋 Table of Contents
 
-## ℹ️ Software Overview
+- [About DISDRODB](#-about-disdrodb)
+- [Key Features](#-key-features)
+- [Installation](#%EF%B8%8F-installation)
+- [Quick Start](#-quick-start)
+- [Documentation](#-explore-the-disdrodb-documentation)
+- [Contributing](#-feedback-and-contributing-guidelines)
+- [Contributors](#%EF%B8%8F-contributors)
+- [Citation](#citation)
+- [License](#license)
 
-The software enables you to:
+## 🌍 About DISDRODB
 
-- Upload raw data of new disdrometer stations to the DISDRODB Decentralized Data Archive
+DISDRODB is an international collaborative initiative to index, collect, and homogenize drop size distribution (DSD) data from disdrometers worldwide. Our mission is to establish a global standard for sharing disdrometer observations, making precipitation microphysics data accessible and interoperable.
 
-- Download the raw disdrometer data from stations included in the DISDRODB Decentralized Data Archive
+Built on **FAIR data principles** (Findable, Accessible, Interoperable, Reusable) and adhering to **Climate & Forecast (CF) conventions**, DISDRODB provides:
 
-- Convert raw disdrometer data into a standard NetCDF format (DISDRODB L0 product)
+- 🌐 A **decentralized data archive** for raw disdrometer data
+- 📊 **Standardized NetCDF products** for seamless analysis
+- 🔬 **Quality-controlled datasets** ready for scientific research
+- 🤝 An **open community** for collaboration and knowledge sharing
 
-- Generate standardized, homogenized, and quality-checked disdrometer measurements (DISDRODB L1 product)
+## ✨ Key Features
 
-- Compute empirical and model-based drop size distribution parameters and derive geophysical and polarimetric radar variables of interest (DISDRODB L2 product)
+### 🗄️ Data Management
 
-If you have ideas, algorithms, data, or expertise to share, or you want to contribute to the future DISDRODB products, do not hesitate to get in touch!!!
+- **Download** raw disdrometer data from the DISDRODB Decentralized Data Archive
+- **Upload** your own disdrometer station data to contribute to the global archive
+- **Explore** metadata from stations worldwide through standardized formats
 
-Join the [**DISDRODB Slack Workspace**](https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA) to meet the DISDRODB Community!
+### 🔄 Data Processing
+
+- **L0 Product**: Convert raw data into standardized NetCDF format
+- **L1 Product**: Generate quality-checked, homogenized measurements at multiple time resolutions
+- **L2 Product**: Compute DSD parameters and derive radar variables (reflectivity, differential reflectivity, etc.)
+
+### 📈 Analysis Tools
+
+- **Lazy loading**: Efficiently work with large datasets using Dask/Xarray
+- **Event detection**: Automatically identify and analyze precipitation events
+- **Visualization**: Built-in plotting functions for DSD quicklooks and data exploration
+- **xarray accessor**: Extended functionality for disdrometer-specific operations
+
+### 🤝 Community-Driven
+
+- Open-source and community-maintained
+- Active [Slack workspace](https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA) for support and collaboration
+- Regular updates and new features based on user feedback
+
+______________________________________________________________________
+
+## 🛠️ Installation
+
+### conda (Recommended)
+
+DISDRODB can be installed via [conda][conda_link] on Linux, macOS, and Windows:
+
+```bash
+conda install -c conda-forge disdrodb
+```
+
+If conda-forge is not set up for your system, see the [conda-forge installation guide][conda_forge_link].
+
+### pip
+
+Alternatively, install via [pip][pip_link]:
+
+```bash
+pip install disdrodb
+```
+
+### Development Installation
+
+To install the latest development version, see the [documentation][dev_install_link].
+
+______________________________________________________________________
 
 ## 🚀 Quick Start
 
-Create your own DISDRODB Local Data Archive.
+Get started with DISDRODB in three simple steps: download metadata, configure paths, and start analyzing data.
 
-### 📚 Download the DISDRODB Metadata Archive
+### Step 1: Download the DISDRODB Metadata Archive
 
-The DISDRODB Metadata Archive is a collection of metadata files that describe the disdrometer stations included in DISDRODB.
+The Metadata Archive contains information about all disdrometer stations in DISDRODB (locations, sensor types, data availability, etc.).
 
-To download the DISDRODB Metadata Archive, navigate to the desired directory and run:
+**Option A: Clone with git (recommended for staying up-to-date):**
 
 ```bash
 git clone https://github.com/ltelab/DISDRODB-METADATA.git
 ```
 
-Or download a static snapshot without using git:
+**Option B: Download a static snapshot:**
 
 ```bash
-disdrodb_download_metadata_archive /path/to/DISDRODB-METADATA
+disdrodb_download_metadata_archive <path/to/DISDRODB-METADATA>
 ```
 
-### 📚 Define the DISDRODB Configuration File
+### Step 2: Define the DISDRODB Configuration File
 
-The disdrodb software requires to know two directories:
+Configure DISDRODB by specifying two directories:
 
-- `metadata_archive_dir`: the base of your local DISDRODB Metadata Archive
-- `data_archive_dir`: the base of your local DISDRODB Data Archive
+- **`metadata_archive_dir`**: Path to your local DISDRODB Metadata Archive
+- **`data_archive_dir`**: Path where DISDRODB will store downloaded data
 
-On Windows, paths must end with `\DISDRODB`; on macOS/Linux, they must end with `/DISDRODB`.
+> **Note:** Paths must end with `\DISDRODB` (Windows) or `/DISDRODB` (macOS/Linux).
 
 ```python
 import disdrodb
 
-metadata_archive_dir = "/<path_to>/DISDRODB-METADATA/DISDRODB"
-data_archive_dir = "/<path_to>/DISDRODB"
+# Define your local paths
+metadata_archive_dir = "<path_to>/DISDRODB-METADATA/DISDRODB"
+data_archive_dir = "<path_to>/DISDRODB"
+
+# Create configuration file
 disdrodb.define_configs(
     metadata_archive_dir=metadata_archive_dir, data_archive_dir=data_archive_dir
 )
 ```
 
-This creates a `.config_disdrodb.yml` file in your home directory (e.g., `~/.config_disdrodb.yml`).
+This creates a `.config_disdrodb.yml` file in your home directory.
 
-To verify the configuration, open a new Python session and run:
+**Verify your configuration:**
 
 ```python
 import disdrodb
 
-print("Metadata Archive Directory:", disdrodb.get_metadata_archive_dir())
-print("Data Archive Directory:", disdrodb.get_data_archive_dir())
+print("Metadata Archive:", disdrodb.get_metadata_archive_dir())
+print("Data Archive:", disdrodb.get_data_archive_dir())
 ```
 
-Or in the shell:
+**Or via command line:**
 
 ```bash
 disdrodb_metadata_archive_directory
 disdrodb_data_archive_directory
 ```
 
-### 📥 Download the DISDRODB Raw Data Archive
+### Step 3: Download Raw Data and Start Analyzing
 
-To download all data stored into the DISDRODB Decentralized Data Archive,
-you just have to run the following command:
+**Download all available data:**
 
 ```bash
 disdrodb_download_archive
 ```
 
-To download from a specific source (e.g., EPFL):
+**Download from a specific data source:**
 
 ```bash
 disdrodb_download_archive --data-sources EPFL
 ```
 
-Type `disdrodb_download_archive --help` to see further options.
-
-To open the local DISDRODB Data Archive directory, type:
+**Download a specific station:**
 
 ```bash
-disdrodb_open_data_archive
+disdrodb_download_station EPFL EPFL_2009 10
 ```
 
-### 💫 Transform Raw Data to Standardized netCDFs
+> 💡 **Tip:** Use `disdrodb_download_archive --help` for all available options.
 
-If you want to convert all stations raw data into standardized netCDF4 files, run the following command in the terminal:
+______________________________________________________________________
+
+## 💫 Working with DISDRODB Data
+
+### Transform Raw Data into Analysis-Ready NetCDFs
+
+Process raw data into standardized NetCDF products (L0, L1, L2) for a specific station:
 
 ```bash
-disdrodb_run_l0
+disdrodb_run_station EPFL EPFL_2009 10 --parallel True --force True
 ```
 
-Type `disdrodb_run_l0 --help` to see further options.
+> 💡 **Tip:** Use `disdrodb_run_station --help` to explore processing options.
 
-### 💫 Generate DISDRODB L1 and p2 products
+### Analyze L0C Product (Raw Data in NetCDF)
 
-To generate DISDRODB L1 and L2 products, run the following commands in the terminal:
-
-```bash
-disdrodb_run_l1
-disdrodb_run_l2e
-disdrodb_run_l2m
-```
-
-### 💫 Analyze Analysis-Ready Products
-
-The software's `open_dataset` function **lazily** opens all station files of a given product:
+The L0C product contains raw disdrometer data in standardized NetCDF format. Use `open_dataset()` to lazily load data without reading everything into memory:
 
 ```python
 import disdrodb
@@ -157,65 +209,106 @@ ds = disdrodb.open_dataset(
 ds
 ```
 
-This allows you to jump directly into analyzing disdrometer data without worrying about processing steps.
+### Analyze L1 Product (Quality-Controlled Data)
 
-### 💫 Explore the DISDRODB Metadata Archive
+The L1 product provides quality-controlled measurements at multiple temporal resolutions (1MIN, 5MIN, 10MIN, etc.), including hydrometeor classification and quality flags. This is the recommended product for precipitation analysis.
 
-To explore the DISDRODB Metadata Archive, you can type into the terminal:
+```python
+import disdrodb
+import matplotlib.pyplot as plt
+
+# Load L1 product at 1-minute resolution
+ds = disdrodb.open_dataset(
+    product="L1",
+    data_source="EPFL",
+    campaign_name="EPFL_2009",
+    station_name="10",
+    temporal_resolution="1MIN",
+)
+
+# Compute particle counts for event detection
+ds["n_particles"] = ds["n_particles"].compute()
+
+# Identify and visualize precipitation events
+for ds_event in ds.disdrodb.split_into_events(
+    variable="n_particles",
+    threshold=10,
+    neighbor_min_size=2,
+    neighbor_time_interval="5MIN",
+    event_max_time_gap="2H",
+    event_min_duration="20MIN",
+    event_min_size=5,
+    sortby=lambda ds_event: ds_event["n_particles"].sum(dim="time").max(),
+    sortby_order="decreasing",
+):
+    # Generate DSD quicklook plots
+    ds_event.disdrodb.plot_dsd_quicklook(
+        hours_per_slice=3,
+        max_rows=6,
+    )
+    plt.show()
+```
+
+You should see quicklook plot of the PSD for the identified precipitation events, similar to this:
+![alt text](docs/source/static/Figure.Quicklook20091101.EPFL.EPFL_2009.10.1MIN.png)
+
+> 📖 **Learn more:** See the [products documentation](https://disdrodb.readthedocs.io/en/latest/products.html) for detailed information.
+
+### Explore the Metadata Archive
+
+**Open the metadata archive directory:**
 
 ```bash
 disdrodb_open_metadata_archive
 ```
 
-If you wish to analyze the DISDRODB Metadata Archive information of all stations,
-the `read_metadata_archive` python function returns all stations metadata information into an easy to analyze `pandas.DataFrame`:
+**Load all station metadata into a pandas DataFrame:**
 
 ```python
 import disdrodb
 
 df = disdrodb.read_metadata_archive()
-print(df)
+df.head()
 ```
 
-## 📖 Explore the DISDRODB documentation
+______________________________________________________________________
 
-With this introduction, we just scratched the surface of the disdrodb software capabilities.
-To discover more about the DISDRODB products, the download and processing options, or how to contribute your own data to DISDRODB,
-please read the software documentation available at [https://disdrodb.readthedocs.io/en/latest/](https://disdrodb.readthedocs.io/en/latest/).
+## 📖 Explore the DISDRODB Documentation
 
-## 🛠️ Installation
+This README provides a quick overview. For comprehensive information, visit our documentation:
 
-### conda
+📚 **[https://disdrodb.readthedocs.io/en/latest/](https://disdrodb.readthedocs.io/en/latest/)**
 
-DISDRODB can be installed via [conda][conda_link] on Linux, Mac, and Windows.
-Install the package by typing the following command in the terminal:
+### What you'll find:
 
-```bash
-conda install disdrodb
-```
+- 📊 Detailed product specifications (L0, L1, L2)
+- 🔧 Advanced processing options and customization
+- 📤 Guide to contributing your own data
+- 💻 API reference and code examples
+- 📓 Jupyter notebook tutorials
+- ❓ FAQs and troubleshooting
 
-In case conda-forge is not set up for your system yet, see the easy to follow instructions on [conda-forge][conda_forge_link].
-
-### pip
-
-DISDRODB can be installed also via [pip][pip_link] on Linux, Mac, and Windows.
-On Windows you can install [WinPython][winpy_link] to get Python and pip running.
-
-Then, install the DISDRODB package by typing the following command in the terminal:
-
-```bash
-pip install disdrodb
-```
-
-To install the latest development version via pip, see the [documentation][dev_install_link].
+______________________________________________________________________
 
 ## 💭 Feedback and Contributing Guidelines
 
-If you aim to contribute your data or discuss the future development of DISDRODB,
-we highly recommend to join the [**DISDRODB Slack Workspace**](https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA)
+We welcome contributions and feedback from the community! Here's how to get involved:
 
-Feel free to also open a [GitHub Issue](https://github.com/ltelab/disdrodb/issues) or a
-[GitHub Discussion](https://github.com/ltelab/disdrodb/discussions) specific to your questions or ideas.
+### 💬 Join the Community
+
+- **[Slack Workspace](https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA)**: Join discussions, ask questions, and collaborate
+- **[GitHub Discussions](https://github.com/ltelab/disdrodb/discussions)**: Share ideas and start conversations
+- **[GitHub Issues](https://github.com/ltelab/disdrodb/issues)**: Report bugs or request features
+
+### 🤝 Ways to Contribute
+
+- 📊 **Share your data**: Contribute disdrometer observations to the archive
+- 💻 **Improve code**: Submit bug fixes or new features via pull requests
+- 📖 **Enhance documentation**: Help improve guides and examples
+- 🧪 **Develop algorithms**: Propose new analysis methods or quality control procedures
+- 🌍 **Spread the word**: Tell others about DISDRODB
+
+See [CONTRIBUTING.rst](CONTRIBUTING.rst) for detailed guidelines.
 
 ## ✍️ Contributors
 
@@ -226,20 +319,27 @@ Feel free to also open a [GitHub Issue](https://github.com/ltelab/disdrodb/issue
 - [Jacopo Grazioli](https://people.epfl.ch/jacopo.grazioli)
 - [Alexis Berne](https://people.epfl.ch/alexis.berne?lang=en)
 
-## Citation
+## 📄 Citation
 
-You can cite the DISDRODB software by:
+If you use DISDRODB in your research, please cite:
 
-> Gionata Ghiggi, Kim Candolfi, Régis Longchamp, Charlotte Weil, Alexis Berne (2023). ltelab/disdrodb Zenodo. https://doi.org/10.5281/zenodo.7680581
+> Gionata Ghiggi, Kim Candolfi, Régis Longchamp, Charlotte Weil, Alexis Berne (2023). ltelab/disdrodb. Zenodo. https://doi.org/10.5281/zenodo.7680581
 
-If you want to cite a specific version, have a look at the [Zenodo site](https://doi.org/10.5281/zenodo.7680581)
+For version-specific citations, visit the [Zenodo record](https://doi.org/10.5281/zenodo.7680581).
 
-## License
+## 📜 License
 
-The content of this repository is released under the terms of the [GPL 3.0 license](LICENSE).
+This project is licensed under the [GPL 3.0 License](LICENSE).
+
+______________________________________________________________________
+
+<div align="center">
+
+**[⬆ Back to Top](#-disdrodb)**
+
+</div>
 
 [conda_forge_link]: https://github.com/conda-forge/disdrodb-feedstock#installing-disdrodb
 [conda_link]: https://docs.conda.io/en/latest/miniconda.html
 [dev_install_link]: https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors
 [pip_link]: https://pypi.org/project/disdrodb
-[winpy_link]: https://winpython.github.io/

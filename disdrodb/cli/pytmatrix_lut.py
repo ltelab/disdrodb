@@ -50,4 +50,4 @@ def main(
     os.makedirs(os.path.dirname(output), exist_ok=True)
     scatterer.psd_integrator.save_scatter_table(output)
 
-    click.echo(f"✔ LUT written to {output}")
+    click.echo(f"LUT written to {output}")
