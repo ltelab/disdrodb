@@ -16,7 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Reader for OSUG DISDRODB L0C netCDFs."""
+
 import xarray as xr
+
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0b_nc_processing import open_raw_netcdf_file, standardize_raw_dataset
 
@@ -35,13 +37,13 @@ def reader(
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Add time coordinate
     ds["time"] = ds["time"].astype("M8[s]")
-    
+
     # Add sample interval as function of time
-    ds["sample_interval"] = xr.ones_like(ds["time"], dtype=float)*ds["sample_interval"].item()
+    ds["sample_interval"] = xr.ones_like(ds["time"], dtype=float) * ds["sample_interval"].item()
     ds = ds.reset_coords("sample_interval")
-    
+
     # Define dictionary mapping dataset variables to select and rename
-    dict_vars = { 
+    dict_vars = {
         "sample_interval": "sample_interval",
         "rainfall_rate_32bit": "rainfall_rate_32bit",
         "rainfall_accumulated_32bit": "rainfall_accumulated_32bit",
@@ -68,17 +70,17 @@ def reader(
         "wind_speed": "wind_speed",
         "wind_direction": "wind_direction",
     }
-    dict_vars = {k:v for k, v in dict_vars.items() if k in ds}
+    dict_vars = {k: v for k, v in dict_vars.items() if k in ds}
     dict_names = {
         ### Dimensions
         "diameter_bin_center": "diameter_bin_center",
         "velocity_bin_center": "velocity_bin_center",
-        ### Variables        
+        ### Variables
     }
     dict_names.update(dict_vars)
- 
+
     # Rename dataset variables and columns and infill missing variables
     ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="PARSIVEL2")
- 
+
     # Return the dataset adhering to DISDRODB L0B standards
     return ds
