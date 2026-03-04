@@ -21,13 +21,13 @@ An open-source python software for standardized processing, sharing, and analysi
 
 ## 📋 Table of Contents
 
-- [About DISDRODB](#-about-disdrodb)
-- [Key Features](#-key-features)
-- [Installation](#%EF%B8%8F-installation)
-- [Quick Start](#-quick-start)
-- [Documentation](#-explore-the-disdrodb-documentation)
-- [Contributing](#-feedback-and-contributing-guidelines)
-- [Contributors](#%EF%B8%8F-contributors)
+- [About DISDRODB](#about-disdrodb)
+- [Key Features](#key-features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Documentation](#explore-the-disdrodb-documentation)
+- [Contributing](#feedback-and-contributing-guidelines)
+- [Contributors](#contributors)
 - [Citation](#citation)
 - [License](#license)
 
@@ -168,7 +168,7 @@ disdrodb_download_archive
 **Download from a specific data source:**
 
 ```bash
-disdrodb_download_archive --data-sources EPFL
+disdrodb_download_archive --data_sources EPFL
 ```
 
 **Download a specific station:**

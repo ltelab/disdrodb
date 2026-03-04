@@ -129,7 +129,7 @@ Alternatively, if you want the reader for a specific station, use the ``get_stat
         station_name="60",
     )
 
-
+.. _reader_structure:
 
 Reader Structure
 ------------------

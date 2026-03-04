@@ -50,7 +50,7 @@ def unzip_file(filepath: str, dest_path: str) -> None:
         zip_ref.extractall(dest_path)
 
 
-def unzip_file_on_terminal(filepath: str, dest_path: str) -> str:
+def unzip_file_on_terminal(filepath: str, dest_path: str):
     """Unzip a file into a directory using the terminal command.
 
     Parameters

@@ -32,10 +32,29 @@ def _env_scripts_dir() -> Path:
     Works for conda envs and venvs on Linux/macOS/Windows.
     """
     exe = Path(sys.executable).resolve()
+
     if os.name == "nt":
-        # ...\env\python.exe -> ...\env\Scripts
-        return exe.parent / "Scripts"
-    # .../env/bin/python -> .../env/bin
+        parent = exe.parent
+
+        # venv/virtualenv layout: <venv>\Scripts\python.exe  -> <venv>\Scripts
+        if parent.name.lower() == "scripts" and parent.exists():
+            return parent
+
+        # conda-style layout: <env>\python.exe -> <env>\Scripts
+        cand = parent / "Scripts"
+        if cand.exists():
+            return cand
+
+        # less common: <env>\bin\python.exe (msys/cygwin style)
+        if parent.name.lower() == "bin" and parent.exists():
+            return parent
+
+        # Raise error otherwise
+        raise FileNotFoundError(
+            f"Could not determine scripts directory for Windows environment. Checked: {parent} and {cand}",
+        )
+
+    # POSIX: typically .../env/bin/python -> .../env/bin
     return exe.parent
 
 
