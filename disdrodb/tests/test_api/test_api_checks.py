@@ -19,11 +19,11 @@
 import datetime
 import os
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
 import pytest
-import pytz
 
 from disdrodb import package_dir
 from disdrodb.api.checks import (
@@ -241,7 +241,7 @@ def test_check_time() -> None:
     # Check non-UTC timezone
     with pytest.raises(ValueError):
         check_time(
-            datetime.datetime(2014, 12, 31, 12, 30, 30, 300, tzinfo=pytz.timezone("Europe/Zurich")),
+            datetime.datetime(2014, 12, 31, 12, 30, 30, 300, tzinfo=ZoneInfo("Europe/Zurich")),
         )
 
 
@@ -300,7 +300,7 @@ def test_check_start_end_time() -> None:
         with pytest.raises(ValueError):
             check_start_end_time(
                 datetime.datetime(2014, 12, 31, 12, 30, 30, 300),
-                datetime.datetime.now(tz=pytz.timezone(timezone)).replace(tzinfo=None),
+                datetime.datetime.now(tz=ZoneInfo(timezone)).replace(tzinfo=None),
             )
 
     # Specifying timezone different than UTC should throw exception
@@ -308,20 +308,20 @@ def test_check_start_end_time() -> None:
         with pytest.raises(ValueError):
             check_start_end_time(
                 datetime.datetime(2014, 12, 31, 12, 30, 30, 300),
-                datetime.datetime.now(tz=pytz.timezone(timezone)),
+                datetime.datetime.now(tz=ZoneInfo(timezone)),
             )
 
     # This should pass as the time is in UTC
     check_start_end_time(
         datetime.datetime(2014, 12, 31, 12, 30, 30, 300),
-        datetime.datetime.now(tz=pytz.utc),
+        datetime.datetime.now(tz=datetime.UTC),
     )
 
     # Do the same but in a timezone that is behind UTC (this should pass)
     for timezone in ["America/New_York", "America/Santiago"]:
         check_start_end_time(
             datetime.datetime(2014, 12, 31, 12, 30, 30, 300),
-            datetime.datetime.now(tz=pytz.timezone(timezone)).replace(tzinfo=None),
+            datetime.datetime.now(tz=ZoneInfo(timezone)).replace(tzinfo=None),
         )
 
     # Test endtime in UTC. This should pass as UTC time generated in the test is slightly
