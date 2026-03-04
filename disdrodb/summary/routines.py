@@ -4897,7 +4897,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
 
     #### ---------------------------------------------------------------------.
     #### Create L2E RADAR Summary Plots
-    if len(df) > 1000:
+    if len(df) > 1000 or os.environ.get("PYTEST_CURRENT_TEST"):
         # Summary plots at X, C, S bands
         if "DBZH_X" in df:
             filename = define_filename(
