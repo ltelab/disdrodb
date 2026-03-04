@@ -6,11 +6,13 @@ Readers
 
 DISDRODB supports reading and loading data from many input file formats.
 
-The following subsections describe, first, what a DISDRODB reader is and how it can be defined.
+This guide describes:
 
-Then, it illustrates multiple methods how a DISDRODB reader can be called (i.e. from terminal or within python) to process raw data into DISDRODB L0 products.
+1. What a DISDRODB reader is and how it is defined
+2. How to call a DISDRODB reader (from terminal or Python) to process raw data into DISDRODB L0 products
+3. How to develop new readers for custom data formats
 
-If you are looking for the ``DISDRODB Reader Implementation Tutorial`` click the link here below:
+For a hands-on tutorial on implementing a new reader, see:
 
 .. toctree::
    :maxdepth: 1
@@ -18,67 +20,80 @@ If you are looking for the ``DISDRODB Reader Implementation Tutorial`` click the
    tutorials/reader_preparation
 
 
-What is a reader
+What is a Reader?
 -------------------
 
-A DISDRODB reader is a python function responsible for reading one raw data file and converting it into a DISDRODB-compliant object.
+A DISDRODB reader is a Python function that reads one raw data file and converts it into a DISDRODB-compliant format.
 
-Depending on the raw data file format, the reader will produce either an L0A ``pandas.DataFrame`` or an L0B ``xarray.Dataset``.
-When it ingests a raw text file, the reader must return a DISDRODB L0A ``pandas.DataFrame``,
-while when it ingests a raw netCDF file, the reader must return a DISDRODB L0B ``xarray.Dataset``.
+**Output Format Depends on Input Type:**
+
+Depending on the raw data file format, the reader produces either:
+
+- **L0A**: A ``pandas.DataFrame`` (for raw text files)
+- **L0B**: An ``xarray.Dataset`` (for raw NetCDF files)
+
+**Reader for Raw Text Files**
 
 For raw text files, the reader function:
 
-1. defines the appropriate options (i.e., delimiter, header row, encoding) to read the raw text file into a ``pandas.DataFrame``;
+1. Defines the appropriate options (delimiter, header row, encoding) to read the raw text file into a ``pandas.DataFrame``
 
-2. loads the raw text file into a ``pandas.DataFrame``, assigning correct column names;
+2. Loads the raw text file into a ``pandas.DataFrame``, assigning correct column names
 
-3. adapts the ``pandas.DataFrame`` to DISDRODB L0A standards (e.g., drops non-DISDRODB columns, ensures a UTC ``time`` column in datetime format);
+3. Adapts the ``pandas.DataFrame`` to DISDRODB L0A standards (drops non-DISDRODB columns, ensures a UTC ``time`` column in datetime format)
 
-4. returns the ``pandas.DataFrame`` in DISDRODB L0A format.
+4. Returns the ``pandas.DataFrame`` in DISDRODB L0A format
 
 
-In the case of raw netCDF files, the reader function:
+**Reader for Raw NetCDF Files**
 
-1. opens the file into an ``xarray.Dataset``;
+In the case of raw NetCDF files, the reader function:
 
-2. renames dataset variables to match DISDRODB conventions;
+1. Opens the file into an ``xarray.Dataset``
 
-3. adapts the ``xarray.Dataset`` to DISDRODB L0B standards (e.g., drops variables not in the expected set);
+2. Renames dataset variables to match DISDRODB conventions
 
-4. returns the ``xarray.Dataset`` in DISDRODB L0B format.
+3. Adapts the ``xarray.Dataset`` to DISDRODB L0B standards (drops variables not in the expected set)
 
+4. Returns the ``xarray.Dataset`` in DISDRODB L0B format
+
+
+**Purpose of Readers**
 
 In both cases, the reader encapsulates file parsing logic and cleanup rules to standardize
-raw measurements to the DISDRODB format.
+raw measurements into the DISDRODB format.
+
+**Reader Configuration in Station Metadata**
+
+In the DISDRODB metadata for each station:
+
+* The ``reader`` field references the reader function required to process the station's raw data
+
+* The ``raw_data_format`` variable specifies whether the source data are text (``txt``) or NetCDF (``netcdf``) files
+
+* The ``raw_data_glob_pattern`` defines which raw data files in the ``DISDRODB/RAW/<DATA_SOURCE>/<CAMPAIGN_NAME>/<STATION_NAME>/data`` directory
+  will be ingested during the DISDRODB L0 processing chain
 
 
-In the DISDRODB metadata of each station:
-
-* the ``reader`` reference points DISDRODB to the reader required to process the station's raw data.
-
-* the ``raw_data_format`` variable specifies whether the source data are text (``txt``) or netCDF files.
-
-* the ``raw_data_glob_pattern`` defines which raw data files in the ``DISDRODB/RAW/<DATA_SOURCE>/<CAMPAIGN_NAME>/<STATION_NAME>/data`` directory will be ingested
-  in the DISDRODB L0 processing chain.
-
-
-Available readers
+Available Readers
 ------------------
 
-In the disdrodb software, the readers are organized by sensor name and data source.
-You can have a look on how the readers looks like by exploring
-the `DISDRODB.l0.readers directory <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers>`_.
+In the disdrodb software, readers are organized by sensor name and data source.
+You can explore existing readers in the `DISDRODB.l0.readers directory <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers>`_.
 
-You can open the local disdrodb software readers directory typing in the terminal:
+**Open Readers Directory**
+
+To open the local disdrodb readers directory, use the terminal command:
 
 .. code:: bash
 
     disdrodb_open_readers_directory
 
 
-In python, the function ``available_readers`` returns a list with all readers available for a given sensor.
-By specifying the optional ``data_sources`` argument, only the readers references for the specified data sources are returned.
+**List Available Readers in Python**
+
+The ``available_readers`` function returns a list of all readers available for a given sensor.
+By specifying the optional ``data_sources`` argument, you can filter readers for specific data sources:
 
 .. code-block:: python
 
@@ -89,7 +104,9 @@ By specifying the optional ``data_sources`` argument, only the readers reference
     available_readers(sensor_name=sensor_name, data_sources=["EPFL", "NASA"])
 
 
-When you know the reader reference, you can easily retrieve the reader function by using the ``get_reader`` function:
+**Get a Specific Reader**
+
+Once you know the reader reference, you can retrieve the reader function using ``get_reader``:
 
 .. code-block:: python
 
@@ -98,7 +115,9 @@ When you know the reader reference, you can easily retrieve the reader function 
     reader = disdrodb.get_reader(reader_reference="EPFL/LOCARNO_2018", sensor_name="PARSIVEL")
 
 
-Alternatively, if you are looking for the reader of a specific station, you can use the ``get_station_reader`` function:
+**Get Reader for a Specific Station**
+
+Alternatively, if you want the reader for a specific station, use the ``get_station_reader`` function:
 
 .. code-block:: python
 
@@ -112,19 +131,17 @@ Alternatively, if you are looking for the reader of a specific station, you can 
 
 
 
-.. _reader_structure:
-
-Reader structure
+Reader Structure
 ------------------
 
-In the following two subsections we detail the structure of the disdrodb readers
-for ingesting raw text files and raw netCDF files.
+The following subsections detail the structure of DISDRODB readers
+for ingesting raw text files and raw NetCDF files.
 
 
-Reader for raw text files
+Reader for Raw Text Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The reader function for ingesting raw text files is typically structured as follow:
+The reader function for ingesting raw text files is typically structured as follows:
 
 .. code-block:: python
 
@@ -162,43 +179,51 @@ The reader function for ingesting raw text files is typically structured as foll
         return df
 
 
-In the reader function:
+**Reader Function Components:**
 
-1. The ``column_names`` list defines the header of the raw text file.
+1. The ``column_names`` list defines the header (column names) of the raw text file
 
-2. The ``reader_kwargs`` dictionary contains all specifications to open the text file into
-   a ``pandas.DataFrame``. The possible key-value arguments are listed `pandas.read_csv <https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html>`_
+2. The ``reader_kwargs`` dictionary contains all specifications for opening the text file into
+   a ``pandas.DataFrame``. The possible key-value arguments are listed in `pandas.read_csv <https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html>`_
 
-3. The last part of the reader function code take care of apply ad-hoc
-   processing to make the ``pandas.DataFrame`` compliant with the DISDRODB L0A standards.
-   Typically, the reader include code to drop columns not compliant with the expected set of DISDRODB variables
-   and to create a UTC ``time`` column into datetime type format.
-   In the returned ``pandas.DataFrame``, each row must correspond to one timestep.
+3. The last part of the reader function applies ad-hoc processing to make the ``pandas.DataFrame``
+   compliant with DISDRODB L0A standards. Typically, this includes:
 
-In the DISDRODB L0A format, the raw precipitation spectrum, named ``raw_drop_number`` ,
-it is expected to be defined as a string with a series of values separated by a delimiter like ``,`` or ``;``.
-Therefore, the ``raw_drop_number`` field value is expected to look like ``"000,001,002, ..., 001"``.
+   - Dropping columns not compliant with the expected set of DISDRODB variables
+   - Creating a UTC ``time`` column in datetime format
+   - Ensuring each row corresponds to one timestep
 
-For example, if the ``raw_drop_number`` strings looks like one of the following three cases,
-in the last part of the reader function you need to take care of processing the ``raw_drop_number`` column
-and convert it to the expected format:
+**Raw Drop Number Format**
+
+In the DISDRODB L0A format, the raw precipitation spectrum (``raw_drop_number``) must be
+defined as a string with values separated by a delimiter such as ``,`` or ``;``.
+The ``raw_drop_number`` field value should look like ``"000,001,002,...,001"``.
+
+**Examples of Raw Drop Number Conversion:**
+
+If the ``raw_drop_number`` strings in your raw data look like any of the following cases,
+you need to convert them to the expected format in the reader function:
 
 * Case 1: ``"000001002 ...001"``. Convert to ``"000,001,002, ..., 001"``.  See `DELFT reader here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/NETHERLANDS/DELFT.py>`_.
 * Case 2: ``"000 001 002 ... 001"``. Convert to ``"000,001,002, ..., 001"``.  See `CHONGQING reader here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/CHINA/CHONGQING.py>`_.
 * Case 3: ``",,,1,2,...,,,"``. Convert to ``"0,0,0,1,2,...,0,0,0"``.  See `SIRTA reader here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/FRANCE/SIRTA_OTT2.py>`_.
 
-When a text reader is invoked by the DISDRODB L0A processing chain, the disdrodb software
+**Automatic Data Cleaning**
+
+When a text reader is invoked by the DISDRODB L0A processing chain, the software
 automatically applies the following cleaning steps to the ``pandas.DataFrame``:
 
-* removes any rows with undefined timesteps,
+* Removes rows with undefined timesteps
 
-* filters out rows that contain corrupted values,
+* Filters out rows containing corrupted values
 
-* trims trailing spaces from all string-type columns,
+* Trims trailing spaces from all string-type columns
 
-* drop duplicated timesteps, keeping only the first occurrence of each.
+* Drops duplicated timesteps, keeping only the first occurrence
 
-Because these checks are already applied downstream, you don't need to implement them yourself in the reader function.
+Because these checks are applied automatically downstream, you don't need to implement them in the reader function.
+
+**Manual Application of Cleaning Steps**
 
 If you want to manually apply the DISDRODB L0A processing chain cleaning steps,
 you can simply pass the ``pandas.DataFrame`` returned by the reader to the ``sanitize_df`` function:
@@ -216,14 +241,16 @@ you can simply pass the ``pandas.DataFrame`` returned by the reader to the ``san
     df = sanitize_df(df)
 
 
-The raw text files reader template is available at
-`https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/template_reader_raw_text_data.py  <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/template_reader_raw_text_data.py>`_.
+**Reader Template**
+
+A reader template for raw text files is available at
+`https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/template_reader_raw_text_data.py <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/template_reader_raw_text_data.py>`_.
 
 
-Reader for raw netCDF files
+Reader for Raw NetCDF Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The reader function for ingesting raw netCDF files is typically structured as follow:
+The reader function for ingesting raw NetCDF files is typically structured as follows:
 
 .. code-block:: python
 
@@ -265,26 +292,29 @@ The reader function for ingesting raw netCDF files is typically structured as fo
         return ds
 
 
-In the reader function:
+**Reader Function Components:**
 
-1. The ``dict_names`` dictionary mapping the dimension and variables names of the source netCDF to the DISDRODB L0B standards.
-   Variables not present the ``dict_names`` are dropped from the dataset.
-   Variables specified in ``dict_names`` but missing in the dataset, are added as NaN arrays.
+1. The ``dict_names`` dictionary maps the dimension and variable names of the source NetCDF to DISDRODB L0B standards.
 
-2. The last part of the reader function code takes care of apply ad-hoc
-   processing to make the ``xarray.Dataset`` compliant with the DISDRODB L0B standards.
+   - Variables not present in ``dict_names`` are dropped from the dataset
+   - Variables specified in ``dict_names`` but missing in the dataset are added as NaN arrays
 
+2. The last part of the reader function applies ad-hoc processing to make the ``xarray.Dataset``
+   compliant with DISDRODB L0B standards.
 
-When a netCDF reader is invoked by the DISDRODB L0B processing chain, the disdrodb software
+**Automatic Data Cleaning**
+When a NetCDF reader is invoked by the DISDRODB L0B processing chain, the software
 automatically applies the following cleaning steps to the ``xarray.Dataset``:
 
-* replace classical nan flags values with ``np.nan`` values,
+* Replaces classical NaN flag values with ``np.nan``
 
-* replace invalid value to ``np.nan``,
+* Replaces invalid values with ``np.nan``
 
-* set values outside the data range to ``np.nan``.
+* Sets values outside the valid data range to ``np.nan``
 
-Because these checks are already applied downstream, you don't need to implement them yourself in the reader function.
+Because these checks are applied automatically downstream, you don't need to implement them in the reader function.
+
+**Manual Application of Cleaning Steps**
 
 If you want to manually apply the DISDRODB L0B processing chain cleaning steps,
 you can simply pass the ``xarray.Dataset`` returned by the reader to the ``sanitize_ds`` function:
@@ -302,16 +332,18 @@ you can simply pass the ``xarray.Dataset`` returned by the reader to the ``sanit
     ds = sanitize_ds(ds)
 
 
-The raw netCDF files reader template is available at `https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/template_reader_raw_netcdf_data.py <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/template_reader_raw_netcdf_data.py>`_.
+**Reader Template**
+
+A reader template for raw NetCDF files is available at `https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/template_reader_raw_netcdf_data.py <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/template_reader_raw_netcdf_data.py>`_.
 
 
 
-How to develop a new reader
+How to Develop a New Reader
 -----------------------------
 
-The `Reader Implementation Tutorial <https://disdrodb.readthedocs.io/en/latest/tutorials/reader_preparation.html>`_ subsection provides read-only access to the DISDRODB Reader Implementation Tutorial.
-`The original Jupyter Notebook tutorial <https://github.com/ltelab/disdrodb/blob/main/tutorials/reader_preparation.ipynb>`_ is available in the disdrodb ``/tutorials`` repository and can be adapted
-to implement new readers.
+The `Reader Implementation Tutorial <https://disdrodb.readthedocs.io/en/latest/tutorials/reader_preparation.html>`_ provides a step-by-step guide to implementing a new reader.
+The `original Jupyter Notebook tutorial <https://github.com/ltelab/disdrodb/blob/main/tutorials/reader_preparation.ipynb>`_ is available in the disdrodb ``/tutorials`` directory and can be adapted
+for implementing new readers.
 
-Please refers to the :ref:`Step 8: Implement the reader <step8>` subsection of the
-`How to Contribute New Data <https://disdrodb.readthedocs.io/en/latest/contribute_data.html>`_ section of the documentation for further detailed information.
+For detailed information, see the :ref:`Step 8: Implement the reader <step8>` subsection of the
+`How to Contribute New Data <https://disdrodb.readthedocs.io/en/latest/contribute_data.html>`_ documentation.

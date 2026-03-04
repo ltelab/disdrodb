@@ -60,7 +60,7 @@ Built on **FAIR data principles** (Findable, Accessible, Interoperable, Reusable
 
 - **Lazy loading**: Efficiently work with large datasets using Dask/Xarray
 - **Event detection**: Automatically identify and analyze precipitation events
-- **Visualization**: Built-in plotting functions for DSD quicklooks and data exploration
+- **Visualization**: Built-in plotting functions for DSD quick-looks and data exploration
 - **xarray accessor**: Extended functionality for disdrometer-specific operations
 
 ### 🤝 Community-Driven
@@ -103,9 +103,9 @@ Get started with DISDRODB in three simple steps: download metadata, configure pa
 
 ### Step 1: Download the DISDRODB Metadata Archive
 
-The Metadata Archive contains information about all disdrometer stations in DISDRODB (locations, sensor types, data availability, etc.).
+The Metadata Archive contains information about all disdrometer stations in DISDRODB (location, sensor type, data availability, etc.).
 
-**Option A: Clone with git (recommended for staying up-to-date):**
+**Option A: Clone with Git (recommended for staying up-to-date):**
 
 ```bash
 git clone https://github.com/ltelab/DISDRODB-METADATA.git
@@ -121,8 +121,8 @@ disdrodb_download_metadata_archive <path/to/DISDRODB-METADATA>
 
 Configure DISDRODB by specifying two directories:
 
-- **`metadata_archive_dir`**: Path to your local DISDRODB Metadata Archive
-- **`data_archive_dir`**: Path where DISDRODB will store downloaded data
+- **`metadata_archive_dir`**: Path to your local DISDRODB Metadata Archive (the cloned repository)
+- **`data_archive_dir`**: Path where DISDRODB will store downloaded raw data and processing products
 
 > **Note:** Paths must end with `\DISDRODB` (Windows) or `/DISDRODB` (macOS/Linux).
 
@@ -195,7 +195,7 @@ disdrodb_run_station EPFL EPFL_2009 10 --parallel True --force True
 
 ### Analyze L0C Product (Raw Data in NetCDF)
 
-The L0C product contains raw disdrometer data in standardized NetCDF format. Use `open_dataset()` to lazily load data without reading everything into memory:
+The L0C product contains raw disdrometer data in standardized NetCDF format. Use `open_dataset()` to efficiently load data with lazy evaluation (data is only loaded into memory when needed):
 
 ```python
 import disdrodb
@@ -241,7 +241,7 @@ for ds_event in ds.disdrodb.split_into_events(
     sortby=lambda ds_event: ds_event["n_particles"].sum(dim="time").max(),
     sortby_order="decreasing",
 ):
-    # Generate DSD quicklook plots
+    # Generate DSD quick-look plots
     ds_event.disdrodb.plot_dsd_quicklook(
         hours_per_slice=3,
         max_rows=6,
@@ -249,7 +249,7 @@ for ds_event in ds.disdrodb.split_into_events(
     plt.show()
 ```
 
-You should see quicklook plot of the PSD for the identified precipitation events, similar to this:
+You should see quick-look plots of the PSD for the identified precipitation events, similar to this:
 ![alt text](docs/source/static/Figure.Quicklook20091101.EPFL.EPFL_2009.10.1MIN.png)
 
 > 📖 **Learn more:** See the [products documentation](https://disdrodb.readthedocs.io/en/latest/products.html) for detailed information.

@@ -1,17 +1,27 @@
 .. _sensor_configurations:
 
 =========================
-Sensors Configurations
+Sensor Configurations
 =========================
 
-DISDRODB tailors processing of disdrometer measurements based on instrument type and characteristics.
+DISDRODB tailors the processing of disdrometer measurements based on instrument type and characteristics.
 
-Currently, disdrodb can process data from the
-OTT Parsivel (``PARSIVEL``), OTT Parsivel2 (``PARSIVEL2``),
-Thies Laser Precipitation Monitor (``LPM``) and Disdromet RD-80 (``RD80``) disdrometers.
+**Currently Supported Sensors:**
+
+DISDRODB can currently process data from:
+
+* Distromet RD-80 (``RD80``)
+* OTT Parsivel (``PARSIVEL``)
+* OTT Parsivel2 (``PARSIVEL2``)
+* Thies Laser Precipitation Monitor (``LPM``)
+* Campbell Present Weather Sensor 100 (``PWS100``)
+* Eigenbrot Optical Disdrometer 470 (``ODM470``),
+* Biral Visibility and Present Weather Sensors (``SWS250``).
 
 
-The sensor configurations already implemented can be listed by typing the command:
+**List Available Sensor Configurations**
+
+To view all available sensor configurations, use:
 
 .. code-block:: python
 
@@ -20,129 +30,202 @@ The sensor configurations already implemented can be listed by typing the comman
     disdrodb.available_sensor_names()
 
 
-The sensor configurations are stored within the disdrodb software
-`disdrodb.l0.configs <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/configs>`_ directory.
-In this directory, the name of the subdirectories correspond to the ``sensor_name``.
+**Configuration File Structure**
 
-For each sensor, the following list of configuration YAML files are required:
+Sensor configurations are stored in the
+`disdrodb.l0.configs <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/configs>`_ directory.
+Each sensor has its own subdirectory named after the ``sensor_name``.
+
+**Required Configuration Files**
+
+For each sensor, the following configuration YAML files are required:
 
 |   📁 disdrodb/
-|   ├── 📁 l0 : Contains the software to produce the DISDRODB L0 products
-|       ├── 📁 configs : Contains the specifications of various types of disdrometers
-|           ├── 📁 *<sensor_name>* : e.g. PARSIVEL, PARSIVEL2, LPM, RD80
-|               ├── 📜 \*.yml  : YAML files defining sensor characteristics (e.g. diameter and velocity bins)
-|               ├── 📜 bins_diameter.yml : Information related to sensor diameter bins
-|               ├── 📜 bins_velocity.yml : Information related to sensor velocity bins
-|               ├── 📜 raw_data_format.yml : Information related to the variables logged by the sensor
-|               ├── 📜 l0a_encodings.yml : Variables encodings for the L0A product
-|               ├── 📜 l0b_encodings.yml : Variables encodings for the L0B product
-|               ├── 📜 l0b_cf_attrs.yml : Variables CF attributes for the L0B product
+|   ├── 📁 l0 : Contains the software to produce DISDRODB L0 products
+|       ├── 📁 configs : Contains specifications for various disdrometer types
+|           ├── 📁 *<sensor_name>* : e.g., PARSIVEL, PARSIVEL2, LPM, RD80
+|               ├── 📜 bins_diameter.yml : Diameter bin specifications
+|               ├── 📜 bins_velocity.yml : Velocity bin specifications
+|               ├── 📜 raw_data_format.yml : Variables logged by the sensor
+|               ├── 📜 l0a_encodings.yml : Variable encodings for L0A product
+|               ├── 📜 l0b_encodings.yml : Variable encodings for L0B product
+|               ├── 📜 l0b_cf_attrs.yml : CF attributes for L0B product variables
 
 
-To add a new sensor configuration, copy the YAML files from an existing sensor
-and adapt them to your specifications.
+**Adding a New Sensor Configuration**
+To add a new sensor configuration:
 
-Once you have added a new sensor configuration, validate it using:
+1. Copy the YAML files from an existing sensor directory
+2. Adapt them to your sensor's specifications
+3. Validate the configuration using the code below:
 
 .. code-block:: python
 
     from disdrodb.l0.check_configs import check_sensor_configs
 
-    sensor_name = "PARSIVEL"  # Change with your sensor_name
+    sensor_name = "PARSIVEL"  # Replace with your sensor_name
     check_sensor_configs(sensor_name)
 
-Below is detailed information about each configuration YAML file.
+**Configuration File Details**
+
+The following sections provide detailed information about each configuration YAML file.
 
 
-Sensor diameter bins
+Sensor Diameter Bins
 --------------------
 
 The ``bins_diameter.yml`` file specifies drop diameter bins.
-For each bin, define the ``center``, ``width``, and lower and upper ``bounds``.
 
-Sensor velocity bins
+**Required Fields:**
+
+For each bin, define:
+
+* ``center``: Bin center value
+* ``width``: Bin width
+* ``bounds``: Lower and upper bin boundaries
+
+
+Sensor Velocity Bins
 --------------------
 
 The ``bins_velocity.yml`` file specifies drop fall velocity bins.
-For each bin, define the ``center``, ``width``, and lower and upper ``bounds``.
-If the sensor (e.g., an impact disdrometer) does not measure fall velocity,
+
+**Required Fields:**
+
+For each bin, define:
+
+* ``center``: Bin center value
+* ``width``: Bin width
+* ``bounds``: Lower and upper bin boundaries
+
+**Note:** If the sensor (e.g., an impact disdrometer) does not measure fall velocity,
 leave this file empty.
 
-Sensor logged variables
+
+Sensor Logged Variables
 -----------------------
 
 The ``raw_data_format.yml`` file contains numeric information about each sensor variable.
+
+**Required Fields:**
+
 For each variable, specify:
 
-    * ``n_digits``: number of digits logged (including the sign, if any, but excluding the decimal point)
-    * ``n_characters``: total characters (digits, decimal point, and sign)
-    * ``n_decimals``: decimal digits (right of the point)
-    * ``n_naturals``: natural digits (left of the point)
-    * ``data_range``: valid data range
-    * ``nan_flags``: values indicating missing data
-    * ``field_number``: field number in the documentation
+* ``n_digits``: Number of digits logged (including sign if present, excluding decimal point)
+* ``n_characters``: Total characters (digits, decimal point, and sign)
+* ``n_decimals``: Number of decimal digits (right of the decimal point)
+* ``n_naturals``: Number of natural digits (left of the decimal point)
+* ``data_range``: Valid data range for the variable
+* ``nan_flags``: Values indicating missing or invalid data
+* ``field_number``: Field number in the sensor documentation
 
-The ``null`` value should be added for character variables or when the value can not be specified.
+**Note:** Use ``null`` for character variables or when a value cannot be specified.
 
-During the DISDRODB L0 processing:
+**Usage During L0 Processing:**
 
-* the ``data_range``, if specified, will be used to set invalid values to ``NaN``
-* the ``nan_flags`` values, if specified, will be converted to ``NaN``
+During DISDRODB L0 processing:
 
-The ``n_digits``, ``n_characters``, ``n_decimals`` and ``n_naturals`` information
-is used to infer the raw files header when it is unknown.
-See usage of the ``infer_column_names`` function in the
+* If ``data_range`` is specified, values outside this range are set to ``NaN``
+* If ``nan_flags`` are specified, these values are converted to ``NaN``
+
+**Header Inference:**
+
+The ``n_digits``, ``n_characters``, ``n_decimals``, and ``n_naturals`` information
+is used to infer raw file headers when they are unknown.
+See the ``infer_column_names`` function usage in the
 `reader_preparation.ipynb <https://github.com/ltelab/disdrodb/blob/main/tutorials/reader_preparation.ipynb>`_ Jupyter Notebook.
 
-For variables whose values do not depend solely on time,
-add two keys: ``n_values`` and ``dimension_order``.
+**Multi-Dimensional Variables:**
+
+For variables with values that depend on more than just time (e.g., precipitation spectra),
+add two additional keys:
+
+* ``n_values``: Total number of variable values in the array
+* ``dimension_order``: Order for reshaping the flattened array into a multi-dimensional matrix
+
+**Examples:**
 
 The ``n_values`` key corresponds to the total number of variable values in the array.
-For example, for the precipitation spectrum of the OTT PARSIVEL sensor,
-characterized by 32 diameter and 32 velocity bins, ``n_values = 1024`` (32*32).
 
-``dimension_order`` controls how the flattened precipitation spectrum array is reshaped into a 2D matrix.
+*Example 1: OTT PARSIVEL precipitation spectrum*
 
-For example, the OTT PARSIVEL logs the precipitation spectrum by first providing
-the drop count in each bin diameters for the velocity bin 1, then for velocity bin 2 and so on.
-The flattened array looks like ``[v1d1 ... v1d32, v2d1, ..., v2d32, ...]`` and therefore
-``dimension_order = ["velocity_bin_center", "diameter_bin_center"]``
+- 32 diameter bins × 32 velocity bins = 1024 total values
+- ``n_values = 1024``
 
-The Thies LPM logs the precipitation spectrum by first providing
-the drop count in each velocity bin for the diameter bin 1, then for diameter bin 2 and so on.
-The flattened array looks like ``[v1d1 ... v20d1, v1d2, ..., v20d2, ...]``
-and therefore ``dimension_order = ["diameter_bin_center", "velocity_bin_center"]``
+**Dimension Order:**
+
+The ``dimension_order`` controls how the flattened precipitation spectrum array is reshaped into a 2D matrix.
+
+*Example 1: OTT PARSIVEL*
+
+The OTT PARSIVEL logs the precipitation spectrum by providing drop counts for each diameter bin
+within velocity bin 1, then velocity bin 2, and so on.
+
+- Flattened array: ``[v1d1 ... v1d32, v2d1, ..., v2d32, ...]``
+- ``dimension_order = ["velocity_bin_center", "diameter_bin_center"]``
+
+*Example 2: Thies LPM*
+
+The Thies LPM logs the precipitation spectrum by providing drop counts for each velocity bin
+within diameter bin 1, then diameter bin 2, and so on.
+
+- Flattened array: ``[v1d1 ... v20d1, v1d2, ..., v20d2, ...]``
+- ``dimension_order = ["diameter_bin_center", "velocity_bin_center"]``
 
 
-DISDRODB L0B variable attributes
+DISDRODB L0B Variable Attributes
 --------------------------------
 
-The ``l0b_cf_attrs.yml`` file specifies CF attributes for L0B netCDF variables.
-Variables here must be a subset of those in ``raw_data_format.yml``.
-Only these variables are referenced in other ``l0*.yml`` files.
-For each variable, provide ``long_name``, ``units``, and ``description``.
-Please read the Climate and Forecast Conventions guidelines for
-`long_name <https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#long-name>`_
-and `units <https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#units>`_
-for more information.
+The ``l0b_cf_attrs.yml`` file specifies Climate and Forecast (CF) convention attributes for L0B NetCDF variables.
+
+**Important Notes:**
+
+* Variables listed here must be a subset of those defined in ``raw_data_format.yml``
+* Only variables listed here are referenced in other ``l0*.yml`` configuration files
+
+**Required Fields:**
+
+For each variable, provide:
+
+* ``long_name``: Descriptive name following CF conventions
+* ``units``: Units of measurement following CF conventions
+* ``description``: Detailed description of the variable
+
+**Resources:**
+
+For more information, consult the Climate and Forecast Conventions guidelines:
+
+* `long_name <https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#long-name>`_
+* `units <https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#units>`_
 
 
-DISDRODB L0A encodings
+DISDRODB L0A Encodings
 -----------------------
 
-The ``l0a_encodings.yml`` file lists which variables can be saved in the
-L0A Apache Parquet format and specifies each variable's data type.
-Additionally, these variables are always included:
+The ``l0a_encodings.yml`` file specifies which variables are saved in the
+L0A Apache Parquet format and defines each variable's data type.
 
-* the ``time`` column (in UTC)
-* the ``latitude`` and ``longitude`` columns if the disdrometer station is mobile.
+**Automatically Included Variables:**
+
+The following variables are always included in L0A products:
+
+* ``time``: Timestamp column (in UTC)
+* ``latitude`` and ``longitude``: Geolocation columns (if the disdrometer station is mobile)
 
 
-DISDRODB L0B encodings
+DISDRODB L0B Encodings
 -----------------------
 
-The ``l0b_encodings.yml`` file lists variables saved in the L0B netCDF4 format.
-For each variable, you need to specify the compression, data type,
-the ``_FillValue`` for NaN-to-integer conversion, and the chunk size
-across time (and diameter/velocity) dimensions.
-The specified key values are used to define, for each variable, the specific netCDF4 encodings.
+The ``l0b_encodings.yml`` file specifies encodings for variables saved in the L0B NetCDF4 format.
+
+**Required Specifications:**
+
+For each variable, you must specify:
+
+* **Compression**: Compression method and level
+* **Data type**: NetCDF data type (e.g., float32, int16)
+* **_FillValue**: Fill value used for NaN-to-integer conversion
+* **Chunking**: Chunk size across time (and diameter/velocity) dimensions
+
+These specifications are used to define the NetCDF4 encodings for each variable,
+optimizing storage and access performance.
