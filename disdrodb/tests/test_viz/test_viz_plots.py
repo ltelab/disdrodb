@@ -16,64 +16,66 @@
 # -----------------------------------------------------------------------------.
 """Test DISDRODB visualization functions."""
 
-import pytest
-
 from disdrodb.tests.fake_datasets import create_template_l2e_dataset
-
-
-@pytest.fixture
-def l2e_dataset():
-    """Create a template L2E dataset for testing visualization functions."""
-    return create_template_l2e_dataset()
 
 
 class TestPlotDsdQuicklook:
     """Test plot_dsd_quicklook function."""
 
-    def test_plot_dsd_quicklook_dataset(self, l2e_dataset):
+    def test_plot_dsd_quicklook_dataset(self):
         """Test plot_dsd_quicklook with xarray Dataset."""
-        l2e_dataset.disdrodb.plot_dsd_quicklook()
+        ds = create_template_l2e_dataset()
+        ds.disdrodb.plot_dsd_quicklook()
 
-    def test_plot_dsd_quicklook_dataarray(self, l2e_dataset):
+    def test_plot_dsd_quicklook_dataarray(self):
         """Test plot_dsd_quicklook with xarray DataArray."""
-        l2e_dataset["raw_drop_number"].disdrodb.plot_dsd_quicklook()
+        ds = create_template_l2e_dataset()
+        ds["raw_drop_number"].disdrodb.plot_dsd_quicklook()
 
 
 class TestPlotDsd:
     """Test plot_dsd function."""
 
-    def test_plot_dsd_dataset_multiple_timesteps(self, l2e_dataset):
+    def test_plot_dsd_dataset_multiple_timesteps(self):
         """Test plot_dsd with Dataset containing multiple timesteps."""
-        l2e_dataset.disdrodb.plot_dsd()
+        ds = create_template_l2e_dataset()
+        ds.disdrodb.plot_dsd()
 
-    def test_plot_dsd_dataarray_multiple_timesteps(self, l2e_dataset):
+    def test_plot_dsd_dataarray_multiple_timesteps(self):
         """Test plot_dsd with DataArray containing multiple timesteps."""
-        l2e_dataset["drop_number_concentration"].disdrodb.plot_dsd()
+        ds = create_template_l2e_dataset()
+        ds["drop_number_concentration"].disdrodb.plot_dsd()
 
-    def test_plot_dsd_dataset_single_timestep(self, l2e_dataset):
+    def test_plot_dsd_dataset_single_timestep(self):
         """Test plot_dsd with Dataset containing a single timestep."""
-        l2e_dataset.isel(time=0).disdrodb.plot_dsd()
+        ds = create_template_l2e_dataset()
+        ds.isel(time=0).disdrodb.plot_dsd()
 
-    def test_plot_dsd_dataarray_single_timestep(self, l2e_dataset):
+    def test_plot_dsd_dataarray_single_timestep(self):
         """Test plot_dsd with DataArray containing a single timestep."""
-        l2e_dataset["drop_number_concentration"].isel(time=0).disdrodb.plot_dsd()
+        ds = create_template_l2e_dataset()
+        ds["drop_number_concentration"].isel(time=0).disdrodb.plot_dsd()
 
 
 class TestPlotSpectrum:
     """Test plot_spectrum function."""
 
-    def test_plot_spectrum_dataset_multiple_timesteps(self, l2e_dataset):
+    def test_plot_spectrum_dataset_multiple_timesteps(self):
         """Test plot_spectrum with Dataset containing multiple timesteps."""
-        l2e_dataset.disdrodb.plot_spectrum()
+        ds = create_template_l2e_dataset()
+        ds.disdrodb.plot_spectrum()
 
-    def test_plot_spectrum_dataarray_multiple_timesteps(self, l2e_dataset):
+    def test_plot_spectrum_dataarray_multiple_timesteps(self):
         """Test plot_spectrum with DataArray containing multiple timesteps."""
-        l2e_dataset["raw_drop_number"].disdrodb.plot_spectrum()
+        ds = create_template_l2e_dataset()
+        ds["raw_drop_number"].disdrodb.plot_spectrum()
 
-    def test_plot_spectrum_dataset_single_timestep(self, l2e_dataset):
+    def test_plot_spectrum_dataset_single_timestep(self):
         """Test plot_spectrum with Dataset containing a single timestep."""
-        l2e_dataset.isel(time=0).disdrodb.plot_spectrum()
+        ds = create_template_l2e_dataset()
+        ds.isel(time=0).disdrodb.plot_spectrum()
 
-    def test_plot_spectrum_dataarray_single_timestep(self, l2e_dataset):
+    def test_plot_spectrum_dataarray_single_timestep(self):
         """Test plot_spectrum with DataArray containing a single timestep."""
-        l2e_dataset["raw_drop_number"].isel(time=0).disdrodb.plot_spectrum()
+        ds = create_template_l2e_dataset()
+        ds["raw_drop_number"].isel(time=0).disdrodb.plot_spectrum()
