@@ -30,6 +30,7 @@ import tqdm
 from disdrodb.api.path import define_metadata_filepath, define_station_dir
 from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
 from disdrodb.metadata import get_list_metadata
+from disdrodb.utils.cli import subprocess_run
 from disdrodb.utils.compression import unzip_file
 from disdrodb.utils.directories import is_empty_directory, remove_file_or_directories
 from disdrodb.utils.yaml import read_yaml
@@ -344,7 +345,7 @@ def download_web_server_data(url: str, dst_dir: str, verbose=True) -> None:
 
     # 6. Run wget command
     try:
-        subprocess.run(cmd, check=True)
+        subprocess_run(cmd, check=True)
     except subprocess.CalledProcessError as e:
         raise subprocess.CalledProcessError(
             returncode=e.returncode,
@@ -492,7 +493,7 @@ def download_ftp_server_data(url: str, dst_dir: str, verbose: bool = True) -> No
     )
     # Run wget
     try:
-        subprocess.run(cmd, check=True)
+        subprocess_run(cmd, check=True)
     except subprocess.CalledProcessError as e:
         raise subprocess.CalledProcessError(
             returncode=e.returncode,

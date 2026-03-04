@@ -4,10 +4,10 @@
 Installation
 =========================
 
-This section describes two type of installation:
+This section describes two types of installation:
 
-- `Installation for standard users`_: for processing and analyze disdrometer data.
-- `Installation for contributors`_: who want to enrich the project (e.g., adding a new reader, data, ...).
+- `Installation for standard users`_: for processing and analyzing disdrometer data.
+- `Installation for contributors`_: for those who want to enrich the project (e.g., adding a new reader, data, etc.).
 
 We recommend setting up a virtual environment before installing DISDRODB.
 
@@ -28,8 +28,8 @@ using `venv <https://docs.python.org/3/library/venv.html>`__ or
 
 **With conda:**
 
-* Install `mamba <https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html>`_, `miniconda <https://docs.conda.io/en/latest/miniconda.html>`__ or `anaconda <https://docs.anaconda.com/anaconda/install/>`__ if you haven't already installed.
-* Create a new conda environment with one of the latest python version (e.g., python 3.13):
+* Install `mamba <https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html>`_, `miniconda <https://docs.conda.io/en/latest/miniconda.html>`__ or `anaconda <https://docs.anaconda.com/anaconda/install/>`__ if you haven't already.
+* Create a new conda environment with one of the latest Python versions (e.g., Python 3.13):
 
 .. code-block:: bash
 
@@ -43,7 +43,7 @@ using `venv <https://docs.python.org/3/library/venv.html>`__ or
 
 **With venv:**
 
-* On Windows, create and activate a virtual environment:
+* On Windows, create and activate a virtual environment (replace ``pyXXX`` with your Python version, e.g., ``py313``):
 
 .. code-block:: bash
 
@@ -51,7 +51,7 @@ using `venv <https://docs.python.org/3/library/venv.html>`__ or
     cd disdrodb-pyXXX/Scripts
     activate
 
-* On macOS/Linux, create and activate a virtual environment:
+* On macOS/Linux, create and activate a virtual environment (replace ``pyXXX`` with your Python version, e.g., ``py313``):
 
 .. code-block:: bash
 
@@ -68,8 +68,8 @@ The latest disdrodb stable version is available
 on the `Python Packaging Index (PyPI) <https://pypi.org/project/disdrodb/>`__
 and on the `conda-forge channel <https://anaconda.org/conda-forge/disdrodb>`__.
 
-Therefore you can either install the package with pip or conda (recommended).
-Please install the package in the virtual environment you created before !
+You can install the package with either pip or conda (recommended).
+If you created a virtual environment, make sure to activate it before installing.
 
 **With conda:**
 
@@ -79,7 +79,7 @@ Please install the package in the virtual environment you created before !
 
 
 .. note::
-   In alternative to conda, if you are looking for a lightweight package manager you could use `micromamba <https://micromamba.readthedocs.io/en/latest/>`__.
+   As a lightweight alternative to conda, you can use `micromamba <https://micromamba.readthedocs.io/en/latest/>`__.
 
 **With pip:**
 
@@ -94,8 +94,8 @@ Installation for contributors
 ================================
 
 The latest disdrodb version is available on the GitHub repository `disdrodb <https://github.com/ltelab/disdrodb>`__.
-You can install the package in editable mode, so that you can modify the code and see the changes immediately.
-Here below we provide the steps to install the package in editable mode.
+You can install the package in editable mode to modify the code and see changes immediately.
+Follow the steps below to install the package in editable mode.
 
 Clone the repository from GitHub
 ......................................
@@ -113,8 +113,8 @@ Then create a local copy of the repository you forked with:
 Create the development environment
 ......................................
 
-We recommend to create a dedicated conda environment for development purposes.
-You can create a conda environment (i.e. with python 3.13) with:
+We recommend creating a dedicated conda environment for development purposes.
+You can create a conda environment (e.g., with Python 3.13) with:
 
 .. code-block:: bash
 
@@ -123,6 +123,8 @@ You can create a conda environment (i.e. with python 3.13) with:
 
 Install the package dependencies
 ............................................
+
+Install all required dependencies without installing disdrodb itself:
 
 .. code-block:: bash
 
@@ -164,7 +166,7 @@ Optional dependencies
 =======================
 
 Specific functionality in disdrodb may require additional optional dependencies.
-To unlock the full functionalities offered by disdrodb, it is recommended to install also the packages detailed here below.
+To unlock the full functionality offered by disdrodb, we recommend installing the packages detailed below.
 
 IDEs
 ..............
@@ -194,9 +196,9 @@ To speed up arrays computations with xarray, install
 Summary Tables
 ..............................
 
-If you want to generate automatic summary tables of rain events or DSD parameters within the disdrodb software,
-`Tectonic <https://tectonic-typesetting.github.io/en-US/>`__ must be installed.
-Tectonic is a modern typesetting system that can be used to compile LaTeX documents and create PDF files.
+To generate automatic summary tables of rain events or DSD parameters within the disdrodb software,
+you must install `Tectonic <https://tectonic-typesetting.github.io/en-US/>`__.
+Tectonic is a modern typesetting system used to compile LaTeX documents and create PDF files.
 
 You can install Tectonic using conda:
 
@@ -210,10 +212,9 @@ T-Matrix Radar Simulations
 ............................
 
 To simulate radar polarimetric variables in the DISDRODB L2E and L2M products, you must install the pyTMatrix package.
-The original pyTMatrix can be difficult to install on recent Python versions.
+The original pyTMatrix cannot be installed on recent Python versions.
 
-The instructions below describe how to install the LTE-maintained fork of pyTMatrix, which is compatible with modern Python interpreters.
-Please note that it's currently not possible to install pyTmatrix on Windows systems.
+The instructions below show how to install the LTE-maintained fork of pyTMatrix, which is compatible with modern Python interpreters.
 
 1. Install the GNU `Fortran <https://fortran-lang.org/>`__ Compiler (gfortran) and the `Meson Build system <https://mesonbuild.com/>`__.
 
@@ -221,39 +222,29 @@ Please note that it's currently not possible to install pyTmatrix on Windows sys
 
    conda install -c conda-forge gfortran meson
 
-2. `Fork <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo>`__ and clone `the LTE-maintained pyTMatrix repository <https://github.com/ltelab/pytmatrix-lte.git>`__:
+2. Then install pyTMatrix with:
 
 .. code-block:: bash
 
-   git clone https://github.com/<your-account>/pytmatrix-lte.git
+   pip install git+https://github.com/ltelab/pytmatrix-lte.git
 
-3. Enter the newly cloned ``pytmatrix-lte`` directory and install the package in editable mode:
+3. Verify that the package is installed correctly:
 
 .. code-block:: bash
 
-   cd pytmatrix-lte
-   pip install -e .
-
-4. To confirm that everything was installed correctly, run the pytmatrix built-in test suite. Launch Python and execute:
-
-.. code-block:: python
-
-    from pytmatrix.test import test_tmatrix
-
-    test_tmatrix.run_tests()
+   python -c "import pytmatrix; print(pytmatrix.__version__)"
+   python -c "import pytmatrix; raise SystemExit(pytmatrix.run_tests())"
 
 
-.. warning::
-
-   Installing pyTMatrix directly via ``pip install git+https://github.com/ltelab/pytmatrix-lte.git`` does *not* work at this time. We welcome contributions to enable this type of installation !
+Alternative installation instructions for developers are available at `https://github.com/ltelab/pytmatrix-lte <https://github.com/ltelab/pytmatrix-lte>`__.
 
 
 
 Run DISDRODB on Jupyter Notebooks
 ==================================
 
-If you want to run disdrodb on a `Jupyter Notebook <https://jupyter.org/>`__,
-you have to take care to set up the IPython kernel environment where disdrodb is installed.
+To run disdrodb in a `Jupyter Notebook <https://jupyter.org/>`__,
+you need to set up an IPython kernel for the environment where disdrodb is installed.
 
 For example, if your conda/virtual environment is named ``disdrodb-dev``, run:
 
@@ -261,4 +252,4 @@ For example, if your conda/virtual environment is named ``disdrodb-dev``, run:
 
    python -m ipykernel install --user --name=disdrodb-dev
 
-When you will use the Jupyter Notebook, by clicking on ``Kernel`` and then ``Change Kernel``, you will be able to select the ``disdrodb-dev`` kernel.
+When using Jupyter Notebook, click on ``Kernel`` and then ``Change Kernel`` to select the ``disdrodb-dev`` kernel.

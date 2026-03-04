@@ -19,7 +19,6 @@
 import datetime
 import functools
 import os
-import subprocess
 import sys
 from pathlib import Path
 
@@ -766,6 +765,8 @@ def remove_product(
 
 def open_file_explorer(path):
     """Open the native file-browser showing 'path'."""
+    from disdrodb.utils.cli import subprocess_run
+
     p = Path(path).resolve()
     if not p.exists():
         raise FileNotFoundError(f"{p} does not exist")
@@ -775,10 +776,10 @@ def open_file_explorer(path):
         os.startfile(str(p))
     elif sys.platform == "darwin":
         # macOS
-        subprocess.run(["open", str(p)], check=False)
+        subprocess_run(["open", str(p)], check=False)
     else:
         # Linux (most desktop environments)
-        subprocess.run(["xdg-open", str(p)], check=False)
+        subprocess_run(["xdg-open", str(p)], check=False)
 
 
 def open_logs_directory(

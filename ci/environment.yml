@@ -21,6 +21,9 @@ dependencies:
   - tectonic
   - matplotlib-base
   - pycolorbar
+  # Pytmatrix
+  - gfortran
+  - meson
   # Docs
   - jupyter
   - sphinx=5.1.1

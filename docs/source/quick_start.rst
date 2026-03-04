@@ -7,19 +7,19 @@ Quick Start
 This quick start guide demonstrates how to download raw disdrometer data from the DISDRODB
 Decentralized Data Archive and generate DISDRODB products on your local machine.
 
-**Prerequisites**
+**Prerequisites:**
 
 - Virtual environment with DISDRODB installed (see :ref:`Installation <installation>`)
 - DISDRODB Metadata Archive cloned locally
 - Sufficient disk space for raw data and products
 
-**What You'll Learn**
+**What You'll Learn:**
 
-- Configure DISDRODB directories
-- Download station data
-- Generate DISDRODB L0, L1, and L2E products
-- Open and analyze products with xarray
-- Explore available stations
+- How to configure DISDRODB directories
+- How to download station data from the archive
+- How to generate DISDRODB L0, L1, and L2E products
+- How to open and analyze products with xarray
+- How to explore available stations and filter by criteria
 
 
 1. Download the DISDRODB Metadata Archive
@@ -50,28 +50,30 @@ This creates a ``DISDRODB-METADATA`` directory.
    - macOS: ``brew install git`` or install Xcode Command Line Tools
    - Windows: Download from https://git-scm.com/
 
-.. note:: The DISDRODB Metadata Archive is often updated with new stations or metadata.
-          Therefore, we recommend to regularly update your local DISDRODB Metadata Archive by
-          running :code:`git pull` inside the ``DISDRODB-METADATA`` directory.
+.. note::
+
+   The DISDRODB Metadata Archive is regularly updated with new stations and metadata.
+   We recommend updating your local copy periodically by running ``git pull``
+   inside the ``DISDRODB-METADATA`` directory.
 
 
-2. Define the DISDRODB Configuration File
+2. Configure DISDRODB Directories
 ------------------------------------------
 
-DISDRODB requires two directory paths:
+DISDRODB requires two main directory paths to operate:
 
 - **Metadata Archive Directory** (``metadata_archive_dir``): Path to the ``DISDRODB`` subdirectory
-  within your cloned ``DISDRODB-METADATA`` repository
-- **Data Archive Directory** (``data_archive_dir``): Path where raw data and processed products will be stored
+  within your cloned ``DISDRODB-METADATA`` repository (contains station information and metadata)
+- **Data Archive Directory** (``data_archive_dir``): Path where DISDRODB will store downloaded raw data
+  and all processed products (L0, L1, L2)
 
-DISDRODB searches for a configuration file ``~/.config_disdrodb.yml`` in your home directory.
+DISDRODB will search for a configuration file named ``~/.config_disdrodb.yml`` in your home directory.
 
 **Create Configuration File**
 
-To facilitate the creation of the DISDRODB Configuration File, you can adapt and
-run in python the following code snippet. See :func:`disdrodb.define_configs` for more details.
-Note that on Windows paths must end with ``\DISDRODB``,
-while on macOS/Linux they must end with ``/DISDRODB``.
+To create the DISDRODB configuration file, adapt and run the following Python code snippet.
+See :func:`disdrodb.define_configs` for more details.
+Note that paths must end with ``\DISDRODB`` on Windows or ``/DISDRODB`` on macOS/Linux.
 
 .. code:: python
 
@@ -95,7 +97,8 @@ Restart your Python session and verify the configuration:
     print("DISDRODB Data Archive Directory: ", disdrodb.get_data_archive_dir())
 
 
-You can also verify and print the default DISDRODB Metadata Archive and Data Archive directories by typing the following command in the terminal:
+You can also verify and print the default DISDRODB Metadata Archive and Data Archive directories
+using the following terminal commands:
 
 .. code:: bash
 
@@ -105,25 +108,42 @@ You can also verify and print the default DISDRODB Metadata Archive and Data Arc
 See :func:`disdrodb.get_metadata_archive_dir` and :func:`disdrodb.get_data_archive_dir` for API details.
 
 
-Although not recommended for beginner users, you also have the option to define the DISDRODB Data and Metadata Archive directories using environment variables.
-This can be done by setting the ``DISDRODB_DATA_ARCHIVE_DIR`` and ``DISDRODB_METADATA_ARCHIVE_DIR`` variables either directly in your terminal or by adding them to your
-``.bashrc`` (or equivalent shell configuration) script.
-To set them in the terminal, you can use the following commands:
+Although not recommended for beginner users, you can also define the DISDRODB Data and Metadata Archive directories using environment variables.
+Set the ``DISDRODB_DATA_ARCHIVE_DIR`` and ``DISDRODB_METADATA_ARCHIVE_DIR`` variables either directly in your terminal
+or by adding them to your ``.bashrc`` (or equivalent shell configuration) file.
+
+To set them in the terminal:
 
 .. code:: bash
 
    export DISDRODB_DATA_ARCHIVE_DIR="<path_of_choice_to_the_local_data_archive>/DISDRODB"
    export DISDRODB_METADATA_ARCHIVE_DIR="<path_to>/DISDRODB-METADATA/DISDRODB"
 
-.. note:: It is important to remember that the environment variables ``DISDRODB_DATA_ARCHIVE_DIR`` and ``DISDRODB_METADATA_ARCHIVE_DIR``, if defined,
-   will take priority over the default path defined in the ``.config_disdrodb.yml`` file.
+.. note::
+
+   Environment variables ``DISDRODB_DATA_ARCHIVE_DIR`` and ``DISDRODB_METADATA_ARCHIVE_DIR``,
+   if defined, take priority over the paths specified in the ``.config_disdrodb.yml`` file.
+
+**Optional: Configure T-Matrix Scattering Tables (Advanced)**
+
+If you installed pyTmatrix to simulate radar variables in DISDRODB L2 products, you can specify a custom
+directory for storing T-matrix scattering lookup tables (these tables can be large and are reused across processing runs):
+
+.. code:: python
+
+    import disdrodb
+
+    scattering_table_dir = (
+        "<path_of_choice_to_the_local_scattering_table_dir>/"  # Created automatically if it doesn't exist
+    )
+    disdrodb.define_configs(scattering_table_dir=scattering_table_dir)
 
 
 3. Download Raw Disdrometer Data
 -------------------------------------------
 
 The DISDRODB Decentralized Data Archive stores raw disdrometer data contributed by the community.
-Currently, a growing subset of stations is available for download.
+A growing number of stations are currently available for download, with new stations being added regularly.
 
 **Check Available Stations**
 
@@ -145,38 +165,41 @@ To download raw data for specific stations:
 
 .. code:: bash
 
-   disdrodb_download_archive --data_sources <data_source> --campaign_names <campaign_name> --station_names <station_name> --force false
+   disdrodb_download_archive --data_sources <data_source> --campaign_names <campaign_name> --station_names <station_name> --force False
 
-The ``data_sources``, ``campaign_names`` and ``station_names`` parameters are optional and are meant to restrict the download to a specific set of
-data sources, campaigns, and/or stations.
+The ``data_sources``, ``campaign_names``, and ``station_names`` parameters are optional
+and allow you to restrict the download to specific data sources, campaigns, and/or stations.
 
-Parameters:
+**Command Parameters:**
 
--  ``data_sources`` (optional): Station data sources.
--  ``campaign_names`` (optional): Station campaign names.
--  ``station_names`` (optional): Name of the stations.
--  ``force`` (optional, default = ``False``): a boolean value indicating whether existing files should be overwritten.
+-  ``--data_sources`` (optional): Filter by data source (e.g., institution or country name)
+-  ``--campaign_names`` (optional): Filter by campaign name (measurement campaign or network)
+-  ``--station_names`` (optional): Filter by station name
+-  ``--force`` (optional, default = ``False``): Overwrite existing files if set to ``True``
 
-To download data from multiple data sources, campaigns, or stations, please provide a space-separated string of
-the data sources, campaigns or stations you require.
+To download data from multiple data sources, campaigns, or stations, provide a space-separated string.
 
 For example:
 
-* if you want to download all EPFL and NASA data use ``--data_sources "EPFL NASA"``,
+* To download all EPFL and NASA data: ``--data_sources "EPFL NASA"``,
 
-* if you want to download stations of specific campaigns, use ``--campaign_names "HYMEX_LTE_SOP3 HYMEX_LTE_SOP4"``.
+* To download stations from specific campaigns: ``--campaign_names "HYMEX_LTE_SOP3 HYMEX_LTE_SOP4"``,
 
-* if you want to download stations named in a specific way, use ``--station_names "station_name1 station_name2"``.
+* To download specific stations: ``--station_names "station_name1 station_name2"``.
 
-**Tutorial Example**
+**Quick Start Example**
 
-For this quick start, download a single station:
+For this tutorial, we'll download a single station from the EPFL data source:
 
 .. code:: bash
 
    disdrodb_download_station EPFL HYMEX_LTE_SOP3 10
 
-where ``EPFL`` is the data source, ``HYMEX_LTE_SOP3`` is the campaign name, and ``10`` is the station name.
+This command downloads data for:
+
+- **Data Source**: ``EPFL`` (École Polytechnique Fédérale de Lausanne)
+- **Campaign**: ``HYMEX_LTE_SOP3`` (HyMeX Long-Term Experiment Special Observation Period 3)
+- **Station**: ``10`` (station identifier)
 
 See :func:`disdrodb.download_station` for Python API.
 
@@ -184,17 +207,22 @@ See :func:`disdrodb.download_station` for Python API.
 4. Generate DISDRODB Products
 ----------------------------------------------
 
-Once the data are downloaded, we can start the generation of the DISDRODB L0, L1 and L2E products.
+Once you have downloaded the raw data, you can generate standardized DISDRODB products.
 
-The DISDRODB L0 processing chain converts raw data into a standardized format,
-saving each day's data in a NetCDF file.
+**Understanding the Processing Chain**
 
-The DISDRODB L1 processing chain ingests the L0C product files, aggregates data at user-defined temporal resolutions,
-performs quality checks, data homogenization, and apply an hydrometeor classification algorithm that allows to
-differentiate between rain, snow, mixed, and non-hydrometeor particles detected by the sensors.
+DISDRODB processes raw disdrometer data through several stages:
 
-The DISDRODB L1 product forms the basis for generating DISDRODB L2 products, which provide advanced retrievals of drop size distribution moments
-and other microphysical parameters at user-defined temporal resolutions.
+- **L0 Processing**: Converts raw data into standardized NetCDF format with quality control.
+  Each day's data is saved as a separate NetCDF file with CF-compliant metadata.
+
+- **L1 Processing**: Ingests L0C files and aggregates data at user-defined temporal resolutions
+  (e.g., 1-minute, 5-minute, 10-minute). Performs quality checks, data homogenization, and
+  applies a hydrometeor classification algorithm to differentiate between rain, snow, mixed precipitation,
+  and non-hydrometeor particles.
+
+- **L2 Processing**: Generates advanced products from L1 data, including DSD moments,
+  microphysical parameters (rain rate, liquid water content), and simulated radar variables.
 
 **Processing Chain Overview**
 
@@ -207,27 +235,24 @@ and other microphysical parameters at user-defined temporal resolutions.
 - **L2E**: Empirical rainfall parameters and radar observables (see :ref:`L2E <disdrodb_l2e>`)
 - **L2M**: Modeled DSD parameters from parametric fitting (see :ref:`L2M <disdrodb_l2m>`)
 
-To know more about the various DISDRODB products and how to customize the processing,
-please refer to the :ref:`DISDRODB Products <products>` section.
-For configuration options, see :ref:`Products Configuration <products_configuration>`.
+For detailed information about DISDRODB products and processing customization,
+see the :ref:`DISDRODB Products <products>` and :ref:`Products Configuration <products_configuration>` sections.
 
-**Quick Processing Commands**
+**Quick Test Run (Debugging Mode)**
 
-Generate L0 and L1 products with debugging enabled (processes only 3 files):
-
-Generating DISDRODB L0 and L1 products requires only two simple commands:
+To quickly test the processing chain on a small sample, use debugging mode.
+This processes only 3 raw files with verbose output:
 
 .. code:: bash
 
    disdrodb_run_l0_station EPFL HYMEX_LTE_SOP3 10 --debugging_mode True --parallel False --verbose True
    disdrodb_run_l1_station EPFL HYMEX_LTE_SOP3 10 --debugging_mode True --parallel False --verbose True
 
-For illustrative purposes, this code snippet here above processes just 3 raw files (``--debugging_mode True``)
-with disabled parallelism (``--parallel False``) and verbose output  (``--verbose True``).
+This is useful for testing before running the full processing on all station data.
 
 **Process All Station Data**
 
-To process all data for a given station use:
+To process all available data for the station (recommended for actual data analysis):
 
 .. code:: bash
 
@@ -237,7 +262,7 @@ To process all data for a given station use:
 
 See :func:`disdrodb.run_l0_station`, :func:`disdrodb.run_l1_station`, and :func:`disdrodb.run_l2e_station` for Python API.
 
-**Create all products with Single Command**
+**Create All Products with a Single Command**
 
 Generate all DISDRODB products (L0 → L1 → L2E) in one command:
 
@@ -249,47 +274,52 @@ See :func:`disdrodb.run_station` for Python API.
 
 **Monitor Processing**
 
-- **Dask Dashboard**: Monitor parallel processing at http://localhost:8787/status
-- **Processing Logs**: Check detailed logs for each file:
+While processing runs, you can monitor progress:
+
+- **Dask Dashboard**: View real-time parallel processing status at http://localhost:8787/status
+- **Processing Logs**: Check detailed logs for troubleshooting:
 
   .. code:: bash
 
     disdrodb_open_logs_directory EPFL HYMEX_LTE_SOP3 10
 
-**Command Options**
+**Common Command Options**
 
-- ``--force True``: Overwrite existing products
-- ``--parallel True``: Enable parallel processing (default)
-- ``--verbose True``: Print detailed processing information
-- ``--debugging_mode True``: Process only 3 files for testing
+- ``--force True``: Overwrite existing product files (useful when reprocessing)
+- ``--parallel True``: Enable parallel processing across multiple CPU cores (default: ``True``)
+- ``--verbose True``: Print detailed processing information to console
+- ``--debugging_mode True``: Process only 3 files for quick testing (default: ``False``)
 
-For complete processing options, see :ref:`Archive Processing <processing>`.
+For complete processing options and batch processing, see :ref:`Archive Processing <processing>`.
 
 
-6. Create Summary Figures and Table
+5. Create Summary Figures and Tables
 ---------------------------------------------
 
-After generating the products, the disdrodb software provide the opportunity to automatically
-generate summary figures and tables.
+After generating products, DISDRODB can automatically create summary visualizations and statistics
+for your station. These summaries provide a quick overview of data availability, quality, and key measurements.
 
 .. code:: bash
 
     disdrodb_create_summary_station EPFL HYMEX_LTE_SOP3 10
 
-You can open the summary directory with the following command:
+To view the generated summaries, open the summary directory:
 
 .. code:: bash
 
     disdrodb_open_product_directory SUMMARY HYMEX_LTE_SOP3 10
 
 
-7. Open and Analyze DISDRODB L0 Products
+6. Open and Analyze DISDRODB L0 Products
 ---------------------------------------------------
 
-Use :func:`disdrodb.open_dataset` to lazily open all station files for a DISDRODB product
-as an ``xarray.Dataset`` (or ``pandas.DataFrame`` for L0A).
+DISDRODB provides convenient functions to open and analyze processed products.
+Use :func:`disdrodb.open_dataset` to lazily load all station files for a product
+as an ``xarray.Dataset`` (or ``pandas.DataFrame`` for L0A products).
 
 **Open All Station Files**
+
+This approach opens all files for a station at once using lazy loading (data is only read from disk when needed):
 
 .. code:: python
 
@@ -313,7 +343,8 @@ as an ``xarray.Dataset`` (or ``pandas.DataFrame`` for L0A).
 
 **List and Open Individual Files**
 
-Use :func:`disdrodb.find_files` to list all files, then open individually:
+Alternatively, you can list all product files and open them individually.
+This is useful when you want to process files one at a time or inspect specific dates:
 
 .. code:: python
 
@@ -338,10 +369,13 @@ Use :func:`disdrodb.find_files` to list all files, then open individually:
     ds
 
 
-8. Open and Analyze the DISDRODB L1 Product
+7. Open and Analyze the DISDRODB L1 Product
 ---------------------------------------------------
 
-L1 products require specifying the temporal resolution (e.g., ``1MIN``, ``5MIN``, ``10MIN``).
+The L1 product is the recommended product for most analyses, as it provides quality-controlled,
+temporally aggregated data with hydrometeor classification.
+
+When opening L1 products, you must specify the temporal resolution (e.g., ``1MIN``, ``5MIN``, ``10MIN``).
 
 **Open L1 Dataset**
 
@@ -369,12 +403,17 @@ L1 products require specifying the temporal resolution (e.g., ``1MIN``, ``5MIN``
     ds = ds.compute()
 
 
-The DISDRODB L1 product includes hydrometeor classification variables for differentiating between
-rain, snow, mixed precipitation, and non-hydrometeor particles.
+**Understanding Hydrometeor Classification**
 
-For details on classification methodology, see :ref:`L1 Product <disdrodb_l1>`.
+The L1 product includes classification variables to identify different precipitation types.
+This allows you to filter data by hydrometeor type (rain, snow, graupel, hail) and
+analysis quality (valid measurements vs. artifacts).
 
-Here below we provide an example on how to subset and analyze the dataset by precipitation type.
+For details on the classification methodology, see :ref:`L1 Product <disdrodb_l1>`.
+
+**Filter Data by Precipitation Type**
+
+Here's how to subset and analyze the dataset by precipitation type:
 
 .. code:: python
 
@@ -402,10 +441,11 @@ Here below we provide an example on how to subset and analyze the dataset by pre
     ds_hail.disdrodb.plot_spectrum()
 
 
-9. Open and Analyze the DISDRODB L2E Product
+8. Open and Analyze the DISDRODB L2E Product
 ---------------------------------------------------
 
-L2E products provide empirical rainfall parameters and radar observables.
+The L2E product provides derived microphysical parameters and simulated radar variables,
+making it ideal for rainfall analysis and radar intercomparison studies.
 
 **Open L2E Dataset**
 
@@ -433,7 +473,7 @@ L2E products provide empirical rainfall parameters and radar observables.
 
 **L2E Product Contents**
 
-The L2E product focuses on rainfall observations and includes:
+The L2E product focuses on rainfall observations and provides:
 
 - Drop size distribution (DSD) spectra and concentration
 - DSD moments
@@ -459,16 +499,19 @@ For details, see :ref:`L2E Product <disdrodb_l2e>` and :ref:`Radar Variable Simu
     # Analyze DSD moments
     ds[["M3", "M4", "M6"]].to_dataframe().describe()
 
-10. Explore Available Stations
+9. Explore Available Stations
 ------------------------------------
 
-Use :func:`disdrodb.available_stations` to list stations registered in the DISDRODB Archive.
+DISDRODB provides powerful filtering capabilities to explore the station catalog.
+Use :func:`disdrodb.available_stations` to discover stations that match your criteria.
 
 **List All Known Stations**
 
-By default, the function returns all known stations, regardless of whether their raw data are currently available for download.
-Setting ``available_data=True`` restricts the output to stations whose raw data are already available in the DISDRODB Decentralized Data Archive.
-Note that some contributors have not yet made their data publicly available.
+By default, this function returns all stations registered in the DISDRODB Metadata Archive,
+regardless of whether their raw data are currently available for download.
+
+To see only stations with downloadable data, use ``available_data=True``.
+Note that some contributors have registered their stations but not yet made their data publicly available.
 
 .. code:: python
 
@@ -492,8 +535,8 @@ Note that some contributors have not yet made their data publicly available.
 
 **Filter by Station Identifiers**
 
-Stations can be filtered by data source, campaign name, or station name.
-Combine multiple filters for precise selection:
+You can filter stations by data source, campaign name, or station name.
+Multiple filters can be combined for precise selection:
 
 .. code:: python
 
@@ -517,13 +560,17 @@ After generating products locally, list available processed stations with:
     disdrodb.available_stations(sensor_name="PARSIVEL2", product="L2E", temporal_resolution="1MIN")
 
 
-Please note that the ``temporal_resolution`` argument is mandatory when listing DISDRODB L1 and L2 products.
+.. note::
+
+   The ``temporal_resolution`` argument is required when listing L1 and L2 products,
+   as these products can exist at multiple temporal resolutions.
 
 
-11. What's Next?
+10. What's Next?
 ---------------------
 
-Now that you've completed the quick start, explore these topics to deepen your DISDRODB skills:
+Congratulations! You've completed the DISDRODB quick start tutorial.
+Here are some next steps to deepen your knowledge and make the most of DISDRODB:
 
 **Learn More About Products**
 
@@ -544,13 +591,14 @@ Now that you've completed the quick start, explore these topics to deepen your D
 
 **Advanced Workflows**
 
-- **L2M Products**: Fit parametric DSD models with grid search, maximum likelihood, or method of moments
-  (see :ref:`L2M Product <disdrodb_l2m>` and :func:`disdrodb.run_l2m_station`)
+- **L2M Products**: Fit parametric DSD models (gamma, exponential, etc.) using grid search,
+  maximum likelihood, or method of moments (see :ref:`L2M Product <disdrodb_l2m>` and :func:`disdrodb.run_l2m_station`)
 
-- **Custom Processing**: Use Python API for fine-grained control over processing steps
+- **Custom Processing**: Use the Python API for fine-grained control over individual processing steps
   (see :func:`disdrodb.generate_l0a`, :func:`disdrodb.generate_l1`, :func:`disdrodb.generate_l2e`, :func:`disdrodb.generate_l2m`)
 
-- **Data Analysis**: Use DISDRODB's xarray accessor for specialized visualizations and computations
+- **Data Analysis**: Leverage DISDRODB's xarray accessor methods for specialized visualizations,
+  event detection, and DSD computations
 
 **API Reference**
 
@@ -572,9 +620,15 @@ Now that you've completed the quick start, explore these topics to deepen your D
 - Update your Metadata Archive regularly: ``cd DISDRODB-METADATA && git pull``
 - Join the community to stay informed about new stations and features
 
+**Important: Data Citation**
+
 .. warning::
 
-    Users are expected to properly acknowledge the data they use by citing
-    and referencing each station. The corresponding references, recommended
-    citations, and DOIs are available in the DISDRODB netCDFs/xarray.Dataset
-    global attributes, as well as in the DISDRODB Metadata Archive.
+    When using DISDRODB data in your research, you **must properly cite and acknowledge**
+    each station's data source. This is essential for recognizing data contributors' efforts
+    and maintaining the open science ecosystem.
+
+    Citation information, DOIs, and recommended references are available in:
+
+    - DISDRODB NetCDF/xarray.Dataset global attributes
+    - DISDRODB Metadata YAML file of each station

@@ -20,7 +20,6 @@ import bz2
 import gzip
 import os
 import shutil
-import subprocess
 import tempfile
 import zipfile
 
@@ -51,7 +50,7 @@ def unzip_file(filepath: str, dest_path: str) -> None:
         zip_ref.extractall(dest_path)
 
 
-def unzip_file_on_terminal(filepath: str, dest_path: str) -> str:
+def unzip_file_on_terminal(filepath: str, dest_path: str):
     """Unzip a file into a directory using the terminal command.
 
     Parameters
@@ -61,6 +60,8 @@ def unzip_file_on_terminal(filepath: str, dest_path: str) -> str:
     dest_path : str
         Path of the destination directory.
     """
+    from disdrodb.utils.cli import subprocess_run
+
     os.makedirs(dest_path, exist_ok=True)
 
     if os.name == "nt":
@@ -76,7 +77,7 @@ def unzip_file_on_terminal(filepath: str, dest_path: str) -> str:
         # macOS/Linux: use unzip
         cmd = ["unzip", "-q", filepath, "-d", dest_path]
 
-    subprocess.run(cmd, check=True)
+    subprocess_run(cmd, check=True)
 
 
 def _zip_dir(dir_path: str, dst_dir=None) -> str:

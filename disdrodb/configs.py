@@ -18,6 +18,8 @@
 
 import os
 import shutil
+import tempfile
+from pathlib import Path
 
 from disdrodb.utils.yaml import read_yaml, write_yaml
 
@@ -185,21 +187,50 @@ def get_metadata_archive_dir(metadata_archive_dir=None):
     return metadata_archive_dir
 
 
+_CACHED_TMP_SCATTERING_TABLE_DIR = None
+
+
 def get_scattering_table_dir(scattering_table_dir=None):
-    """Return the directory where DISDRODB save pyTMatrix scattering tables."""
+    """Return the directory where DISDRODB save pyTMatrix scattering tables.
+
+    Priority:
+      1) explicit argument
+      2) disdrodb config
+      3) cached temp dir (per process)
+
+    """
     import disdrodb
     from disdrodb.api.checks import check_scattering_table_dir
 
+    # Explicit path provided as argument
+    if scattering_table_dir is not None:
+        scattering_table_dir = check_scattering_table_dir(scattering_table_dir)
+        return scattering_table_dir
+
+    # Check if configuration file has a scattering_table_dir specified
     if scattering_table_dir is None:
         scattering_table_dir = disdrodb.config.get("scattering_table_dir", None)
-    if scattering_table_dir is None:
+
+    # If yes, use it
+    if scattering_table_dir is not None:
+        scattering_table_dir = check_scattering_table_dir(scattering_table_dir)  # ensure Path converted to str
+        return scattering_table_dir
+
+    # If not, fall back to a temp directory (cross-platform)
+    global _CACHED_TMP_SCATTERING_TABLE_DIR  # noqa: PLW0603
+
+    if _CACHED_TMP_SCATTERING_TABLE_DIR is None:
+        scattering_table_dir = Path(tempfile.gettempdir()) / "disdrodb" / "scattering_tables"
+        scattering_table_dir.mkdir(parents=True, exist_ok=True)  # creates it if it doesn't exist
+        scattering_table_dir = check_scattering_table_dir(scattering_table_dir)  # ensure Path converted to str
+        _CACHED_TMP_SCATTERING_TABLE_DIR = scattering_table_dir
         msg = (
-            "The directory where to save DISDRODB T-Matrix scattering look-up tables is not specified. "
-            + "Please specify it using disdrodb.define_configs(scattering_table_dir=<path>)"
+            "The directory where to save DISDRODB T-Matrix scattering look-up tables (LUTs) is not specified. "
+            + "Please specify it using disdrodb.define_configs(scattering_table_dir=<path>). "
+            + f"Currently saving LUTs in temporary directory {scattering_table_dir}."
         )
-        raise ValueError(msg)
-    scattering_table_dir = check_scattering_table_dir(scattering_table_dir)  # ensure Path converted to str
-    return scattering_table_dir
+        print(msg)
+    return _CACHED_TMP_SCATTERING_TABLE_DIR
 
 
 def get_folder_partitioning():

@@ -72,7 +72,7 @@ def disdrodb_run_l0b_station(
         If parallel processing is enabled, each process will use a single thread
         to avoid issues with the HDF/netCDF library.
         The DASK_NUM_WORKERS environment variable controls the number of processes
-        to use.A sensible default is automatically set by the software.
+        to use. A sensible default is automatically set by the software.
         --debugging_mode: Processes only a subset of data for testing
         --force: Overwrites existing output files (default: False)
 

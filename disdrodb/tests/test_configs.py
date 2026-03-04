@@ -274,12 +274,14 @@ class TestGetScatteringTableDir:
         disdrodb.config.set({"scattering_table_dir": test_dir})
         assert get_scattering_table_dir() == test_dir
 
-    def test_missing_config_raises(self):
+    def test_missing_config_do_not_raises(self):
         """Test raising ValueError when scattering table dir missing."""
         import disdrodb
 
-        with disdrodb.config.set({"scattering_table_dir": None}), pytest.raises(ValueError):
-            get_scattering_table_dir()
+        with disdrodb.config.set({"scattering_table_dir": None}):
+            tmp_dir = get_scattering_table_dir()
+        assert isinstance(tmp_dir, str)
+        assert tmp_dir.endswith("scattering_tables")
 
 
 class TestGetFolderPartitioning:

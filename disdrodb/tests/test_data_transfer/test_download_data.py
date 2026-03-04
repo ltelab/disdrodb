@@ -534,16 +534,19 @@ class TestDownloadWebServerData:
         monkeypatch.setattr(os, "makedirs", lambda path, exist_ok: calls.append((path, exist_ok)))
         self.makedirs_calls = calls
 
-        # Prepare a placeholder for subprocess.run behavior
+        # Prepare a placeholder for subprocess_run behavior
         self.subprocess_args = []
 
-        def fake_run(cmd, check):
-            self.subprocess_args.append((cmd, check))
+        def fake_subprocess_run(argv, *, check=True, capture_output=False, text=True, cwd=None):
+            self.subprocess_args.append((argv, check))
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(
+            "disdrodb.data_transfer.download_data.subprocess_run",
+            fake_subprocess_run,
+        )
 
     def test_successful_download_invokes_subprocess(self, tmp_path):
-        """download_web_server_data should invoke subprocess.run with constructed command on success."""
+        """download_web_server_data should invoke subprocess_run with constructed command on success."""
         url = "http://example.com/data"
         dst_dir = str(tmp_path / "out")
         download_web_server_data(url, dst_dir, verbose=True)
@@ -551,20 +554,20 @@ class TestDownloadWebServerData:
         # os.makedirs should have been called for dst_dir
         assert (dst_dir, True) in self.makedirs_calls
 
-        # subprocess.run should have been called once with the stubbed command
+        # subprocess_run should have been called once with the stubbed command
         assert len(self.subprocess_args) == 1
         cmd_called, check_flag = self.subprocess_args[0]
         assert cmd_called == ["wget", "-r", "-np", "-nH", "--cut-dirs=3", "-P", dst_dir, url + "/"]
         assert check_flag is True
 
     def test_subprocess_failure_raises(self, tmp_path, monkeypatch):
-        """download_web_server_data should propagate CalledProcessError when subprocess.run fails."""
+        """download_web_server_data should propagate CalledProcessError when subprocess_run fails."""
 
-        # Patch subprocess.run to raise CalledProcessError
-        def raise_error(cmd, check):
-            raise subprocess.CalledProcessError(returncode=1, cmd=cmd, output=b"", stderr=b"error")
+        # Patch subprocess_run to raise CalledProcessError
+        def raise_error(argv, *, check=True, capture_output=False, text=True, cwd=None):
+            raise subprocess.CalledProcessError(returncode=1, cmd=argv, output=b"", stderr=b"error")
 
-        monkeypatch.setattr(subprocess, "run", raise_error)
+        monkeypatch.setattr("disdrodb.data_transfer.download_data.subprocess_run", raise_error)
 
         url = "http://example.com/data"
         dst_dir = str(tmp_path / "out")
@@ -620,16 +623,19 @@ class TestDownloadFTPServerData:
         )
         self.makedirs_calls = calls
 
-        # Capture subprocess.run calls
+        # Capture subprocess_run calls
         self.subprocess_args = []
 
-        def fake_run(cmd, check):
-            self.subprocess_args.append((cmd, check))
+        def fake_subprocess_run(argv, *, check=True, capture_output=False, text=True, cwd=None):
+            self.subprocess_args.append((argv, check))
 
-        monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(
+            "disdrodb.data_transfer.download_data.subprocess_run",
+            fake_subprocess_run,
+        )
 
     def test_successful_download_invokes_subprocess(self, tmp_path):
-        """download_ftp_server_data should invoke subprocess.run with constructed command."""
+        """download_ftp_server_data should invoke subprocess_run with constructed command."""
         url = "ftp.test.com/data"
         dst_dir = str(tmp_path / "out")
         download_ftp_server_data(url, dst_dir, verbose=True)
@@ -637,7 +643,7 @@ class TestDownloadFTPServerData:
         # os.makedirs called
         assert (dst_dir, True) in self.makedirs_calls
 
-        # subprocess.run called with stubbed command
+        # subprocess_run called with stubbed command
         assert len(self.subprocess_args) == 1
         cmd_called, check_flag = self.subprocess_args[0]
         assert cmd_called == [
@@ -653,17 +659,17 @@ class TestDownloadFTPServerData:
         assert check_flag is True
 
     def test_subprocess_failure_raises(self, tmp_path, monkeypatch):
-        """download_ftp_server_data should raise CalledProcessError when subprocess.run fails."""
+        """download_ftp_server_data should raise CalledProcessError when subprocess_run fails."""
 
-        def raise_error(cmd, check):
+        def raise_error(argv, *, check=True, capture_output=False, text=True, cwd=None):
             raise subprocess.CalledProcessError(
                 returncode=1,
-                cmd=cmd,
+                cmd=argv,
                 output=b"",
                 stderr=b"error",
             )
 
-        monkeypatch.setattr(subprocess, "run", raise_error)
+        monkeypatch.setattr("disdrodb.data_transfer.download_data.subprocess_run", raise_error)
 
         url = "ftp.test.com/data"
         dst_dir = str(tmp_path / "out")

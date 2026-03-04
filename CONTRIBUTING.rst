@@ -24,9 +24,9 @@ So all code changes happen through Pull Requests (PRs).
 
 Before contributing, please take a moment to read through the following sections:
 
-- The `Installation for contributors <https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors>`__ help you to set up the developing environment and the pre-commit hooks.
-- The section `Contributing process <#contributing-process>`__ provides you with a brief overview of the steps that each DISDRODB developer must follow to contribute to the repository.
-- The `Code review checklist <#code-review-checklist>`__ enable to speed up the code review process.
+- The `Installation for contributors <https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors>`__ section helps you set up the development environment and pre-commit hooks.
+- The `Contributing process <#contributing-process>`__ section provides a brief overview of the steps each DISDRODB developer must follow to contribute to the repository.
+- The `Code review checklist <#code-review-checklist>`__ section enables faster code review.
 - The `Code of conduct <https://github.com/ltelab/disdrodb/blob/main/CODE_OF_CONDUCT.md>`__ details the expected behavior of all contributors.
 
 Initiating a discussion about your ideas or proposed implementations is a vital step before starting your contribution!
@@ -35,9 +35,9 @@ Here are some guidelines to facilitate this process:
 
 1. Start with a conversation
 
-   Before you start coding, open a `GitHub Discussion <https://github.com/ltelab/disdrodb/discussions>`__, a `GitHub Feature Request Issue <https://github.com/ltelab/disdrodb/issues/new/choose>`__ or
-   just start a discussion in the `DISDRODB Slack Workspace <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__.
-   These channels of communication provide an opportunity to gather feedback, understand the project's current state, and improve your contributions.
+   Before you start coding, open a `GitHub Discussion <https://github.com/ltelab/disdrodb/discussions>`__, a `GitHub Feature Request Issue <https://github.com/ltelab/disdrodb/issues/new/choose>`__, or
+   start a discussion in the `DISDRODB Slack Workspace <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__.
+   These communication channels provide an opportunity to gather feedback, understand the project's current state, and improve your contributions.
 
 2. Seek guidance and suggestions
 
@@ -50,27 +50,27 @@ Here are some guidelines to facilitate this process:
 
 By following these steps, you not only enhance the quality and relevance of your contribution but also become an integral part of the project's collaborative ecosystem.
 
-If you have any questions, please do not hesitate to ask in the `GitHub Discussions <https://github.com/ltelab/disdrodb/discussions>`__ or in the
+If you have any questions, please ask in the `GitHub Discussions <https://github.com/ltelab/disdrodb/discussions>`__ or
 `DISDRODB Slack Workspace <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__.
 
 
 Issue Reporting Guidelines
 -----------------------------
 
-To facilitate and enhance the issue reporting process, it is important to utilize the predefined GitHub Issue Templates.
-These templates are designed to ensure you provide all the essential information in your report, allowing for a faster and more effective response from the maintainers.
-You can access and use these templates by visiting the `GitHub Issue Templates page here <https://github.com/ltelab/disdrodb/issues/new/choose>`__.
+To facilitate and enhance the issue reporting process, it is important to use the predefined GitHub Issue Templates.
+These templates ensure you provide all essential information in your report, enabling a faster and more effective response from the maintainers.
+You can access these templates at the `GitHub Issue Templates page <https://github.com/ltelab/disdrodb/issues/new/choose>`__.
 
-However, if you find that the existing templates don't quite match the specifics of the issue you're encountering, please feel free to suggest a new template.
-Your feedback is invaluable in refining our processes and ensuring we address a broader spectrum of concerns.
-To do this, simply create a general issue in the repository, clearly stating that you're requesting a new template and include detailed suggestions about what this new template should entail.
+However, if the existing templates don't match your specific issue, please suggest a new template.
+Your feedback is invaluable for refining our processes and addressing a broader spectrum of concerns.
+To do this, create a general issue in the repository, clearly state that you're requesting a new template, and include detailed suggestions about what it should entail.
 This proactive approach helps us continuously evolve and better serve the needs of the project and its contributors.
 
 
 Contributing process
 -----------------------
 
-Here is a brief overview of the steps that each DISDRODB developer must follow to contribute to the repository.
+Here is a brief overview of the steps each DISDRODB developer must follow to contribute to the repository:
 
 1. Fork the repository.
 2. Create a new branch for each contribution.
@@ -87,9 +87,9 @@ Here is a brief overview of the steps that each DISDRODB developer must follow t
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you do not have a GitHub account yet, please create one `here <https://github.com/join>`__.
-If you do not have yet Git installed on your computer, please install it following `these instructions <https://github.com/git-guides/install-git>`__.
-Then, please follow the guidelines in the `Installation for contributors <https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors>`__ section
-to create the local copy of the disdrodb repository, set up the developing environment and the pre-commit hooks.
+If you do not have Git installed on your computer, please install it following `these instructions <https://github.com/git-guides/install-git>`__.
+Then, follow the guidelines in the `Installation for contributors <https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors>`__ section
+to create a local copy of the disdrodb repository, set up the development environment, and install the pre-commit hooks.
 
 Once you have a local copy of the disdrodb repository on your machine, you're ready to contribute!
 
@@ -98,56 +98,56 @@ Once you have a local copy of the disdrodb repository on your machine, you're re
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Each contribution should be made in a separate new branch of your forked repository.
-For example, if you plan to contribute with new readers, please create a branch for every single reader.
-Working on the main branch is reserved for *Core Contributors* only.
-Core Contributors are developers that actively work and maintain the repository.
+For example, if you plan to contribute new readers, create a branch for each individual reader.
+Working directly on the main branch is reserved for *Core Contributors* only.
+Core Contributors are developers who actively maintain the repository.
 They are the only ones who accept Pull Requests and push commits directly to the DISDRODB repository.
 
 For more information on how to create and work with branches, see
 `“Branches in a Nutshell” <https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell>`__
 in the Git documentation.
 
-Please define the name of your branch based on the scope of the contribution. Try to strictly stick to the following guidelines:
+Please define the name of your branch based on the scope of the contribution. Strictly follow these guidelines:
 
--  If you add a reader, use : ``reader-<data_source*>-<campaign>``
+-  If you add a reader: ``reader-<data_source*>-<campaign>``
 -  If you fix a bug: ``bugfix-<some_key>-<word>``
 -  If you improve the documentation: ``doc-<some_key>-<word>``
 -  If you add a new feature: ``feature-<some_key>-<word>``
--  If you refactor some code: ``refactor-<some_key>-<word>``
--  If you optimize some code: ``optimize-<some_key>-<word>``
+-  If you refactor code: ``refactor-<some_key>-<word>``
+-  If you optimize code: ``optimize-<some_key>-<word>``
 
 
-\* Guidelines for the ``<data_source>``
-- 	We use the institution name when campaign data spans more than 1 country (i.e. ARM, NASA)
-- 	We use the country name when all campaigns (or sensor networks) are inside a given country.
+\* Guidelines for the ``<data_source>``:
+
+- 	Use the institution name when campaign data spans more than 1 country (e.g., ARM, NASA)
+- 	Use the country name when all campaigns (or sensor networks) are within a given country
 
 
 
 3. Work on your changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When you are working on your changes, please stick with the repository's coding style and documentation rules.
+When working on your changes, please adhere to the repository's coding style and documentation rules.
 
 **Code Style**
 
 We follow the `PEP 8 <https://pep8.org/>`__ style guide for python code.
 Another relevant style guide can be found in the `The Hitchhiker's Guide to Python <https://docs.python-guide.org/writing/style/>`__.
 
-To ensure a minimal style consistency, we use `black <https://black.readthedocs.io/en/stable/>`__ to auto-format the source code.
-The *black* configuration used in the DISDRODB project is
+To ensure minimal style consistency, we use `black <https://black.readthedocs.io/en/stable/>`__ to auto-format the source code.
+The *black* configuration used in DISDRODB is
 defined in the `pyproject.toml <https://github.com/ltelab/disdrodb/blob/main/pyproject.toml>`__.
 
 
 **Code Documentation**
 
-Every module, function, or class must have a docstring that describes its purpose and how to use it.
-The docstrings follows the conventions described in the `PEP 257 <https://www.python.org/dev/peps/pep-0257/#multi-line-docstrings>`__
+Every module, function, or class must have a docstring describing its purpose and how to use it.
+The docstrings follow the conventions described in `PEP 257 <https://www.python.org/dev/peps/pep-0257/#multi-line-docstrings>`__
 and the `Numpy's docstrings format <https://numpydoc.readthedocs.io/en/latest/format.html>`__.
 
 Here is a summary of the most important rules:
 
--  Always use triple quotes for doctrings, even if it fits a single
-   line.
+-  Always use triple quotes for docstrings, even if they fit on a single line.
 
 -  For one-line docstring, end the phrase with a period.
 
@@ -178,16 +178,16 @@ Here is an example of a docstring:
        """
 
 
-If you are using VS code, you can install the  `autoDocstring <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_
-extension to automatically create such preformatted docstring.
+If you are using VS Code, you can install the `autoDocstring <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_
+extension to automatically create such preformatted docstrings.
 
-You should configure VS code as follow :
+You should configure VS Code as follows:
 
 .. image:: https://github.com/ltelab/disdrodb/blob/main/docs/source/static/vs_code_settings.png?raw=true
    :alt: VS Code Settings
    :align: center
 
-The convention we adopt for our docstrings is the numpydoc string convention.
+The convention we adopt for our docstrings is the NumPy docstring convention.
 
 
 .. _code_quality_control:
@@ -199,7 +199,7 @@ Pre-commit hooks are automated scripts that run during each commit to detect bas
 If a hook identifies an issue (signified by the pre-commit script exiting with a non-zero status), it halts the commit process and displays the error messages.
 
 Currently, DISDRODB tests that the code to be committed complies with `black's  <https://github.com/psf/black>`__ format style,
-the `ruff <https://github.com/charliermarsh/ruff>`__ linter and the `codespell <https://github.com/codespell-project/codespell>`__ spelling checker.
+the `ruff <https://github.com/charliermarsh/ruff>`__ linter, and the `codespell <https://github.com/codespell-project/codespell>`__ spelling checker.
 
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+
 |  Tool                                                                                         | Aim                                                              | pre-commit | CI/CD |
@@ -211,12 +211,12 @@ the `ruff <https://github.com/charliermarsh/ruff>`__ linter and the `codespell <
 | `Codespell  <https://github.com/codespell-project/codespell>`__                               | Spelling checker                                                 | 👍         | 👍    |
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+
 
-The versions of the software used in the pre-commit hooks is specified in the `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`__ file.
-This file serves as a configuration guide, ensuring that the hooks are executed with the correct versions of each tool, thereby maintaining consistency and reliability in the code quality checks.
+The versions of the software used in the pre-commit hooks are specified in the `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`__ file.
+This file serves as a configuration guide, ensuring that the hooks are executed with the correct versions of each tool, thereby maintaining consistency and reliability in code quality checks.
 
 
-If a commit is blocked due to these checks, you can manually correct the issues by running locally the appropriate tool: ``black .`` for Black, ``ruff check .`` for Ruff, or ``codespell`` for Codespell.
-Alternatively, you can use the ``pre-commit run --all-files`` command to attempt automatic corrections of all formatting errors across all files.
+If a commit is blocked due to these checks, you can manually correct the issues by running the appropriate tool locally: ``black .`` for Black, ``ruff check .`` for Ruff, or ``codespell`` for Codespell.
+Alternatively, use the ``pre-commit run --all-files`` command to attempt automatic corrections of all formatting errors across all files.
 
 The Continuous Integration (CI) tools integrated within GitHub employ the same pre-commit hooks to consistently uphold code quality for every Pull Request.
 
@@ -245,9 +245,9 @@ DISDRODB tests are written using the third-party `pytest <https://docs.pytest.or
 
 The tests are organized within the ``/disdrodb/tests`` directory and are structured to comprehensively assess various aspects of the code.
 
-These tests are integral to the development process and are automatically triggered on GitHub upon any new commits or updates to a Pull Request.
-The Continuous Integration (CI) on GitHub runs tests and analyzes code coverage using multiple versions of Python,
-multiple operating systems, and multiple versions of dependency libraries. This is done to ensure that the code works in a variety of environments.
+These tests are integral to the development process and automatically run on GitHub upon new commits or Pull Request updates.
+The Continuous Integration (CI) on GitHub runs tests and analyzes code coverage using multiple Python versions,
+multiple operating systems, and multiple versions of dependency libraries to ensure the code works in various environments.
 
 The following tools are used:
 
@@ -334,12 +334,12 @@ Code review checklist
 ---------------------
 
 -  Once your Pull Request is ready, ask the maintainers to review your code.
--  When you are done with the changes suggested by the reviewers, do another  self review of the code and write a comment to notify the reviewer,
+-  When you complete the changes suggested by reviewers, do another self-review of the code and write a comment to notify the reviewer
    that the Pull Request is ready for another iteration.
--  Resolve all the review comments, making sure they are all addressed before another review iteration.
--  If you are not going to follow a code review recommendations, please add a comment explaining why you think the reviewer suggestion is not relevant.
--  Avoid writing comment like “done” of “fixed” on each code review comment.
-   Reviewers assume you will do all suggested changes, unless you have a reason not to do some of them.
+-  Resolve all review comments, ensuring they are all addressed before the next review iteration.
+-  If you are not going to follow a code review recommendation, please add a comment explaining why you think the reviewer's suggestion is not relevant.
+-  Avoid writing comments like "done" or "fixed" on each code review comment.
+   Reviewers assume you will make all suggested changes unless you have a reason not to implement some of them.
 
 
 Credits

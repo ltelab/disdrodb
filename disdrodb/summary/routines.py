@@ -99,6 +99,8 @@ def save_table_to_pdf(
         If 'landscape', the table will be laid out horizontally.
         The default is 'landscape'.
     """
+    from disdrodb.utils.cli import subprocess_run
+
     # Export table to LaTeX
     table_tex = df.to_latex(
         index=index,
@@ -142,7 +144,7 @@ def save_table_to_pdf(
         with open(tex_path, "w", encoding="utf-8") as f:
             f.write(document)
         for _ in range(2):
-            subprocess.run(
+            subprocess_run(
                 [
                     "tectonic",
                     "--outdir",
@@ -4895,7 +4897,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
 
     #### ---------------------------------------------------------------------.
     #### Create L2E RADAR Summary Plots
-    if len(df) > 1000:
+    if len(df) > 1000 or os.environ.get("PYTEST_CURRENT_TEST"):
         # Summary plots at X, C, S bands
         if "DBZH_X" in df:
             filename = define_filename(

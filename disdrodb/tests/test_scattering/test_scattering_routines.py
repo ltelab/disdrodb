@@ -17,7 +17,6 @@
 """Test scattering routines."""
 
 import re
-import subprocess
 
 import numpy as np
 import pytest
@@ -39,6 +38,7 @@ from disdrodb.scattering.routines import (
     wavelength_to_frequency,
 )
 from disdrodb.tests.fake_datasets import create_template_l2e_dataset
+from disdrodb.utils.cli import subprocess_run
 
 
 class TestRadarBands:
@@ -152,7 +152,7 @@ def test_pytmatrix_lut_cli(tmp_path):
     ]
 
     # Run the CLI command
-    result = subprocess.run(
+    result = subprocess_run(
         cmd,
         capture_output=True,
         text=True,
@@ -177,7 +177,7 @@ def test_pytmatrix_lut_cli_invalid_args():
     """Test the pytmatrix_lut CLI command fails gracefully with invalid arguments."""
     # Test missing required argument (frequency)
     cmd = ["pytmatrix_lut", "output.pkl"]
-    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    result = subprocess_run(cmd, capture_output=True, text=True, check=False)
     assert result.returncode != 0
 
     # Test invalid axis ratio model
@@ -189,7 +189,7 @@ def test_pytmatrix_lut_cli_invalid_args():
         "InvalidModel",
         "output.pkl",
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    result = subprocess_run(cmd, capture_output=True, text=True, check=False)
     assert result.returncode != 0
 
 
@@ -224,7 +224,7 @@ def test_pytmatrix_lut_cli_fails_without_pytmatrix(tmp_path):
     ]
 
     # Run the CLI command
-    result = subprocess.run(
+    result = subprocess_run(
         cmd,
         capture_output=True,
         text=True,
