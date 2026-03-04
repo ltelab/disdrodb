@@ -99,6 +99,8 @@ def save_table_to_pdf(
         If 'landscape', the table will be laid out horizontally.
         The default is 'landscape'.
     """
+    from disdrodb.utils.cli import subprocess_run
+
     # Export table to LaTeX
     table_tex = df.to_latex(
         index=index,
@@ -142,7 +144,7 @@ def save_table_to_pdf(
         with open(tex_path, "w", encoding="utf-8") as f:
             f.write(document)
         for _ in range(2):
-            subprocess.run(
+            subprocess_run(
                 [
                     "tectonic",
                     "--outdir",

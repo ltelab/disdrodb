@@ -16,7 +16,77 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB command-line-interface scripts utilities."""
 
+import os
+import shutil
+import subprocess
+import sys
+from collections.abc import Sequence
+from pathlib import Path
+
 import click
+
+
+def _env_scripts_dir() -> Path:
+    """Return the directory where console scripts for the *current* Python environment live.
+
+    Works for conda envs and venvs on Linux/macOS/Windows.
+    """
+    exe = Path(sys.executable).resolve()
+    if os.name == "nt":
+        # ...\env\python.exe -> ...\env\Scripts
+        return exe.parent / "Scripts"
+    # .../env/bin/python -> .../env/bin
+    return exe.parent
+
+
+def subprocess_run(
+    argv: Sequence[str],
+    *,
+    check: bool = True,
+    capture_output: bool = False,
+    text: bool = True,
+    cwd: str | None = None,
+    **kwargs,
+) -> subprocess.CompletedProcess:
+    """Run a command ensuring the current kernel's env 'bin/Scripts' is on PATH.
+
+    argv: like ["disdrodb_run_l0", "--help"]
+
+    This wrapper ensures subprocess can find and run console scripts from the
+    current Jupyter kernel's conda/venv by adding
+    that environment's bin/ (or Scripts/ on Windows) to PATH
+    when the notebook starts with a system-only PATH.
+
+    """
+    if not argv:
+        raise ValueError("argv must be non-empty")
+
+    env = os.environ.copy()
+    scripts_dir = str(_env_scripts_dir())
+
+    # Add scripts_dir to PATH only if not already present
+    path_parts = env.get("PATH", "").split(os.pathsep) if env.get("PATH") else []
+    if scripts_dir not in path_parts:
+        env["PATH"] = scripts_dir + os.pathsep + env.get("PATH", "")
+
+    # Resolve the executable explicitly (more deterministic)
+    exe = shutil.which(argv[0], path=env["PATH"])
+    if exe is None:
+        raise FileNotFoundError(
+            f"Command '{argv[0]}' not found on PATH for kernel environment."
+            f"Tried with scripts directory: {scripts_dir}",
+        )
+
+    cmd = [exe, *argv[1:]]
+    return subprocess.run(
+        cmd,
+        env=env,
+        check=check,
+        capture_output=capture_output,
+        text=text,
+        cwd=cwd,
+        **kwargs,
+    )
 
 
 def execute_cmd(cmd, raise_error=False):

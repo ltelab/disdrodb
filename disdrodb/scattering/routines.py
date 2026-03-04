@@ -19,7 +19,6 @@
 import itertools
 import logging
 import os
-import subprocess
 
 import dask
 import numpy as np
@@ -34,6 +33,7 @@ from disdrodb.scattering.permittivity import (
     get_rayleigh_dielectric_factor,
     get_refractive_index,
 )
+from disdrodb.utils.cli import subprocess_run
 from disdrodb.utils.manipulations import filter_diameter_bins, get_diameter_bin_edges
 from disdrodb.utils.warnings import suppress_warnings
 
@@ -580,7 +580,7 @@ def ensure_pytmatrix_lut_exists(
     if verbose:
         print("Running:", " ".join(cmd))
 
-    result = subprocess.run(
+    result = subprocess_run(
         cmd,
         check=False,
         capture_output=True,
