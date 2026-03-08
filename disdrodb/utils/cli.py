@@ -194,7 +194,7 @@ def subprocess_run(
     """
     # Retrieve command arguments as list (shell=False)
     argv = get_command_argv(cmd)
-    _ = kwargs.pop("shell", None)
+    kwargs.pop("shell", None)
 
     # Retrieve environment
     env = retrieve_environment()
