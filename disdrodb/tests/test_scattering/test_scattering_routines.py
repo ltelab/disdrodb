@@ -22,6 +22,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
+import disdrodb
 from disdrodb import is_pytmatrix_available
 from disdrodb.scattering import RADAR_VARIABLES, get_radar_parameters
 from disdrodb.scattering.routines import (
@@ -384,8 +385,6 @@ class TestListSimulationParams:
 @pytest.fixture(autouse=True, scope="module")
 def set_scattering_table_dir(tmp_path_factory):
     """Set a scattering_table_dir for all tests in this module."""
-    import disdrodb
-
     # Define directory
     scattering_dir = tmp_path_factory.mktemp("scattering_table")
 
@@ -699,3 +698,82 @@ class TestGetRadarParameters:
                 frequency=5.0,  # numeric frequency in GHz
                 parallel=True,
             )
+
+    def test_empirical_psd_returns_nan_when_load_scatterer_fails(self, mocker):
+        """Test get_radar_parameters returns NaN when load_scatterer raises RuntimeError for empirical PSD."""
+        mock_load_scatterer = mocker.patch(
+            "disdrodb.scattering.routines.load_scatterer",
+            side_effect=RuntimeError("Scattering table simulation failed"),
+        )
+
+        # Create empirical PSD dataset
+        ds = create_template_l2e_dataset(with_velocity=True)
+
+        # Get radar parameters (should handle the RuntimeError gracefully)
+        ds_radar = get_radar_parameters(
+            ds=ds,
+            frequency="C",
+            num_points=1024,
+            diameter_min=0,
+            diameter_max=8,
+            canting_angle_std=7,
+            axis_ratio_model="Thurai2007",
+            permittivity_model="Turner2016",
+            water_temperature=10,
+            elevation_angle=0,
+            parallel=False,
+        )
+
+        # Assert all radar variables are present
+        assert isinstance(ds_radar, xr.Dataset)
+        for var in RADAR_VARIABLES:
+            assert var in ds_radar
+
+        # Assert all radar variables are NaN
+        for var in RADAR_VARIABLES:
+            assert np.all(np.isnan(ds_radar[var].values))
+
+        # Verify that load_scatterer was called
+        assert mock_load_scatterer.called
+
+    def test_model_psd_returns_nan_when_load_scatterer_fails(self, mocker):
+        """Test get_radar_parameters returns NaN when load_scatterer raises RuntimeError for model PSD."""
+        mock_load_scatterer = mocker.patch(
+            "disdrodb.scattering.routines.load_scatterer",
+            side_effect=RuntimeError("Scattering table simulation failed"),
+        )
+
+        # Define L2M dataset
+        n_timesteps = 6
+        D50 = xr.DataArray(np.linspace(0.5, 3.0, n_timesteps), dims="time", name="D50")
+        Nw = xr.DataArray(np.linspace(5e2, 2e4, n_timesteps), dims="time", name="Nw")
+        ds = xr.Dataset({"D50": D50, "Nw": Nw})
+        ds["mu"] = 1
+        ds.attrs["disdrodb_psd_model"] = "NormalizedGammaPSD"
+
+        # Get radar parameters (should handle the RuntimeError gracefully)
+        ds_radar = get_radar_parameters(
+            ds=ds,
+            frequency="C",
+            num_points=1024,
+            diameter_min=0,
+            diameter_max=8,
+            canting_angle_std=7,
+            axis_ratio_model="Thurai2007",
+            permittivity_model="Turner2016",
+            water_temperature=10,
+            elevation_angle=0,
+            parallel=False,
+        )
+
+        # Assert all radar variables are present
+        assert isinstance(ds_radar, xr.Dataset)
+        for var in RADAR_VARIABLES:
+            assert var in ds_radar
+
+        # Assert all radar variables are NaN
+        for var in RADAR_VARIABLES:
+            assert np.all(np.isnan(ds_radar[var].values))
+
+        # Verify that load_scatterer was called
+        assert mock_load_scatterer.called

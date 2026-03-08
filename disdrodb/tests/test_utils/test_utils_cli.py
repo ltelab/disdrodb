@@ -38,12 +38,13 @@ class TestExecuteCmd:
     def test_raises_called_process_error_when_failed(self):
         """It raises CalledProcessError if command fails and raise_error=True."""
         with pytest.raises(subprocess.CalledProcessError):
-            execute_cmd("exit 1", raise_error=True)
+            execute_cmd("python -c 'import sys; sys.exit(1)'", raise_error=True)
 
     def test_no_raise_when_failed_if_raise_error_false(self):
         """It does not raise if command fails and raise_error=False."""
         # Should not raise, even if command fails
-        execute_cmd("exit 1", raise_error=False)
+        returncode = execute_cmd("python -c 'import sys; sys.exit(1)'", raise_error=False)
+        assert returncode == 1
 
 
 class TestParseEmptyStringAndNone:
