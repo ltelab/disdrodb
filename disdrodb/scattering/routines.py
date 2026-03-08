@@ -585,7 +585,7 @@ def create_pytmatrix_lut(
     )
 
     if verbose:
-        print("Running: {cmd}")
+        print(f"Running: {cmd}")
 
     result = subprocess_run(
         cmd,
