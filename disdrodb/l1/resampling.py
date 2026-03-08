@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from disdrodb.utils.coords import add_time_bnds
 from disdrodb.utils.time import (
     ensure_sample_interval_in_seconds,
     get_dataset_start_end_time,
@@ -342,4 +343,9 @@ def resample_dataset(ds, sample_interval, temporal_resolution, time_is_interval_
 
     # Add accumulation_interval as new sample_interval coordinate
     ds_resampled = add_sample_interval(ds_resampled, sample_interval=accumulation_interval)
+
+    # Add time bounds
+    ds_resampled = add_time_bnds(ds_resampled)
+
+    # Return resampled dataset
     return ds_resampled

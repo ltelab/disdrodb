@@ -26,6 +26,7 @@ from disdrodb.api.io import open_netcdf_files
 from disdrodb.l0.l0b_processing import set_l0b_encodings
 from disdrodb.l1.resampling import add_sample_interval
 from disdrodb.utils.attrs import set_disdrodb_attrs
+from disdrodb.utils.coords import add_time_bnds
 from disdrodb.utils.logger import log_info, log_warning
 from disdrodb.utils.time import ensure_sorted_by_time
 
@@ -623,12 +624,12 @@ def finalize_l0c_dataset(ds, sample_interval, sensor_name, verbose=True, logger=
     # - Just log warnings in the log file
     ds = check_timesteps_regularity(ds=ds, sample_interval=sample_interval, verbose=verbose, logger=logger)
 
-    # Shift timesteps to ensure time correspond to start of measurement interval
-    # TODO as function of sensor name
-
     # Set netCDF dimension order
     # --> Required for correct encoding !
     ds = ds.transpose("time", "diameter_bin_center", ...)
+
+    # Add time bounds
+    ds = add_time_bnds(ds)
 
     # Set encodings
     ds = set_l0b_encodings(ds=ds, sensor_name=sensor_name)

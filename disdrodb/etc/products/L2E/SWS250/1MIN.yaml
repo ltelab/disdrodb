@@ -15,5 +15,5 @@ product_options:
   below_velocity_tolerance: 3
   maintain_drops_smaller_than: 1
   maintain_drops_slower_than: 2.5
-  maintain_smallest_drops: True
+  maintain_smallest_drops: False
   remove_splashing_drops: True

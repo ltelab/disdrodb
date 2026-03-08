@@ -939,6 +939,7 @@ def run_l0c_station(
         filepaths=filepaths,
         freq=product_frequency,
         tolerance_seconds=TOLERANCE_SECONDS,
+        time_is_interval_end=True,
     )
 
     # -----------------------------------------------------------------.

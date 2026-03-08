@@ -434,10 +434,44 @@ class TestDefineBlocksOffsets:
         block_start, block_end = _define_blocks_offsets(
             sample_interval=30,
             temporal_resolution="ROLL1MIN",
+            time_is_interval_end=False,
         )
 
         assert block_start == 0
         assert block_end == np.timedelta64(30, "s")
+
+    def test_define_blocks_offsets_rolling_interval_end(self):
+        """Test rolling with time_is_interval_end=True extends block start backward."""
+        block_start, block_end = _define_blocks_offsets(
+            sample_interval=30,
+            temporal_resolution="ROLL1MIN",
+            time_is_interval_end=True,
+        )
+
+        assert block_start == -np.timedelta64(30, "s")
+        assert block_end == 0
+
+    def test_define_blocks_offsets_non_rolling_interval_end(self):
+        """Test non-rolling offsets are zero regardless of time_is_interval_end."""
+        block_start, block_end = _define_blocks_offsets(
+            sample_interval=60,
+            temporal_resolution="1MIN",
+            time_is_interval_end=True,
+        )
+
+        assert block_start == 0
+        assert block_end == 0
+
+    def test_define_blocks_offsets_rolling_same_interval_end(self):
+        """Test offsets are zero when rolling but sample matches accumulation, even with interval end."""
+        block_start, block_end = _define_blocks_offsets(
+            sample_interval=60,
+            temporal_resolution="ROLL1MIN",
+            time_is_interval_end=True,
+        )
+
+        assert block_start == 0
+        assert block_end == 0
 
 
 # ---------------------------------------------------------------------------
@@ -485,8 +519,8 @@ def l1_filepaths(tmp_path):
     filepaths = []
     # Two files on the same day to keep things simple but non-trivial
     for hour in (0, 12):
-        start = dt.datetime(2020, 1, 1, hour, 0, 0)
-        end = dt.datetime(2020, 1, 1, hour, 59, 59)
+        start = dt.datetime(2020, 1, 1, hour, 1, 0)
+        end = dt.datetime(2020, 1, 1, hour + 1, 0, 0)
         fname = f"L1.1MIN.CAMPAIGN_NAME.STATION_NAME.s{start:%Y%m%d%H%M%S}.e{end:%Y%m%d%H%M%S}.{ARCHIVE_VERSION}.nc"
         path = data_dir / fname
         path.touch()
@@ -501,8 +535,8 @@ def l2e_filepaths(tmp_path):
     data_dir = tmp_path / "l2e_data"
     data_dir.mkdir()
 
-    start = dt.datetime(2020, 1, 1, 0, 0, 0)
-    end = dt.datetime(2020, 1, 31, 23, 59, 59)
+    start = dt.datetime(2020, 1, 1, 0, 1, 0)
+    end = dt.datetime(2020, 2, 1, 0, 0, 0)
     fname = f"L2E.1MIN.CAMPAIGN_NAME.STATION_NAME.s{start:%Y%m%d%H%M%S}.e{end:%Y%m%d%H%M%S}.{ARCHIVE_VERSION}.nc"
     path = data_dir / fname
     path.touch()
@@ -515,8 +549,8 @@ def l2m_filepaths(tmp_path):
     data_dir = tmp_path / "l2m_data"
     data_dir.mkdir()
 
-    start = dt.datetime(2020, 2, 1, 0, 0, 0)
-    end = dt.datetime(2020, 2, 29, 23, 59, 59)
+    start = dt.datetime(2020, 2, 1, 0, 1, 0)
+    end = dt.datetime(2020, 3, 1, 0, 0, 0)
     # Pattern: L2M_<subproduct>.{accumulation_acronym}.campaign.station.s...e....version.format
     fname = f"L2M_GAMMA_ML.1MIN.CAMPAIGN_NAME.STATION_NAME.s{start:%Y%m%d%H%M%S}.e{end:%Y%m%d%H%M%S}.{ARCHIVE_VERSION}.nc"  # noqa
     path = data_dir / fname
@@ -600,7 +634,7 @@ class TestL1ProcessingOptions:
         assert {Path(fp).name for fp in block["filepaths"]} == {Path(fp).name for fp in l1_filepaths}
 
         # Start and end time should be within the expected date if partitions freq is daily.
-        assert block["start_time"].date() == block["end_time"].date()
+        assert block["start_time"].date() == block["end_time"].date() - dt.timedelta(days=1)
 
 
 # ---------------------------------------------------------------------------

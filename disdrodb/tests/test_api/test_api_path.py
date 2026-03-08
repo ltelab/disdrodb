@@ -793,8 +793,9 @@ class TestDefineFilename:
             station_name="STATION_NAME",
             start_time=start,
             end_time=end,
+            temporal_resolution="1MIN",
         )
-        assert fn == f"L0C.CAMPAIGN_NAME.STATION_NAME.s20220601000000.e20220601001000.{ARCHIVE_VERSION}.nc"
+        assert fn == f"L0C.1MIN.CAMPAIGN_NAME.STATION_NAME.s20220601000000.e20220601001000.{ARCHIVE_VERSION}.nc"
 
     def test_l2e_with_rolling(self):
         """Test L2E filename includes rolling temporal resolution."""
