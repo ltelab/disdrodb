@@ -156,7 +156,7 @@ class TestResampleDataset:
             coords={"time": times},
         )
         # Resample to 2 minutes timeseries
-        out = resample_dataset(ds, sample_interval=60, temporal_resolution="120S")
+        out = resample_dataset(ds, sample_interval=60, temporal_resolution="120S", time_is_interval_end=False)
 
         # Check expected timesteps
         # 00:00:00 and 00:02:00 (start of accumulated intervals)
@@ -189,7 +189,7 @@ class TestResampleDataset:
             coords={"time": times},
         )
         # Resample to 2 minutes timeseries
-        out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL120S")
+        out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL120S", time_is_interval_end=False)
 
         # Window size of 2
         # - Output time indicate start of the measurement interval !
@@ -207,38 +207,26 @@ class TestResampleDataset:
         assert "sample_interval" in out.coords
         assert out["sample_interval"].item() == 120
 
-    def test_resample_accessor_method(self):
-        """Test disdrodb resample accessor method."""
-        ds = xr.Dataset(coords={"time": pd.date_range("2000-01-01 00:00:00", periods=5, freq="1min")})
-        ds = ds.assign_coords({"sample_interval": 60})
-        out = ds.disdrodb.resample(temporal_resolution="ROLL2MIN")
-        # Test sample_interval coordinate is added
-        assert "sample_interval" in out.coords
-        assert out["sample_interval"].item() == 120
-        # Test flags set correctly
-        assert out.attrs["disdrodb_rolled_product"] == "True"
-        assert out.attrs["disdrodb_aggregated_product"] == "True"
-
     def test_qc_resampling_flag(self):
         """Test qc_resampling flag."""
         # Test when all timesteps are available and sample_interval=accumulation_interval
         ds = xr.Dataset(coords={"time": pd.date_range("2000-01-01 00:00:00", periods=5, freq="1min")})
         # - rolling=True
-        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL60S")
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL60S", time_is_interval_end=False)
         assert np.all(ds_out["qc_resampling"].data == 0)
         # - rolling=False
-        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="60S")
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="60S", time_is_interval_end=False)
         assert np.all(ds_out["qc_resampling"].data == 0)
 
         # Test when all timesteps are available
         ds = xr.Dataset(coords={"time": pd.date_range("2000-01-01 00:00:00", periods=6, freq="1min")})
         ds["drop_number"] = xr.ones_like(ds["time"], dtype=int)
         # - rolling=False
-        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="2MIN")
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="2MIN", time_is_interval_end=False)
         assert np.all(ds_out["qc_resampling"].data == 0)
         assert ds_out.sizes["time"] == 3
         # - rolling=True
-        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL2MIN")
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL2MIN", time_is_interval_end=False)
         assert np.all(ds_out["qc_resampling"].data == 0)
         assert ds_out.sizes["time"] == 5  #  6 -1
 
@@ -247,11 +235,11 @@ class TestResampleDataset:
         ds = ds.isel(time=[0, 4, 5])  # 1, 2, 3 missing
 
         # - rolling=True
-        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL2MIN")
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL2MIN", time_is_interval_end=False)
         np.testing.assert_allclose(ds_out["qc_resampling"].data, [0.5, 1.0, 1.0, 0.5, 0.0])
 
         # - rolling=False
-        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="2MIN")
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="2MIN", time_is_interval_end=False)
         np.testing.assert_allclose(ds_out["qc_resampling"].data, [0.5, 1.0, 0.0])
 
     def test_drop_number_with_nan(self):
@@ -275,12 +263,12 @@ class TestResampleDataset:
 
         # Test case with no resampling (sample_interval == accumulation_interval)
         # - Expect return same dataset as input (no filtering)
-        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="1MIN")
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="1MIN", time_is_interval_end=False)
         assert ds_out.sizes["time"] == 6
         np.testing.assert_allclose(ds_out["drop_number"].data, ds["drop_number"].data)
 
         # Test case with resampling
-        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="2MIN")
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="2MIN", time_is_interval_end=False)
         assert ds_out.sizes["time"] == 4
         assert (ds_out["drop_number"].isel(time=0) == 2).all()
 
@@ -306,3 +294,156 @@ class TestResampleDataset:
         # Expect ValueError due to no valid timesteps
         with pytest.raises(ValueError, match="No timesteps with valid spectrum"):
             resample_dataset(ds, sample_interval=30, temporal_resolution="1MIN")
+
+    # ------------------------------------------------------------------
+    # Tests for time_is_interval_end=True
+    # ------------------------------------------------------------------
+
+    def test_non_rolling_resample_aggregates_correctly_time_end(self):
+        """Test non-rolling aggregation with time_is_interval_end=True."""
+        # Input times represent end of 1-min intervals
+        times = pd.date_range("2000-01-01 00:01:00", periods=4, freq="1min").astype("datetime64[s]")
+        ds = xr.Dataset(
+            {
+                "fall_velocity": ("time", [10, 20, 30, 40]),
+                "drop_number": ("time", [1, 2, 3, 4]),
+                "raw_drop_number": ("time", [2, 3, 4, 5]),
+                "Dmin": ("time", [5, 6, 7, 8]),
+                "Dmax": ("time", [8, 9, 10, 11]),
+            },
+            coords={"time": times},
+        )
+        out = resample_dataset(ds, sample_interval=60, temporal_resolution="120S", time_is_interval_end=True)
+
+        # Output timestamps are end of 2-min accumulation intervals
+        expected_times = pd.to_datetime(["2000-01-01T00:02:00", "2000-01-01T00:04:00"])
+        assert list(out["time"].data) == list(expected_times)
+
+        # Aggregated values are the same as the time_is_interval_end=False case
+        np.testing.assert_allclose(out["fall_velocity"], [15, 35])
+        np.testing.assert_allclose(out["drop_number"], [3, 7])
+        np.testing.assert_allclose(out["raw_drop_number"], [5, 9])
+        np.testing.assert_allclose(out["Dmin"], [5, 7])
+        np.testing.assert_allclose(out["Dmax"], [9, 11])
+
+        assert out.attrs["disdrodb_rolled_product"] == "False"
+        assert out.attrs["disdrodb_aggregated_product"] == "True"
+        assert out.attrs["measurement_interval"] == 120
+        assert "sample_interval" in out.coords
+        assert out["sample_interval"].item() == 120
+
+    def test_rolling_resample_aggregates_correctly_time_end(self):
+        """Test rolling aggregation with time_is_interval_end=True."""
+        # Input times represent end of 1-min intervals
+        times = pd.date_range("2000-01-01 00:01:00", periods=4, freq="1min").astype("datetime64[s]")
+        ds = xr.Dataset(
+            {
+                "fall_velocity": ("time", [10, 20, 30, 40]),
+                "drop_number": ("time", [1, 1, 1, 1]),
+                "raw_drop_number": ("time", [2, 3, 4, 5]),
+            },
+            coords={"time": times},
+        )
+        out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL120S", time_is_interval_end=True)
+
+        # Output timestamps are end of 2-min rolling intervals
+        expected_times = pd.to_datetime(
+            ["2000-01-01T00:02:00", "2000-01-01T00:03:00", "2000-01-01T00:04:00"],
+        )
+        assert list(out["time"].data) == list(expected_times)
+
+        np.testing.assert_allclose(out["fall_velocity"], [15, 25, 35])
+        np.testing.assert_allclose(out["drop_number"], [2, 2, 2])
+        np.testing.assert_allclose(out["raw_drop_number"], [5, 7, 9])
+
+        assert out.attrs["disdrodb_rolled_product"] == "True"
+        assert out.attrs["disdrodb_aggregated_product"] == "True"
+        assert out.attrs["measurement_interval"] == 120
+        assert "sample_interval" in out.coords
+        assert out["sample_interval"].item() == 120
+
+    def test_resample_accessor_method(self):
+        """Test disdrodb resample accessor method (default time_is_interval_end=True)."""
+        # The accessor uses the default time_is_interval_end=True
+        times = pd.date_range("2000-01-01 00:01:00", periods=5, freq="1min")
+        ds = xr.Dataset(coords={"time": times})
+        ds = ds.assign_coords({"sample_interval": 60})
+        out = ds.disdrodb.resample(temporal_resolution="ROLL2MIN")  # time_is_interval_end defaults to True
+        assert "sample_interval" in out.coords
+        assert out["sample_interval"].item() == 120
+        assert out.attrs["disdrodb_rolled_product"] == "True"
+        assert out.attrs["disdrodb_aggregated_product"] == "True"
+
+    def test_qc_resampling_flag_time_end(self):
+        """Test qc_resampling flag with time_is_interval_end=True."""
+        # Test when all timesteps are available and sample_interval == accumulation_interval
+        times = pd.date_range("2000-01-01 00:01:00", periods=5, freq="1min")
+        ds = xr.Dataset(coords={"time": times})
+        # rolling
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL60S", time_is_interval_end=True)
+        assert np.all(ds_out["qc_resampling"].data == 0)
+        # non-rolling
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="60S", time_is_interval_end=True)
+        assert np.all(ds_out["qc_resampling"].data == 0)
+
+        # Test when all timesteps are available, accumulation > sample
+        times = pd.date_range("2000-01-01 00:01:00", periods=6, freq="1min")
+        ds = xr.Dataset(coords={"time": times})
+        ds["drop_number"] = xr.ones_like(ds["time"], dtype=int)
+        # non-rolling
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="2MIN", time_is_interval_end=True)
+        assert np.all(ds_out["qc_resampling"].data == 0)
+        assert ds_out.sizes["time"] == 3
+        # rolling
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL2MIN", time_is_interval_end=True)
+        assert np.all(ds_out["qc_resampling"].data == 0)
+        assert ds_out.sizes["time"] == 5  # 6 - 1
+
+        # Test when some timesteps are not available
+        # End-of-interval times: 00:01 through 00:06
+        times = pd.date_range("2000-01-01 00:01:00", periods=6, freq="1min")
+        ds = xr.Dataset(coords={"time": times})
+        ds = ds.isel(time=[0, 4, 5])  # keep 00:01, 00:05, 00:06 → indices 1,2,3 missing
+
+        # rolling
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="ROLL2MIN", time_is_interval_end=True)
+        np.testing.assert_allclose(ds_out["qc_resampling"].data, [0.5, 1.0, 1.0, 0.5, 0.0])
+
+        # non-rolling
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="2MIN", time_is_interval_end=True)
+        np.testing.assert_allclose(ds_out["qc_resampling"].data, [0.5, 1.0, 0.0])
+
+    def test_drop_number_with_nan_time_end(self):
+        """Test spectrum with NaN are processed correctly when time_is_interval_end=True."""
+        # End-of-interval times at 1-min spacing
+        times = pd.date_range("2020-01-01 00:01:00", periods=8, freq="60s")
+
+        drop_number = np.ones((8, 3))
+        drop_number[2, 1] = np.nan  # partial NaN at idx 2
+        drop_number[6:8, :] = np.nan  # all NaN at idx 6:7
+
+        ds = xr.Dataset(
+            {
+                "drop_number": (("time", DIAMETER_DIMENSION), drop_number),
+            },
+            coords={"time": times},
+        )
+        ds = ds.isel(time=[0, 1, 2, 3, 6, 7])  # Remove indices 4, 5
+
+        # No resampling case
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="1MIN", time_is_interval_end=True)
+        assert ds_out.sizes["time"] == 6
+        np.testing.assert_allclose(ds_out["drop_number"].data, ds["drop_number"].data)
+
+        # Resampling to 2MIN
+        ds_out = resample_dataset(ds, sample_interval=60, temporal_resolution="2MIN", time_is_interval_end=True)
+        assert ds_out.sizes["time"] == 4
+
+        assert (ds_out["drop_number"].isel(time=0) == 2).all()
+
+        assert (ds_out["drop_number"].isel(time=1) == 1).all()  # NaN timestep zeroed in sum
+        assert not np.isnan(ds_out["drop_number"].isel(time=1)).any()
+
+        assert np.isnan(ds_out["drop_number"].isel(time=2)).all()  # missing timesteps → NaN
+
+        assert np.isnan(ds_out["drop_number"].isel(time=3)).all()  # all-NaN timesteps → NaN

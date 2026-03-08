@@ -189,7 +189,7 @@ class TestSplitDatasetBySamplingIntervals:
         )
         ds = xr.Dataset(coords={"time": times})
 
-        dict_ds = split_dataset_by_sampling_intervals(ds, measurement_intervals=[60, 180], time_is_end_interval=True)
+        dict_ds = split_dataset_by_sampling_intervals(ds, measurement_intervals=[60, 180], time_is_interval_end=True)
         assert set(dict_ds.keys()) == {60}  # because only 2 consecutive 180s samples
         # First segment has 5 consecutive samples (60s)
         assert len(dict_ds[60].time) == 6
@@ -212,7 +212,7 @@ class TestSplitDatasetBySamplingIntervals:
         )
         times = times[::-1]  # just ensure that also if not ordered ... it works
         ds = xr.Dataset(coords={"time": times})
-        dict_ds = split_dataset_by_sampling_intervals(ds, measurement_intervals=[60, 180], time_is_end_interval=True)
+        dict_ds = split_dataset_by_sampling_intervals(ds, measurement_intervals=[60, 180], time_is_interval_end=True)
         assert set(dict_ds.keys()) == {60, 180}
         # First segment has 5 consecutive samples (60s)
         assert len(dict_ds[60].time) == 6
@@ -242,7 +242,7 @@ class TestSplitDatasetBySamplingIntervals:
         )
         ds = xr.Dataset(coords={"time": times})
 
-        dict_ds = split_dataset_by_sampling_intervals(ds, measurement_intervals=[60, 180], time_is_end_interval=False)
+        dict_ds = split_dataset_by_sampling_intervals(ds, measurement_intervals=[60, 180], time_is_interval_end=False)
         assert set(dict_ds.keys()) == {60}  # because only 2 consecutive 180s samples
         # First segment has 5 consecutive samples (60s)
         assert len(dict_ds[60].time) == 5
@@ -265,7 +265,7 @@ class TestSplitDatasetBySamplingIntervals:
         )
         times = times[::-1]  # just ensure that also if not ordered ... it works
         ds = xr.Dataset(coords={"time": times})
-        dict_ds = split_dataset_by_sampling_intervals(ds, measurement_intervals=[60, 180], time_is_end_interval=False)
+        dict_ds = split_dataset_by_sampling_intervals(ds, measurement_intervals=[60, 180], time_is_interval_end=False)
         assert set(dict_ds.keys()) == {60, 180}
         # First segment has 5 consecutive samples (60s)
         assert len(dict_ds[60].time) == 5
@@ -298,7 +298,7 @@ class TestSplitDatasetBySamplingIntervals:
         )
         ds = xr.Dataset(coords={"time": times})
 
-        dict_ds = split_dataset_by_sampling_intervals(ds, measurement_intervals=[60, 180], time_is_end_interval=True)
+        dict_ds = split_dataset_by_sampling_intervals(ds, measurement_intervals=[60, 180], time_is_interval_end=True)
         assert set(dict_ds.keys()) == {60, 180}  # because only 2 consecutive 180s samples
         # First segment has 5 consecutive samples (60s)
         assert len(dict_ds[60].time) == 6
@@ -325,7 +325,7 @@ class TestSplitDatasetBySamplingIntervals:
         )
         ds = xr.Dataset(coords={"time": times})
 
-        dict_ds = split_dataset_by_sampling_intervals(ds, measurement_intervals=[60, 180], time_is_end_interval=True)
+        dict_ds = split_dataset_by_sampling_intervals(ds, measurement_intervals=[60, 180], time_is_interval_end=True)
         assert set(dict_ds.keys()) == {60, 180}  # because only 2 consecutive 180s samples
         # First segment has 5 consecutive samples (60s)
         assert len(dict_ds[60].time) == 7
@@ -360,7 +360,7 @@ class TestSplitDatasetBySamplingIntervals:
         )
         ds = xr.Dataset(coords={"time": times})
 
-        dict_ds = split_dataset_by_sampling_intervals(ds, measurement_intervals=[60, 180], time_is_end_interval=True)
+        dict_ds = split_dataset_by_sampling_intervals(ds, measurement_intervals=[60, 180], time_is_interval_end=True)
         assert set(dict_ds.keys()) == {60, 180}  # because only 2 consecutive 180s samples
         # First segment has 5 consecutive samples (60s)
         assert len(dict_ds[60].time) == 12

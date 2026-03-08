@@ -138,7 +138,7 @@ def _rolling(ds, variables, window_size, op):
     return ds_subset
 
 
-def resample_dataset(ds, sample_interval, temporal_resolution):
+def resample_dataset(ds, sample_interval, temporal_resolution, time_is_interval_end=True):
     """
     Resample the dataset to a specified accumulation interval.
 
@@ -156,6 +156,9 @@ def resample_dataset(ds, sample_interval, temporal_resolution):
         It should be a string representing the accumulation interval,
         e.g., "5MIN" for 5 minutes, "1H" for 1 hour, "30S" for 30 seconds, etc.
         Prefixed with "ROLL" for rolling resampling, e.g., "ROLL5MIN".
+    time_is_interval_end: bool
+        Whether time correspond to the end of the measurement/accumulation interval/period.
+        The default is True.
 
     Returns
     -------
@@ -279,12 +282,19 @@ def resample_dataset(ds, sample_interval, temporal_resolution):
     var_to_min = [var for var in var_to_min if var in ds]
     var_to_max = [var for var in var_to_max if var in ds]
 
+    # -------------------------------------------------------------------------.
     # Resample the dataset
     # - Rolling currently does not allow direct rolling forward.
     # - We currently use center=False which means search for data backward (right-aligned) !
     # - We then drop the first 'window_size' NaN timesteps and we shift backward the timesteps.
     # - https://github.com/pydata/xarray/issues/9773
     # - https://github.com/pydata/xarray/issues/8958
+
+    if time_is_interval_end:
+        ds = ds.assign_coords(
+            {"time": ds["time"].data - pd.Timedelta(sample_interval, "s")},
+        )  # set temporary time as start of measurement/accumulation interval
+
     if not rolling:
         # Resample
         accumulation = pd.Timedelta(seconds=accumulation_interval)
@@ -304,6 +314,12 @@ def resample_dataset(ds, sample_interval, temporal_resolution):
             {"time": ds_resampled["time"].data[: -window_size + 1]},
         )
 
+    if time_is_interval_end:
+        ds_resampled = ds_resampled.assign_coords(
+            {"time": ds_resampled["time"].data + pd.Timedelta(accumulation_interval, "s")},
+        )  # set back time as end of accumulation interval
+
+    # -------------------------------------------------------------------------.
     # Finalize qc_resampling
     ds_resampled = _finalize_qc_resampling(
         ds_resampled,

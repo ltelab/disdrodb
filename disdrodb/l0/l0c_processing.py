@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 # L0C processing requires searching for data (per time blocks) into neighbouring files:
 # - to account for possible trailing seconds in previous/next files
 # - to get information if at the edges of the time blocks previous/next timesteps are available
-# - to shift the time to ensure reported L0C time is the start of the measurement interval
+# - to shift the time to ensure reported L0C time is the end of the measurement interval
 TOLERANCE_SECONDS = 60 * 3
 
 ####---------------------------------------------------------------------------------
@@ -65,7 +65,7 @@ def split_dataset_by_sampling_intervals(
     measurement_intervals,
     min_sample_interval=10,
     min_block_size=5,
-    time_is_end_interval=True,
+    time_is_interval_end=True,
 ):
     """
     Split a dataset into subsets where each subset has a consistent sampling interval.
@@ -83,7 +83,7 @@ def split_dataset_by_sampling_intervals(
         The minimum number of timesteps with a given sampling interval to be considered.
         Otherwise such portion of data is discarded !
         Defaults to 5 timesteps.
-    time_is_end_interval: bool
+    time_is_interval_end: bool
         Whether time refers to the end of the measurement interval.
         The default is True.
 
@@ -184,7 +184,7 @@ def split_dataset_by_sampling_intervals(
     change_points = np.where(mapped_intervals[:-1] != mapped_intervals[1:])[0] + 1
 
     # Split ds into segments according to change_points
-    offset = 1 if time_is_end_interval else 0
+    offset = 1 if time_is_interval_end else 0
     segments = np.split(np.arange(ds.sizes["time"]), change_points + offset)
 
     # Remove segments with less than min_block_size elements
@@ -813,6 +813,7 @@ def generate_l0c_datasets(ds, measurement_intervals, ensure_variables_equality=T
         measurement_intervals=measurement_intervals,
         min_sample_interval=10,
         min_block_size=5,
+        time_is_interval_end=True,
     )
 
     # Log a warning if two sampling intervals are present within a given time block
