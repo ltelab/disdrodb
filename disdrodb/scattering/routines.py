@@ -442,21 +442,22 @@ def load_scatterer(
     scattering_table_filepath = os.path.join(scattering_table_dir, filename)
 
     # Compute LUT in new python process if does not exist yet
-    ensure_pytmatrix_lut_exists(
-        frequency=frequency,
-        num_points=num_points,
-        diameter_min=diameter_min,
-        diameter_max=diameter_max,
-        canting_angle_std=canting_angle_std,
-        axis_ratio_model=axis_ratio_model,
-        permittivity_model=permittivity_model,
-        water_temperature=water_temperature,
-        elevation_angle=elevation_angle,
-        lut_path=scattering_table_filepath,
-        verbose=verbose,
-    )
+    if not os.path.exists(scattering_table_filepath):
+        create_pytmatrix_lut(
+            frequency=frequency,
+            num_points=num_points,
+            diameter_min=diameter_min,
+            diameter_max=diameter_max,
+            canting_angle_std=canting_angle_std,
+            axis_ratio_model=axis_ratio_model,
+            permittivity_model=permittivity_model,
+            water_temperature=water_temperature,
+            elevation_angle=elevation_angle,
+            lut_path=scattering_table_filepath,
+            verbose=verbose,
+        )
 
-    # Load or create scattering table
+    # Load LUT and create scatterer object
     scatterer = initialize_scatterer(
         frequency=frequency,
         num_points=num_points,
@@ -528,16 +529,23 @@ def precompute_scattering_tables(
         elevation_angle=elevation_angle,
     )
 
-    # Compute require scattering tables
+    # Compute required scattering tables (if not already existing)
     for params in list_params:
-        # Initialize scattering table
-        _ = load_scatterer(
-            verbose=verbose,
-            **params,
-        )
+        try:
+            _ = load_scatterer(
+                verbose=verbose,
+                **params,
+            )
+        except RuntimeError as e:
+            msg = str(e)
+            msg += (
+                " Radar variables will be NaN for this parameters combination. "
+                "Proceeding to the simulation of next LUT.\n\n"
+            )
+            print(msg)
 
 
-def ensure_pytmatrix_lut_exists(
+def create_pytmatrix_lut(
     frequency,
     num_points,
     diameter_min,
@@ -551,9 +559,6 @@ def ensure_pytmatrix_lut_exists(
     verbose=False,
 ):
     """Create a pyTMatrix LUT at lut_path if it does not exist yet."""
-    if os.path.exists(lut_path):
-        return
-
     cmd = [
         "pytmatrix_lut",
         "--frequency",
@@ -578,7 +583,7 @@ def ensure_pytmatrix_lut_exists(
     ]
 
     if verbose:
-        print("Running:", " ".join(cmd))
+        print(f"Running: {cmd}")
 
     result = subprocess_run(
         cmd,
@@ -588,27 +593,16 @@ def ensure_pytmatrix_lut_exists(
     )
 
     # Process failed
-    if result.returncode != 0:
-
-        # Process killed by signal (segfault, OOM, etc.)
-        if result.returncode < 0:
-            signal = -result.returncode
-            msg = (
-                f"pyTMatrix LUT generation was killed by signal {signal}.\n\n"
-                "This usually indicates a numerical crash.\n\n"
-                "Try adjusting the simulation parameters, e.g.:\n"
-                "  - reduce maximum diameter (dmax)\n"
-                "  - increase num_points\n"
-                "  - avoid very small canting angle std (< 5 deg)\n"
-                "  - check frequency / size resonance combinations\n"
-            )
-        else:
-            msg = (
-                f"pyTMatrix LUT generation failed "
-                f"(exit code {result.returncode}).\n\n"
-                f"STDERR:\n{result.stderr or '<empty>'}"
-            )
-
+    if result.returncode != 0 or not os.path.exists(lut_path):
+        msg = (
+            f"pyTMatrix LUT generation with {cmd} failed.\n\n"
+            "This usually indicates a numerical crash.\n\n"
+            "Try adjusting the simulation parameters, e.g.:\n"
+            "  - reduce maximum diameter (dmax)\n"
+            "  - increase num_points\n"
+            "  - avoid very small canting angle std (< 5 deg)\n"
+            "  - check frequency / size resonance combinations\n"
+        )
         raise RuntimeError(msg)
 
 
@@ -668,13 +662,18 @@ def compute_radar_variables(scatterer):
 RADAR_VARIABLES = ["DBZH", "DBZV", "ZDR", "LDRH", "LDRV", "RHOHV", "DELTAHV", "KDP", "AH", "AV", "ADP"]
 
 
+def _nan_radar_variables():
+    output = np.zeros(len(RADAR_VARIABLES)) * np.nan
+    return output
+
+
 def _try_compute_radar_variables(scatterer):
     with suppress_warnings():
         try:
             radar_vars = compute_radar_variables(scatterer)
             output = np.array(list(radar_vars.values()))
         except Exception:
-            output = np.zeros(len(RADAR_VARIABLES)) * np.nan
+            output = _nan_radar_variables()
     return output
 
 
@@ -683,6 +682,10 @@ def _estimate_empirical_radar_parameters(
     bin_edges,
     scatterer,
 ):
+    # If scatter not available
+    if scatterer is None:
+        return _nan_radar_variables()
+
     # Assign PSD model to the scatterer object
     scatterer.psd = BinnedPSD(bin_edges, np.asarray(drop_number_concentration))
 
@@ -696,6 +699,10 @@ def _estimate_model_radar_parameters(
     psd_parameters_names,
     scatterer,
 ):
+    # If scatter not available
+    if scatterer is None:
+        return _nan_radar_variables()
+
     # Assign PSD model to the scatterer object
     parameters = dict(zip(psd_parameters_names, np.asarray(parameters), strict=True))
     scatterer.psd = create_psd(psd_model, parameters)
@@ -778,18 +785,23 @@ def get_model_radar_parameters(
     # Create DataArray with PSD parameters
     da_parameters = ds_parameters.to_array(dim="psd_parameters")
 
-    # Initialize scattering table
-    scatterer = load_scatterer(
-        frequency=frequency,
-        num_points=num_points,
-        diameter_min=diameter_min,
-        diameter_max=diameter_max,
-        canting_angle_std=canting_angle_std,
-        axis_ratio_model=axis_ratio_model,
-        permittivity_model=permittivity_model,
-        water_temperature=water_temperature,
-        elevation_angle=elevation_angle,
-    )
+    # Load scattering table
+    # - If scatter not available (because pytmatrix simulation fail),
+    #   radar variables returned will be NaN
+    try:
+        scatterer = load_scatterer(
+            frequency=frequency,
+            num_points=num_points,
+            diameter_min=diameter_min,
+            diameter_max=diameter_max,
+            canting_angle_std=canting_angle_std,
+            axis_ratio_model=axis_ratio_model,
+            permittivity_model=permittivity_model,
+            water_temperature=water_temperature,
+            elevation_angle=elevation_angle,
+        )
+    except RuntimeError:
+        scatterer = None
 
     # Define kwargs
     kwargs = {
@@ -900,18 +912,23 @@ def get_empirical_radar_parameters(
     axis_ratio_model = check_axis_ratio_model(axis_ratio_model)
     permittivity_model = check_permittivity_model(permittivity_model)
 
-    # Initialize scattering table
-    scatterer = load_scatterer(
-        frequency=frequency,
-        num_points=num_points,
-        diameter_min=diameter_min,
-        diameter_max=diameter_max,
-        canting_angle_std=canting_angle_std,
-        axis_ratio_model=axis_ratio_model,
-        permittivity_model=permittivity_model,
-        water_temperature=water_temperature,
-        elevation_angle=elevation_angle,
-    )
+    # Load scattering table
+    # - If scatter not available (because pytmatrix simulation fail),
+    #   radar variables returned will be NaN
+    try:
+        scatterer = load_scatterer(
+            frequency=frequency,
+            num_points=num_points,
+            diameter_min=diameter_min,
+            diameter_max=diameter_max,
+            canting_angle_std=canting_angle_std,
+            axis_ratio_model=axis_ratio_model,
+            permittivity_model=permittivity_model,
+            water_temperature=water_temperature,
+            elevation_angle=elevation_angle,
+        )
+    except RuntimeError:
+        scatterer = None
 
     # Define kwargs
     kwargs = {

@@ -226,6 +226,10 @@ KEF:
   standard_name: ""
   units: J m-2 h-1
   long_name: Kinetic Energy Density Flux
+M0:
+  standard_name: ""
+  units: m-3
+  long_name: Zero Moment of the Drop Size Distribution
 M1:
   standard_name: ""
   units: m-3 mm
@@ -272,7 +276,7 @@ Z:
   standard_name: equivalent_reflectivity_factor
   units: dBZ
   long_name: Equivalent Radar Reflectivity Factor
-W:
+LWC:
   description: Water Mass of the Drop Size Distribution
   standard_name: mass_concentration_of_liquid_water_in_air
   units: g m-3
