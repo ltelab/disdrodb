@@ -4473,8 +4473,6 @@ def plot_kinetic_energy_relationships(df):
     # ==================================================
     # Colorbar inside ax21 (bottom-left)
     # ==================================================
-    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-
     cax = inset_axes(
         ax21,
         width="65%",  # length of colorbar
