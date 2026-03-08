@@ -34,12 +34,12 @@ from disdrodb.utils.archiving import (
 )
 
 
-class TestGenerateTimeBlocks:
+class TestGenerateTimeBlocksIntervalStart:
     def test_none(self):
         """Test 'none' returns the original interval as a single block."""
         start_time = np.datetime64("2022-01-01T05:06:07")
         end_time = np.datetime64("2022-01-02T08:09:10")
-        result = generate_time_blocks(start_time, end_time, freq="none")
+        result = generate_time_blocks(start_time, end_time, freq="none", time_is_interval_end=False)
         expected = np.array([[start_time, end_time]], dtype="datetime64[s]")
         np.testing.assert_array_equal(result, expected)
 
@@ -47,7 +47,7 @@ class TestGenerateTimeBlocks:
         """Test 'hour' splits into full-hour blocks covering the range."""
         start_time = np.datetime64("2022-01-01T10:15:00")
         end_time = np.datetime64("2022-01-01T12:45:00")
-        result = generate_time_blocks(start_time, end_time, freq="hour")
+        result = generate_time_blocks(start_time, end_time, freq="hour", time_is_interval_end=False)
 
         assert result.shape == (3, 2)
 
@@ -58,18 +58,24 @@ class TestGenerateTimeBlocks:
         np.testing.assert_array_equal(result[-1], expected_last)
 
         # Test XX::00:00 - XX:00:00 case
-        # -inclusive_end_time=True:  if end_time is XX:00:00 it includes that hour up to 59:59
+        # -include_end_time=True:  if end_time is XX:00:00 it includes that hour up to 59:59
         start_time = np.datetime64("2022-03-10T02:00:00")
         end_time = np.datetime64("2022-03-10T03:00:00")
-        result = generate_time_blocks(start_time, end_time, freq="hour")
+        result = generate_time_blocks(start_time, end_time, freq="hour", time_is_interval_end=False)
         assert result.shape == (2, 2)
         expected_first = np.array(["2022-03-10T02:00:00", "2022-03-10T02:59:59"], dtype="datetime64[s]")
         np.testing.assert_array_equal(result[0], expected_first)
 
         expected_last = np.array(["2022-03-10T03:00:00", "2022-03-10T03:59:59"], dtype="datetime64[s]")
         np.testing.assert_array_equal(result[-1], expected_last)
-        # - inclusive_end_time=False: if end_time is XX:00:00 should not include that hour
-        result = generate_time_blocks(start_time, end_time, freq="hour", inclusive_end_time=False)
+        # - include_end_time=False: if end_time is XX:00:00 should not include that hour
+        result = generate_time_blocks(
+            start_time,
+            end_time,
+            freq="hour",
+            include_end_time=False,
+            time_is_interval_end=False,
+        )
         assert result.shape == (1, 2)
         expected_first = np.array(["2022-03-10T02:00:00", "2022-03-10T02:59:59"], dtype="datetime64[s]")
         np.testing.assert_array_equal(result[0], expected_first)
@@ -78,7 +84,7 @@ class TestGenerateTimeBlocks:
         """Test 'day' splits into calendar-day blocks covering the range."""
         start_time = np.datetime64("2022-03-10T05:00:00")
         end_time = np.datetime64("2022-03-12T20:00:00")
-        result = generate_time_blocks(start_time, end_time, freq="day")
+        result = generate_time_blocks(start_time, end_time, freq="day", time_is_interval_end=False)
 
         assert result.shape == (3, 2)
 
@@ -89,17 +95,23 @@ class TestGenerateTimeBlocks:
         np.testing.assert_array_equal(result[-1], expected_last)
 
         # Test 00:00:00 - 00:00:00 case
-        # - inclusive_end_time=True: if end_time is 00:00:00 it includes that day up to 23:59:59
+        # - include_end_time=True: if end_time is 00:00:00 it includes that day up to 23:59:59
         start_time = np.datetime64("2022-03-10T00:00:00")
         end_time = np.datetime64("2022-03-11T00:00:00")
-        result = generate_time_blocks(start_time, end_time, freq="day")
+        result = generate_time_blocks(start_time, end_time, freq="day", time_is_interval_end=False)
         assert result.shape == (2, 2)
         expected_first = np.array(["2022-03-10T00:00:00", "2022-03-10T23:59:59"], dtype="datetime64[s]")
         np.testing.assert_array_equal(result[0], expected_first)
         expected_last = np.array(["2022-03-11T00:00:00", "2022-03-11T23:59:59"], dtype="datetime64[s]")
         np.testing.assert_array_equal(result[-1], expected_last)
-        # - inclusive_end_time=True: if end_time is 00:00:00 it does not includes that day
-        result = generate_time_blocks(start_time, end_time, freq="day", inclusive_end_time=False)
+        # - include_end_time=False: if end_time is 00:00:00 it does not includes that day
+        result = generate_time_blocks(
+            start_time,
+            end_time,
+            freq="day",
+            include_end_time=False,
+            time_is_interval_end=False,
+        )
         assert result.shape == (1, 2)
         expected_first = np.array(["2022-03-10T00:00:00", "2022-03-10T23:59:59"], dtype="datetime64[s]")
         np.testing.assert_array_equal(result[0], expected_first)
@@ -108,7 +120,7 @@ class TestGenerateTimeBlocks:
         """Test 'month' splits into month blocks covering the range."""
         start_time = np.datetime64("2022-01-15")
         end_time = np.datetime64("2022-04-10")
-        result = generate_time_blocks(start_time, end_time, freq="month")
+        result = generate_time_blocks(start_time, end_time, freq="month", time_is_interval_end=False)
 
         assert result.shape == (4, 2)
 
@@ -119,17 +131,23 @@ class TestGenerateTimeBlocks:
         np.testing.assert_array_equal(result[-1], expected_last)
 
         # Test XXX-01-01 - XXX-02-01 case
-        # - inclusive_end_time=True: if end_time is XXXX-01-01 it includes that month up to last day of month
+        # - include_end_time=True: if end_time is XXXX-01-01 it includes that month up to last day of month
         start_time = np.datetime64("2022-01-01")
         end_time = np.datetime64("2022-02-01")
-        result = generate_time_blocks(start_time, end_time, freq="month")
+        result = generate_time_blocks(start_time, end_time, freq="month", time_is_interval_end=False)
         assert result.shape == (2, 2)
         expected_first = np.array(["2022-01-01T00:00:00", "2022-01-31T23:59:59"], dtype="datetime64[s]")
         np.testing.assert_array_equal(result[0], expected_first)
         expected_last = np.array(["2022-02-01T00:00:00", "2022-02-28T23:59:59"], dtype="datetime64[s]")
         np.testing.assert_array_equal(result[-1], expected_last)
-        # - inclusive_end_time=False: if end_time is XXXX-01-01 it does not includes that month
-        result = generate_time_blocks(start_time, end_time, freq="month", inclusive_end_time=False)
+        # - include_end_time=False: if end_time is XXXX-01-01 it does not includes that month
+        result = generate_time_blocks(
+            start_time,
+            end_time,
+            freq="month",
+            include_end_time=False,
+            time_is_interval_end=False,
+        )
         assert result.shape == (1, 2)
         expected_first = np.array(["2022-01-01T00:00:00", "2022-01-31T23:59:59"], dtype="datetime64[s]")
         np.testing.assert_array_equal(result[0], expected_first)
@@ -138,7 +156,7 @@ class TestGenerateTimeBlocks:
         """Test 'year' splits into year blocks covering the range."""
         start_time = np.datetime64("2020-06-01")
         end_time = np.datetime64("2023-02-01")
-        result = generate_time_blocks(start_time, end_time, freq="year")
+        result = generate_time_blocks(start_time, end_time, freq="year", time_is_interval_end=False)
 
         assert result.shape == (4, 2)
 
@@ -152,7 +170,7 @@ class TestGenerateTimeBlocks:
         """Test 'quarter' splits into quarter blocks covering the range."""
         start_time = np.datetime64("2022-02-10")
         end_time = np.datetime64("2022-08-20")
-        result = generate_time_blocks(start_time, end_time, freq="quarter")
+        result = generate_time_blocks(start_time, end_time, freq="quarter", time_is_interval_end=False)
 
         assert result.shape == (3, 2)
 
@@ -166,13 +184,175 @@ class TestGenerateTimeBlocks:
         """Test 'season' splits into meteorological-season blocks covering the range."""
         start_time = np.datetime64("2022-01-01")
         end_time = np.datetime64("2022-12-31")
-        result = generate_time_blocks(start_time, end_time, freq="season")
+        result = generate_time_blocks(start_time, end_time, freq="season", time_is_interval_end=False)
         assert result.shape == (5, 2)
 
         expected_first = np.array(["2021-12-01T00:00:00", "2022-02-28T23:59:59"], dtype="datetime64[s]")
         np.testing.assert_array_equal(result[0], expected_first)
 
         expected_last = np.array(["2022-12-01T00:00:00", "2023-02-28T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+
+class TestGenerateTimeBlocksIntervalEnd:
+    """Tests for generate_time_blocks with time_is_interval_end=True."""
+
+    def test_none(self):
+        """Test 'none' returns the original interval as a single block (unchanged by convention)."""
+        start_time = np.datetime64("2022-01-01T05:06:07")
+        end_time = np.datetime64("2022-01-02T08:09:10")
+        result = generate_time_blocks(start_time, end_time, freq="none", time_is_interval_end=True)
+        expected = np.array([[start_time, end_time]], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result, expected)
+
+    def test_hour(self):
+        """Test 'hour' splits into shifted hour blocks: [HH:00:01, (HH+1):00:00]."""
+        start_time = np.datetime64("2022-01-01T10:15:00")
+        end_time = np.datetime64("2022-01-01T12:45:00")
+        result = generate_time_blocks(start_time, end_time, freq="hour", time_is_interval_end=True)
+
+        assert result.shape == (3, 2)
+
+        expected_first = np.array(["2022-01-01T10:00:01", "2022-01-01T11:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2022-01-01T12:00:01", "2022-01-01T13:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+        # Test XX:00:00 boundary cases
+        # - When end_time is exactly XX:00:00 (valid interval end), include_end_time=True includes that hour
+        start_time = np.datetime64("2022-03-10T02:00:00")
+        end_time = np.datetime64("2022-03-10T03:00:00")
+        result = generate_time_blocks(start_time, end_time, freq="hour", time_is_interval_end=True)
+        assert result.shape == (2, 2)
+        expected_first = np.array(["2022-03-10T01:00:01", "2022-03-10T02:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+        expected_last = np.array(["2022-03-10T02:00:01", "2022-03-10T03:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+        # - include_end_time=False: last block whose end equals end_time is removed
+        result = generate_time_blocks(
+            start_time,
+            end_time,
+            freq="hour",
+            include_end_time=False,
+            time_is_interval_end=True,
+        )
+        assert result.shape == (1, 2)
+        expected_first = np.array(["2022-03-10T01:00:01", "2022-03-10T02:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+    def test_day(self):
+        """Test 'day' splits into shifted day blocks: [00:00:01, next-day 00:00:00]."""
+        start_time = np.datetime64("2022-03-10T05:00:00")
+        end_time = np.datetime64("2022-03-12T20:00:00")
+        result = generate_time_blocks(start_time, end_time, freq="day", time_is_interval_end=True)
+
+        assert result.shape == (3, 2)
+
+        expected_first = np.array(["2022-03-10T00:00:01", "2022-03-11T00:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2022-03-12T00:00:01", "2022-03-13T00:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+        # Test 00:00:00 boundary cases (00:00:00 is end of previous day when time_is_interval_end=True)
+        start_time = np.datetime64("2022-03-10T00:00:00")
+        end_time = np.datetime64("2022-03-11T00:00:00")
+        # - include_end_time=True: includes the block whose end is 2022-03-11T00:00:00
+        result = generate_time_blocks(start_time, end_time, freq="day", time_is_interval_end=True)
+        assert result.shape == (2, 2)
+        expected_first = np.array(["2022-03-09T00:00:01", "2022-03-10T00:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+        expected_last = np.array(["2022-03-10T00:00:01", "2022-03-11T00:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+        # - include_end_time=False: block ending at end_time is removed
+        result = generate_time_blocks(
+            start_time,
+            end_time,
+            freq="day",
+            include_end_time=False,
+            time_is_interval_end=True,
+        )
+        assert result.shape == (1, 2)
+        expected_first = np.array(["2022-03-09T00:00:01", "2022-03-10T00:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+    def test_month(self):
+        """Test 'month' splits into shifted month blocks."""
+        start_time = np.datetime64("2022-01-15")
+        end_time = np.datetime64("2022-04-10")
+        result = generate_time_blocks(start_time, end_time, freq="month", time_is_interval_end=True)
+
+        assert result.shape == (4, 2)
+
+        expected_first = np.array(["2022-01-01T00:00:01", "2022-02-01T00:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2022-04-01T00:00:01", "2022-05-01T00:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+        # Test boundary case
+        start_time = np.datetime64("2022-01-01")
+        end_time = np.datetime64("2022-02-01")
+        # - start_time 2022-01-01T00:00:00 means December block required
+        # - end_time 2022-02-01 T00:00:00 means end of January block. Feb block not needed
+        result = generate_time_blocks(start_time, end_time, freq="month", time_is_interval_end=True)
+        assert result.shape == (2, 2)
+        expected_first = np.array(["2021-12-01T00:00:01", "2022-01-01T00:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+        expected_last = np.array(["2022-01-01T00:00:01", "2022-02-01T00:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+        # - include_end_time=False: removes last block whose end equals end_time (Feb block)
+        result = generate_time_blocks(
+            start_time,
+            end_time,
+            freq="month",
+            include_end_time=False,
+            time_is_interval_end=True,
+        )
+        assert result.shape == (1, 2)
+
+    def test_year(self):
+        """Test 'year' splits into shifted year blocks."""
+        start_time = np.datetime64("2020-06-01")
+        end_time = np.datetime64("2023-02-01")
+        result = generate_time_blocks(start_time, end_time, freq="year", time_is_interval_end=True)
+
+        assert result.shape == (4, 2)
+
+        expected_first = np.array(["2020-01-01T00:00:01", "2021-01-01T00:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2023-01-01T00:00:01", "2024-01-01T00:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+    def test_quarter(self):
+        """Test 'quarter' splits into shifted quarter blocks."""
+        start_time = np.datetime64("2022-02-10")
+        end_time = np.datetime64("2022-08-20")
+        result = generate_time_blocks(start_time, end_time, freq="quarter", time_is_interval_end=True)
+
+        assert result.shape == (3, 2)
+
+        expected_first = np.array(["2022-01-01T00:00:01", "2022-04-01T00:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2022-07-01T00:00:01", "2022-10-01T00:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+    def test_season(self):
+        """Test 'season' splits into shifted meteorological-season blocks."""
+        start_time = np.datetime64("2022-01-01")
+        end_time = np.datetime64("2022-12-31")
+        result = generate_time_blocks(start_time, end_time, freq="season", time_is_interval_end=True)
+        assert result.shape == (5, 2)
+
+        expected_first = np.array(["2021-12-01T00:00:01", "2022-03-01T00:00:00"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2022-12-01T00:00:01", "2023-03-01T00:00:00"], dtype="datetime64[s]")
         np.testing.assert_array_equal(result[-1], expected_last)
 
 
@@ -256,13 +436,13 @@ def generate_product_filename(start_time, end_time, product="L1", temporal_resol
     # 'L1.1MIN.UL.Ljubljana.s20180601120000.e20180701120000.V0.nc',
 
 
-class TestIdentifyTimePartitions:
+class TestIdentifyTimePartitionsIntervalStart:
     def test_none_frequency(self):
         """'none' returns a single block spanning all files."""
         start_times = np.array([np.datetime64("2017-05-22T15:45:58"), np.datetime64("2018-06-01T12:00:00")])
         end_times = np.array([np.datetime64("2017-07-31T13:29:27"), np.datetime64("2018-07-01T12:00:00")])
 
-        result = identify_time_partitions(start_times, end_times, freq="none")
+        result = identify_time_partitions(start_times, end_times, freq="none", time_is_interval_end=False)
         assert len(result) == 1
         block = result[0]
         assert isinstance(block["start_time"], np.datetime64)
@@ -275,7 +455,7 @@ class TestIdentifyTimePartitions:
         start_times = np.array([np.datetime64("2022-05-01T10:00:00"), np.datetime64("2022-05-05T15:00:00")])
         end_times = np.array([np.datetime64("2022-05-01T12:00:00"), np.datetime64("2022-05-05T17:00:00")])
 
-        result = identify_time_partitions(start_times, end_times, freq="day")
+        result = identify_time_partitions(start_times, end_times, freq="day", time_is_interval_end=False)
 
         assert len(result) == 2
         assert result[0] == {
@@ -292,12 +472,56 @@ class TestIdentifyTimePartitions:
         start_times = np.array([np.datetime64("2022-01-01T12:00:00")])
         end_times = np.array([np.datetime64("2022-02-15T12:00:00")])
 
-        result = identify_time_partitions(start_times, end_times, freq="season")
+        result = identify_time_partitions(start_times, end_times, freq="season", time_is_interval_end=False)
 
         assert len(result) == 1
         block = result[0]
         assert block["start_time"] == np.datetime64("2021-12-01T00:00:00")
         assert block["end_time"] == np.datetime64("2022-02-28T23:59:59")
+
+
+class TestIdentifyTimePartitionsIntervalEnd:
+    """Tests for identify_time_partitions with time_is_interval_end=True."""
+
+    def test_none_frequency(self):
+        """'none' returns a single block spanning all files (unchanged)."""
+        start_times = np.array([np.datetime64("2017-05-22T15:45:58"), np.datetime64("2018-06-01T12:00:00")])
+        end_times = np.array([np.datetime64("2017-07-31T13:29:27"), np.datetime64("2018-07-01T12:00:00")])
+
+        result = identify_time_partitions(start_times, end_times, freq="none", time_is_interval_end=True)
+        assert len(result) == 1
+        block = result[0]
+        assert block["start_time"] == np.datetime64("2017-05-22T15:45:58")
+        assert block["end_time"] == np.datetime64("2018-07-01T12:00:00")
+
+    def test_day_frequency(self):
+        """'day' returns shifted day blocks [00:00:01, next-day 00:00:00]."""
+        start_times = np.array([np.datetime64("2022-05-01T10:00:00"), np.datetime64("2022-05-05T15:00:00")])
+        end_times = np.array([np.datetime64("2022-05-01T12:00:00"), np.datetime64("2022-05-05T17:00:00")])
+
+        result = identify_time_partitions(start_times, end_times, freq="day", time_is_interval_end=True)
+
+        assert len(result) == 2
+        assert result[0] == {
+            "start_time": np.datetime64("2022-05-01T00:00:01"),
+            "end_time": np.datetime64("2022-05-02T00:00:00"),
+        }
+        assert result[1] == {
+            "start_time": np.datetime64("2022-05-05T00:00:01"),
+            "end_time": np.datetime64("2022-05-06T00:00:00"),
+        }
+
+    def test_season_frequency(self):
+        """'season' returns shifted DJF block."""
+        start_times = np.array([np.datetime64("2022-01-01T12:00:00")])
+        end_times = np.array([np.datetime64("2022-02-15T12:00:00")])
+
+        result = identify_time_partitions(start_times, end_times, freq="season", time_is_interval_end=True)
+
+        assert len(result) == 1
+        block = result[0]
+        assert block["start_time"] == np.datetime64("2021-12-01T00:00:01")
+        assert block["end_time"] == np.datetime64("2022-03-01T00:00:00")
 
 
 # Generate filenames for period on 2017-05-22T00:00:00 - 2017-05-22T00:11:00^
@@ -477,7 +701,7 @@ class TestGroupFilesByTemporalPartitions:
         assert out == []
 
 
-class TestGroupFilesByTimeBlock:
+class TestGroupFilesByTimeBlockIntervalStart:
     """Test suite for group_files_by_time_block."""
 
     def test_group_files_by_time_block_structure(self):
@@ -485,7 +709,7 @@ class TestGroupFilesByTimeBlock:
         filepaths = [
             "L0B.1MIN.LOCARNO_2019.61.s20190713134200.e20190713161000.V0.nc",
         ]
-        list_event_info = group_files_by_time_block(filepaths, freq="day")
+        list_event_info = group_files_by_time_block(filepaths, freq="day", time_is_interval_end=False)
         assert isinstance(list_event_info, list)
         assert "start_time" in list_event_info[0]
         assert "end_time" in list_event_info[0]
@@ -503,7 +727,7 @@ class TestGroupFilesByTimeBlock:
             "L0B.1MIN.LOCARNO_2019.61.s20190716144200.e20190717111000.V0.nc",
         ]
 
-        list_event_info = group_files_by_time_block(filepaths, freq="day")
+        list_event_info = group_files_by_time_block(filepaths, freq="day", time_is_interval_end=False)
 
         # Days covered span from 2019-07-13 to 2019-07-17
         dict_days = {str(info["start_time"]): info["filepaths"] for info in list_event_info}
@@ -539,14 +763,14 @@ class TestGroupFilesByTimeBlock:
 
     def test_empty_list_returns_empty_dict(self):
         """An empty list of filepaths should return an empty list."""
-        assert group_files_by_time_block([]) == []
+        assert group_files_by_time_block([], time_is_interval_end=False) == []
 
     def test_single_file_spanning_multiple_days(self):
         """A single file spanning multiple days should appear in all those days."""
         filepaths = [
             "L0B.1MIN.LOCARNO_2019.61.s20190701000000.e20190702235900.V0.nc",
         ]
-        list_event_info = group_files_by_time_block(filepaths)
+        list_event_info = group_files_by_time_block(filepaths, time_is_interval_end=False)
 
         # Expect to cover July 1, 2, and 3 + previous and next day around midnight
         expected_start_times = [
@@ -559,3 +783,59 @@ class TestGroupFilesByTimeBlock:
         assert set(start_times) == set(expected_start_times)
         for info in list_event_info:
             assert filepaths[0] in info["filepaths"]
+
+
+class TestGroupFilesByTimeBlockIntervalEnd:
+    """Tests for group_files_by_time_block with time_is_interval_end=True."""
+
+    def test_group_files_by_time_block_structure(self):
+        """Test list structure returned by group_files_by_time_block."""
+        filepaths = [
+            "L0B.1MIN.LOCARNO_2019.61.s20190713134200.e20190713161000.V0.nc",
+        ]
+        list_event_info = group_files_by_time_block(filepaths, freq="day", time_is_interval_end=True)
+        assert isinstance(list_event_info, list)
+        assert len(list_event_info) >= 1
+        assert "start_time" in list_event_info[0]
+        assert "end_time" in list_event_info[0]
+        assert "filepaths" in list_event_info[0]
+        assert isinstance(list_event_info[0]["start_time"], datetime.datetime)
+        assert isinstance(list_event_info[0]["end_time"], datetime.datetime)
+        assert isinstance(list_event_info[0]["filepaths"], list)
+
+    def test_files_grouped_per_day(self):
+        """Files spanning multiple days should be grouped with shifted day blocks."""
+        filepaths = [
+            "L0B.1MIN.LOCARNO_2019.61.s20190713134200.e20190713161000.V0.nc",
+            "L0B.1MIN.LOCARNO_2019.61.s20190714144200.e20190715111000.V0.nc",
+            "L0B.1MIN.LOCARNO_2019.61.s20190715144200.e20190716111000.V0.nc",
+            "L0B.1MIN.LOCARNO_2019.61.s20190716144200.e20190717111000.V0.nc",
+        ]
+
+        list_event_info = group_files_by_time_block(filepaths, freq="day", time_is_interval_end=True)
+
+        # With interval-end convention, day blocks are [00:00:01, next-day 00:00:00]
+        dict_days = {str(info["start_time"]): info["filepaths"] for info in list_event_info}
+        expected_days_start_time = [
+            "2019-07-13 00:00:01",
+            "2019-07-14 00:00:01",
+            "2019-07-15 00:00:01",
+            "2019-07-16 00:00:01",
+            "2019-07-17 00:00:01",
+        ]
+        assert set(dict_days.keys()) == set(expected_days_start_time)
+
+        # Check end times are next-day 00:00:00
+        dict_days_end = {str(info["end_time"]): info["filepaths"] for info in list_event_info}
+        expected_days_end_time = [
+            "2019-07-14 00:00:00",
+            "2019-07-15 00:00:00",
+            "2019-07-16 00:00:00",
+            "2019-07-17 00:00:00",
+            "2019-07-18 00:00:00",
+        ]
+        assert set(dict_days_end.keys()) == set(expected_days_end_time)
+
+    def test_empty_list_returns_empty(self):
+        """An empty list of filepaths should return an empty list."""
+        assert group_files_by_time_block([], time_is_interval_end=True) == []

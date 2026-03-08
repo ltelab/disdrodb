@@ -705,6 +705,13 @@ def define_filename(
     """
     from disdrodb.api.checks import check_product, check_product_kwargs, check_temporal_resolution
 
+    # Retrieve temporal resolution
+    if product == "L0C":
+        temporal_resolution = product_kwargs.pop("temporal_resolution", "XXX")
+    else:
+        temporal_resolution = product_kwargs.get("temporal_resolution", "")
+
+    # Check product
     product = check_product(product)
     product_kwargs = check_product_kwargs(product, product_kwargs)
 
@@ -715,9 +722,8 @@ def define_filename(
     # Define product name
     product_name = f"{product}"
 
-    # L0C ... sample interval known only per-file
-    if product in ["L1", "L2E", "L2M"]:
-        temporal_resolution = product_kwargs.get("temporal_resolution")
+    # Temporal resolution required from L0C onwards
+    if product in ["L0C", "L1", "L2E", "L2M"]:
         check_temporal_resolution(temporal_resolution)
         product_name = f"{product}.{temporal_resolution}"
     if product in ["L2M"]:
@@ -810,10 +816,19 @@ def define_l0c_filename(ds, campaign_name: str, station_name: str, sample_interv
     """Define L0C file name."""
     temporal_resolution = define_temporal_resolution(sample_interval, rolling=False)
     starting_time, ending_time = get_file_start_end_time(ds)
-    starting_time = starting_time.strftime("%Y%m%d%H%M%S")
-    ending_time = ending_time.strftime("%Y%m%d%H%M%S")
-    version = ARCHIVE_VERSION
-    filename = f"L0C.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
+    filename = define_filename(
+        product="L0C",
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # Filename options
+        start_time=starting_time,
+        end_time=ending_time,
+        add_version=True,
+        add_time_period=True,
+        add_extension=True,
+        # Product options
+        temporal_resolution=temporal_resolution,
+    )
     return filename
 
 

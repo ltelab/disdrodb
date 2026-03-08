@@ -36,6 +36,15 @@ def get_encodings_dict():
     return encodings_dict
 
 
+def add_time_encoding(xr_obj, var="time"):
+    """Add time encoding to 'var' time coordinate in the xarray Dataset."""
+    xr_obj[var] = xr_obj[var].dt.floor("s")  # ensure no sub-second values
+    with suppress_warnings():
+        xr_obj[var] = xr_obj[var].astype("datetime64[s]")
+    xr_obj[var].encoding.update(get_time_encoding())
+    return xr_obj
+
+
 def set_encodings(ds: xr.Dataset, encodings_dict: dict) -> xr.Dataset:
     """Apply the encodings to the xarray Dataset.
 
@@ -67,10 +76,7 @@ def set_encodings(ds: xr.Dataset, encodings_dict: dict) -> xr.Dataset:
 
     # Set time encoding
     if "time" in ds:
-        ds["time"] = ds["time"].dt.floor("s")  # ensure no sub-second values
-        with suppress_warnings():
-            ds["time"] = ds["time"].astype("datetime64[s]")
-        ds["time"].encoding.update(get_time_encoding())
+        ds = add_time_encoding(ds, var="time")
 
     # Set the variable encodings
     for var, encoding in encodings_dict.items():

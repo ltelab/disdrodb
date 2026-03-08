@@ -43,3 +43,33 @@ def add_dataset_crs_coords(xr_obj):
         },
     )
     return xr_obj.assign_coords({"crs": da_crs})
+
+
+def add_time_bnds(ds):
+    """Add time bounds coordinate to xarray.Dataset."""
+    import xarray as xr
+
+    from disdrodb.utils.encoding import add_time_encoding
+
+    if "time_bnds" in ds.coords:
+        ds = ds.drop_vars("time_bnds")
+
+    # Ensure sample_interval is timedelta64
+    dt = ds["sample_interval"].astype("timedelta64[s]")
+
+    # Define time_bnds coordinate
+    start = ds["time"] - dt
+    end = ds["time"]
+
+    time_bnds = xr.concat([start, end], dim="nv").transpose("time", "nv")
+    ds = ds.assign_coords(
+        {"time_bnds": time_bnds},
+    )
+
+    # Add time encoding
+    ds = add_time_encoding(ds, var="time_bnds")
+
+    # Add CF attributes
+    ds["time"].attrs.update({"bounds": "time_bnds"})
+    ds["time_bnds"].attrs = {"long_name": "time bounds"}
+    return ds

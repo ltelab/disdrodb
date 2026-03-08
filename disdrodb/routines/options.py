@@ -173,7 +173,7 @@ def check_availability_radar_simulations(options):
     return options
 
 
-def _define_blocks_offsets(sample_interval, temporal_resolution):
+def _define_blocks_offsets(sample_interval, temporal_resolution, time_is_interval_end=True):
     """Define blocks offset for resampling logic."""
     # Retrieve accumulation_interval and rolling option
     accumulation_interval, rolling = get_sampling_information(temporal_resolution)
@@ -186,9 +186,16 @@ def _define_blocks_offsets(sample_interval, temporal_resolution):
     block_starts_offset = 0
     block_ends_offset = 0
 
-    # If rolling, need to search also in next time block ...
+    # If rolling, need to load extra data beyond the block boundary to fill the rolling window.
+    # - When time_is_interval_end=False: the rolling drops entries at the END, so extend block_ends forward.
+    # - When time_is_interval_end=True: the rolling drops entries at the START (after the internal
+    #   time shift), so extend block_starts backward.
     if rolling and sample_interval != accumulation_interval:
-        block_ends_offset = accumulation_interval - sample_interval
+        offset = accumulation_interval - sample_interval
+        if time_is_interval_end:
+            block_starts_offset = -offset
+        else:
+            block_ends_offset = offset
     return block_starts_offset, block_ends_offset
 
 
@@ -273,7 +280,12 @@ class L1ProcessingOptions:
             key = json.dumps(archive_options, sort_keys=True)
             if key not in _cache_dict_temporal_partitions:
                 _cache_dict_temporal_partitions[key] = {
-                    sample_interval: define_temporal_partitions(filepaths, parallel=parallel, **archive_options)
+                    sample_interval: define_temporal_partitions(
+                        filepaths,
+                        parallel=parallel,
+                        time_is_interval_end=True,
+                        **archive_options,
+                    )
                     for sample_interval, filepaths in dict_filepaths.items()
                 }
             dict_temporal_partitions = _cache_dict_temporal_partitions[key].copy()  # To avoid in-place replacement
@@ -370,7 +382,12 @@ class L2ProcessingOptions:
         #   --> Does some data filtering on what to process !
         # - "strategy=time_block" does not require loading data into memory
         #   --> Does not do data filtering on what to process !
-        temporal_partitions = define_temporal_partitions(filepaths, parallel=parallel, **archive_options)
+        temporal_partitions = define_temporal_partitions(
+            filepaths,
+            parallel=parallel,
+            time_is_interval_end=True,
+            **archive_options,
+        )
 
         # ------------------------------------------------------------------.
         # Group filepaths by temporal partitions

@@ -4545,6 +4545,10 @@ def prepare_summary_dataset(ds, velocity_method="theoretical_velocity", source="
         if dim in ds.dims and dim != "frequency":
             ds = ds.isel({dim: 0})
 
+    # Drop time bounds coordinate
+    if "time_bnds" in ds:
+        ds = ds.drop_vars("time_bnds")
+
     # Select only one elevation angle
     if "elevation_angle" in ds.dims:
         ds = ds.isel(elevation_angle=0)

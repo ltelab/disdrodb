@@ -46,7 +46,8 @@ def generate_time_blocks(
     start_time: np.datetime64,
     end_time: np.datetime64,
     freq: str,
-    inclusive_end_time: bool = True,
+    include_end_time: bool = True,
+    time_is_interval_end: bool = True,
 ) -> np.ndarray:
     """Generate time blocks between `start_time` and `end_time` for a given frequency.
 
@@ -55,7 +56,7 @@ def generate_time_blocks(
     start_time : numpy.datetime64
         Inclusive start of the overall time range.
     end_time : numpy.datetime64
-        End of the overall time range. Inclusive by default (see inclusive_end_time argument).
+        End of the overall time range. Inclusive by default (see include_end_time argument).
     freq : str
         Frequency specifier. Accepted values are:
 
@@ -66,9 +67,13 @@ def generate_time_blocks(
         - 'year'    : split into calendar years
         - 'season'  : split into meteorological seasons (MAM, JJA, SON, DJF)
 
-    inclusive_end_time: bool
+    include_end_time: bool
         The default is True.
         If False, if the last block end_time is equal to input end_time, such block is removed.
+    time_is_interval_end : bool
+        Whether time corresponds to the end of measurement/accumulation intervals.
+        If True (default), day blocks are [00:00:01, next-day 00:00:00].
+        If False, day blocks are [00:00:00, 23:59:59].
 
     Returns
     -------
@@ -90,8 +95,19 @@ def generate_time_blocks(
         "season": "Q-FEB",  # seasons DJF, MAM, JJA, SON
     }
 
+    # When time is interval end, shift input times back by 1s so that
+    # pd.period_range assigns them to the correct period.
+    # (e.g. 00:00:00 as interval end belongs to the previous day)
+    one_second = np.timedelta64(1, "s")
+    if time_is_interval_end:
+        period_start = start_time - one_second
+        period_end = end_time - one_second
+    else:
+        period_start = start_time
+        period_end = end_time
+
     # Define periods
-    periods = pd.period_range(start=start_time, end=end_time, freq=freq_map[freq])
+    periods = pd.period_range(start=period_start, end=period_end, freq=freq_map[freq])
 
     # Create time blocks
     blocks = []
@@ -104,8 +120,19 @@ def generate_time_blocks(
         blocks.append([start, end])
     blocks = np.array(blocks, dtype="datetime64[s]")
 
-    if not inclusive_end_time and len(blocks) > 0 and blocks[-1, 0] == end_time:
-        blocks = blocks[:-1]
+    # When time is interval end, shift blocks forward by 1s:
+    # [00:00:00, 23:59:59] --> [00:00:01, next-day 00:00:00]
+    if time_is_interval_end:
+        blocks = blocks + one_second
+
+    if not include_end_time and len(blocks) > 0:
+        if time_is_interval_end:
+            # Check if last block end equals input end_time
+            if blocks[-1, 1] == end_time:
+                blocks = blocks[:-1]
+        # Check if last block start equals input end_time
+        elif blocks[-1, 0] == end_time:
+            blocks = blocks[:-1]
     return blocks
 
 
@@ -212,7 +239,7 @@ def identify_events(
     return event_list
 
 
-def identify_time_partitions(start_times, end_times, freq: str) -> list[dict]:
+def identify_time_partitions(start_times, end_times, freq: str, time_is_interval_end: bool = True) -> list[dict]:
     """Identify the set of time blocks covered by files.
 
     The result is a minimal, sorted, and unique set of time partitions.
@@ -228,6 +255,9 @@ def identify_time_partitions(start_times, end_times, freq: str) -> list[dict]:
         Frequency determining the granularity of candidate blocks.
         Allowed values are {'none', 'hour', 'day', 'month', 'quarter', 'season', 'year'}.
         See `generate_time_blocks` for more details.
+    time_is_interval_end : bool
+        Whether time corresponds to the end of measurement/accumulation intervals.
+        The default is True.
 
     Returns
     -------
@@ -246,7 +276,7 @@ def identify_time_partitions(start_times, end_times, freq: str) -> list[dict]:
     start_time, end_time = start_times.min(), end_times.max()
 
     # Compute candidate time blocks
-    blocks = generate_time_blocks(start_time, end_time, freq=freq)
+    blocks = generate_time_blocks(start_time, end_time, freq=freq, time_is_interval_end=time_is_interval_end)
 
     # Select time blocks with files
     mask = (blocks[:, 0][:, None] <= end_times) & (blocks[:, 1][:, None] >= start_times)
@@ -261,7 +291,7 @@ def identify_time_partitions(start_times, end_times, freq: str) -> list[dict]:
     return list_time_blocks
 
 
-def define_temporal_partitions(filepaths, strategy, parallel, strategy_options):
+def define_temporal_partitions(filepaths, strategy, parallel, strategy_options, time_is_interval_end=True):
     """Define temporal file processing partitions.
 
     Parameters
@@ -308,6 +338,11 @@ def define_temporal_partitions(filepaths, strategy, parallel, strategy_options):
 
         See the ``identify_events`` function for more information.
 
+    time_is_interval_end : bool
+        Whether time corresponds to the end of measurement/accumulation intervals.
+        Only used when ``strategy == 'time_block'``.
+        The default is True.
+
     Returns
     -------
     list
@@ -334,7 +369,12 @@ def define_temporal_partitions(filepaths, strategy, parallel, strategy_options):
         return identify_events(filepaths, parallel=parallel, **strategy_options)
 
     start_times, end_times = get_start_end_time_from_filepaths(filepaths)
-    return identify_time_partitions(start_times=start_times, end_times=end_times, **strategy_options)
+    return identify_time_partitions(
+        start_times=start_times,
+        end_times=end_times,
+        time_is_interval_end=time_is_interval_end,
+        **strategy_options,
+    )
 
 
 ####----------------------------------------------------------------------------
@@ -418,7 +458,7 @@ def group_files_by_temporal_partitions(
     return list_event_info
 
 
-def group_files_by_time_block(filepaths, freq="day", tolerance_seconds=120):
+def group_files_by_time_block(filepaths, freq="day", tolerance_seconds=120, time_is_interval_end=True):
     """
     Organize files by time blocks based on their start and end times.
 
@@ -434,6 +474,9 @@ def group_files_by_time_block(filepaths, freq="day", tolerance_seconds=120):
         Frequency of the time block. The default frequency is 'day'.
     tolerance_seconds: int
         Tolerance in seconds to subtract/add to files start time and end time.
+    time_is_interval_end : bool
+        Whether time corresponds to the end of measurement/accumulation intervals.
+        The default is True.
 
     Returns
     -------
@@ -466,6 +509,7 @@ def group_files_by_time_block(filepaths, freq="day", tolerance_seconds=120):
         start_times=files_start_time,
         end_times=files_end_time,
         freq=freq,
+        time_is_interval_end=time_is_interval_end,
     )
     block_starts = np.array([b["start_time"] for b in temporal_partitions]).astype("M8[s]")
     block_ends = np.array([b["end_time"] for b in temporal_partitions]).astype("M8[s]")
