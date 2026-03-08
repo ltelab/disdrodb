@@ -142,7 +142,7 @@ def retrieve_executable(command, env):
     if exe is None:
         raise FileNotFoundError(
             f"Command '{command}' not found on PATH for kernel environment."
-            f"Tried searching in the following directories: {env['PATH'].split(':')}",
+            f"Tried searching in the following directories: {env['PATH'].split(os.pathsep)}",
         )
     return exe
 
