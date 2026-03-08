@@ -559,30 +559,28 @@ def create_pytmatrix_lut(
     verbose=False,
 ):
     """Create a pyTMatrix LUT at lut_path if it does not exist yet."""
-    cmd = " ".join(
-        [
-            "pytmatrix_lut",
-            "--frequency",
-            str(frequency),
-            "--num-points",
-            str(num_points),
-            "--diameter-min",
-            str(diameter_min),
-            "--diameter-max",
-            str(diameter_max),
-            "--canting-angle-std",
-            str(canting_angle_std),
-            "--axis-ratio-model",
-            axis_ratio_model,
-            "--permittivity-model",
-            permittivity_model,
-            "--water-temperature",
-            str(water_temperature),
-            "--elevation-angle",
-            str(elevation_angle),
-            lut_path,
-        ],
-    )
+    cmd = [
+        "pytmatrix_lut",
+        "--frequency",
+        str(frequency),
+        "--num-points",
+        str(num_points),
+        "--diameter-min",
+        str(diameter_min),
+        "--diameter-max",
+        str(diameter_max),
+        "--canting-angle-std",
+        str(canting_angle_std),
+        "--axis-ratio-model",
+        axis_ratio_model,
+        "--permittivity-model",
+        permittivity_model,
+        "--water-temperature",
+        str(water_temperature),
+        "--elevation-angle",
+        str(elevation_angle),
+        lut_path,
+    ]
 
     if verbose:
         print(f"Running: {cmd}")

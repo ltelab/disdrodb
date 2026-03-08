@@ -291,29 +291,28 @@ def run_l0a_station(
         in the DISDRODB active configuration.
     """
     # Define command
-    cmd = " ".join(
-        [
-            "disdrodb_run_l0a_station",
-            # Station arguments
-            data_source,
-            campaign_name,
-            station_name,
-            # DISDRODB root directories
-            "--data_archive_dir",
-            str(data_archive_dir),
-            "--metadata_archive_dir",
-            str(metadata_archive_dir),
-            # Processing options
-            "--force",
-            str(force),
-            "--verbose",
-            str(verbose),
-            "--debugging_mode",
-            str(debugging_mode),
-            "--parallel",
-            str(parallel),
-        ],
-    )
+    cmd = [
+        "disdrodb_run_l0a_station",
+        # Station arguments
+        data_source,
+        campaign_name,
+        station_name,
+        # DISDRODB root directories
+        "--data_archive_dir",
+        str(data_archive_dir),
+        "--metadata_archive_dir",
+        str(metadata_archive_dir),
+        # Processing options
+        "--force",
+        str(force),
+        "--verbose",
+        str(verbose),
+        "--debugging_mode",
+        str(debugging_mode),
+        "--parallel",
+        str(parallel),
+    ]
+
     # Execute command
     execute_cmd(cmd)
 
@@ -372,32 +371,30 @@ def run_l0b_station(
         The default value is ``True``.
     """
     # Define command
-    cmd = " ".join(
-        [
-            "disdrodb_run_l0b_station",
-            # Station arguments
-            data_source,
-            campaign_name,
-            station_name,
-            # DISDRODB root directories
-            "--data_archive_dir",
-            str(data_archive_dir),
-            "--metadata_archive_dir",
-            str(metadata_archive_dir),
-            # L0B processing options
-            "--remove_l0a",
-            str(remove_l0a),
-            # Processing options
-            "--force",
-            str(force),
-            "--verbose",
-            str(verbose),
-            "--debugging_mode",
-            str(debugging_mode),
-            "--parallel",
-            str(parallel),
-        ],
-    )
+    cmd = [
+        "disdrodb_run_l0b_station",
+        # Station arguments
+        data_source,
+        campaign_name,
+        station_name,
+        # DISDRODB root directories
+        "--data_archive_dir",
+        str(data_archive_dir),
+        "--metadata_archive_dir",
+        str(metadata_archive_dir),
+        # L0B processing options
+        "--remove_l0a",
+        str(remove_l0a),
+        # Processing options
+        "--force",
+        str(force),
+        "--verbose",
+        str(verbose),
+        "--debugging_mode",
+        str(debugging_mode),
+        "--parallel",
+        str(parallel),
+    ]
     # Execute command
     execute_cmd(cmd)
 
@@ -456,32 +453,30 @@ def run_l0c_station(
         in the DISDRODB active configuration.
     """
     # Define command
-    cmd = " ".join(
-        [
-            "disdrodb_run_l0c_station",
-            # Station arguments
-            data_source,
-            campaign_name,
-            station_name,
-            # DISDRODB root directories
-            "--data_archive_dir",
-            str(data_archive_dir),
-            "--metadata_archive_dir",
-            str(metadata_archive_dir),
-            # L0C processing options
-            "--remove_l0b",
-            str(remove_l0b),
-            # Processing options
-            "--force",
-            str(force),
-            "--verbose",
-            str(verbose),
-            "--debugging_mode",
-            str(debugging_mode),
-            "--parallel",
-            str(parallel),
-        ],
-    )
+    cmd = [
+        "disdrodb_run_l0c_station",
+        # Station arguments
+        data_source,
+        campaign_name,
+        station_name,
+        # DISDRODB root directories
+        "--data_archive_dir",
+        str(data_archive_dir),
+        "--metadata_archive_dir",
+        str(metadata_archive_dir),
+        # L0C processing options
+        "--remove_l0b",
+        str(remove_l0b),
+        # Processing options
+        "--force",
+        str(force),
+        "--verbose",
+        str(verbose),
+        "--debugging_mode",
+        str(debugging_mode),
+        "--parallel",
+        str(parallel),
+    ]
     # Execute command
     execute_cmd(cmd)
 
@@ -535,29 +530,27 @@ def run_l1_station(
         in the DISDRODB active configuration.
     """
     # Define command
-    cmd = " ".join(
-        [
-            "disdrodb_run_l1_station",
-            # Station arguments
-            data_source,
-            campaign_name,
-            station_name,
-            # DISDRODB root directories
-            "--data_archive_dir",
-            str(data_archive_dir),
-            "--metadata_archive_dir",
-            str(metadata_archive_dir),
-            # Processing options
-            "--force",
-            str(force),
-            "--verbose",
-            str(verbose),
-            "--debugging_mode",
-            str(debugging_mode),
-            "--parallel",
-            str(parallel),
-        ],
-    )
+    cmd = [
+        "disdrodb_run_l1_station",
+        # Station arguments
+        data_source,
+        campaign_name,
+        station_name,
+        # DISDRODB root directories
+        "--data_archive_dir",
+        str(data_archive_dir),
+        "--metadata_archive_dir",
+        str(metadata_archive_dir),
+        # Processing options
+        "--force",
+        str(force),
+        "--verbose",
+        str(verbose),
+        "--debugging_mode",
+        str(debugging_mode),
+        "--parallel",
+        str(parallel),
+    ]
     # Execute command
     execute_cmd(cmd)
 
@@ -611,29 +604,27 @@ def run_l2e_station(
         in the DISDRODB active configuration.
     """
     # Define command
-    cmd = " ".join(
-        [
-            "disdrodb_run_l2e_station",
-            # Station arguments
-            data_source,
-            campaign_name,
-            station_name,
-            # DISDRODB root directories
-            "--data_archive_dir",
-            str(data_archive_dir),
-            "--metadata_archive_dir",
-            str(metadata_archive_dir),
-            # Processing options
-            "--force",
-            str(force),
-            "--verbose",
-            str(verbose),
-            "--debugging_mode",
-            str(debugging_mode),
-            "--parallel",
-            str(parallel),
-        ],
-    )
+    cmd = [
+        "disdrodb_run_l2e_station",
+        # Station arguments
+        data_source,
+        campaign_name,
+        station_name,
+        # DISDRODB root directories
+        "--data_archive_dir",
+        str(data_archive_dir),
+        "--metadata_archive_dir",
+        str(metadata_archive_dir),
+        # Processing options
+        "--force",
+        str(force),
+        "--verbose",
+        str(verbose),
+        "--debugging_mode",
+        str(debugging_mode),
+        "--parallel",
+        str(parallel),
+    ]
     # Execute command
     execute_cmd(cmd)
 
@@ -687,29 +678,27 @@ def run_l2m_station(
         in the DISDRODB active configuration.
     """
     # Define command
-    cmd = " ".join(
-        [
-            "disdrodb_run_l2m_station",
-            # Station arguments
-            data_source,
-            campaign_name,
-            station_name,
-            # DISDRODB root directories
-            "--data_archive_dir",
-            str(data_archive_dir),
-            "--metadata_archive_dir",
-            str(metadata_archive_dir),
-            # Processing options
-            "--force",
-            str(force),
-            "--verbose",
-            str(verbose),
-            "--debugging_mode",
-            str(debugging_mode),
-            "--parallel",
-            str(parallel),
-        ],
-    )
+    cmd = [
+        "disdrodb_run_l2m_station",
+        # Station arguments
+        data_source,
+        campaign_name,
+        station_name,
+        # DISDRODB root directories
+        "--data_archive_dir",
+        str(data_archive_dir),
+        "--metadata_archive_dir",
+        str(metadata_archive_dir),
+        # Processing options
+        "--force",
+        str(force),
+        "--verbose",
+        str(verbose),
+        "--debugging_mode",
+        str(debugging_mode),
+        "--parallel",
+        str(parallel),
+    ]
     # Execute command
     execute_cmd(cmd)
 
@@ -724,21 +713,19 @@ def create_summary_station(
 ):
     """Create summary figures and tables for a DISDRODB station."""
     # Define command
-    cmd = " ".join(
-        [
-            "disdrodb_create_summary_station",
-            # Station arguments
-            data_source,
-            campaign_name,
-            station_name,
-            "--data_archive_dir",
-            str(data_archive_dir),
-            "--parallel",
-            str(parallel),
-            "--temporal_resolution",
-            str(temporal_resolution),
-        ],
-    )
+    cmd = [
+        "disdrodb_create_summary_station",
+        # Station arguments
+        data_source,
+        campaign_name,
+        station_name,
+        "--data_archive_dir",
+        str(data_archive_dir),
+        "--parallel",
+        str(parallel),
+        "--temporal_resolution",
+        str(temporal_resolution),
+    ]
     # Execute command
     execute_cmd(cmd)
 
