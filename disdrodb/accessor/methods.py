@@ -122,7 +122,7 @@ class DISDRODB_Dataset_Accessor(DISDRODB_Base_Accessor):
     def __init__(self, xarray_obj):
         super().__init__(xarray_obj)
 
-    def resample(self, temporal_resolution):
+    def resample(self, temporal_resolution, **kwargs):
         """Resample a L1 or L2 DISDRODB Product."""
         from disdrodb.l1.resampling import resample_dataset
 
@@ -131,6 +131,7 @@ class DISDRODB_Dataset_Accessor(DISDRODB_Base_Accessor):
             self._obj,
             sample_interval=sample_interval,
             temporal_resolution=temporal_resolution,
+            **kwargs,
         )
         return ds
 

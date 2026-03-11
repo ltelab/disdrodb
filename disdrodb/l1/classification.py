@@ -122,6 +122,11 @@ def get_temperature(ds):
     is_inconsistent = temperature_spread > 10
     temperature = temperature.where(~is_inconsistent)
     snow_temperature_limit = snow_temperature_limit.where(~is_inconsistent)
+
+    # Remove snow_limit coordinate
+    temperature = temperature.drop_vars("snow_limit")
+    snow_temperature_limit = snow_temperature_limit.drop_vars("snow_limit")
+
     return temperature, snow_temperature_limit
 
 
@@ -981,8 +986,8 @@ def classify_raw_spectrum(
     ds_class["n_splashing"] = n_splashing_final
     ds_class["n_wind_artefacts"] = n_wind_artefacts_final
 
-    # fraction_splash
-    # fraction_margin_fallers
+    ds_class["fraction_splashing"] = ds_class["n_splashing"] / n_particles
+    ds_class["fraction_margin_fallers"] = ds_class["n_margin_fallers"] / n_particles
 
     # ds_class["mask_graupel"] = graupel_mask_without_splash
     # ds_class["mask_splashing"] = mask_splashing

@@ -139,7 +139,29 @@ def _rolling(ds, variables, window_size, op):
     return ds_subset
 
 
-def resample_dataset(ds, sample_interval, temporal_resolution, time_is_interval_end=True):
+def _initialize_var_to(ds, var_to):
+    var_to = [] if var_to is None else var_to
+    if isinstance(var_to, str):
+        var_to = [var_to]
+    if len(var_to) > 0:
+        missing = [v for v in var_to if v not in ds]
+        if missing:
+            raise ValueError(
+                f"The following variables are not in ds: {missing}. " f"Available variables are: {list(ds.keys())}",
+            )
+    return list(var_to)
+
+
+def resample_dataset(
+    ds,
+    sample_interval,
+    temporal_resolution,
+    time_is_interval_end=True,
+    var_to_average=None,
+    var_to_cumulate=None,
+    var_to_max=None,
+    var_to_min=None,
+):
     """
     Resample the dataset to a specified accumulation interval.
 
@@ -177,6 +199,11 @@ def resample_dataset(ds, sample_interval, temporal_resolution, time_is_interval_
     """
     from disdrodb.constants import METEOROLOGICAL_VARIABLES
     from disdrodb.l1.classification import TEMPERATURE_VARIABLES
+
+    var_to_average = _initialize_var_to(ds, var_to_average)
+    var_to_cumulate = _initialize_var_to(ds, var_to_cumulate)
+    var_to_min = _initialize_var_to(ds, var_to_min)
+    var_to_max = _initialize_var_to(ds, var_to_max)
 
     # --------------------------------------------------------------------------.
     # Ensure sample interval in seconds
@@ -230,6 +257,7 @@ def resample_dataset(ds, sample_interval, temporal_resolution, time_is_interval_
         "raw_particle_counts",
     ]:
         if var in ds:
+            ds[var] = ds[var].compute()
             dims = set(ds[var].dims) - {"time"}
             invalid_timesteps = np.isnan(ds[var]).any(dim=dims)
             ds[var] = ds[var].where(~invalid_timesteps, 0)
@@ -260,7 +288,7 @@ def resample_dataset(ds, sample_interval, temporal_resolution, time_is_interval_
     # Retrieve variables to average/sum
     # - ATTENTION: it will not resample non-dimensional time coordinates of the dataset !
     # - precip_flag used for OceanRain ODM470 data
-    var_to_average = ["fall_velocity"]
+    var_to_average = ["fall_velocity", *var_to_average]
     var_to_cumulate = [
         "raw_drop_number",
         "raw_particle_counts",
@@ -272,16 +300,17 @@ def resample_dataset(ds, sample_interval, temporal_resolution, time_is_interval_
         "Nraw",
         "Nremoved",
         "qc_resampling",
+        *var_to_cumulate,
     ]
-    var_to_min = ["Dmin", *TEMPERATURE_VARIABLES]
+    var_to_min = ["Dmin", *TEMPERATURE_VARIABLES, *var_to_min]
     met_vars = set(METEOROLOGICAL_VARIABLES) - set(TEMPERATURE_VARIABLES)  # exclude air_temperature variable
-    var_to_max = ["Dmax", "qc_time", "precip_flag", *met_vars]
+    var_to_max = ["Dmax", "qc_time", "precip_flag", *met_vars, *var_to_max]
 
     # Retrieve available variables
-    var_to_average = [var for var in var_to_average if var in ds]
-    var_to_cumulate = [var for var in var_to_cumulate if var in ds]
-    var_to_min = [var for var in var_to_min if var in ds]
-    var_to_max = [var for var in var_to_max if var in ds]
+    var_to_average = np.unique([var for var in var_to_average if var in ds]).tolist()
+    var_to_cumulate = np.unique([var for var in var_to_cumulate if var in ds]).tolist()
+    var_to_min = np.unique([var for var in var_to_min if var in ds]).tolist()
+    var_to_max = np.unique([var for var in var_to_max if var in ds]).tolist()
 
     # -------------------------------------------------------------------------.
     # Resample the dataset

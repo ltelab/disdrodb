@@ -461,11 +461,14 @@ def plot_l2_dsd_quicklook(
     if isinstance(xr_obj, xr.Dataset):
         # Compute event Rmax, Ptot, and define legend string
         if "R" in xr_obj and "P" in xr_obj:
+            xr_obj["R"] = xr_obj["R"].compute()
+            xr_obj["P"] = xr_obj["P"].compute()
             r_max = xr_obj["R"].max().item()
             p_tot = xr_obj["P"].sum().item()
             bottom_right_str = f"$R_{{MAX}}$={r_max:.1f} mm/h  $P_{{TOT}}$={p_tot:.1f} mm"
         # Define secondary variable
         if secondary_var == "R" and secondary_var in xr_obj:
+            xr_obj[secondary_var] = xr_obj[secondary_var].compute()
             secondary_ylim = secondary_ylim if secondary_ylim is not None else (0.1, 200)
             secondary_yscale = secondary_yscale if secondary_yscale is not None else "log"
             secondary_label = secondary_label if secondary_label is not None else r"R [$mm hr^{-1}$]"
@@ -474,6 +477,9 @@ def plot_l2_dsd_quicklook(
         if precipitation_type is not None:
             if precipitation_type == "rain_type" and precipitation_type not in xr_obj:
                 if "Dm" in xr_obj and "Nw" in xr_obj:
+                    xr_obj["Dm"] = xr_obj["Dm"].compute()
+                    xr_obj["Nw"] = xr_obj["Nw"].compute()
+
                     xr_obj["rain_type"] = bringi_nw_dm_classification(xr_obj["Dm"], xr_obj["Nw"])
                 else:
                     precipitation_type = None
@@ -592,7 +598,7 @@ def plot_dsd_quicklook(
             raise TypeError("secondary_var must be a string or None.")
         if secondary_var not in ds:
             raise ValueError(f"{secondary_var} not found in dataset.")
-
+        ds[secondary_var] = ds[secondary_var].compute()
     if secondary_ylim is not None and not (isinstance(secondary_ylim, (tuple, list)) and len(secondary_ylim) == 2):
         raise ValueError("secondary_ylim must be a tuple/list of length 2.")
 
@@ -622,6 +628,7 @@ def plot_dsd_quicklook(
     # ------------------------------------------------------------------------.
     # Derive N(D) variable
     da_dsd = get_dsd_variable(ds, variable=variable, diameter_dim=d_dim)
+    da_dsd = da_dsd.compute()
     variable = da_dsd.name
     ds[da_dsd.name] = da_dsd  # might have computed n(d) on-the-fly from N(D,V)
 
