@@ -250,6 +250,10 @@ def get_diameter_coords_dict_from_bin_edges(diameter_bin_edges):
     return coords_dict
 
 
+####---------------------------------------------------------------------------.
+#### Resampling low-level functions
+
+
 def _conservative_counts_remapping(n_src, d_src, d_dst, dD_src, dD_dst):
     """Conservative remapping of bin-integrated counts between diameter grids."""
     n_src = np.asarray(n_src, dtype=float)
@@ -294,84 +298,7 @@ def _conservative_counts_remapping(n_src, d_src, d_dst, dD_src, dD_dst):
     return np.clip(n_dst, 0.0, None)
 
 
-def resample_drop_number(drop_number, diameter_bin_edges):
-    """Conservatively resample bin-integrated drop counts to new diameter bins.
-
-    This function performs first-order conservative remapping of counts using
-    geometric overlap between source and destination bins. Counts in each source
-    bin are assumed piecewise-uniform inside that bin and redistributed by
-    overlap fraction, which works for both refinement (finer bins) and
-    coarsening (larger bins).
-
-    Parameters
-    ----------
-    drop_number : xr.DataArray
-        Bin-integrated counts (for example ``drop_number``) defined on
-        ``diameter_bin_center`` and carrying ``diameter_bin_width`` coordinates.
-        Additional dimensions (for example ``time`` or ``velocity_bin_center``)
-        are supported and vectorized.
-    diameter_bin_edges : array-like
-        Destination diameter bin edges. The destination bins do not need to be
-        aligned with source bins.
-
-    Returns
-    -------
-    xr.DataArray
-        Resampled counts on destination ``diameter_bin_center`` with updated
-        ``diameter_bin_width``, ``diameter_bin_lower`` and
-        ``diameter_bin_upper`` coordinates.
-
-    Notes
-    -----
-    - This is a conservative remapping in count space (not density space).
-    - If destination bins fully span the source support, the total count is
-      conserved up to numerical precision.
-    - Destination bins outside source support receive zero contribution.
-    """
-    da_dst_d_bin_centers = define_diameter_datarray(diameter_bin_edges, dim="d_new")
-    drop_number = drop_number.where(drop_number > 0, 0)
-
-    da_resampled = xr.apply_ufunc(
-        _conservative_counts_remapping,
-        drop_number,
-        drop_number["diameter_bin_center"],
-        da_dst_d_bin_centers,
-        drop_number["diameter_bin_width"],
-        da_dst_d_bin_centers["diameter_bin_width"],
-        input_core_dims=[
-            ["diameter_bin_center"],
-            ["diameter_bin_center"],
-            ["d_new"],
-            ["diameter_bin_center"],
-            ["d_new"],
-        ],
-        output_core_dims=[["d_new"]],
-        vectorize=True,
-        dask="parallelized",
-        output_dtypes=[float],
-    )
-
-    name = drop_number.name
-    da_resampled = da_resampled.assign_coords({"d_new": da_dst_d_bin_centers})
-    da_resampled = da_resampled.rename({"d_new": "diameter_bin_center"})
-    da_resampled.name = name if name is not None else "drop_number"
-    return da_resampled
-
-
-# def interpolate_drop_number_concentration(drop_number_concentration, diameter_bin_edges, method="linear"):
-#     """Interpolate drop number concentration N(D) DataArray to high resolution diameter bins.
-
-#     This should be done only for visualization purposes as it change the distribution moments.
-#     """
-#     diameters_bin_center = diameter_bin_edges[:-1] + np.diff(diameter_bin_edges) / 2
-
-#     da = drop_number_concentration.interp(coords={"diameter_bin_center": diameters_bin_center}, method=method)
-#     coords_dict = get_diameter_coords_dict_from_bin_edges(diameter_bin_edges)
-#     da = da.assign_coords(coords_dict)
-#     return da
-
-
-def _conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
+def _conservative_density_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
     # Source edges
     src_left = d_src - 0.5 * dD_src
     src_right = d_src + 0.5 * dD_src
@@ -398,7 +325,7 @@ def _conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
     return N_dst / dD_dst
 
 
-def _log_pchip_conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
+def _log_pchip_conservative_density_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
     """Smooth remapping in log-space, scaled to conserve global integrated number."""
     y_src = np.asarray(y_src, dtype=float)
     d_src = np.asarray(d_src, dtype=float)
@@ -428,7 +355,7 @@ def _log_pchip_conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
 
     positive = y_src > 0
     if np.count_nonzero(positive) < 2:
-        return _conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst)
+        return _conservative_counts_remapping(y_src, d_src, d_dst, dD_src, dD_dst)
 
     log_interp = PchipInterpolator(
         d_src[positive],
@@ -462,6 +389,66 @@ def _log_pchip_conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
     if n_dst_total > 0:
         y_dst *= n_src_total / n_dst_total
     return np.clip(y_dst, 0.0, None)
+
+
+def resample_counts(
+    da_counts,
+    d_src,
+    d_dst,
+    dim,
+    new_dim,
+    dD_src,
+    dD_dst,
+):
+    """Conservatively resample bin-integrated counts between diameter grids.
+
+    Parameters
+    ----------
+    da_counts : xr.DataArray
+        Bin-integrated counts defined on ``dim``.
+    d_src : xr.DataArray
+        Source diameter centers associated with ``da_counts``.
+    d_dst : xr.DataArray
+        Destination diameter centers associated with ``new_dim``.
+    dim : str
+        Source diameter dimension.
+    new_dim : str
+        Destination diameter dimension.
+    dD_src : xr.DataArray
+        Source bin widths defined on ``dim``.
+    dD_dst : xr.DataArray
+        Destination bin widths defined on ``new_dim``.
+
+    Returns
+    -------
+    xr.DataArray
+        Resampled counts on ``new_dim``.
+
+    Notes
+    -----
+    The remapping preserves total counts over the remapped support and assumes
+    counts are piecewise-uniform inside each source bin.
+    """
+    da_counts = da_counts.where(da_counts > 0, 0)
+
+    da_counts_new = xr.apply_ufunc(
+        _conservative_counts_remapping,
+        da_counts,
+        d_src,
+        d_dst,
+        dD_src,
+        dD_dst,
+        input_core_dims=[[dim], [dim], [new_dim], [dim], [new_dim]],
+        output_core_dims=[[new_dim]],
+        vectorize=True,
+        dask="parallelized",
+        output_dtypes=[float],
+    )
+
+    name = da_counts.name
+    da_counts_new = da_counts_new.assign_coords({new_dim: d_dst})
+    da_counts_new.name = name if name is not None else "counts"
+    return da_counts_new
 
 
 def resample_density(
@@ -529,8 +516,8 @@ def resample_density(
     da_density = da_density.where(da_density > 0, 0)
 
     methods = {
-        "constant": _conservative_remapping,
-        "log_pchip": _log_pchip_conservative_remapping,
+        "constant": _conservative_density_remapping,
+        "log_pchip": _log_pchip_conservative_density_remapping,
     }
     if callable(method):
         resampling_func = method
@@ -560,6 +547,46 @@ def resample_density(
     da_density_new = da_density_new.assign_coords({new_dim: d_dst})
     da_density_new.name = name if name is not None else "drop_number_concentration"
     return da_density_new
+
+
+####---------------------------------------------------------------------------.
+#### Resampling wrappers for n(D) and N(D)
+
+
+def resample_drop_counts(drop_counts, diameter_bin_edges):
+    """Conservatively resample bin-integrated drop counts to new diameter bins.
+
+    Parameters
+    ----------
+    drop_counts : xr.DataArray
+        Bin-integrated counts (for example ``drop_counts`` or ``drop_number``) defined on
+        ``diameter_bin_center`` and carrying ``diameter_bin_width`` coordinates.
+        Additional dimensions (for example ``time`` or ``velocity_bin_center``)
+        are supported and vectorized.
+    diameter_bin_edges : array-like
+        Destination diameter bin edges. The destination bins do not need to be
+        aligned with source bins.
+
+    Returns
+    -------
+    xr.DataArray
+        Resampled counts on destination ``diameter_bin_center`` with updated
+        ``diameter_bin_width``, ``diameter_bin_lower`` and
+        ``diameter_bin_upper`` coordinates.
+    """
+    da_dst_d_bin_centers = define_diameter_datarray(diameter_bin_edges, dim="d_new")
+    da_resampled = resample_counts(
+        da_counts=drop_counts,
+        d_src=drop_counts["diameter_bin_center"],
+        d_dst=da_dst_d_bin_centers,
+        dim="diameter_bin_center",
+        new_dim="d_new",
+        dD_src=drop_counts["diameter_bin_width"],
+        dD_dst=da_dst_d_bin_centers["diameter_bin_width"],
+    )
+    da_resampled = da_resampled.rename({"d_new": "diameter_bin_center"})
+    da_resampled.name = drop_counts.name if drop_counts.name is not None else "drop_counts"
+    return da_resampled
 
 
 def resample_drop_number_concentration(
@@ -610,6 +637,10 @@ def resample_drop_number_concentration(
     )
     da_resampled = da_resampled.rename({"d_new": "diameter_bin_center"})
     return da_resampled
+
+
+####---------------------------------------------------------------------------.
+#### Double Moment Normalization utilities
 
 
 def remap_to_diameter(
@@ -734,3 +765,16 @@ def compute_normalized_dsd_datarray(
     da_dsd_norm = da_dsd_norm.assign_coords({"diameter_bin_width": da_normalized_diameter["diameter_bin_width"]})
     da_dsd_norm.name = "N(D)/Nc"
     return da_dsd_norm
+
+
+# def interpolate_drop_number_concentration(drop_number_concentration, diameter_bin_edges, method="linear"):
+#     """Interpolate drop number concentration N(D) DataArray to high resolution diameter bins.
+
+#     This should be done only for visualization purposes as it change the distribution moments.
+#     """
+#     diameters_bin_center = diameter_bin_edges[:-1] + np.diff(diameter_bin_edges) / 2
+
+#     da = drop_number_concentration.interp(coords={"diameter_bin_center": diameters_bin_center}, method=method)
+#     coords_dict = get_diameter_coords_dict_from_bin_edges(diameter_bin_edges)
+#     da = da.assign_coords(coords_dict)
+#     return da

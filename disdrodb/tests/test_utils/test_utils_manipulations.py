@@ -36,8 +36,9 @@ from disdrodb.utils.manipulations import (
     get_diameter_bin_edges,
     get_diameter_coords_dict_from_bin_edges,
     remap_to_diameter,
+    resample_counts,
     resample_density,
-    resample_drop_number,
+    resample_drop_counts,
     resample_drop_number_concentration,
     unstack_radar_variables,
 )
@@ -307,24 +308,24 @@ def test_resample_drop_number_concentration():
     np.testing.assert_allclose(Nt_original.to_numpy(), Nt_resampled.to_numpy(), rtol=1e-6)
 
 
-class TestResampleDropNumber:
-    def test_resample_drop_number_same_edges_returns_same_values(self):
+class TestResampleDropCounts:
+    def test_resample_drop_counts_same_edges_returns_same_values(self):
         """It returns unchanged counts when source and destination bin edges are identical."""
         edges = np.array([0.0, 0.5, 1.0, 1.5, 2.0])
         src_da = define_diameter_datarray(edges)
-        drop_number = xr.DataArray(
+        drop_counts = xr.DataArray(
             [2.0, 4.0, 6.0, 8.0],
             dims=("diameter_bin_center",),
             coords=src_da.coords,
-            name="drop_number",
+            name="drop_counts",
         )
 
-        da_resampled = resample_drop_number(drop_number=drop_number, diameter_bin_edges=edges)
+        da_resampled = resample_drop_counts(drop_counts=drop_counts, diameter_bin_edges=edges)
 
-        np.testing.assert_allclose(da_resampled.to_numpy(), drop_number.to_numpy(), rtol=1e-12, atol=1e-12)
-        np.testing.assert_allclose(da_resampled.sum().item(), drop_number.sum().item(), rtol=1e-12, atol=1e-12)
+        np.testing.assert_allclose(da_resampled.to_numpy(), drop_counts.to_numpy(), rtol=1e-12, atol=1e-12)
+        np.testing.assert_allclose(da_resampled.sum().item(), drop_counts.sum().item(), rtol=1e-12, atol=1e-12)
 
-    def test_resample_drop_number_aligned_edges_and_reversed_case(self):
+    def test_resample_drop_counts_aligned_edges_and_reversed_case(self):
         """It gives exact aligned-bin sums and exact reverse redistribution when refined back."""
         fine_edges = np.array([0.0, 0.5, 1.0, 1.5, 2.0])
         coarse_edges = np.array([0.0, 1.0, 2.0])
@@ -334,64 +335,117 @@ class TestResampleDropNumber:
             [2.0, 4.0, 6.0, 8.0],
             dims=("diameter_bin_center",),
             coords=fine_da.coords,
-            name="drop_number",
+            name="drop_counts",
         )
 
         # Aligned coarsening: exact bin aggregation.
-        coarse = resample_drop_number(drop_number=fine_counts, diameter_bin_edges=coarse_edges)
+        coarse = resample_drop_counts(drop_counts=fine_counts, diameter_bin_edges=coarse_edges)
         np.testing.assert_allclose(coarse.to_numpy(), np.array([6.0, 14.0]), rtol=1e-12, atol=1e-12)
 
         # Reversed aligned case (coarse -> fine): exact split by overlap fraction.
-        fine_back = resample_drop_number(drop_number=coarse, diameter_bin_edges=fine_edges)
+        fine_back = resample_drop_counts(drop_counts=coarse, diameter_bin_edges=fine_edges)
         np.testing.assert_allclose(fine_back.to_numpy(), np.array([3.0, 3.0, 7.0, 7.0]), rtol=1e-12, atol=1e-12)
 
         np.testing.assert_allclose(coarse.sum().item(), fine_counts.sum().item(), rtol=1e-12, atol=1e-12)
         np.testing.assert_allclose(fine_back.sum().item(), coarse.sum().item(), rtol=1e-12, atol=1e-12)
 
-    def test_resample_drop_number_refinement_misaligned_bins_is_conservative(self):
+    def test_resample_drop_counts_refinement_misaligned_bins_is_conservative(self):
         """It conservatively redistributes counts onto finer non-aligned bins."""
         src_edges = np.array([0.0, 1.0, 2.0, 4.0])
         src_da = define_diameter_datarray(src_edges)
-        drop_number = xr.DataArray(
+        drop_counts = xr.DataArray(
             [10.0, 20.0, 40.0],
             dims=("diameter_bin_center",),
             coords=src_da.coords,
-            name="drop_number",
+            name="drop_counts",
         )
 
         dst_edges = np.array([0.0, 0.5, 1.5, 2.5, 4.0, 5.0])
-        da_resampled = resample_drop_number(drop_number=drop_number, diameter_bin_edges=dst_edges)
+        da_resampled = resample_drop_counts(drop_counts=drop_counts, diameter_bin_edges=dst_edges)
 
         expected = np.array([5.0, 15.0, 20.0, 30.0, 0.0])
         np.testing.assert_allclose(da_resampled.to_numpy(), expected, rtol=1e-12, atol=1e-12)
         # Test total number is conserved
-        np.testing.assert_allclose(da_resampled.sum().item(), drop_number.sum().item(), rtol=1e-12, atol=1e-12)
+        np.testing.assert_allclose(da_resampled.sum().item(), drop_counts.sum().item(), rtol=1e-12, atol=1e-12)
 
-    def test_resample_drop_number_coarsening_misaligned_bins_is_conservative(self):
+    def test_resample_drop_counts_coarsening_misaligned_bins_is_conservative(self):
         """It conservatively redistributes counts onto coarser non-aligned bins."""
         src_edges = np.array([0.0, 1.0, 2.0, 4.0])
         src_da = define_diameter_datarray(src_edges)
-        drop_number = xr.DataArray(
+        drop_counts = xr.DataArray(
             [10.0, 20.0, 40.0],
             dims=("diameter_bin_center",),
             coords=src_da.coords,
-            name="drop_number",
+            name="drop_counts",
         )
-
         dst_edges = np.array([0.0, 1.2, 3.1, 4.0])
-        da_resampled = resample_drop_number(drop_number=drop_number, diameter_bin_edges=dst_edges)
+        da_resampled = resample_drop_counts(drop_counts=drop_counts, diameter_bin_edges=dst_edges)
 
         expected = np.array([14.0, 38.0, 18.0])
         np.testing.assert_allclose(da_resampled.to_numpy(), expected, rtol=1e-12, atol=1e-12)
         # Test total number is conserved
-        np.testing.assert_allclose(da_resampled.sum().item(), drop_number.sum().item(), rtol=1e-12, atol=1e-12)
+        np.testing.assert_allclose(da_resampled.sum().item(), drop_counts.sum().item(), rtol=1e-12, atol=1e-12)
+
+
+class TestResampleCounts:
+    def test_resample_counts_same_edges_returns_same_values(self):
+        """It returns unchanged counts when source and destination bins are identical."""
+        edges = np.array([0.0, 0.5, 1.0, 1.5, 2.0])
+        src_da = define_diameter_datarray(edges)
+        da_counts = xr.DataArray(
+            [2.0, 4.0, 6.0, 8.0],
+            dims=("diameter_bin_center",),
+            coords=src_da.coords,
+            name="counts",
+        )
+
+        da_resampled = resample_counts(
+            da_counts=da_counts,
+            d_src=da_counts["diameter_bin_center"],
+            d_dst=src_da.rename({"diameter_bin_center": "d_new"}),
+            dim="diameter_bin_center",
+            new_dim="d_new",
+            dD_src=da_counts["diameter_bin_width"],
+            dD_dst=src_da["diameter_bin_width"].rename({"diameter_bin_center": "d_new"}),
+        )
+
+        np.testing.assert_allclose(da_resampled.to_numpy(), da_counts.to_numpy(), rtol=1e-12, atol=1e-12)
+        np.testing.assert_allclose(da_resampled.sum().item(), da_counts.sum().item(), rtol=1e-12, atol=1e-12)
+
+    def test_resample_counts_misaligned_bins_is_conservative(self):
+        """It conservatively redistributes counts onto a non-aligned destination grid."""
+        src_edges = np.array([0.0, 1.0, 2.0, 4.0])
+        dst_edges = np.array([0.0, 0.5, 1.5, 2.5, 4.0, 5.0])
+        src_da = define_diameter_datarray(src_edges)
+        dst_da = define_diameter_datarray(dst_edges, dim="d_new")
+
+        da_counts = xr.DataArray(
+            [10.0, 20.0, 40.0],
+            dims=("diameter_bin_center",),
+            coords=src_da.coords,
+            name="counts",
+        )
+
+        da_resampled = resample_counts(
+            da_counts=da_counts,
+            d_src=da_counts["diameter_bin_center"],
+            d_dst=dst_da,
+            dim="diameter_bin_center",
+            new_dim="d_new",
+            dD_src=da_counts["diameter_bin_width"],
+            dD_dst=dst_da["diameter_bin_width"],
+        )
+
+        expected = np.array([5.0, 15.0, 20.0, 30.0, 0.0])
+        np.testing.assert_allclose(da_resampled.to_numpy(), expected, rtol=1e-12, atol=1e-12)
+        np.testing.assert_allclose(da_resampled.sum().item(), da_counts.sum().item(), rtol=1e-12, atol=1e-12)
 
 
 class TestResampleDensity:
-    
+
     def test_resample_density_same_edges_returns_same_values(self):
         """It returns unchanged counts when source and destination bin edges are identical."""
-        # Define source 
+        # Define source
         edges = np.array([0.0, 0.5, 1.0, 1.5, 2.0])
         src_da = define_diameter_datarray(edges)
         da_density = xr.DataArray(
@@ -402,11 +456,11 @@ class TestResampleDensity:
         )
         d_src = da_density["diameter_bin_center"]
         dD_src = da_density["diameter_bin_width"]
-        
+
         # Define destination with same bins
         d_dst = d_src.rename({"diameter_bin_center": "d_new"})
         dD_dst = dD_src.rename({"diameter_bin_center": "d_new"})
-        
+
         # Resample
         da_constant = resample_density(
             da_density=da_density,
@@ -428,7 +482,7 @@ class TestResampleDensity:
             dD_dst=dD_dst,
             method="log_pchip",
         )
-        
+
         np.testing.assert_allclose(da_constant.to_numpy(), da_density.to_numpy(), rtol=1e-12, atol=1e-12)
         np.testing.assert_allclose(da_smooth.to_numpy(), da_smooth.to_numpy(), rtol=1e-12, atol=1e-12)
 
@@ -518,7 +572,7 @@ class TestResampleDensity:
         nt_src = float((y_src * dD_src).sum())
         nt_smooth = float((da_smooth * dD_dst).sum())
         np.testing.assert_allclose(nt_smooth, nt_src, rtol=1e-12, atol=1e-12)
-        
+
     def test_resample_density_raises_on_unknown_method(self):
         """It raises if an unsupported remapping method is requested."""
         da_density = xr.DataArray([10.0, 5.0], dims=("diameter_bin_center",))
@@ -537,8 +591,6 @@ class TestResampleDensity:
                 dD_dst=d_dst["diameter_bin_width"],
                 method="not_a_method",
             )
-
-
 
 
 def test_remap_to_diameter_pchip():
