@@ -26,6 +26,7 @@ from disdrodb.utils.xarray import unstack_datarray_dimension
 
 def define_diameter_datarray(bounds, dim="diameter_bin_center"):
     """Define diameter DataArray."""
+    bounds = np.asarray(bounds, dtype=float)
     diameters_bin_lower = bounds[:-1]
     diameters_bin_upper = bounds[1:]
     diameters_bin_width = diameters_bin_upper - diameters_bin_lower
@@ -247,6 +248,82 @@ def get_diameter_coords_dict_from_bin_edges(diameter_bin_edges):
         "diameter_bin_upper": (DIAMETER_DIMENSION, diameter_bin_upper),
     }
     return coords_dict
+
+
+def _conservative_drop_number_remapping(n_src, d_src, d_dst, dD_src, dD_dst):
+    """Conservative remapping of bin-integrated counts between diameter grids."""
+    n_src = np.asarray(n_src, dtype=float)
+    d_src = np.asarray(d_src, dtype=float)
+    d_dst = np.asarray(d_dst, dtype=float)
+    dD_src = np.asarray(dD_src, dtype=float)
+    dD_dst = np.asarray(dD_dst, dtype=float)
+
+    n_src = np.where(np.isfinite(n_src), n_src, 0.0)
+    n_src = np.clip(n_src, 0.0, None)
+
+    valid_src = np.isfinite(d_src) & np.isfinite(dD_src) & (dD_src > 0)
+    valid_dst = np.isfinite(d_dst) & np.isfinite(dD_dst) & (dD_dst > 0)
+    if np.count_nonzero(valid_src) == 0 or np.count_nonzero(valid_dst) == 0:
+        return np.zeros_like(d_dst, dtype=float)
+
+    n_src = n_src[valid_src]
+    d_src = d_src[valid_src]
+    dD_src = dD_src[valid_src]
+
+    order = np.argsort(d_src)
+    n_src = n_src[order]
+    d_src = d_src[order]
+    dD_src = dD_src[order]
+
+    d_dst_valid = d_dst[valid_dst]
+    dD_dst_valid = dD_dst[valid_dst]
+
+    src_left = d_src - 0.5 * dD_src
+    src_right = d_src + 0.5 * dD_src
+
+    dst_left = d_dst_valid - 0.5 * dD_dst_valid
+    dst_right = d_dst_valid + 0.5 * dD_dst_valid
+
+    overlap = np.minimum(src_right[:, None], dst_right[None, :]) - np.maximum(src_left[:, None], dst_left[None, :])
+    overlap = np.clip(overlap, 0.0, None)
+
+    n_dst_valid = (n_src[:, None] * overlap / dD_src[:, None]).sum(axis=0)
+
+    n_dst = np.zeros_like(d_dst, dtype=float)
+    n_dst[valid_dst] = n_dst_valid
+    return np.clip(n_dst, 0.0, None)
+
+
+def resample_drop_number(drop_number, diameter_bin_edges):
+    """Conservatively resample bin-integrated drop counts to new diameter bins."""
+    da_dst_d_bin_centers = define_diameter_datarray(diameter_bin_edges, dim="d_new")
+    drop_number = drop_number.where(drop_number > 0, 0)
+
+    da_resampled = xr.apply_ufunc(
+        _conservative_drop_number_remapping,
+        drop_number,
+        drop_number["diameter_bin_center"],
+        da_dst_d_bin_centers,
+        drop_number["diameter_bin_width"],
+        da_dst_d_bin_centers["diameter_bin_width"],
+        input_core_dims=[
+            ["diameter_bin_center"],
+            ["diameter_bin_center"],
+            ["d_new"],
+            ["diameter_bin_center"],
+            ["d_new"],
+        ],
+        output_core_dims=[["d_new"]],
+        vectorize=True,
+        dask="parallelized",
+        output_dtypes=[float],
+    )
+
+    name = drop_number.name
+    da_resampled = da_resampled.assign_coords({"d_new": da_dst_d_bin_centers})
+    da_resampled = da_resampled.rename({"d_new": "diameter_bin_center"})
+    da_resampled.name = name if name is not None else "drop_number"
+    return da_resampled
 
 
 def resample_drop_number_concentration(
