@@ -254,62 +254,109 @@ def get_diameter_coords_dict_from_bin_edges(diameter_bin_edges):
 #### Resampling low-level functions
 
 
-def _conservative_counts_remapping(n_src, d_src, d_dst, dD_src, dD_dst):
-    """Conservative remapping of bin-integrated counts between diameter grids."""
-    n_src = np.asarray(n_src, dtype=float)
+def _prepare_resampling_inputs(y_src, d_src, d_dst, dD_src, dD_dst):
+    """Sanitize and align source and destination arrays for conservative remapping."""
+    # Ensure numpy array input
+    y_src = np.asarray(y_src, dtype=float)
     d_src = np.asarray(d_src, dtype=float)
     d_dst = np.asarray(d_dst, dtype=float)
     dD_src = np.asarray(dD_src, dtype=float)
     dD_dst = np.asarray(dD_dst, dtype=float)
-
-    n_src = np.where(np.isfinite(n_src), n_src, 0.0)
-    n_src = np.clip(n_src, 0.0, None)
-
+    
+    # Ensure only positive values
+    y_src = np.where(np.isfinite(y_src), y_src, 0.0)
+    y_src = np.clip(y_src, 0.0, None)
+    
+    # Identify bins with invalid values 
     valid_src = np.isfinite(d_src) & np.isfinite(dD_src) & (dD_src > 0)
     valid_dst = np.isfinite(d_dst) & np.isfinite(dD_dst) & (dD_dst > 0)
+    
+    # If not valid values, return None flag --> zero array returned
     if np.count_nonzero(valid_src) == 0 or np.count_nonzero(valid_dst) == 0:
-        return np.zeros_like(d_dst, dtype=float)
-
-    n_src = n_src[valid_src]
+        return None
+    
+    # Keep only bin with valid values
+    y_src = y_src[valid_src]
     d_src = d_src[valid_src]
     dD_src = dD_src[valid_src]
-
+    
+    # Sort by diameter
     order = np.argsort(d_src)
-    n_src = n_src[order]
+    y_src = y_src[order]
     d_src = d_src[order]
     dD_src = dD_src[order]
+    
+    # Return dictionary with relevant info quality-checked
+    return {
+        "y_src": y_src,
+        "d_src": d_src,
+        "d_dst": d_dst,
+        "dD_src": dD_src,
+        "dD_dst": dD_dst,
+        "valid_dst": valid_dst,
+        "d_dst_valid": d_dst[valid_dst],
+        "dD_dst_valid": dD_dst[valid_dst],
+    }
 
-    d_dst_valid = d_dst[valid_dst]
-    dD_dst_valid = dD_dst[valid_dst]
 
+def _assemble_resampled_output(y_dst_valid, d_dst, valid_dst):
+    """Populate invalid destination bins with zero after remapping."""
+    y_dst = np.zeros_like(d_dst, dtype=float)
+    y_dst[valid_dst] = y_dst_valid
+    return np.clip(y_dst, 0.0, None)
+
+
+def _conservative_counts_remapping(n_src, d_src, d_dst, dD_src, dD_dst):
+    """Conservative remapping of bin-integrated counts between diameter grids."""
+    # Prepare input data
+    prepared = _prepare_resampling_inputs(n_src, d_src, d_dst, dD_src, dD_dst)
+    if prepared is None:
+        return np.zeros_like(d_dst, dtype=float)
+
+    n_src = prepared["y_src"]
+    d_src = prepared["d_src"]
+    dD_src = prepared["dD_src"]
+    d_dst_valid = prepared["d_dst_valid"]
+    dD_dst_valid = prepared["dD_dst_valid"]
+    
+    # Source edges
     src_left = d_src - 0.5 * dD_src
     src_right = d_src + 0.5 * dD_src
-
+    
+    # Destination edges
     dst_left = d_dst_valid - 0.5 * dD_dst_valid
     dst_right = d_dst_valid + 0.5 * dD_dst_valid
-
+    
+    # Overlap matrix (Ns, N)
     overlap = np.minimum(src_right[:, None], dst_right[None, :]) - np.maximum(src_left[:, None], dst_left[None, :])
     overlap = np.clip(overlap, 0.0, None)
 
     n_dst_valid = (n_src[:, None] * overlap / dD_src[:, None]).sum(axis=0)
-
-    n_dst = np.zeros_like(d_dst, dtype=float)
-    n_dst[valid_dst] = n_dst_valid
-    return np.clip(n_dst, 0.0, None)
+    return _assemble_resampled_output(n_dst_valid, prepared["d_dst"], prepared["valid_dst"])
 
 
 def _conservative_density_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
+    # Prepare input data
+    prepared = _prepare_resampling_inputs(y_src, d_src, d_dst, dD_src, dD_dst)
+    if prepared is None:
+        return np.zeros_like(d_dst, dtype=float)
+
+    y_src = prepared["y_src"]
+    d_src = prepared["d_src"]
+    dD_src = prepared["dD_src"]
+    d_dst_valid = prepared["d_dst_valid"]
+    dD_dst_valid = prepared["dD_dst_valid"]
+
     # Source edges
     src_left = d_src - 0.5 * dD_src
     src_right = d_src + 0.5 * dD_src
 
     # Destination edges
-    dst_left = d_dst - 0.5 * dD_dst
-    dst_right = d_dst + 0.5 * dD_dst
+    dst_left = d_dst_valid - 0.5 * dD_dst_valid
+    dst_right = d_dst_valid + 0.5 * dD_dst_valid
 
     # Overlap matrix (Ns, Nd)
     overlap = np.minimum(src_right[:, None], dst_right[None, :]) - np.maximum(src_left[:, None], dst_left[None, :])
-
     overlap = np.clip(overlap, 0.0, None)
 
     # # Convert density to bin-integrated number
@@ -319,35 +366,24 @@ def _conservative_density_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
     # N_dst = (N_src[:, None] * overlap / dD_src[:, None]).sum(axis=0)
 
     # Integrated number in destination bins
-    N_dst = (y_src[:, None] * overlap).sum(axis=0)
+    n_dst = (y_src[:, None] * overlap).sum(axis=0)
 
     # Convert back to density
-    return N_dst / dD_dst
+    y_dst_valid = n_dst / dD_dst_valid
+    return _assemble_resampled_output(y_dst_valid, prepared["d_dst"], prepared["valid_dst"])
 
 
 def _log_pchip_conservative_density_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
     """Smooth remapping in log-space, scaled to conserve global integrated number."""
-    y_src = np.asarray(y_src, dtype=float)
-    d_src = np.asarray(d_src, dtype=float)
-    d_dst = np.asarray(d_dst, dtype=float)
-    dD_src = np.asarray(dD_src, dtype=float)
-    dD_dst = np.asarray(dD_dst, dtype=float)
-
-    y_src = np.where(np.isfinite(y_src), y_src, 0.0)
-    y_src = np.clip(y_src, 0.0, None)
-
-    valid_src = np.isfinite(d_src) & np.isfinite(dD_src) & (dD_src > 0)
-    if np.count_nonzero(valid_src) == 0:
+    prepared = _prepare_resampling_inputs(y_src, d_src, d_dst, dD_src, dD_dst)
+    if prepared is None:
         return np.zeros_like(d_dst, dtype=float)
 
-    y_src = y_src[valid_src]
-    d_src = d_src[valid_src]
-    dD_src = dD_src[valid_src]
-
-    order = np.argsort(d_src)
-    y_src = y_src[order]
-    d_src = d_src[order]
-    dD_src = dD_src[order]
+    y_src = prepared["y_src"]
+    d_src = prepared["d_src"]
+    dD_src = prepared["dD_src"]
+    d_dst_valid = prepared["d_dst_valid"]
+    dD_dst_valid = prepared["dD_dst_valid"]
 
     n_src_total = np.sum(y_src * dD_src)
     if n_src_total <= 0:
@@ -355,23 +391,23 @@ def _log_pchip_conservative_density_remapping(y_src, d_src, d_dst, dD_src, dD_ds
 
     positive = y_src > 0
     if np.count_nonzero(positive) < 2:
-        return _conservative_counts_remapping(y_src, d_src, d_dst, dD_src, dD_dst)
+        return _conservative_density_remapping(y_src, d_src, d_dst_valid, dD_src, dD_dst_valid)
 
     log_interp = PchipInterpolator(
         d_src[positive],
         np.log(y_src[positive]),
         extrapolate=False,
     )
-    y_dst = np.exp(log_interp(d_dst))
-    y_dst = np.where(np.isfinite(y_dst), y_dst, 0.0)
+    y_dst_valid = np.exp(log_interp(d_dst_valid))
+    y_dst_valid = np.where(np.isfinite(y_dst_valid), y_dst_valid, 0.0)
 
     # Keep signal only where destination bins overlap support of positive source bins.
     src_left = d_src - 0.5 * dD_src
     src_right = d_src + 0.5 * dD_src
     support_left = np.min(src_left[positive])
     support_right = np.max(src_right[positive])
-    dst_left = d_dst - 0.5 * dD_dst
-    dst_right = d_dst + 0.5 * dD_dst
+    dst_left = d_dst_valid - 0.5 * dD_dst_valid
+    dst_right = d_dst_valid + 0.5 * dD_dst_valid
     overlaps_support = (dst_right > support_left) & (dst_left < support_right)
 
     # Fill boundary half-bins that overlap support but lie outside interpolation center range.
@@ -379,16 +415,16 @@ def _log_pchip_conservative_density_remapping(y_src, d_src, d_dst, dD_src, dD_ds
     last_center = d_src[positive][-1]
     first_value = y_src[positive][0]
     last_value = y_src[positive][-1]
-    left_boundary = overlaps_support & (d_dst < first_center)
-    right_boundary = overlaps_support & (d_dst > last_center)
-    y_dst[left_boundary] = first_value
-    y_dst[right_boundary] = last_value
-    y_dst[~overlaps_support] = 0.0
+    left_boundary = overlaps_support & (d_dst_valid < first_center)
+    right_boundary = overlaps_support & (d_dst_valid > last_center)
+    y_dst_valid[left_boundary] = first_value
+    y_dst_valid[right_boundary] = last_value
+    y_dst_valid[~overlaps_support] = 0.0
 
-    n_dst_total = np.sum(y_dst * dD_dst)
+    n_dst_total = np.sum(y_dst_valid * dD_dst_valid)
     if n_dst_total > 0:
-        y_dst *= n_src_total / n_dst_total
-    return np.clip(y_dst, 0.0, None)
+        y_dst_valid *= n_src_total / n_dst_total
+    return _assemble_resampled_output(y_dst_valid, prepared["d_dst"], prepared["valid_dst"])
 
 
 def resample_counts(

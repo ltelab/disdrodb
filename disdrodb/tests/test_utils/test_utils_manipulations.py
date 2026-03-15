@@ -573,6 +573,41 @@ class TestResampleDensity:
         nt_smooth = float((da_smooth * dD_dst).sum())
         np.testing.assert_allclose(nt_smooth, nt_src, rtol=1e-12, atol=1e-12)
 
+    def test_resample_density_log_pchip_falls_back_to_constant_with_single_positive_bin(self):
+        """It falls back to conservative density remapping when smooth interpolation is not possible."""
+        d_src = xr.DataArray([0.5, 1.5, 2.5], dims=("diameter_bin_center",))
+        dD_src = xr.DataArray([1.0, 1.0, 1.0], dims=("diameter_bin_center",))
+        y_src = xr.DataArray([0.0, 10.0, 0.0], dims=("diameter_bin_center",), coords={"diameter_bin_center": d_src})
+
+        d_dst = define_diameter_datarray(np.array([0.0, 1.0, 2.0, 3.0]), dim="d_new")
+        dD_dst = d_dst["diameter_bin_width"]
+
+        da_constant = resample_density(
+            da_density=y_src,
+            d_src=d_src,
+            d_dst=d_dst,
+            dim="diameter_bin_center",
+            new_dim="d_new",
+            dD_src=dD_src,
+            dD_dst=dD_dst,
+            method="constant",
+        )
+        da_smooth = resample_density(
+            da_density=y_src,
+            d_src=d_src,
+            d_dst=d_dst,
+            dim="diameter_bin_center",
+            new_dim="d_new",
+            dD_src=dD_src,
+            dD_dst=dD_dst,
+            method="log_pchip",
+        )
+
+        np.testing.assert_allclose(da_smooth.to_numpy(), da_constant.to_numpy(), rtol=1e-12, atol=1e-12)
+        nt_src = float((y_src * dD_src).sum())
+        nt_smooth = float((da_smooth * dD_dst).sum())
+        np.testing.assert_allclose(nt_smooth, nt_src, rtol=1e-12, atol=1e-12)
+        
     def test_resample_density_raises_on_unknown_method(self):
         """It raises if an unsupported remapping method is requested."""
         da_density = xr.DataArray([10.0, 5.0], dims=("diameter_bin_center",))
