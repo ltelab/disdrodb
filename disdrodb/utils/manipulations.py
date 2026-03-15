@@ -433,6 +433,29 @@ def _log_pchip_conservative_density_remapping(y_src, d_src, d_dst, dD_src, dD_ds
     return _assemble_resampled_output(y_dst_valid, prepared["d_dst"], prepared["valid_dst"])
 
 
+def _log_pchip_conservative_counts_remapping(n_src, d_src, d_dst, dD_src, dD_dst):
+    """Smooth conservative remapping of bin-integrated counts via count density."""
+    prepared = _prepare_resampling_inputs(n_src, d_src, d_dst, dD_src, dD_dst)
+    if prepared is None:
+        return np.zeros_like(d_dst, dtype=float)
+
+    # Smooth interpolation method should be applied to an intensive quantity (not extensive)
+    # --> Convert counts to density
+    y_src = prepared["y_src"] / prepared["dD_src"]
+
+    # Resample density
+    y_dst_valid = _log_pchip_conservative_density_remapping(
+        y_src,
+        prepared["d_src"],
+        prepared["d_dst_valid"],
+        prepared["dD_src"],
+        prepared["dD_dst_valid"],
+    )
+    # Convert back to counts
+    n_dst_valid = y_dst_valid * prepared["dD_dst_valid"]
+    return _assemble_resampled_output(n_dst_valid, prepared["d_dst"], prepared["valid_dst"])
+
+
 def resample_counts(
     da_counts,
     d_src,
@@ -441,6 +464,7 @@ def resample_counts(
     new_dim,
     dD_src,
     dD_dst,
+    method="constant",
 ):
     """Conservatively resample bin-integrated counts between diameter grids.
 
@@ -460,6 +484,20 @@ def resample_counts(
         Source bin widths defined on ``dim``.
     dD_dst : xr.DataArray
         Destination bin widths defined on ``new_dim``.
+    method : {"constant", "log_pchip"} or callable, optional
+        Remapping strategy used within ``xr.apply_ufunc``.
+
+        - ``"constant"``: first-order conservative remapping in count space.
+          Use this for coarsening and when strict robustness is preferred.
+        - ``"log_pchip"``: smooth conservative remapping obtained by applying
+          log-PCHIP to the implied count density ``counts / dD`` and then
+          converting back to counts. Use this mainly for refinement to finer bins.
+
+        If coarsening is detected (destination has fewer bins than source), the
+        method is forced to ``"constant"`` to avoid shape artifacts.
+
+        If callable, it must have signature
+        ``f(n_src, d_src, d_dst, dD_src, dD_dst)`` and return remapped destination counts.
 
     Returns
     -------
@@ -471,10 +509,27 @@ def resample_counts(
     The remapping preserves total counts over the remapped support and assumes
     counts are piecewise-uniform inside each source bin.
     """
+    if len(d_dst) < len(d_src) and method != "constant":  # coarsening
+        print("Resampling method set to 'constant' for coarsening.")
+        method = "constant"
+
     da_counts = da_counts.where(da_counts > 0, 0)
 
+    methods = {
+        "constant": _conservative_counts_remapping,
+        "log_pchip": _log_pchip_conservative_counts_remapping,
+    }
+    if callable(method):
+        resampling_func = method
+    else:
+        if method not in methods:
+            valid_methods = ", ".join(methods)
+            msg = f"Unknown {method!r}. Valid options are: {valid_methods}."
+            raise ValueError(msg)
+        resampling_func = methods[method]
+
     da_counts_new = xr.apply_ufunc(
-        _conservative_counts_remapping,
+        resampling_func,
         da_counts,
         d_src,
         d_dst,
@@ -595,7 +650,7 @@ def resample_density(
 #### Resampling wrappers for n(D) and N(D)
 
 
-def resample_drop_counts(drop_counts, diameter_bin_edges):
+def resample_drop_counts(drop_counts, diameter_bin_edges, method="constant"):
     """Conservatively resample bin-integrated drop counts to new diameter bins.
 
     Parameters
@@ -608,6 +663,17 @@ def resample_drop_counts(drop_counts, diameter_bin_edges):
     diameter_bin_edges : array-like
         Destination diameter bin edges. The destination bins do not need to be
         aligned with source bins.
+    method : {"constant", "log_pchip"} or callable, optional
+        Remapping method passed to :func:`resample_counts`.
+
+        - ``"constant"``: first-order conservative remapping in count space.
+          Recommended for coarsening and robust for any grid change.
+        - ``"log_pchip"``: smooth conservative remapping based on the implied
+          count density. Recommended for refinement/interpolation to finer bins
+          when the source spectrum is sufficiently resolved.
+
+        If coarsening is requested, :func:`resample_counts` automatically
+        switches to ``"constant"``.
 
     Returns
     -------
@@ -625,6 +691,7 @@ def resample_drop_counts(drop_counts, diameter_bin_edges):
         new_dim="d_new",
         dD_src=drop_counts["diameter_bin_width"],
         dD_dst=da_dst_d_bin_centers["diameter_bin_width"],
+        method=method,
     )
     da_resampled = da_resampled.rename({"d_new": "diameter_bin_center"})
     da_resampled.name = drop_counts.name if drop_counts.name is not None else "drop_counts"

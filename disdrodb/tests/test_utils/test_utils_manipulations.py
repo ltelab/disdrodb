@@ -440,6 +440,107 @@ class TestResampleCounts:
         np.testing.assert_allclose(da_resampled.to_numpy(), expected, rtol=1e-12, atol=1e-12)
         np.testing.assert_allclose(da_resampled.sum().item(), da_counts.sum().item(), rtol=1e-12, atol=1e-12)
 
+    def test_resample_counts_log_pchip_conservative_irregular_bins(self):
+        """It remaps counts smoothly in log-space while conserving total counts."""
+        d_src = xr.DataArray(
+            [0.2, 0.55, 1.05, 1.9, 3.2, 4.8],
+            dims=("diameter_bin_center",),
+        )
+        dD_src = xr.DataArray(
+            [0.2, 0.5, 0.5, 1.2, 1.4, 1.8],
+            dims=("diameter_bin_center",),
+        )
+        n_src = xr.DataArray(
+            [6.0e3, 6.0e3, 2.0e3, 1.08e3, 2.1e2, 1.44e1],
+            dims=("diameter_bin_center",),
+            coords={"diameter_bin_center": d_src},
+        )
+
+        d_dst_edges = np.arange(0.1, 5.7 + 0.1, 0.1)
+        d_dst = define_diameter_datarray(d_dst_edges, dim="d_new")
+        dD_dst = d_dst["diameter_bin_width"]
+
+        da_constant = resample_counts(
+            da_counts=n_src,
+            d_src=d_src,
+            d_dst=d_dst,
+            dim="diameter_bin_center",
+            new_dim="d_new",
+            dD_src=dD_src,
+            dD_dst=dD_dst,
+            method="constant",
+        )
+        da_smooth = resample_counts(
+            da_counts=n_src,
+            d_src=d_src,
+            d_dst=d_dst,
+            dim="diameter_bin_center",
+            new_dim="d_new",
+            dD_src=dD_src,
+            dD_dst=dD_dst,
+            method="log_pchip",
+        )
+
+        np.testing.assert_allclose(float(da_smooth.sum()), float(n_src.sum()), rtol=1e-12, atol=1e-12)
+        assert np.all(np.isfinite(da_smooth))
+        assert np.all(da_smooth >= 0)
+
+        n_unique_constant = np.unique(np.round(da_constant.to_numpy(), decimals=8)).size
+        n_unique_smooth = np.unique(np.round(da_smooth.to_numpy(), decimals=8)).size
+        assert n_unique_smooth > n_unique_constant
+
+    def test_resample_counts_log_pchip_falls_back_to_constant_with_single_positive_bin(self):
+        """It falls back to conservative count remapping when smooth interpolation is not possible."""
+        d_src = xr.DataArray([0.5, 1.5, 2.5], dims=("diameter_bin_center",))
+        dD_src = xr.DataArray([1.0, 1.0, 1.0], dims=("diameter_bin_center",))
+        n_src = xr.DataArray([0.0, 10.0, 0.0], dims=("diameter_bin_center",), coords={"diameter_bin_center": d_src})
+
+        d_dst = define_diameter_datarray(np.array([0.0, 1.0, 2.0, 3.0]), dim="d_new")
+        dD_dst = d_dst["diameter_bin_width"]
+
+        da_constant = resample_counts(
+            da_counts=n_src,
+            d_src=d_src,
+            d_dst=d_dst,
+            dim="diameter_bin_center",
+            new_dim="d_new",
+            dD_src=dD_src,
+            dD_dst=dD_dst,
+            method="constant",
+        )
+        da_smooth = resample_counts(
+            da_counts=n_src,
+            d_src=d_src,
+            d_dst=d_dst,
+            dim="diameter_bin_center",
+            new_dim="d_new",
+            dD_src=dD_src,
+            dD_dst=dD_dst,
+            method="log_pchip",
+        )
+
+        np.testing.assert_allclose(da_smooth.to_numpy(), da_constant.to_numpy(), rtol=1e-12, atol=1e-12)
+        np.testing.assert_allclose(float(da_smooth.sum()), float(n_src.sum()), rtol=1e-12, atol=1e-12)
+
+    def test_resample_counts_raises_on_unknown_method(self):
+        """It raises if an unsupported remapping method is requested."""
+        da_counts = xr.DataArray([10.0, 5.0], dims=("diameter_bin_center",))
+        d_src = xr.DataArray([0.25, 0.75], dims=("diameter_bin_center",))
+        dD_src = xr.DataArray([0.5, 0.5], dims=("diameter_bin_center",))
+        d_dst = define_diameter_datarray(np.array([0.0, 0.5, 1.0]), dim="d_new")
+
+        with pytest.raises(ValueError):
+            resample_counts(
+                da_counts=da_counts,
+                d_src=d_src,
+                d_dst=d_dst,
+                dim="diameter_bin_center",
+                new_dim="d_new",
+                dD_src=dD_src,
+                dD_dst=d_dst["diameter_bin_width"],
+                method="not_a_method",
+            )
+
 
 class TestResampleDensity:
 
