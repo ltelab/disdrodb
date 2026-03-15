@@ -27,6 +27,7 @@ from disdrodb.l2.empirical_dsd import (
     compute_integral_parameters,
     get_bin_dimensions,
     get_drop_average_velocity,
+    get_drop_counts_from_number_concentration,
     get_drop_number_concentration,
     get_drop_volume,
     get_effective_sampling_area,
@@ -43,10 +44,11 @@ from disdrodb.l2.empirical_dsd import (
     get_moment,
     get_normalized_intercept_parameter,
     get_normalized_intercept_parameter_from_moments,
+    get_particle_counts_from_number_concentration,
     get_quantile_volume_drop_diameter,
     get_rain_accumulation,
     get_rain_rate,
-    get_rain_rate_from_drop_number,
+    get_rain_rate_from_drop_counts,
     get_std_volume_drop_diameter,
     get_total_number_concentration,
 )
@@ -233,8 +235,8 @@ class TestRainRate:
         )
 
         # Calculate using drop_number method
-        output2 = get_rain_rate_from_drop_number(
-            drop_number=ds["drop_number"],
+        output2 = get_rain_rate_from_drop_counts(
+            drop_counts=ds["drop_number"],
             diameter=ds["diameter_bin_center"] / 1000,
             sampling_area=sampling_area,
             sample_interval=sample_interval,
@@ -1676,6 +1678,70 @@ class TestDropNumberConcentration:
         # Test expected values
         expected = np.array([[100.0, 50.0, 33.33333333, 25.0], [100.0, 50.0, 33.33333333, 25.0]])
         np.testing.assert_allclose(output.to_numpy(), expected)
+
+
+class TestDropCountsFromNumberConcentration:
+    @pytest.mark.parametrize("array_type", ["numpy", "dask"])
+    def test_round_trip_drop_counts_and_number_concentration(self, template_dataset, array_type):
+        """Test round-trip consistency between counts and number concentration."""
+        ds = _prepare_test_dataset(
+            template_dataset,
+            variables="drop_number_concentration",
+            scenario="realistic",
+            array_type=array_type,
+        )
+        sampling_area = 0.005
+        sample_interval = 60
+
+        drop_counts = get_drop_counts_from_number_concentration(
+            drop_number_concentration=ds["drop_number_concentration"],
+            velocity=ds["fall_velocity"],
+            diameter_bin_width=ds["diameter_bin_width"],
+            sampling_area=sampling_area,
+            sample_interval=sample_interval,
+        )
+        output = get_drop_number_concentration(
+            drop_number=drop_counts,
+            velocity=ds["fall_velocity"],
+            diameter_bin_width=ds["diameter_bin_width"],
+            sampling_area=sampling_area,
+            sample_interval=sample_interval,
+        )
+
+        check_datarray_type(drop_counts, array_type=array_type)
+        check_datarray_type(output, array_type=array_type)
+        xr.testing.assert_allclose(output, ds["drop_number_concentration"])
+
+    @pytest.mark.parametrize("array_type", ["numpy", "dask"])
+    def test_particle_and_drop_count_helpers_match(self, template_dataset, array_type):
+        """Test the generic particle helper matches the drop-specific wrapper."""
+        ds = _prepare_test_dataset(
+            template_dataset,
+            variables="drop_number_concentration",
+            scenario="realistic",
+            array_type=array_type,
+        )
+        sampling_area = 0.005
+        sample_interval = 60
+
+        output_particle = get_particle_counts_from_number_concentration(
+            particle_number_concentration=ds["drop_number_concentration"],
+            velocity=ds["fall_velocity"],
+            diameter_bin_width=ds["diameter_bin_width"],
+            sampling_area=sampling_area,
+            sample_interval=sample_interval,
+        )
+        output_drop = get_drop_counts_from_number_concentration(
+            drop_number_concentration=ds["drop_number_concentration"],
+            velocity=ds["fall_velocity"],
+            diameter_bin_width=ds["diameter_bin_width"],
+            sampling_area=sampling_area,
+            sample_interval=sample_interval,
+        )
+
+        check_datarray_type(output_particle, array_type=array_type)
+        check_datarray_type(output_drop, array_type=array_type)
+        xr.testing.assert_allclose(output_particle, output_drop)
 
 
 class TestBinDimensions:

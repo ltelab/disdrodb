@@ -350,6 +350,26 @@ def get_diameter_bin_width(sensor_name: str) -> list:
     return diameter_bin_width
 
 
+def get_diameter_bin_edges(sensor_name: str) -> list:
+    """Get diameter bin edges.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    list
+        Diameter bin edges.
+    """
+    diameter_dict = get_diameter_bins_dict(sensor_name)
+    lower_bounds = [v[0] for v in diameter_dict["bounds"].values()]
+    diameter_bin_width = list(diameter_dict["width"].values())
+    diameter_bin_edges = [*lower_bounds, lower_bounds[-1] + diameter_bin_width[-1]]
+    return diameter_bin_edges
+
+
 def get_velocity_bins_dict(sensor_name: str) -> dict:
     """Get velocity with ``sensor_name`` diameter bins information.
 
@@ -449,6 +469,28 @@ def get_velocity_bin_width(sensor_name: str) -> list:
     else:
         return None
     return velocity_bin_width
+
+
+def get_velocity_bin_edges(sensor_name: str) -> list:
+    """Get velocity bin edges.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    list
+        Velocity bin edges.
+    """
+    velocity_dict = get_velocity_bins_dict(sensor_name)
+    if velocity_dict is None:
+        return []  # RD80 ...
+    lower_bounds = [v[0] for v in velocity_dict["bounds"].values()]
+    velocity_bin_width = list(velocity_dict["width"].values())
+    velocity_bin_edges = [*lower_bounds, lower_bounds[-1] + velocity_bin_width[-1]]
+    return velocity_bin_edges
 
 
 def get_bin_coords_dict(sensor_name: str) -> dict:

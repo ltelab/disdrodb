@@ -24,7 +24,7 @@ from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.fall_velocity import get_hail_fall_velocity
 from disdrodb.fall_velocity.graupel import retrieve_graupel_heymsfield2014_fall_velocity
 from disdrodb.fall_velocity.rain import get_rain_fall_velocity
-from disdrodb.l2.empirical_dsd import get_effective_sampling_area, get_rain_rate_from_drop_number
+from disdrodb.l2.empirical_dsd import get_effective_sampling_area, get_rain_rate_from_drop_counts
 from disdrodb.l2.processing import define_rain_spectrum_mask
 from disdrodb.utils.manipulations import filter_diameter_bins, filter_velocity_bins
 from disdrodb.utils.time import ensure_sample_interval_in_seconds
@@ -567,8 +567,8 @@ def classify_raw_spectrum(
     sampling_area = get_effective_sampling_area(sensor_name=sensor_name, diameter=diameter)  # m2
     # - Compute dummy rainfall rate (on D from 0 to 5) to avoid 'hail' contamination
     rainfall_rate_mask = drizzle_mask + drizzle_rain_mask
-    rainfall_rate = get_rain_rate_from_drop_number(
-        drop_number=raw_spectrum.where(rainfall_rate_mask, 0),  # if any NaN --> return NaN
+    rainfall_rate = get_rain_rate_from_drop_counts(
+        drop_counts=raw_spectrum.where(rainfall_rate_mask, 0),  # if any NaN --> return NaN
         sampling_area=sampling_area,
         diameter=diameter,
         sample_interval=sample_interval,

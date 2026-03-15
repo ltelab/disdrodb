@@ -275,8 +275,7 @@ def get_bin_dimensions(xr_obj):
 
 
 def get_particle_number_concentration(particle_number, velocity, diameter_bin_width, sampling_area, sample_interval):
-    r"""
-    Calculate the volumetric particle number concentration \\( N(D) \\) per diameter class.
+    r"""Calculate the volumetric particle number concentration \\( N(D) \\) per diameter class.
 
     Computes the particle number concentration \\( N(D) \\) [m⁻³·mm⁻¹] for each diameter
     class based on the measured particle counts and sensor parameters.
@@ -285,6 +284,9 @@ def get_particle_number_concentration(particle_number, velocity, diameter_bin_wi
 
     Parameters
     ----------
+    particle_number : xarray.DataArray
+        Array of particle counts \\(  n(D) or n(D,v) \\) per diameter (and velocity if available)
+        bins over the measurement interval.
     velocity : xarray.DataArray
         Array of particle fall velocities \\( v(D) \\) corresponding to each diameter bin in meters per second (m/s).
         Typically the estimated fall velocity is used.
@@ -292,9 +294,6 @@ def get_particle_number_concentration(particle_number, velocity, diameter_bin_wi
         along the diameter bin dimension.
     diameter_bin_width : xarray.DataArray
         Width of each diameter bin \\( \\Delta D \\) in millimeters (mm).
-    particle_number : xarray.DataArray
-        Array of particle counts \\(  n(D) or n(D,v) \\) per diameter (and velocity if available)
-        bins over the measurement interval.
     sample_interval : float or xarray.DataArray
         Time over which the particles are counted \\( \\Delta t \\) in seconds (s).
     sampling_area : float or xarray.DataArray
@@ -341,6 +340,90 @@ def get_particle_number_concentration(particle_number, velocity, diameter_bin_wi
     else:
         particle_number_concentration = safe_ratio / (sampling_area * diameter_bin_width * sample_interval)
     return particle_number_concentration
+
+
+def get_particle_counts_from_number_concentration(
+    particle_number_concentration,
+    velocity,
+    diameter_bin_width,
+    sample_interval,
+    sampling_area,
+):
+    r"""Calculate particle counts from particle number concentration.
+
+    Parameters
+    ----------
+    particle_number_concentration : xarray.DataArray
+        Particle number concentration :math:`N(D)` in m\ :sup:`-3` mm\ :sup:`-1`.
+    velocity : xarray.DataArray
+        Particle fall velocity :math:`v(D)` in m s\ :sup:`-1`.
+        The array can already be broadcast on the target dimensions.
+    diameter_bin_width : xarray.DataArray
+        Diameter bin width :math:`\Delta D` in millimeters.
+    sample_interval : float or xarray.DataArray
+        Measurement interval :math:`\Delta t` in seconds.
+    sampling_area : float or xarray.DataArray
+        Effective sensor sampling area :math:`A` in square meters.
+
+    Returns
+    -------
+    xarray.DataArray
+        Particle counts :math:`n(D)` or :math:`n(D, v)` over the measurement interval.
+
+    Notes
+    -----
+    The counts are reconstructed as
+
+    .. math::
+
+        n(D) = N(D) \cdot v(D) \cdot A \cdot \Delta D \cdot \Delta t
+    """
+    particle_number = particle_number_concentration * velocity * (sampling_area * diameter_bin_width * sample_interval)
+    return particle_number
+
+
+def get_drop_counts_from_number_concentration(
+    drop_number_concentration,
+    velocity,
+    diameter_bin_width,
+    sample_interval,
+    sampling_area,
+):
+    r"""
+    Calculate drop counts from drop number concentration.
+
+    Parameters
+    ----------
+    drop_number_concentration : xarray.DataArray
+        Drop number concentration :math:`N(D)` in m\ :sup:`-3` mm\ :sup:`-1`.
+    velocity : xarray.DataArray
+        Drop fall velocity :math:`v(D)` in m s\ :sup:`-1`.
+        The array can already be broadcast on the target dimensions.
+    diameter_bin_width : xarray.DataArray
+        Diameter bin width :math:`\Delta D` in millimeters.
+    sample_interval : float or xarray.DataArray
+        Measurement interval :math:`\Delta t` in seconds.
+    sampling_area : float or xarray.DataArray
+        Effective sensor sampling area :math:`A` in square meters.
+
+    Returns
+    -------
+    xarray.DataArray
+        Drop counts :math:`n(D)` or :math:`n(D, v)` over the measurement interval.
+
+    Notes
+    -----
+    This is a drop-specific wrapper around
+    :func:`get_particle_counts_from_number_concentration`.
+    """
+    drop_counts = get_particle_counts_from_number_concentration(
+        particle_number_concentration=drop_number_concentration,
+        velocity=velocity,
+        diameter_bin_width=diameter_bin_width,
+        sample_interval=sample_interval,
+        sampling_area=sampling_area,
+    )
+    return drop_counts
 
 
 def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sampling_area, sample_interval):
@@ -530,9 +613,11 @@ def get_moment(drop_number_concentration, diameter, diameter_bin_width, moment):
 #### Rain Rate and Accumulation
 
 
-def get_rain_rate_from_drop_number(drop_number, sampling_area, diameter, sample_interval):
+def get_rain_rate_from_drop_counts(drop_counts, sampling_area, diameter, sample_interval):
     r"""
-    Compute the rain rate \\( R \\) [mm/h] based on the drop size distribution and drop velocities.
+    Compute the rain rate \\( R \\) [mm/h] based on the drop size distribution.
+
+    Drop velocities are not required to estimate rain rate from drop counts!
 
     This function calculates the rain rate by integrating over the drop size distribution (DSD),
     considering the volume of water falling per unit time and area. It uses the number of drops
@@ -541,9 +626,10 @@ def get_rain_rate_from_drop_number(drop_number, sampling_area, diameter, sample_
 
     Parameters
     ----------
-    drop_number : xarray.DataArray
-        Array representing the number of drops per diameter class
-        and, optionally, velocity class \\( n(D, (v)) \\).
+    drop_counts : xarray.DataArray
+        Array representing the number of drops per diameter class.
+        Passing the drop number array n(D, v) is allowed, but velocity information
+        is not exploited. The derived rain rate will be the same as if n(D) was passed.
     sample_interval : float or xarray.DataArray
         The time duration over which drops are counted \\( \\Delta t \\) in seconds (s).
     sampling_area : float or xarray.DataArray
@@ -588,12 +674,12 @@ def get_rain_rate_from_drop_number(drop_number, sampling_area, diameter, sample_
         \\sum_{\text{bins}} n(D) \cdot A(D) \cdot D^3 \cdot \\Delta t
 
     """
-    dim = get_bin_dimensions(drop_number)
+    dim = get_bin_dimensions(drop_counts)
     rain_rate = (
         np.pi
         / 6
         / sample_interval
-        * (drop_number * (diameter**3 / sampling_area)).sum(dim=dim, skipna=False)
+        * (drop_counts * (diameter**3 / sampling_area)).sum(dim=dim, skipna=False)
         * 3600
         * 1000
     )
@@ -1778,8 +1864,8 @@ def get_kinetic_energy_variables_from_drop_number(
     velocity = xr.ones_like(drop_number) * velocity
 
     # Compute rain rate
-    R = get_rain_rate_from_drop_number(
-        drop_number=drop_number,
+    R = get_rain_rate_from_drop_counts(
+        drop_counts=drop_number,
         sampling_area=sampling_area,
         diameter=diameter,
         sample_interval=sample_interval,

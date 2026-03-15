@@ -33,7 +33,7 @@ from disdrodb.l2.empirical_dsd import (
     get_kinetic_energy_variables_from_drop_number,
     get_min_max_diameter,
     get_rain_accumulation,
-    get_rain_rate_from_drop_number,
+    get_rain_rate_from_drop_counts,
 )
 from disdrodb.psd import create_psd, estimate_model_parameters
 from disdrodb.psd.gof_metrics import compute_gof_stats
@@ -723,8 +723,8 @@ def generate_l2e(
     # -------------------------------------------------------
     #### Compute R and P from drop number (without velocity assumptions)
     # - Rain rate and accumulation computed with this method are not influenced by the fall velocity of drops !
-    ds_l2["Rm"] = get_rain_rate_from_drop_number(
-        drop_number=drop_number,
+    ds_l2["Rm"] = get_rain_rate_from_drop_counts(
+        drop_counts=drop_number,
         sampling_area=sampling_area,
         diameter=diameter,
         sample_interval=sample_interval,
