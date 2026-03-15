@@ -388,6 +388,50 @@ class TestResampleDropNumber:
 
 
 class TestResampleDensity:
+    
+    def test_resample_density_same_edges_returns_same_values(self):
+        """It returns unchanged counts when source and destination bin edges are identical."""
+        # Define source 
+        edges = np.array([0.0, 0.5, 1.0, 1.5, 2.0])
+        src_da = define_diameter_datarray(edges)
+        da_density = xr.DataArray(
+            [2.0, 4.0, 6.0, 8.0],
+            dims=("diameter_bin_center",),
+            coords=src_da.coords,
+            name="drop_number_concentration",
+        )
+        d_src = da_density["diameter_bin_center"]
+        dD_src = da_density["diameter_bin_width"]
+        
+        # Define destination with same bins
+        d_dst = d_src.rename({"diameter_bin_center": "d_new"})
+        dD_dst = dD_src.rename({"diameter_bin_center": "d_new"})
+        
+        # Resample
+        da_constant = resample_density(
+            da_density=da_density,
+            d_src=d_src,
+            d_dst=d_dst,
+            dim="diameter_bin_center",
+            new_dim="d_new",
+            dD_src=dD_src,
+            dD_dst=dD_dst,
+            method="constant",
+        )
+        da_smooth = resample_density(
+            da_density=da_density,
+            d_src=d_src,
+            d_dst=d_dst,
+            dim="diameter_bin_center",
+            new_dim="d_new",
+            dD_src=dD_src,
+            dD_dst=dD_dst,
+            method="log_pchip",
+        )
+        
+        np.testing.assert_allclose(da_constant.to_numpy(), da_density.to_numpy(), rtol=1e-12, atol=1e-12)
+        np.testing.assert_allclose(da_smooth.to_numpy(), da_smooth.to_numpy(), rtol=1e-12, atol=1e-12)
+
     def test_resample_density_log_pchip_conservative_irregular_bins(self):
         """It remaps irregular bins smoothly in log-space while conserving total number."""
         # Irregular source grid with contiguous edges
@@ -442,25 +486,6 @@ class TestResampleDensity:
         n_unique_smooth = np.unique(np.round(da_smooth.to_numpy(), decimals=8)).size
         assert n_unique_smooth > n_unique_constant
 
-    def test_resample_density_raises_on_unknown_method(self):
-        """It raises if an unsupported remapping method is requested."""
-        da_density = xr.DataArray([10.0, 5.0], dims=("diameter_bin_center",))
-        d_src = xr.DataArray([0.25, 0.75], dims=("diameter_bin_center",))
-        dD_src = xr.DataArray([0.5, 0.5], dims=("diameter_bin_center",))
-        d_dst = define_diameter_datarray(np.array([0.0, 0.5, 1.0]), dim="d_new")
-
-        with pytest.raises(ValueError):
-            resample_density(
-                da_density=da_density,
-                d_src=d_src,
-                d_dst=d_dst,
-                dim="diameter_bin_center",
-                new_dim="d_new",
-                dD_src=dD_src,
-                dD_dst=d_dst["diameter_bin_width"],
-                method="not_a_method",
-            )
-
     def test_resample_density_log_pchip_keeps_edge_half_bins(self):
         """It keeps non-zero values in destination bins overlapping source edge half-bins."""
         d_src = xr.DataArray([1.0, 2.0], dims=("diameter_bin_center",))
@@ -493,6 +518,27 @@ class TestResampleDensity:
         nt_src = float((y_src * dD_src).sum())
         nt_smooth = float((da_smooth * dD_dst).sum())
         np.testing.assert_allclose(nt_smooth, nt_src, rtol=1e-12, atol=1e-12)
+        
+    def test_resample_density_raises_on_unknown_method(self):
+        """It raises if an unsupported remapping method is requested."""
+        da_density = xr.DataArray([10.0, 5.0], dims=("diameter_bin_center",))
+        d_src = xr.DataArray([0.25, 0.75], dims=("diameter_bin_center",))
+        dD_src = xr.DataArray([0.5, 0.5], dims=("diameter_bin_center",))
+        d_dst = define_diameter_datarray(np.array([0.0, 0.5, 1.0]), dim="d_new")
+
+        with pytest.raises(ValueError):
+            resample_density(
+                da_density=da_density,
+                d_src=d_src,
+                d_dst=d_dst,
+                dim="diameter_bin_center",
+                new_dim="d_new",
+                dD_src=dD_src,
+                dD_dst=d_dst["diameter_bin_width"],
+                method="not_a_method",
+            )
+
+
 
 
 def test_remap_to_diameter_pchip():

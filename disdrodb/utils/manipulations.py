@@ -250,7 +250,7 @@ def get_diameter_coords_dict_from_bin_edges(diameter_bin_edges):
     return coords_dict
 
 
-def _conservative_drop_number_remapping(n_src, d_src, d_dst, dD_src, dD_dst):
+def _conservative_counts_remapping(n_src, d_src, d_dst, dD_src, dD_dst):
     """Conservative remapping of bin-integrated counts between diameter grids."""
     n_src = np.asarray(n_src, dtype=float)
     d_src = np.asarray(d_src, dtype=float)
@@ -295,12 +295,44 @@ def _conservative_drop_number_remapping(n_src, d_src, d_dst, dD_src, dD_dst):
 
 
 def resample_drop_number(drop_number, diameter_bin_edges):
-    """Conservatively resample bin-integrated drop counts to new diameter bins."""
+    """Conservatively resample bin-integrated drop counts to new diameter bins.
+
+    This function performs first-order conservative remapping of counts using
+    geometric overlap between source and destination bins. Counts in each source
+    bin are assumed piecewise-uniform inside that bin and redistributed by
+    overlap fraction, which works for both refinement (finer bins) and
+    coarsening (larger bins).
+
+    Parameters
+    ----------
+    drop_number : xr.DataArray
+        Bin-integrated counts (for example ``drop_number``) defined on
+        ``diameter_bin_center`` and carrying ``diameter_bin_width`` coordinates.
+        Additional dimensions (for example ``time`` or ``velocity_bin_center``)
+        are supported and vectorized.
+    diameter_bin_edges : array-like
+        Destination diameter bin edges. The destination bins do not need to be
+        aligned with source bins.
+
+    Returns
+    -------
+    xr.DataArray
+        Resampled counts on destination ``diameter_bin_center`` with updated
+        ``diameter_bin_width``, ``diameter_bin_lower`` and
+        ``diameter_bin_upper`` coordinates.
+
+    Notes
+    -----
+    - This is a conservative remapping in count space (not density space).
+    - If destination bins fully span the source support, the total count is
+      conserved up to numerical precision.
+    - Destination bins outside source support receive zero contribution.
+    """
     da_dst_d_bin_centers = define_diameter_datarray(diameter_bin_edges, dim="d_new")
     drop_number = drop_number.where(drop_number > 0, 0)
 
     da_resampled = xr.apply_ufunc(
-        _conservative_drop_number_remapping,
+        _conservative_counts_remapping,
         drop_number,
         drop_number["diameter_bin_center"],
         da_dst_d_bin_centers,
@@ -323,27 +355,6 @@ def resample_drop_number(drop_number, diameter_bin_edges):
     da_resampled = da_resampled.assign_coords({"d_new": da_dst_d_bin_centers})
     da_resampled = da_resampled.rename({"d_new": "diameter_bin_center"})
     da_resampled.name = name if name is not None else "drop_number"
-    return da_resampled
-
-
-def resample_drop_number_concentration(
-    drop_number_concentration,
-    diameter_bin_edges,
-    method="log_pchip",
-):
-    """Resample drop number concentration N(D) DataArray to high resolution diameter bins."""
-    da_dst_d_bin_centers = define_diameter_datarray(diameter_bin_edges, dim="d_new")
-    da_resampled = resample_density(
-        da_density=drop_number_concentration,
-        d_src=drop_number_concentration["diameter_bin_center"],
-        d_dst=da_dst_d_bin_centers,
-        dim="diameter_bin_center",
-        new_dim="d_new",
-        dD_src=drop_number_concentration["diameter_bin_width"],
-        dD_dst=da_dst_d_bin_centers["diameter_bin_width"],
-        method=method,
-    )
-    da_resampled = da_resampled.rename({"d_new": "diameter_bin_center"})
     return da_resampled
 
 
@@ -463,7 +474,10 @@ def resample_density(
     dD_dst,
     method="log_pchip",
 ):
-    """Conservative resampling of density.
+    """Conservatively resample a density between diameter grids.
+
+    The remapping preserves integrated quantity (``sum(density * bin_width)``)
+    over the remapped support.
 
     Parameters
     ----------
@@ -483,16 +497,30 @@ def resample_density(
         Destination bin widths (same dim as new_dim).
     method : str or callable
         Remapping strategy used within ``xr.apply_ufunc``.
+
         If str, available methods are:
-        - ``"constant"``: first-order conservative remapping (piecewise constant in source bins).
-        - ``"log_pchip"``: conservative, smooth remapping using PCHIP in log-density space.
+
+        - ``"constant"``: first-order conservative remapping (piecewise
+          constant inside each source bin). Use this for coarsening and when
+          strict robustness is preferred.
+        - ``"log_pchip"``: conservative smooth remapping using PCHIP in
+          log-density space. Use this mainly for refinement to finer bins.
+
+        If coarsening is detected (destination has fewer bins than source), the
+        method is forced to ``"constant"`` to avoid shape artifacts.
+
         If callable, it must have signature
         ``f(y_src, d_src, d_dst, dD_src, dD_dst)`` and return remapped destination density.
 
     Returns
     -------
     xr.DataArray
-        Remapped density conserving total number.
+        Remapped density conserving integrated amount.
+
+    Notes
+    -----
+    For ``drop_number`` counts already integrated per bin, use
+    :func:`resample_drop_number` instead of this function.
     """
     if len(d_dst) < len(d_src) and method != "constant":  # coarsening
         print("Resampling method set to 'constant' for coarsening.")
@@ -532,6 +560,56 @@ def resample_density(
     da_density_new = da_density_new.assign_coords({new_dim: d_dst})
     da_density_new.name = name if name is not None else "drop_number_concentration"
     return da_density_new
+
+
+def resample_drop_number_concentration(
+    drop_number_concentration,
+    diameter_bin_edges,
+    method="log_pchip",
+):
+    """Resample drop number concentration ``N(D)`` to new diameter bins.
+
+    The remapping is conservative with respect to integrated number
+    concentration (that is, ``sum(N(D) * dD)``).
+
+    Parameters
+    ----------
+    drop_number_concentration : xr.DataArray
+        Drop number concentration defined per unit diameter on
+        ``diameter_bin_center`` and carrying ``diameter_bin_width``.
+    diameter_bin_edges : array-like
+        Destination diameter bin edges.
+    method : {"constant", "log_pchip"} or callable, optional
+        Remapping method passed to :func:`resample_density`.
+
+        - ``"constant"``: first-order conservative remapping. Recommended for
+          coarsening and robust for any grid change.
+        - ``"log_pchip"``: smooth conservative remapping in log-space.
+          Recommended for refinement/interpolation to finer bins when positive
+          source spectra are sufficiently resolved.
+
+        If coarsening is requested, :func:`resample_density` automatically
+        switches to ``"constant"``.
+
+    Returns
+    -------
+    xr.DataArray
+        Resampled ``N(D)`` on destination ``diameter_bin_center`` with updated
+        diameter-bin coordinates.
+    """
+    da_dst_d_bin_centers = define_diameter_datarray(diameter_bin_edges, dim="d_new")
+    da_resampled = resample_density(
+        da_density=drop_number_concentration,
+        d_src=drop_number_concentration["diameter_bin_center"],
+        d_dst=da_dst_d_bin_centers,
+        dim="diameter_bin_center",
+        new_dim="d_new",
+        dD_src=drop_number_concentration["diameter_bin_width"],
+        dD_dst=da_dst_d_bin_centers["diameter_bin_width"],
+        method=method,
+    )
+    da_resampled = da_resampled.rename({"d_new": "diameter_bin_center"})
+    return da_resampled
 
 
 def remap_to_diameter(
