@@ -607,7 +607,7 @@ class TestResampleDensity:
         nt_src = float((y_src * dD_src).sum())
         nt_smooth = float((da_smooth * dD_dst).sum())
         np.testing.assert_allclose(nt_smooth, nt_src, rtol=1e-12, atol=1e-12)
-        
+
     def test_resample_density_raises_on_unknown_method(self):
         """It raises if an unsupported remapping method is requested."""
         da_density = xr.DataArray([10.0, 5.0], dims=("diameter_bin_center",))

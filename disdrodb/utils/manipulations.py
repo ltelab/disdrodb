@@ -262,30 +262,30 @@ def _prepare_resampling_inputs(y_src, d_src, d_dst, dD_src, dD_dst):
     d_dst = np.asarray(d_dst, dtype=float)
     dD_src = np.asarray(dD_src, dtype=float)
     dD_dst = np.asarray(dD_dst, dtype=float)
-    
+
     # Ensure only positive values
     y_src = np.where(np.isfinite(y_src), y_src, 0.0)
     y_src = np.clip(y_src, 0.0, None)
-    
-    # Identify bins with invalid values 
+
+    # Identify bins with invalid values
     valid_src = np.isfinite(d_src) & np.isfinite(dD_src) & (dD_src > 0)
     valid_dst = np.isfinite(d_dst) & np.isfinite(dD_dst) & (dD_dst > 0)
-    
+
     # If not valid values, return None flag --> zero array returned
     if np.count_nonzero(valid_src) == 0 or np.count_nonzero(valid_dst) == 0:
         return None
-    
+
     # Keep only bin with valid values
     y_src = y_src[valid_src]
     d_src = d_src[valid_src]
     dD_src = dD_src[valid_src]
-    
+
     # Sort by diameter
     order = np.argsort(d_src)
     y_src = y_src[order]
     d_src = d_src[order]
     dD_src = dD_src[order]
-    
+
     # Return dictionary with relevant info quality-checked
     return {
         "y_src": y_src,
@@ -307,7 +307,10 @@ def _assemble_resampled_output(y_dst_valid, d_dst, valid_dst):
 
 
 def _conservative_counts_remapping(n_src, d_src, d_dst, dD_src, dD_dst):
-    """Conservative remapping of bin-integrated counts between diameter grids."""
+    """First-order conservative remapping of bin-integrated counts between diameter grids.
+
+    Preserves total counts and redistributes them by geometric overlap.
+    """
     # Prepare input data
     prepared = _prepare_resampling_inputs(n_src, d_src, d_dst, dD_src, dD_dst)
     if prepared is None:
@@ -318,24 +321,31 @@ def _conservative_counts_remapping(n_src, d_src, d_dst, dD_src, dD_dst):
     dD_src = prepared["dD_src"]
     d_dst_valid = prepared["d_dst_valid"]
     dD_dst_valid = prepared["dD_dst_valid"]
-    
+
     # Source edges
     src_left = d_src - 0.5 * dD_src
     src_right = d_src + 0.5 * dD_src
-    
+
     # Destination edges
     dst_left = d_dst_valid - 0.5 * dD_dst_valid
     dst_right = d_dst_valid + 0.5 * dD_dst_valid
-    
+
     # Overlap matrix (Ns, N)
     overlap = np.minimum(src_right[:, None], dst_right[None, :]) - np.maximum(src_left[:, None], dst_left[None, :])
     overlap = np.clip(overlap, 0.0, None)
 
+    # Redistributes only fraction of the bin count that overlaps each destination bin
     n_dst_valid = (n_src[:, None] * overlap / dD_src[:, None]).sum(axis=0)
+
+    # Return resampled counts
     return _assemble_resampled_output(n_dst_valid, prepared["d_dst"], prepared["valid_dst"])
 
 
 def _conservative_density_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
+    """First-order conservative remapping of bin densities between diameter grids.
+
+    Preserves total number concentration.
+    """
     # Prepare input data
     prepared = _prepare_resampling_inputs(y_src, d_src, d_dst, dD_src, dD_dst)
     if prepared is None:
@@ -359,17 +369,13 @@ def _conservative_density_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
     overlap = np.minimum(src_right[:, None], dst_right[None, :]) - np.maximum(src_left[:, None], dst_left[None, :])
     overlap = np.clip(overlap, 0.0, None)
 
-    # # Convert density to bin-integrated number
-    # N_src = y_src * dD_src
-
-    # # Redistribute integrated number conservatively
-    # N_dst = (N_src[:, None] * overlap / dD_src[:, None]).sum(axis=0)
-
-    # Integrated number in destination bins
+    # Integrate density over the overlap length to get destination bin counts
     n_dst = (y_src[:, None] * overlap).sum(axis=0)
 
-    # Convert back to density
+    # Divide by destination bin width to go back to density
     y_dst_valid = n_dst / dD_dst_valid
+
+    # Return resampled counts
     return _assemble_resampled_output(y_dst_valid, prepared["d_dst"], prepared["valid_dst"])
 
 
