@@ -598,6 +598,24 @@ class TestValidateAllProductsYAMLfiles:
         # Test that validation passes with hierarchical configs
         validate_all_product_yaml_files(tmp_products_configs_dir)
 
+    def test_partial_sensor_level_global_config_inherits_product_defaults(self, tmp_products_configs_dir):
+        """Test validation accepts sensor-level global YAML files with inherited product defaults."""
+        create_minimal_product_configs(tmp_products_configs_dir)
+
+        sensor_dir = tmp_products_configs_dir / "L2E" / "PARSIVEL2"
+        sensor_dir.mkdir(parents=True, exist_ok=True)
+        write_yaml(
+            {
+                "product_options": {
+                    "maximum_diameter": 8,
+                },
+                "radar_enabled": True,
+            },
+            sensor_dir / "global.yaml",
+        )
+
+        validate_all_product_yaml_files(tmp_products_configs_dir)
+
     def test_raise_error_with_corrupted_yaml(self, tmp_products_configs_dir):
         """Test raise error with corrupted YAML file."""
         # Create minimal structure

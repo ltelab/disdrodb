@@ -16,6 +16,7 @@
 # -----------------------------------------------------------------------------.
 """Implements ProcessingOption class for DISDRODB routines."""
 
+import copy
 import json
 import os
 from pathlib import Path
@@ -29,6 +30,28 @@ from disdrodb.utils.list import flatten_list
 from disdrodb.utils.routines import is_possible_product
 from disdrodb.utils.time import ensure_timedelta_seconds, get_sampling_information
 from disdrodb.utils.yaml import read_yaml
+
+
+def _merge_options(base_options, override_options):
+    """Merge options without mutating inputs.
+
+    Nested option sections are merged one level deep to preserve the existing
+    temporal-file semantics while allowing partial sensor-level globals.
+    """
+    first_level_keys = set(base_options.keys()) | set(override_options.keys())
+    merged_options = copy.deepcopy(base_options)
+    override_options = copy.deepcopy(override_options)
+
+    for key in first_level_keys:
+        if key not in override_options:
+            continue
+
+        if isinstance(merged_options.get(key), dict) and isinstance(override_options[key], dict):
+            merged_options[key] = copy.deepcopy(merged_options[key])
+            merged_options[key].update(override_options[key])
+        else:
+            merged_options[key] = copy.deepcopy(override_options[key])
+    return merged_options
 
 
 def get_product_options_directory(products_configs_dir, product, sensor_name=None):
@@ -104,15 +127,27 @@ def get_product_options(product, temporal_resolution=None, sensor_name=None, pro
     # Check product
     check_product(product)
 
-    # Get product global options path
+    # Read product-level global options
     global_options_path = get_product_global_options_path(
         products_configs_dir=products_configs_dir,
         product=product,
-        sensor_name=sensor_name,
+        sensor_name=None,
     )
+    global_options = read_yaml(global_options_path)
+
+    # If available, merge sensor-level global options on top of the product defaults
+    if sensor_name is not None:
+        sensor_global_options_path = get_product_options_directory(
+            products_configs_dir=products_configs_dir,
+            product=product,
+            sensor_name=sensor_name,
+        )
+        sensor_global_options_path = os.path.join(sensor_global_options_path, "global.yaml")
+        if os.path.exists(sensor_global_options_path):
+            sensor_global_options = read_yaml(sensor_global_options_path)
+            global_options = _merge_options(base_options=global_options, override_options=sensor_global_options)
 
     # Retrieve global product options (when no temporal resolution !)
-    global_options = read_yaml(global_options_path)
     if temporal_resolution is None:
         global_options = check_availability_radar_simulations(global_options)
         return global_options
@@ -135,14 +170,7 @@ def get_product_options(product, temporal_resolution=None, sensor_name=None, pro
     custom_options = read_yaml(custom_options_path)
 
     # Update global options with the custom options specified
-    options = global_options.copy()
-    keys_options = ["archive_options", "product_options", "radar_options"]
-    for key in keys_options:
-        if key in custom_options:
-            options[key].update(custom_options.pop(key))  # Update with only one
-
-    # Update remaining flat keys
-    options.update(custom_options)
+    options = _merge_options(global_options, custom_options)
 
     # Check availability of radar simulations
     options = check_availability_radar_simulations(options)
