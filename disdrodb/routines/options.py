@@ -35,8 +35,10 @@ from disdrodb.utils.yaml import read_yaml
 def _merge_options(base_options, override_options):
     """Merge options without mutating inputs.
 
-    Nested option sections are merged one level deep to preserve the existing
-    temporal-file semantics while allowing partial sensor-level globals.
+    Nested option sections are merged one level deep: second-level keys are
+    replaced as whole values, not merged recursively. This preserves the
+    existing temporal-file semantics while allowing partial sensor-level
+    globals.
     """
     first_level_keys = set(base_options.keys()) | set(override_options.keys())
     merged_options = copy.deepcopy(base_options)
@@ -48,7 +50,8 @@ def _merge_options(base_options, override_options):
 
         if isinstance(merged_options.get(key), dict) and isinstance(override_options[key], dict):
             merged_options[key] = copy.deepcopy(merged_options[key])
-            merged_options[key].update(override_options[key])
+            for nested_key, nested_value in override_options[key].items():
+                merged_options[key][nested_key] = copy.deepcopy(nested_value)
         else:
             merged_options[key] = copy.deepcopy(override_options[key])
     return merged_options

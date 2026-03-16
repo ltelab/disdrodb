@@ -46,6 +46,8 @@ from disdrodb.routines.options import (
     get_product_temporal_resolutions,
 )
 from disdrodb.tests.test_routines.options_defaults import (
+    ARCHIVE_OPTIONS_EVENT,
+    ARCHIVE_OPTIONS_TIME_BLOCK,
     GAMMA_GS_CONFIG,
     GAMMA_ML_CONFIG,
     L0C_GLOBAL_YAML,
@@ -439,6 +441,21 @@ def test_merge_options_updates_scalar_and_nested_keys():
     assert merged_options["archive_options"]["folder_partitioning"] == "month"
     assert merged_options["radar_enabled"] is True
     assert merged_options["flat"] == 2
+
+
+def test_merge_options_replaces_nested_archive_strategy_options():
+    """Test archive strategy_options are replaced wholesale and not mixed."""
+    base_options = {
+        "archive_options": copy.deepcopy(ARCHIVE_OPTIONS_EVENT),
+    }
+    override_options = {
+        "archive_options": copy.deepcopy(ARCHIVE_OPTIONS_TIME_BLOCK),
+    }
+
+    merged_options = _merge_options(base_options, override_options)
+
+    assert merged_options["archive_options"] == ARCHIVE_OPTIONS_TIME_BLOCK
+    assert set(merged_options["archive_options"]["strategy_options"]) == {"freq"}
 
 
 class TestRadarSimulationsAvailability:
