@@ -14,13 +14,256 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Test 2D LUT routines."""
+"""Test LUT routines."""
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from disdrodb.retrievals.lut import NearestNeighbourLUT2D
+from disdrodb.retrievals.lut import NearestNeighbourLUT1D, NearestNeighbourLUT2D
+
+
+class TestNearestNeighbourLUT1D:
+    """Test suite for NearestNeighbourLUT1D class."""
+
+    @pytest.fixture
+    def sample_df(self):
+        """Create a sample DataFrame for testing."""
+        return pd.DataFrame(
+            {
+                "x": [0.0, 1.0, 2.0, 3.0],
+                "value1": [10, 20, 30, 40],
+                "value2": [100, 200, 300, 400],
+            },
+        )
+
+    @pytest.fixture
+    def lut(self, sample_df):
+        """Create a NearestNeighbourLUT1D instance for testing."""
+        return NearestNeighbourLUT1D(sample_df, "x", columns=["value1", "value2"])
+
+    def test_init_with_valid_dataframe(self, sample_df):
+        """Test initialization with valid DataFrame and parameters."""
+        lut = NearestNeighbourLUT1D(sample_df, "x", columns=["value1", "value2"])
+        assert lut.x == "x"
+        assert lut.columns == ["value1", "value2"]
+        assert lut.dtype == np.float32
+        assert lut.points.shape == (4, 1)
+        assert lut.values.shape == (4, 2)  # noqa: PD011
+
+    def test_init_with_default_columns(self, sample_df):
+        """Test initialization with default columns (all columns)."""
+        lut = NearestNeighbourLUT1D(sample_df, "x")
+        assert set(lut.columns) == {"x", "value1", "value2"}
+
+    def test_init_with_custom_dtype(self, sample_df):
+        """Test initialization with custom dtype."""
+        lut = NearestNeighbourLUT1D(sample_df, "x", columns=["value1"], dtype=np.float64)
+        assert lut.dtype == np.float64
+        assert lut.points.dtype == np.float64
+        assert lut.values.dtype == np.float64  # noqa: PD011
+
+    def test_init_with_index_reset(self):
+        """Test initialization when x is in DataFrame index."""
+        df = pd.DataFrame({"value": [10, 20, 30]})
+        df = df.set_index(pd.Index([0.0, 1.0, 2.0], name="x"))
+        lut = NearestNeighbourLUT1D(df, "x", columns=["value"])
+        assert lut.x == "x"
+        assert lut.points.shape == (3, 1)
+
+    def test_init_raises_error_for_missing_x_column(self, sample_df):
+        """Test that ValueError is raised when x column is missing."""
+        with pytest.raises(ValueError, match="x='nonexistent' is not a column of df."):
+            NearestNeighbourLUT1D(sample_df, "nonexistent")
+
+    def test_init_raises_error_for_missing_value_columns(self, sample_df):
+        """Test that ValueError is raised when specified columns are missing."""
+        with pytest.raises(ValueError, match="columns not found in DataFrame"):
+            NearestNeighbourLUT1D(sample_df, "x", columns=["nonexistent"])
+
+    def test_predict_with_scalar_inputs(self, lut):
+        """Test predict method with scalar coordinates."""
+        result = lut.predict(1.7)
+        assert isinstance(result, pd.DataFrame)
+        assert result.shape == (1, 3)  # x, value1, value2
+        assert "x" in result.columns
+        assert "value1" in result.columns
+        assert "value2" in result.columns
+
+    def test_predict_with_array_inputs(self, lut):
+        """Test predict method with array inputs."""
+        x_query = [0.1, 2.7]
+        result = lut.predict(x_query)
+        assert result.shape == (2, 3)
+        assert np.array_equal(result["x"].values, x_query)
+
+    def test_predict_preserves_pandas_index(self, lut):
+        """Test predict preserves index from pandas inputs."""
+        x_query = pd.Series([0.1, 2.7], index=["a", "b"])
+        result = lut.predict(x_query)
+        assert list(result.index) == ["a", "b"]
+
+    def test_predict_with_return_distance(self, lut):
+        """Test predict method with return_distance=True."""
+        result = lut.predict(2.0, return_distance=True)
+        assert "distance" in result.columns
+        assert result["distance"].iloc[0] == 0.0
+
+    def test_predict_exact_match(self, lut):
+        """Test predict returns exact values when query point matches training point."""
+        result = lut.predict(2.0)
+        assert result["value1"].iloc[0] == 30
+        assert result["value2"].iloc[0] == 300
+
+    def test_predict_nearest_neighbor(self, lut):
+        """Test predict returns nearest neighbor values for intermediate points."""
+        result = lut.predict(1.7)
+        assert result["value1"].iloc[0] == 30
+
+    def test_predict_column_order(self, lut):
+        """Test that predict returns columns in correct order."""
+        result = lut.predict(2.0)
+        assert list(result.columns) == ["x", "value1", "value2"]
+
+    def test_predict_dict_with_scalar_inputs(self, lut):
+        """Test predict_dict method with scalar coordinates."""
+        result = lut.predict_dict(2.0)
+        assert isinstance(result, dict)
+        assert result["x"] == 2.0
+        assert result["value1"] == 30
+        assert result["value2"] == 300
+
+    def test_predict_dict_raises_error_for_array_inputs(self, lut):
+        """Test that predict_dict raises ValueError for non-scalar inputs."""
+        with pytest.raises(ValueError, match="predict_dict accepts only scalars"):
+            lut.predict_dict([0.5, 1.5])
+
+    def test_len(self, lut):
+        """Test __len__ method returns correct number of points."""
+        assert len(lut) == 4
+
+    def test_save_and_read_lut(self, lut, tmp_path):
+        """Test saving and loading lookup table from file."""
+        filepath = tmp_path / "test_lut_1d.pkl"
+        lut.save_lut(filepath)
+        assert filepath.exists()
+
+        loaded_lut = NearestNeighbourLUT1D.read_lut(filepath)
+        assert loaded_lut.x == lut.x
+        assert loaded_lut.columns == lut.columns
+        assert np.array_equal(loaded_lut.points, lut.points)
+        assert np.array_equal(loaded_lut.values, lut.values)
+
+    def test_save_lut_preserves_functionality(self, lut, tmp_path):
+        """Test that loaded LUT produces same predictions as original."""
+        filepath = tmp_path / "test_lut_1d.pkl"
+        lut.save_lut(filepath)
+        loaded_lut = NearestNeighbourLUT1D.read_lut(filepath)
+
+        original_result = lut.predict(1.7)
+        loaded_result = loaded_lut.predict(1.7)
+
+        pd.testing.assert_frame_equal(original_result, loaded_result)
+
+    def test_tree_attribute_exists(self, lut):
+        """Test that k-d tree is properly initialized."""
+        assert hasattr(lut, "tree")
+        assert lut.tree is not None
+
+    def test_multiple_predictions_consistency(self, lut):
+        """Test that multiple predictions for same point return consistent results."""
+        result1 = lut.predict(0.7)
+        result2 = lut.predict(0.7)
+        pd.testing.assert_frame_equal(result1, result2)
+
+    def test_empty_columns_list_uses_all_columns(self):
+        """Test initialization with None columns parameter includes all columns."""
+        df = pd.DataFrame({"x": [0.0, 1.0], "val": [10, 20]})
+        lut = NearestNeighbourLUT1D(df, "x", columns=None)
+        assert "val" in lut.columns
+        assert "x" in lut.columns
+
+    def test_predict_with_nan_input_x(self, lut):
+        """Test that NaN x-coordinate returns NaN values."""
+        result = lut.predict(np.nan)
+        assert np.isnan(result["value1"].iloc[0])
+        assert np.isnan(result["value2"].iloc[0])
+        assert np.isnan(result["x"].iloc[0])
+
+    def test_predict_with_inf_input_x(self, lut):
+        """Test that inf x-coordinate returns NaN values."""
+        result = lut.predict(np.inf)
+        assert np.isnan(result["value1"].iloc[0])
+        assert np.isnan(result["value2"].iloc[0])
+
+    def test_predict_with_mixed_valid_invalid_inputs(self, lut):
+        """Test that mixed valid/invalid inputs return correct values."""
+        x_query = [0.5, np.nan, np.inf]
+        result = lut.predict(x_query)
+
+        assert not np.isnan(result["value1"].iloc[0])
+        assert np.isnan(result["value1"].iloc[1])
+        assert np.isnan(result["value1"].iloc[2])
+
+    def test_predict_with_nan_return_distance(self, lut):
+        """Test that NaN inputs return NaN distance when return_distance=True."""
+        result = lut.predict(np.nan, return_distance=True)
+        assert "distance" in result.columns
+        assert np.isnan(result["distance"].iloc[0])
+
+    def test_predict_with_max_distance_scalar(self, lut):
+        """Test max_distance parameter with scalar value masks distant points."""
+        result = lut.predict(5.0, max_distance=1.0)
+        assert np.isnan(result["value1"].iloc[0])
+        assert np.isnan(result["value2"].iloc[0])
+
+    def test_predict_with_max_distance_scalar_valid(self, lut):
+        """Test max_distance parameter allows close points through."""
+        result = lut.predict(0.2, max_distance=0.3)
+        assert not np.isnan(result["value1"].iloc[0])
+        assert not np.isnan(result["value2"].iloc[0])
+
+    def test_predict_with_max_distance_tuple(self, lut):
+        """Test max_distance parameter with tuple for univariate thresholds."""
+        result = lut.predict(0.6, max_distance=(0.3,))
+        assert np.isnan(result["value1"].iloc[0])
+
+    def test_predict_with_max_distance_tuple_valid(self, lut):
+        """Test max_distance tuple allows points within the threshold."""
+        result = lut.predict(0.2, max_distance=(0.3,))
+        assert not np.isnan(result["value1"].iloc[0])
+        assert result["value1"].iloc[0] == 10
+
+    def test_predict_with_max_distance_none(self, lut):
+        """Test that max_distance=None applies no masking."""
+        result = lut.predict(100.0, max_distance=None)
+        assert not np.isnan(result["value1"].iloc[0])
+
+    def test_predict_with_max_distance_and_return_distance(self, lut):
+        """Test max_distance with return_distance=True returns correct distance."""
+        result = lut.predict(0.2, max_distance=0.3, return_distance=True)
+        assert "distance" in result.columns
+        assert not np.isnan(result["distance"].iloc[0])
+        assert result["distance"].iloc[0] < 0.3
+
+    def test_predict_max_distance_tuple_wrong_length(self, lut):
+        """Test that max_distance tuple with wrong length raises ValueError."""
+        with pytest.raises(ValueError, match="max_distance tuple must have exactly 1 element"):
+            lut.predict(0.5, max_distance=(0.3, 0.3))
+
+    def test_predict_with_max_distance_array_of_points(self, lut):
+        """Test max_distance with multiple query points masks correctly."""
+        x_query = [0.1, 5.0, 0.2]
+        result = lut.predict(x_query, max_distance=0.3)
+
+        assert not np.isnan(result["value1"].iloc[0])
+        assert not np.isnan(result["value1"].iloc[2])
+        assert np.isnan(result["value1"].iloc[1])
+
+    def test_predict_coordinates_preserved_with_nan_values(self, lut):
+        """Test that x coordinates are preserved even when values are NaN."""
+        result = lut.predict(np.nan)
+        assert np.isnan(result["x"].iloc[0])
 
 
 class TestNearestNeighbourLUT2D:
@@ -111,6 +354,13 @@ class TestNearestNeighbourLUT2D:
         assert result.shape == (2, 4)
         assert np.array_equal(result["x"].values, x_query)
         assert np.array_equal(result["y"].values, y_query)
+
+    def test_predict_preserves_pandas_index(self, lut):
+        """Test predict preserves index from pandas inputs."""
+        x_query = pd.Series([0.5, 1.5], index=["a", "b"])
+        y_query = pd.Series([0.5, 0.5], index=["a", "b"])
+        result = lut.predict(x_query, y_query)
+        assert list(result.index) == ["a", "b"]
 
     def test_predict_with_return_distance(self, lut):
         """Test predict method with return_distance=True."""

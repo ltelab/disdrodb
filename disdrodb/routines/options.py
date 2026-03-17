@@ -36,9 +36,9 @@ def _merge_options(base_options, override_options):
     """Merge options without mutating inputs.
 
     Nested option sections are merged one level deep: second-level keys are
-    replaced as whole values, not merged recursively. This preserves the
-    existing temporal-file semantics while allowing partial sensor-level
-    globals.
+    replaced as whole values (e.g. strategy_options), not merged recursively.
+
+    This preserves semantics while allowing partial sensor-level globals.
     """
     first_level_keys = set(base_options.keys()) | set(override_options.keys())
     merged_options = copy.deepcopy(base_options)

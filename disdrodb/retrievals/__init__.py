@@ -16,8 +16,9 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB module for DSD retrievals."""
 
-from disdrodb.retrievals.lut import NearestNeighbourLUT2D
+from disdrodb.retrievals.lut import NearestNeighbourLUT1D, NearestNeighbourLUT2D
 
 __all__ = [
+    "NearestNeighbourLUT1D",
     "NearestNeighbourLUT2D",
 ]
