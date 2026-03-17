@@ -38,6 +38,14 @@ def _get_query_index(values):
     return index if isinstance(index, pd.Index) else None
 
 
+def _discard_nan_value_rows(df, columns):
+    """Discard rows with NaNs in the selected value columns."""
+    if len(columns) == 0:
+        return df
+    valid_rows = df[columns].notna().all(axis=1)
+    return df.loc[valid_rows]
+
+
 class NearestNeighbourLUT1D:
     """A 1D nearest neighbor lookup table using k-d tree.
 
@@ -55,6 +63,11 @@ class NearestNeighbourLUT1D:
         If None, all columns are included. Default is None.
     dtype : numpy.dtype, optional
         Data type for storing points and values. Default is np.float32.
+
+    Notes
+    -----
+    Rows with NaNs in the selected value columns are discarded before
+    constructing the lookup table.
     """
 
     def __init__(self, df, x, columns=None, dtype=np.float32):
@@ -69,6 +82,8 @@ class NearestNeighbourLUT1D:
         if not np.all(np.isin(columns, df.columns)):
             missing = np.setdiff1d(columns, df.columns).tolist()
             raise ValueError(f"{missing} columns not found in DataFrame")
+
+        df = _discard_nan_value_rows(df, columns)
 
         self.x = x
         self.columns = columns
@@ -224,6 +239,11 @@ class NearestNeighbourLUT2D:
     ValueError
         If any of the specified columns are not found in the DataFrame.
 
+    Notes
+    -----
+    Rows with NaNs in the selected value columns are discarded before
+    constructing the lookup table.
+
     Examples
     --------
     >>> import pandas as pd
@@ -247,6 +267,8 @@ class NearestNeighbourLUT2D:
         if not np.all(np.isin(columns, df.columns)):
             missing = np.setdiff1d(columns, df.columns).tolist()
             raise ValueError(f"{missing} columns not found in DataFrame")
+
+        df = _discard_nan_value_rows(df, columns)
 
         self.x = x
         self.y = y
