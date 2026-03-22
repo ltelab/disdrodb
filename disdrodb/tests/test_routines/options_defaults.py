@@ -34,6 +34,8 @@ RADAR_OPTIONS = {
 L2E_PRODUCT_OPTIONS = {
     "compute_spectra": False,
     "compute_percentage_contribution": False,
+    "compute_partial_number_concentrations": True,
+    "partial_number_concentration_bins": [0.5, 1, 2, 3, 4, 5, 6, 7, 8],  # None also allowed
     "minimum_ndrops": 1,
     "minimum_nbins": 1,
     "minimum_rain_rate": 0.01,

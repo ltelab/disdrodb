@@ -7,6 +7,8 @@ archive_options:
 product_options:
   compute_spectra: False
   compute_percentage_contribution: False
+  compute_partial_number_concentrations: True
+  partial_number_concentration_bins: null
   minimum_ndrops: 1
   minimum_nbins: 1
   minimum_rain_rate: 0.01

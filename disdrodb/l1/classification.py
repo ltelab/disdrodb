@@ -986,8 +986,16 @@ def classify_raw_spectrum(
     ds_class["n_splashing"] = n_splashing_final
     ds_class["n_wind_artefacts"] = n_wind_artefacts_final
 
-    ds_class["fraction_splashing"] = ds_class["n_splashing"] / n_particles
-    ds_class["fraction_margin_fallers"] = ds_class["n_margin_fallers"] / n_particles
+    ds_class["fraction_splashing"] = xr.where(
+        n_particles == 0,
+        0,
+        ds_class["n_splashing"] / n_particles,
+    )
+    ds_class["fraction_margin_fallers"] = xr.where(
+        n_particles == 0,
+        0,
+        ds_class["n_margin_fallers"] / n_particles,
+    )
 
     # ds_class["mask_graupel"] = graupel_mask_without_splash
     # ds_class["mask_splashing"] = mask_splashing

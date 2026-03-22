@@ -397,7 +397,8 @@ def _log_pchip_conservative_density_remapping(y_src, d_src, d_dst, dD_src, dD_ds
 
     positive = y_src > 0
     if np.count_nonzero(positive) < 2:
-        return _conservative_density_remapping(y_src, d_src, d_dst_valid, dD_src, dD_dst_valid)
+        y_dst_valid = _conservative_density_remapping(y_src, d_src, d_dst_valid, dD_src, dD_dst_valid)
+        return _assemble_resampled_output(y_dst_valid, prepared["d_dst"], prepared["valid_dst"])
 
     log_interp = PchipInterpolator(
         d_src[positive],
@@ -604,7 +605,7 @@ def resample_density(
     Notes
     -----
     For ``drop_number`` counts already integrated per bin, use
-    :func:`resample_drop_number` instead of this function.
+    :func:`resample_drop_counts` instead of this function.
     """
     if len(d_dst) < len(d_src) and method != "constant":  # coarsening
         print("Resampling method set to 'constant' for coarsening.")

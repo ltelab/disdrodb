@@ -55,7 +55,7 @@ def plot_stations(df=None, marker_size=10, c="dodgerblue", ax=None, crs_proj=Non
         x=df["longitude"],
         y=df["latitude"],
         c=c,
-        edgecolor="None",
+        edgecolor="none",
         marker="o",
         s=marker_size,
         alpha=1,

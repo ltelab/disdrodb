@@ -182,6 +182,18 @@ def resample_dataset(
     time_is_interval_end: bool
         Whether time correspond to the end of the measurement/accumulation interval/period.
         The default is True.
+    var_to_average : str or list[str], optional
+        Additional variable name(s) to average during resampling.
+        These are merged with the internal default averaging list.
+    var_to_cumulate : str or list[str], optional
+        Additional variable name(s) to sum (cumulate) during resampling.
+        These are merged with the internal default cumulation list.
+    var_to_max : str or list[str], optional
+        Additional variable name(s) for maximum aggregation during resampling.
+        These are merged with the internal default max list.
+    var_to_min : str or list[str], optional
+        Additional variable name(s) for minimum aggregation during resampling.
+        These are merged with the internal default min list.
 
     Returns
     -------
@@ -193,6 +205,12 @@ def resample_dataset(
     - The function regularizes the dataset (infill possible missing timesteps)
       before performing the resampling operation.
     - Variables are categorized into those to be averaged, accumulated, minimized, and maximized.
+        - The ``var_to_*`` arguments are optional extensions of the default variable
+            groups; they do not replace the built-in defaults.
+        - If provided as a string, each ``var_to_*`` argument is converted to a
+            single-item list.
+        - A ``ValueError`` is raised if any user-provided variable does not exist
+            in the input dataset.
     - Custom processing for quality flags and handling of NaNs is defined.
     - The function updates the dataset attributes and the sample_interval coordinate.
 
@@ -257,10 +275,16 @@ def resample_dataset(
         "raw_particle_counts",
     ]:
         if var in ds:
-            ds[var] = ds[var].compute()
-            dims = set(ds[var].dims) - {"time"}
-            invalid_timesteps = np.isnan(ds[var]).any(dim=dims)
-            ds[var] = ds[var].where(~invalid_timesteps, 0)
+            data_var = ds[var]
+            dims = set(data_var.dims) - {"time"}
+            invalid_timesteps = data_var.isnull().any(dim=dims).compute()  # noqa
+            ds[var] = data_var.where(~invalid_timesteps, 0)
+
+            # ds[var] = ds[var].compute()
+            # dims = set(ds[var].dims) - {"time"}
+            # invalid_timesteps = np.isnan(ds[var]).any(dim=dims)
+            # ds[var] = ds[var].where(~invalid_timesteps, 0)
+
             ds["qc_resampling"] = ds["qc_resampling"].where(~invalid_timesteps, 0)
 
             if np.all(invalid_timesteps).item():

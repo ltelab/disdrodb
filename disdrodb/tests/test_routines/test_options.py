@@ -305,6 +305,8 @@ class TestGetProductOptions:
         assert product_options["maximum_diameter"] == 15
         assert "fall_velocity_model" in product_options
         assert "minimum_nbins" in product_options
+        assert product_options["compute_partial_number_concentrations"] is True
+        assert product_options["partial_number_concentration_bins"] == [0.5, 1, 2, 3, 4, 5, 6, 7, 8]
 
         # Radar_options copied from global
         radar_options = options["radar_options"]
@@ -400,6 +402,8 @@ class TestGetProductOptions:
         assert options_dict["product_options"]["global_level"] == 2
         assert options_dict["product_options"]["sensor_level"] == 1
         assert options_dict["product_options"]["minimum_nbins"] == L2E_GLOBAL_YAML["product_options"]["minimum_nbins"]
+        assert options_dict["product_options"]["compute_partial_number_concentrations"] is True
+        assert options_dict["product_options"]["partial_number_concentration_bins"] == [0.5, 1, 2, 3, 4, 5, 6, 7, 8]
         assert options_dict["radar_options"]["num_points"] == L2E_GLOBAL_YAML["radar_options"]["num_points"]
         assert options_dict["radar_enabled"] is True
 
