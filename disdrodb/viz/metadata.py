@@ -44,7 +44,7 @@ def plot_stations(df=None, marker_size=10, c="dodgerblue", ax=None, crs_proj=Non
     if ax is None:
         crs_proj = ccrs.PlateCarree() if crs_proj is None else crs_proj
         fig, ax = plt.subplots(
-            subplot_kw=dict(projection=crs_proj),
+            subplot_kw={"projection": crs_proj},
             figsize=figsize,
             dpi=dpi,
         )
