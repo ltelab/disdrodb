@@ -659,7 +659,7 @@ def get_nd_from_partial_number_concentrations(ds):
     return da_nd
 
 
-def compute_partial_number_concentration(
+def get_partial_number_concentration(
     drop_number_concentration,
     minimum_diameter=0.0,
     maximum_diameter=None,

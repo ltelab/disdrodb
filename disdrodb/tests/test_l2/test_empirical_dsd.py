@@ -25,7 +25,6 @@ from disdrodb.api.configs import available_sensor_names
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l2.empirical_dsd import (
     compute_integral_parameters,
-    compute_partial_number_concentration,
     get_bin_dimensions,
     get_drop_average_velocity,
     get_drop_counts_from_number_concentration,
@@ -46,6 +45,7 @@ from disdrodb.l2.empirical_dsd import (
     get_nd_from_partial_number_concentrations,
     get_normalized_intercept_parameter,
     get_normalized_intercept_parameter_from_moments,
+    get_partial_number_concentration,
     get_partial_number_concentrations,
     get_particle_counts_from_number_concentration,
     get_quantile_volume_drop_diameter,
@@ -1859,7 +1859,7 @@ class TestPartialNumberConcentrations:
         """Test single-interval concentration integrates over requested bounds."""
         nd = create_uniform_bin_nd(values=[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], array_type=array_type)
 
-        da_partial = compute_partial_number_concentration(
+        da_partial = get_partial_number_concentration(
             drop_number_concentration=nd,
             minimum_diameter=1.0,
             maximum_diameter=3.0,
@@ -1868,11 +1868,11 @@ class TestPartialNumberConcentrations:
         check_datarray_type(da_partial, array_type=array_type)
         np.testing.assert_allclose(da_partial.to_numpy(), np.array([5.0, 11.0]))
 
-    def test_compute_partial_number_concentration_with_default_maximum(self):
+    def test_get_partial_number_concentration_with_default_maximum(self):
         """Test default maximum diameter uses the upper edge of the last bin."""
         nd = create_uniform_bin_nd(values=[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], array_type="numpy")
 
-        da_partial = compute_partial_number_concentration(
+        da_partial = get_partial_number_concentration(
             drop_number_concentration=nd,
             minimum_diameter=1.0,
             maximum_diameter=None,
