@@ -32,6 +32,7 @@ from disdrodb.l2.empirical_dsd import (
     get_effective_sampling_interval,
     get_kinetic_energy_variables_from_drop_number,
     get_min_max_diameter,
+    get_partial_number_concentrations,
     get_rain_accumulation,
     get_rain_rate_from_drop_counts,
 )
@@ -705,7 +706,7 @@ def generate_l2e(
             if partial_number_concentration_bins is None
             else partial_number_concentration_bins
         )
-        ds_partial_number_concentration = compute_partial_number_concentrations(
+        ds_partial_number_concentration = get_partial_number_concentrations(
             drop_number_concentration=ds_l2["drop_number_concentration"],
             diameter_bin_edges=partial_number_concentration_bins,
         )

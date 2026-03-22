@@ -26,7 +26,6 @@ from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l2.empirical_dsd import (
     compute_integral_parameters,
     compute_partial_number_concentration,
-    compute_partial_number_concentrations,
     get_bin_dimensions,
     get_drop_average_velocity,
     get_drop_counts_from_number_concentration,
@@ -47,6 +46,7 @@ from disdrodb.l2.empirical_dsd import (
     get_nd_from_partial_number_concentrations,
     get_normalized_intercept_parameter,
     get_normalized_intercept_parameter_from_moments,
+    get_partial_number_concentrations,
     get_particle_counts_from_number_concentration,
     get_quantile_volume_drop_diameter,
     get_rain_accumulation,
@@ -1806,12 +1806,12 @@ def create_uniform_bin_nd(values, array_type="numpy"):
 class TestPartialNumberConcentrations:
 
     @pytest.mark.parametrize("array_type", ["numpy", "dask"])
-    def test_compute_partial_number_concentrations_expected_names_values_and_attrs(self, array_type):
+    def test_get_partial_number_concentrations_expected_names_values_and_attrs(self, array_type):
         """Test partial concentrations are named and computed as expected."""
         nd = create_uniform_bin_nd(values=[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], array_type=array_type)
         diameter_bin_edges = [0.0, 1.0, 2.0, 3.0]
 
-        ds_partial = compute_partial_number_concentrations(
+        ds_partial = get_partial_number_concentrations(
             drop_number_concentration=nd,
             diameter_bin_edges=diameter_bin_edges,
         )
@@ -1831,12 +1831,12 @@ class TestPartialNumberConcentrations:
         assert ds_partial["N_1p0_2p0"].attrs["diameter_upper_bound"] == 2.0
 
     @pytest.mark.parametrize("array_type", ["numpy", "dask"])
-    def test_compute_partial_number_concentrations_unaligned_bins(self, array_type):
+    def test_get_partial_number_concentrations_unaligned_bins(self, array_type):
         """Test partial concentrations are named and computed as expected."""
         nd = create_uniform_bin_nd(values=[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], array_type=array_type)
         diameter_bin_edges = [0.0, 2.5, 3.0]
 
-        ds_partial = compute_partial_number_concentrations(
+        ds_partial = get_partial_number_concentrations(
             drop_number_concentration=nd,
             diameter_bin_edges=diameter_bin_edges,
         )
@@ -1855,7 +1855,7 @@ class TestPartialNumberConcentrations:
         assert ds_partial["N_0p0_2p5"].attrs["diameter_upper_bound"] == 2.5
 
     @pytest.mark.parametrize("array_type", ["numpy", "dask"])
-    def test_compute_partial_number_concentration_specific_interval(self, array_type):
+    def test_get_partial_number_concentration_specific_interval(self, array_type):
         """Test single-interval concentration integrates over requested bounds."""
         nd = create_uniform_bin_nd(values=[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], array_type=array_type)
 
@@ -1886,7 +1886,7 @@ class TestPartialNumberConcentrations:
         """Test N(D) can be reconstructed from partial concentrations."""
         nd = create_uniform_bin_nd(values=[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], array_type=array_type)
 
-        ds_partial = compute_partial_number_concentrations(
+        ds_partial = get_partial_number_concentrations(
             drop_number_concentration=nd,
             diameter_bin_edges=[0.0, 1.0, 2.0, 3.0],
         )

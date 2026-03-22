@@ -491,7 +491,7 @@ def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sam
     return drop_number_concentration
 
 
-def compute_partial_number_concentrations(drop_number_concentration, diameter_bin_edges):
+def get_partial_number_concentrations(drop_number_concentration, diameter_bin_edges):
     r"""Compute partial number concentrations over specified diameter intervals.
 
     The input drop number concentration density, N(D), is first resampled onto
@@ -536,7 +536,7 @@ def compute_partial_number_concentrations(drop_number_concentration, diameter_bi
     Examples
     --------
     >>> diameter_bin_edges = [0.5, 1.0, 1.5, 2.0]
-    >>> ds_partial = compute_partial_number_concentrations(
+    >>> ds_partial = get_partial_number_concentrations(
     ...     drop_number_concentration=drop_number_concentration,
     ...     diameter_bin_edges=diameter_bin_edges,
     ... )
@@ -684,7 +684,7 @@ def compute_partial_number_concentration(
     if maximum_diameter is None:
         maximum_diameter = np.max(drop_number_concentration["diameter_bin_upper"])
 
-    ds_partial = compute_partial_number_concentrations(
+    ds_partial = get_partial_number_concentrations(
         drop_number_concentration=drop_number_concentration,
         diameter_bin_edges=[minimum_diameter, maximum_diameter],
     )

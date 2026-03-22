@@ -432,7 +432,7 @@ def plot_dsd(
     p.axes.figure.autofmt_xdate(rotation=30, ha="right")
 
     # Optional: avoid clipping of labels
-    p.axes.figure.tight_layout()
+    # p.axes.figure.tight_layout()
 
     return p
 
