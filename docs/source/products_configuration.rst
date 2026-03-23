@@ -315,6 +315,8 @@ For product description, see :ref:`DISDRODB L2E Product <disdrodb_l2e>`.
       # Computation flags
       compute_spectra: false           # Compute mass spectra, rainfall spectra
       compute_percentage_contribution: false
+      compute_partial_number_concentrations: False # Compute partial number concentrations in specified diameter bins
+      partial_number_concentration_bins: [0.5, 1, 2, 3, 4, 5, 6, 7, 8] # Diameter bins for partial number concentrations (mm)
 
       # Quality control thresholds
       minimum_ndrops: 10               # Minimum drops required

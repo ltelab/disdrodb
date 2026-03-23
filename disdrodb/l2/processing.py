@@ -32,8 +32,9 @@ from disdrodb.l2.empirical_dsd import (
     get_effective_sampling_interval,
     get_kinetic_energy_variables_from_drop_number,
     get_min_max_diameter,
+    get_partial_number_concentrations,
     get_rain_accumulation,
-    get_rain_rate_from_drop_number,
+    get_rain_rate_from_drop_counts,
 )
 from disdrodb.psd import create_psd, estimate_model_parameters
 from disdrodb.psd.gof_metrics import compute_gof_stats
@@ -44,6 +45,8 @@ from disdrodb.utils.manipulations import (
     filter_velocity_bins,
 )
 from disdrodb.utils.writer import finalize_product
+
+PARTIAL_NUMBER_CONCENTRATION_BINS = (0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8)
 
 
 def define_velocity_array(ds, spectrum="drop_number"):
@@ -452,6 +455,8 @@ def generate_l2e(
     ds_env=None,
     compute_spectra=False,
     compute_percentage_contribution=False,
+    compute_partial_number_concentrations=False,
+    partial_number_concentration_bins=PARTIAL_NUMBER_CONCENTRATION_BINS,
     # Filtering options
     minimum_ndrops=1,
     minimum_nbins=1,
@@ -540,11 +545,11 @@ def generate_l2e(
     if has_velocity_dimension:
         ds = filter_velocity_bins(ds=ds, minimum_velocity=minimum_velocity, maximum_velocity=maximum_velocity)
 
-    # -------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Compute fall velocity
     ds["fall_velocity"] = get_rain_fall_velocity_from_ds(ds=ds, ds_env=ds_env, model=fall_velocity_model)
 
-    # -------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Retrieve filtered spectrum and drop counts (summing over velocity dimension if present)
     raw_drop_number = ds["raw_drop_number"]
     if has_velocity_dimension:
@@ -572,7 +577,7 @@ def generate_l2e(
     ds["drop_counts"] = drop_counts
     ds["raw_drop_counts"] = drop_counts_raw
 
-    # -------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Compute drop statistics
     # - Compute minimum and max drop diameter observed
     min_drop_diameter, max_drop_diameter = get_min_max_diameter(drop_counts)
@@ -587,14 +592,14 @@ def generate_l2e(
     # - Add bins statistics
     ds = add_bins_metrics(ds)
 
-    # -------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Initialize L2E dataset
     ds_l2 = xr.Dataset()
 
     # Retrieve attributes
     attrs = ds.attrs.copy()
 
-    # -------------------------------------------------------
+    # -------------------------------------------------------------------------
     #### Preprocessing
     # Select timesteps with at least the specified number of drops
     ds = select_timesteps_with_drops(ds, minimum_ndrops=minimum_ndrops)
@@ -611,7 +616,7 @@ def generate_l2e(
     # Determine if the velocity dimension is available
     has_velocity_dimension = "velocity_bin_center" in ds.dims
 
-    # -------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Extract variables from L1
     sensor_name = ds.attrs["sensor_name"]
     diameter = ds["diameter_bin_center"] / 1000  # m
@@ -647,6 +652,9 @@ def generate_l2e(
         "hydrometeor_type",
         "n_margin_fallers",
         "n_splashing",
+        "n_wind_artefacts",
+        "fraction_splashing",
+        "fraction_margin_fallers",
         "flag_graupel",
         "flag_hail",
         "flag_spikes",
@@ -659,13 +667,13 @@ def generate_l2e(
     ds_l2.update(ds[variables])
     ds_l2.update(ds[BINS_METRICS])
 
-    # -------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Compute and add drop average velocity if an optical disdrometer (i.e OTT Parsivel or ThiesLPM)
     # - We recompute it because if the input dataset is aggregated, it must be updated !
     # if has_velocity_dimension:
     #     ds["drop_average_velocity"] = get_drop_average_velocity(ds["drop_number"])
 
-    # -------------------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     #### Compute drop number concentration N(D)
     # Define velocity array with dimension 'velocity_method'
     velocity = define_velocity_array(ds)
@@ -690,7 +698,21 @@ def generate_l2e(
     )
     ds_l2["raw_drop_number_concentration"] = raw_drop_number_concentration
 
-    # -------------------------------------------------------
+    # -------------------------------------------------------------------------
+    #### Compute partial number concentrations
+    if compute_partial_number_concentrations:
+        partial_number_concentration_bins = (
+            PARTIAL_NUMBER_CONCENTRATION_BINS
+            if partial_number_concentration_bins is None
+            else partial_number_concentration_bins
+        )
+        ds_partial_number_concentration = get_partial_number_concentrations(
+            drop_number_concentration=ds_l2["drop_number_concentration"],
+            diameter_bin_edges=partial_number_concentration_bins,
+        )
+        ds_l2.update(ds_partial_number_concentration)
+
+    # -------------------------------------------------------------------------
     #### Compute R, LWC, KE and Z spectra
     if compute_spectra:
         ds_spectrum = compute_spectrum_parameters(
@@ -706,7 +728,7 @@ def generate_l2e(
         # TODO: Implement percentage contribution computation
         pass
 
-    # ----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     #### Compute L2 integral parameters from drop_number_concentration
     ds_parameters = compute_integral_parameters(
         drop_number_concentration=drop_number_concentration,
@@ -717,11 +739,11 @@ def generate_l2e(
         water_density=water_density,
     )
 
-    # -------------------------------------------------------
+    # -------------------------------------------------------------------------
     #### Compute R and P from drop number (without velocity assumptions)
     # - Rain rate and accumulation computed with this method are not influenced by the fall velocity of drops !
-    ds_l2["Rm"] = get_rain_rate_from_drop_number(
-        drop_number=drop_number,
+    ds_l2["Rm"] = get_rain_rate_from_drop_counts(
+        drop_counts=drop_number,
         sampling_area=sampling_area,
         diameter=diameter,
         sample_interval=sample_interval,
@@ -729,7 +751,7 @@ def generate_l2e(
     # Compute rain accumulation (P) [mm]
     ds_l2["Pm"] = get_rain_accumulation(rain_rate=ds_l2["Rm"], sample_interval=sample_interval)
 
-    # -------------------------------------------------------
+    # -------------------------------------------------------------------------
     #### Compute KE integral parameters directly from drop_number
     # The kinetic energy variables can be computed using the actual measured fall velocity by the sensor.
     if has_velocity_dimension:
@@ -753,7 +775,7 @@ def generate_l2e(
     # Add DSD integral parameters
     ds_l2.update(ds_parameters)
 
-    # ----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     #### Finalize L2 Dataset
     ds_l2 = select_timesteps_with_minimum_rain_rate(ds_l2, minimum_rain_rate=minimum_rain_rate)
 

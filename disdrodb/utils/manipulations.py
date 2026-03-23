@@ -26,6 +26,7 @@ from disdrodb.utils.xarray import unstack_datarray_dimension
 
 def define_diameter_datarray(bounds, dim="diameter_bin_center"):
     """Define diameter DataArray."""
+    bounds = np.asarray(bounds, dtype=float)
     diameters_bin_lower = bounds[:-1]
     diameters_bin_upper = bounds[1:]
     diameters_bin_width = diameters_bin_upper - diameters_bin_lower
@@ -249,90 +250,146 @@ def get_diameter_coords_dict_from_bin_edges(diameter_bin_edges):
     return coords_dict
 
 
-def resample_drop_number_concentration(
-    drop_number_concentration,
-    diameter_bin_edges,
-    method="log_pchip",
-):
-    """Resample drop number concentration N(D) DataArray to high resolution diameter bins."""
-    da_dst_d_bin_centers = define_diameter_datarray(diameter_bin_edges, dim="d_new")
-    da_resampled = resample_density(
-        da_density=drop_number_concentration,
-        d_src=drop_number_concentration["diameter_bin_center"],
-        d_dst=da_dst_d_bin_centers,
-        dim="diameter_bin_center",
-        new_dim="d_new",
-        dD_src=drop_number_concentration["diameter_bin_width"],
-        dD_dst=da_dst_d_bin_centers["diameter_bin_width"],
-        method=method,
-    )
-    da_resampled = da_resampled.rename({"d_new": "diameter_bin_center"})
-    return da_resampled
+####---------------------------------------------------------------------------.
+#### Resampling low-level functions
 
 
-# def interpolate_drop_number_concentration(drop_number_concentration, diameter_bin_edges, method="linear"):
-#     """Interpolate drop number concentration N(D) DataArray to high resolution diameter bins.
-
-#     This should be done only for visualization purposes as it change the distribution moments.
-#     """
-#     diameters_bin_center = diameter_bin_edges[:-1] + np.diff(diameter_bin_edges) / 2
-
-#     da = drop_number_concentration.interp(coords={"diameter_bin_center": diameters_bin_center}, method=method)
-#     coords_dict = get_diameter_coords_dict_from_bin_edges(diameter_bin_edges)
-#     da = da.assign_coords(coords_dict)
-#     return da
-
-
-def _conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
-    # Source edges
-    src_left = d_src - 0.5 * dD_src
-    src_right = d_src + 0.5 * dD_src
-
-    # Destination edges
-    dst_left = d_dst - 0.5 * dD_dst
-    dst_right = d_dst + 0.5 * dD_dst
-
-    # Overlap matrix (Ns, Nd)
-    overlap = np.minimum(src_right[:, None], dst_right[None, :]) - np.maximum(src_left[:, None], dst_left[None, :])
-
-    overlap = np.clip(overlap, 0.0, None)
-
-    # # Convert density to bin-integrated number
-    # N_src = y_src * dD_src
-
-    # # Redistribute integrated number conservatively
-    # N_dst = (N_src[:, None] * overlap / dD_src[:, None]).sum(axis=0)
-
-    # Integrated number in destination bins
-    N_dst = (y_src[:, None] * overlap).sum(axis=0)
-
-    # Convert back to density
-    return N_dst / dD_dst
-
-
-def _log_pchip_conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
-    """Smooth remapping in log-space, scaled to conserve global integrated number."""
+def _prepare_resampling_inputs(y_src, d_src, d_dst, dD_src, dD_dst):
+    """Sanitize and align source and destination arrays for conservative remapping."""
+    # Ensure numpy array input
     y_src = np.asarray(y_src, dtype=float)
     d_src = np.asarray(d_src, dtype=float)
     d_dst = np.asarray(d_dst, dtype=float)
     dD_src = np.asarray(dD_src, dtype=float)
     dD_dst = np.asarray(dD_dst, dtype=float)
 
+    # Ensure only positive values
     y_src = np.where(np.isfinite(y_src), y_src, 0.0)
     y_src = np.clip(y_src, 0.0, None)
 
+    # Identify bins with invalid values
     valid_src = np.isfinite(d_src) & np.isfinite(dD_src) & (dD_src > 0)
-    if np.count_nonzero(valid_src) == 0:
-        return np.zeros_like(d_dst, dtype=float)
+    valid_dst = np.isfinite(d_dst) & np.isfinite(dD_dst) & (dD_dst > 0)
 
+    # If not valid values, return None flag --> zero array returned
+    if np.count_nonzero(valid_src) == 0 or np.count_nonzero(valid_dst) == 0:
+        return None
+
+    # Keep only bin with valid values
     y_src = y_src[valid_src]
     d_src = d_src[valid_src]
     dD_src = dD_src[valid_src]
 
+    # Sort by diameter
     order = np.argsort(d_src)
     y_src = y_src[order]
     d_src = d_src[order]
     dD_src = dD_src[order]
+
+    # Return dictionary with relevant info quality-checked
+    return {
+        "y_src": y_src,
+        "d_src": d_src,
+        "d_dst": d_dst,
+        "dD_src": dD_src,
+        "dD_dst": dD_dst,
+        "valid_dst": valid_dst,
+        "d_dst_valid": d_dst[valid_dst],
+        "dD_dst_valid": dD_dst[valid_dst],
+    }
+
+
+def _assemble_resampled_output(y_dst_valid, d_dst, valid_dst):
+    """Populate invalid destination bins with zero after remapping."""
+    y_dst = np.zeros_like(d_dst, dtype=float)
+    y_dst[valid_dst] = y_dst_valid
+    return np.clip(y_dst, 0.0, None)
+
+
+def _conservative_counts_remapping(n_src, d_src, d_dst, dD_src, dD_dst):
+    """First-order conservative remapping of bin-integrated counts between diameter grids.
+
+    Preserves total counts and redistributes them by geometric overlap.
+    """
+    # Prepare input data
+    prepared = _prepare_resampling_inputs(n_src, d_src, d_dst, dD_src, dD_dst)
+    if prepared is None:
+        return np.zeros_like(d_dst, dtype=float)
+
+    n_src = prepared["y_src"]
+    d_src = prepared["d_src"]
+    dD_src = prepared["dD_src"]
+    d_dst_valid = prepared["d_dst_valid"]
+    dD_dst_valid = prepared["dD_dst_valid"]
+
+    # Source edges
+    src_left = d_src - 0.5 * dD_src
+    src_right = d_src + 0.5 * dD_src
+
+    # Destination edges
+    dst_left = d_dst_valid - 0.5 * dD_dst_valid
+    dst_right = d_dst_valid + 0.5 * dD_dst_valid
+
+    # Overlap matrix (Ns, N)
+    overlap = np.minimum(src_right[:, None], dst_right[None, :]) - np.maximum(src_left[:, None], dst_left[None, :])
+    overlap = np.clip(overlap, 0.0, None)
+
+    # Redistributes only fraction of the bin count that overlaps each destination bin
+    n_dst_valid = (n_src[:, None] * overlap / dD_src[:, None]).sum(axis=0)
+
+    # Return resampled counts
+    return _assemble_resampled_output(n_dst_valid, prepared["d_dst"], prepared["valid_dst"])
+
+
+def _conservative_density_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
+    """First-order conservative remapping of bin densities between diameter grids.
+
+    Preserves total number concentration.
+    """
+    # Prepare input data
+    prepared = _prepare_resampling_inputs(y_src, d_src, d_dst, dD_src, dD_dst)
+    if prepared is None:
+        return np.zeros_like(d_dst, dtype=float)
+
+    y_src = prepared["y_src"]
+    d_src = prepared["d_src"]
+    dD_src = prepared["dD_src"]
+    d_dst_valid = prepared["d_dst_valid"]
+    dD_dst_valid = prepared["dD_dst_valid"]
+
+    # Source edges
+    src_left = d_src - 0.5 * dD_src
+    src_right = d_src + 0.5 * dD_src
+
+    # Destination edges
+    dst_left = d_dst_valid - 0.5 * dD_dst_valid
+    dst_right = d_dst_valid + 0.5 * dD_dst_valid
+
+    # Overlap matrix (Ns, Nd)
+    overlap = np.minimum(src_right[:, None], dst_right[None, :]) - np.maximum(src_left[:, None], dst_left[None, :])
+    overlap = np.clip(overlap, 0.0, None)
+
+    # Integrate density over the overlap length to get destination bin counts
+    n_dst = (y_src[:, None] * overlap).sum(axis=0)
+
+    # Divide by destination bin width to go back to density
+    y_dst_valid = n_dst / dD_dst_valid
+
+    # Return resampled counts
+    return _assemble_resampled_output(y_dst_valid, prepared["d_dst"], prepared["valid_dst"])
+
+
+def _log_pchip_conservative_density_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
+    """Smooth remapping in log-space, scaled to conserve global integrated number."""
+    prepared = _prepare_resampling_inputs(y_src, d_src, d_dst, dD_src, dD_dst)
+    if prepared is None:
+        return np.zeros_like(d_dst, dtype=float)
+
+    y_src = prepared["y_src"]
+    d_src = prepared["d_src"]
+    dD_src = prepared["dD_src"]
+    d_dst_valid = prepared["d_dst_valid"]
+    dD_dst_valid = prepared["dD_dst_valid"]
 
     n_src_total = np.sum(y_src * dD_src)
     if n_src_total <= 0:
@@ -340,23 +397,24 @@ def _log_pchip_conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
 
     positive = y_src > 0
     if np.count_nonzero(positive) < 2:
-        return _conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst)
+        y_dst_valid = _conservative_density_remapping(y_src, d_src, d_dst_valid, dD_src, dD_dst_valid)
+        return _assemble_resampled_output(y_dst_valid, prepared["d_dst"], prepared["valid_dst"])
 
     log_interp = PchipInterpolator(
         d_src[positive],
         np.log(y_src[positive]),
         extrapolate=False,
     )
-    y_dst = np.exp(log_interp(d_dst))
-    y_dst = np.where(np.isfinite(y_dst), y_dst, 0.0)
+    y_dst_valid = np.exp(log_interp(d_dst_valid))
+    y_dst_valid = np.where(np.isfinite(y_dst_valid), y_dst_valid, 0.0)
 
     # Keep signal only where destination bins overlap support of positive source bins.
     src_left = d_src - 0.5 * dD_src
     src_right = d_src + 0.5 * dD_src
     support_left = np.min(src_left[positive])
     support_right = np.max(src_right[positive])
-    dst_left = d_dst - 0.5 * dD_dst
-    dst_right = d_dst + 0.5 * dD_dst
+    dst_left = d_dst_valid - 0.5 * dD_dst_valid
+    dst_right = d_dst_valid + 0.5 * dD_dst_valid
     overlaps_support = (dst_right > support_left) & (dst_left < support_right)
 
     # Fill boundary half-bins that overlap support but lie outside interpolation center range.
@@ -364,16 +422,131 @@ def _log_pchip_conservative_remapping(y_src, d_src, d_dst, dD_src, dD_dst):
     last_center = d_src[positive][-1]
     first_value = y_src[positive][0]
     last_value = y_src[positive][-1]
-    left_boundary = overlaps_support & (d_dst < first_center)
-    right_boundary = overlaps_support & (d_dst > last_center)
-    y_dst[left_boundary] = first_value
-    y_dst[right_boundary] = last_value
-    y_dst[~overlaps_support] = 0.0
+    left_boundary = overlaps_support & (d_dst_valid < first_center)
+    right_boundary = overlaps_support & (d_dst_valid > last_center)
+    y_dst_valid[left_boundary] = first_value
+    y_dst_valid[right_boundary] = last_value
+    y_dst_valid[~overlaps_support] = 0.0
 
-    n_dst_total = np.sum(y_dst * dD_dst)
+    n_dst_total = np.sum(y_dst_valid * dD_dst_valid)
     if n_dst_total > 0:
-        y_dst *= n_src_total / n_dst_total
-    return np.clip(y_dst, 0.0, None)
+        y_dst_valid *= n_src_total / n_dst_total
+    return _assemble_resampled_output(y_dst_valid, prepared["d_dst"], prepared["valid_dst"])
+
+
+def _log_pchip_conservative_counts_remapping(n_src, d_src, d_dst, dD_src, dD_dst):
+    """Smooth conservative remapping of bin-integrated counts via count density."""
+    prepared = _prepare_resampling_inputs(n_src, d_src, d_dst, dD_src, dD_dst)
+    if prepared is None:
+        return np.zeros_like(d_dst, dtype=float)
+
+    # Smooth interpolation method should be applied to an intensive quantity (not extensive)
+    # --> Convert counts to density
+    y_src = prepared["y_src"] / prepared["dD_src"]
+
+    # Resample density
+    y_dst_valid = _log_pchip_conservative_density_remapping(
+        y_src,
+        prepared["d_src"],
+        prepared["d_dst_valid"],
+        prepared["dD_src"],
+        prepared["dD_dst_valid"],
+    )
+    # Convert back to counts
+    n_dst_valid = y_dst_valid * prepared["dD_dst_valid"]
+    return _assemble_resampled_output(n_dst_valid, prepared["d_dst"], prepared["valid_dst"])
+
+
+def resample_counts(
+    da_counts,
+    d_src,
+    d_dst,
+    dim,
+    new_dim,
+    dD_src,
+    dD_dst,
+    method="constant",
+):
+    """Conservatively resample bin-integrated counts between diameter grids.
+
+    Parameters
+    ----------
+    da_counts : xr.DataArray
+        Bin-integrated counts defined on ``dim``.
+    d_src : xr.DataArray
+        Source diameter centers associated with ``da_counts``.
+    d_dst : xr.DataArray
+        Destination diameter centers associated with ``new_dim``.
+    dim : str
+        Source diameter dimension.
+    new_dim : str
+        Destination diameter dimension.
+    dD_src : xr.DataArray
+        Source bin widths defined on ``dim``.
+    dD_dst : xr.DataArray
+        Destination bin widths defined on ``new_dim``.
+    method : {"constant", "log_pchip"} or callable, optional
+        Remapping strategy used within ``xr.apply_ufunc``.
+
+        - ``"constant"``: first-order conservative remapping in count space.
+          Use this for coarsening and when strict robustness is preferred.
+        - ``"log_pchip"``: smooth conservative remapping obtained by applying
+          log-PCHIP to the implied count density ``counts / dD`` and then
+          converting back to counts. Use this mainly for refinement to finer bins.
+
+        If coarsening is detected (destination has fewer bins than source), the
+        method is forced to ``"constant"`` to avoid shape artifacts.
+
+        If callable, it must have signature
+        ``f(n_src, d_src, d_dst, dD_src, dD_dst)`` and return remapped destination counts.
+
+    Returns
+    -------
+    xr.DataArray
+        Resampled counts on ``new_dim``.
+
+    Notes
+    -----
+    The remapping preserves total counts over the remapped support and assumes
+    counts are piecewise-uniform inside each source bin.
+    """
+    if len(d_dst) < len(d_src) and method != "constant":  # coarsening
+        print("Resampling method set to 'constant' for coarsening.")
+        method = "constant"
+
+    da_counts = da_counts.where(da_counts > 0, 0)
+
+    methods = {
+        "constant": _conservative_counts_remapping,
+        "log_pchip": _log_pchip_conservative_counts_remapping,
+    }
+    if callable(method):
+        resampling_func = method
+    else:
+        if method not in methods:
+            valid_methods = ", ".join(methods)
+            msg = f"Unknown {method!r}. Valid options are: {valid_methods}."
+            raise ValueError(msg)
+        resampling_func = methods[method]
+
+    da_counts_new = xr.apply_ufunc(
+        resampling_func,
+        da_counts,
+        d_src,
+        d_dst,
+        dD_src,
+        dD_dst,
+        input_core_dims=[[dim], [dim], [new_dim], [dim], [new_dim]],
+        output_core_dims=[[new_dim]],
+        vectorize=True,
+        dask="parallelized",
+        output_dtypes=[float],
+    )
+
+    name = da_counts.name
+    da_counts_new = da_counts_new.assign_coords({new_dim: d_dst})
+    da_counts_new.name = name if name is not None else "counts"
+    return da_counts_new
 
 
 def resample_density(
@@ -386,7 +559,10 @@ def resample_density(
     dD_dst,
     method="log_pchip",
 ):
-    """Conservative resampling of density.
+    """Conservatively resample a density between diameter grids.
+
+    The remapping preserves integrated quantity (``sum(density * bin_width)``)
+    over the remapped support.
 
     Parameters
     ----------
@@ -406,16 +582,30 @@ def resample_density(
         Destination bin widths (same dim as new_dim).
     method : str or callable
         Remapping strategy used within ``xr.apply_ufunc``.
+
         If str, available methods are:
-        - ``"constant"``: first-order conservative remapping (piecewise constant in source bins).
-        - ``"log_pchip"``: conservative, smooth remapping using PCHIP in log-density space.
+
+        - ``"constant"``: first-order conservative remapping (piecewise
+          constant inside each source bin). Use this for coarsening and when
+          strict robustness is preferred.
+        - ``"log_pchip"``: conservative smooth remapping using PCHIP in
+          log-density space. Use this mainly for refinement to finer bins.
+
+        If coarsening is detected (destination has fewer bins than source), the
+        method is forced to ``"constant"`` to avoid shape artifacts.
+
         If callable, it must have signature
         ``f(y_src, d_src, d_dst, dD_src, dD_dst)`` and return remapped destination density.
 
     Returns
     -------
     xr.DataArray
-        Remapped density conserving total number.
+        Remapped density conserving integrated amount.
+
+    Notes
+    -----
+    For ``drop_number`` counts already integrated per bin, use
+    :func:`resample_drop_counts` instead of this function.
     """
     if len(d_dst) < len(d_src) and method != "constant":  # coarsening
         print("Resampling method set to 'constant' for coarsening.")
@@ -424,8 +614,8 @@ def resample_density(
     da_density = da_density.where(da_density > 0, 0)
 
     methods = {
-        "constant": _conservative_remapping,
-        "log_pchip": _log_pchip_conservative_remapping,
+        "constant": _conservative_density_remapping,
+        "log_pchip": _log_pchip_conservative_density_remapping,
     }
     if callable(method):
         resampling_func = method
@@ -455,6 +645,112 @@ def resample_density(
     da_density_new = da_density_new.assign_coords({new_dim: d_dst})
     da_density_new.name = name if name is not None else "drop_number_concentration"
     return da_density_new
+
+
+####---------------------------------------------------------------------------.
+#### Resampling wrappers for n(D) and N(D)
+
+
+def resample_drop_counts(drop_counts, diameter_bin_edges, method="constant"):
+    """Conservatively resample bin-integrated drop counts to new diameter bins.
+
+    Parameters
+    ----------
+    drop_counts : xr.DataArray
+        Bin-integrated counts (for example ``drop_counts`` or ``drop_number``) defined on
+        ``diameter_bin_center`` and carrying ``diameter_bin_width`` coordinates.
+        Additional dimensions (for example ``time`` or ``velocity_bin_center``)
+        are supported and vectorized.
+    diameter_bin_edges : array-like
+        Destination diameter bin edges. The destination bins do not need to be
+        aligned with source bins.
+    method : {"constant", "log_pchip"} or callable, optional
+        Remapping method passed to :func:`resample_counts`.
+
+        - ``"constant"``: first-order conservative remapping in count space.
+          Recommended for coarsening and robust for any grid change.
+        - ``"log_pchip"``: smooth conservative remapping based on the implied
+          count density. Recommended for refinement/interpolation to finer bins
+          when the source spectrum is sufficiently resolved.
+
+        If coarsening is requested, :func:`resample_counts` automatically
+        switches to ``"constant"``.
+
+    Returns
+    -------
+    xr.DataArray
+        Resampled counts on destination ``diameter_bin_center`` with updated
+        ``diameter_bin_width``, ``diameter_bin_lower`` and
+        ``diameter_bin_upper`` coordinates.
+    """
+    da_dst_d_bin_centers = define_diameter_datarray(diameter_bin_edges, dim="d_new")
+    da_resampled = resample_counts(
+        da_counts=drop_counts,
+        d_src=drop_counts["diameter_bin_center"],
+        d_dst=da_dst_d_bin_centers,
+        dim="diameter_bin_center",
+        new_dim="d_new",
+        dD_src=drop_counts["diameter_bin_width"],
+        dD_dst=da_dst_d_bin_centers["diameter_bin_width"],
+        method=method,
+    )
+    da_resampled = da_resampled.rename({"d_new": "diameter_bin_center"})
+    da_resampled.name = drop_counts.name if drop_counts.name is not None else "drop_counts"
+    return da_resampled
+
+
+def resample_drop_number_concentration(
+    drop_number_concentration,
+    diameter_bin_edges,
+    method="log_pchip",
+):
+    """Resample drop number concentration ``N(D)`` to new diameter bins.
+
+    The remapping is conservative with respect to integrated number
+    concentration (that is, ``sum(N(D) * dD)``).
+
+    Parameters
+    ----------
+    drop_number_concentration : xr.DataArray
+        Drop number concentration defined per unit diameter on
+        ``diameter_bin_center`` and carrying ``diameter_bin_width``.
+    diameter_bin_edges : array-like
+        Destination diameter bin edges.
+    method : {"constant", "log_pchip"} or callable, optional
+        Remapping method passed to :func:`resample_density`.
+
+        - ``"constant"``: first-order conservative remapping. Recommended for
+          coarsening and robust for any grid change.
+        - ``"log_pchip"``: smooth conservative remapping in log-space.
+          Recommended for refinement/interpolation to finer bins when positive
+          source spectra are sufficiently resolved.
+
+        If coarsening is requested, :func:`resample_density` automatically
+        switches to ``"constant"``.
+
+    Returns
+    -------
+    xr.DataArray
+        Resampled ``N(D)`` on destination ``diameter_bin_center`` with updated
+        diameter-bin coordinates.
+    """
+    da_dst_d_bin_centers = define_diameter_datarray(diameter_bin_edges, dim="d_new")
+    da_resampled = resample_density(
+        da_density=drop_number_concentration,
+        d_src=drop_number_concentration["diameter_bin_center"],
+        d_dst=da_dst_d_bin_centers,
+        dim="diameter_bin_center",
+        new_dim="d_new",
+        dD_src=drop_number_concentration["diameter_bin_width"],
+        dD_dst=da_dst_d_bin_centers["diameter_bin_width"],
+        method=method,
+    )
+    da_resampled = da_resampled.rename({"d_new": "diameter_bin_center"})
+    return da_resampled
+
+
+####---------------------------------------------------------------------------.
+#### Double Moment Normalization utilities
 
 
 def remap_to_diameter(
@@ -579,3 +875,16 @@ def compute_normalized_dsd_datarray(
     da_dsd_norm = da_dsd_norm.assign_coords({"diameter_bin_width": da_normalized_diameter["diameter_bin_width"]})
     da_dsd_norm.name = "N(D)/Nc"
     return da_dsd_norm
+
+
+# def interpolate_drop_number_concentration(drop_number_concentration, diameter_bin_edges, method="linear"):
+#     """Interpolate drop number concentration N(D) DataArray to high resolution diameter bins.
+
+#     This should be done only for visualization purposes as it change the distribution moments.
+#     """
+#     diameters_bin_center = diameter_bin_edges[:-1] + np.diff(diameter_bin_edges) / 2
+
+#     da = drop_number_concentration.interp(coords={"diameter_bin_center": diameters_bin_center}, method=method)
+#     coords_dict = get_diameter_coords_dict_from_bin_edges(diameter_bin_edges)
+#     da = da.assign_coords(coords_dict)
+#     return da

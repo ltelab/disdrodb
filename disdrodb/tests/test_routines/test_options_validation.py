@@ -202,6 +202,29 @@ class TestL2EProductOptions:
         options = L2EProductOptions(**data)
         assert options.minimum_diameter == 0
         assert options.maximum_diameter == 10
+        assert options.compute_partial_number_concentrations is True
+        assert options.partial_number_concentration_bins == [0.5, 1, 2, 3, 4, 5, 6, 7, 8]
+
+    def test_partial_number_concentration_bins_none_is_allowed(self):
+        """Test that None is allowed for partial number concentration bins."""
+        data = copy.deepcopy(L2E_PRODUCT_OPTIONS)
+        data["partial_number_concentration_bins"] = None
+        options = L2EProductOptions(**data)
+        assert options.partial_number_concentration_bins is None
+
+    def test_partial_number_concentration_bins_must_be_strictly_increasing(self):
+        """Test bins must be strictly increasing."""
+        data = copy.deepcopy(L2E_PRODUCT_OPTIONS)
+        data["partial_number_concentration_bins"] = [0.5, 1.0, 1.0, 2.0]
+        with pytest.raises(ValueError, match="strictly increasing"):
+            L2EProductOptions(**data)
+
+    def test_partial_number_concentration_bins_must_have_at_least_two_edges(self):
+        """Test bins list must contain at least two edges."""
+        data = copy.deepcopy(L2E_PRODUCT_OPTIONS)
+        data["partial_number_concentration_bins"] = [0.5]
+        with pytest.raises(ValueError, match="at least 2"):
+            L2EProductOptions(**data)
 
     def test_diameter_range_validation(self):
         """Test diameter range validation."""
@@ -596,6 +619,24 @@ class TestValidateAllProductsYAMLfiles:
         create_sensor_specific_configs(tmp_products_configs_dir)
 
         # Test that validation passes with hierarchical configs
+        validate_all_product_yaml_files(tmp_products_configs_dir)
+
+    def test_partial_sensor_level_global_config_inherits_product_defaults(self, tmp_products_configs_dir):
+        """Test validation accepts sensor-level global YAML files with inherited product defaults."""
+        create_minimal_product_configs(tmp_products_configs_dir)
+
+        sensor_dir = tmp_products_configs_dir / "L2E" / "PARSIVEL2"
+        sensor_dir.mkdir(parents=True, exist_ok=True)
+        write_yaml(
+            {
+                "product_options": {
+                    "maximum_diameter": 8,
+                },
+                "radar_enabled": True,
+            },
+            sensor_dir / "global.yaml",
+        )
+
         validate_all_product_yaml_files(tmp_products_configs_dir)
 
     def test_raise_error_with_corrupted_yaml(self, tmp_products_configs_dir):

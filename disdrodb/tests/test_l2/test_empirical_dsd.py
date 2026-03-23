@@ -27,6 +27,7 @@ from disdrodb.l2.empirical_dsd import (
     compute_integral_parameters,
     get_bin_dimensions,
     get_drop_average_velocity,
+    get_drop_counts_from_number_concentration,
     get_drop_number_concentration,
     get_drop_volume,
     get_effective_sampling_area,
@@ -41,16 +42,21 @@ from disdrodb.l2.empirical_dsd import (
     get_min_max_diameter,
     get_mode_diameter,
     get_moment,
+    get_nd_from_partial_number_concentrations,
     get_normalized_intercept_parameter,
     get_normalized_intercept_parameter_from_moments,
+    get_partial_number_concentration,
+    get_partial_number_concentrations,
+    get_particle_counts_from_number_concentration,
     get_quantile_volume_drop_diameter,
     get_rain_accumulation,
     get_rain_rate,
-    get_rain_rate_from_drop_number,
+    get_rain_rate_from_drop_counts,
     get_std_volume_drop_diameter,
     get_total_number_concentration,
 )
 from disdrodb.tests.fake_datasets import create_template_l2e_dataset
+from disdrodb.utils.manipulations import define_diameter_datarray
 
 
 @pytest.fixture(scope="session")
@@ -233,8 +239,8 @@ class TestRainRate:
         )
 
         # Calculate using drop_number method
-        output2 = get_rain_rate_from_drop_number(
-            drop_number=ds["drop_number"],
+        output2 = get_rain_rate_from_drop_counts(
+            drop_counts=ds["drop_number"],
             diameter=ds["diameter_bin_center"] / 1000,
             sampling_area=sampling_area,
             sample_interval=sample_interval,
@@ -1678,6 +1684,70 @@ class TestDropNumberConcentration:
         np.testing.assert_allclose(output.to_numpy(), expected)
 
 
+class TestDropCountsFromNumberConcentration:
+    @pytest.mark.parametrize("array_type", ["numpy", "dask"])
+    def test_round_trip_drop_counts_and_number_concentration(self, template_dataset, array_type):
+        """Test round-trip consistency between counts and number concentration."""
+        ds = _prepare_test_dataset(
+            template_dataset,
+            variables="drop_number_concentration",
+            scenario="realistic",
+            array_type=array_type,
+        )
+        sampling_area = 0.005
+        sample_interval = 60
+
+        drop_counts = get_drop_counts_from_number_concentration(
+            drop_number_concentration=ds["drop_number_concentration"],
+            velocity=ds["fall_velocity"],
+            diameter_bin_width=ds["diameter_bin_width"],
+            sampling_area=sampling_area,
+            sample_interval=sample_interval,
+        )
+        output = get_drop_number_concentration(
+            drop_number=drop_counts,
+            velocity=ds["fall_velocity"],
+            diameter_bin_width=ds["diameter_bin_width"],
+            sampling_area=sampling_area,
+            sample_interval=sample_interval,
+        )
+
+        check_datarray_type(drop_counts, array_type=array_type)
+        check_datarray_type(output, array_type=array_type)
+        xr.testing.assert_allclose(output, ds["drop_number_concentration"])
+
+    @pytest.mark.parametrize("array_type", ["numpy", "dask"])
+    def test_particle_and_drop_count_helpers_match(self, template_dataset, array_type):
+        """Test the generic particle helper matches the drop-specific wrapper."""
+        ds = _prepare_test_dataset(
+            template_dataset,
+            variables="drop_number_concentration",
+            scenario="realistic",
+            array_type=array_type,
+        )
+        sampling_area = 0.005
+        sample_interval = 60
+
+        output_particle = get_particle_counts_from_number_concentration(
+            particle_number_concentration=ds["drop_number_concentration"],
+            velocity=ds["fall_velocity"],
+            diameter_bin_width=ds["diameter_bin_width"],
+            sampling_area=sampling_area,
+            sample_interval=sample_interval,
+        )
+        output_drop = get_drop_counts_from_number_concentration(
+            drop_number_concentration=ds["drop_number_concentration"],
+            velocity=ds["fall_velocity"],
+            diameter_bin_width=ds["diameter_bin_width"],
+            sampling_area=sampling_area,
+            sample_interval=sample_interval,
+        )
+
+        check_datarray_type(output_particle, array_type=array_type)
+        check_datarray_type(output_drop, array_type=array_type)
+        xr.testing.assert_allclose(output_particle, output_drop)
+
+
 class TestBinDimensions:
     def test_get_dimensions_optical_disdrometer(self, template_dataset):
         """Test returns correct dimensions for optical disdrometer data."""
@@ -1710,6 +1780,131 @@ class TestBinDimensions:
         assert isinstance(dims, list)
         # Test correct dimensions for impact disdrometer
         assert dims == [DIAMETER_DIMENSION]
+
+
+def create_uniform_bin_nd(values, array_type="numpy"):
+    """Create a simple N(D) DataArray with unit-width diameter bins."""
+    values = np.asarray(values, dtype=float)
+    n_bins = values.shape[-1]
+    diameter_bin_edges = np.arange(0, n_bins + 1, dtype=float)
+    da_coords = define_diameter_datarray(diameter_bin_edges)
+
+    nd = xr.DataArray(
+        values,
+        dims=["time", DIAMETER_DIMENSION],
+        coords={
+            "time": np.arange(values.shape[0]),
+        },
+        name="drop_number_concentration",
+    )
+    nd = nd.assign_coords(da_coords.coords)
+    if array_type == "dask":
+        nd = nd.chunk({"time": 1})
+    return nd
+
+
+class TestPartialNumberConcentrations:
+
+    @pytest.mark.parametrize("array_type", ["numpy", "dask"])
+    def test_get_partial_number_concentrations_expected_names_values_and_attrs(self, array_type):
+        """Test partial concentrations are named and computed as expected."""
+        nd = create_uniform_bin_nd(values=[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], array_type=array_type)
+        diameter_bin_edges = [0.0, 1.0, 2.0, 3.0]
+
+        ds_partial = get_partial_number_concentrations(
+            drop_number_concentration=nd,
+            diameter_bin_edges=diameter_bin_edges,
+        )
+
+        expected_vars = ["N_0p0_1p0", "N_1p0_2p0", "N_2p0_3p0"]
+        assert list(ds_partial.data_vars) == expected_vars
+        assert "diameter_bin_center" not in ds_partial.dims
+        for var in expected_vars:
+            check_datarray_type(ds_partial[var], array_type=array_type)
+
+        np.testing.assert_allclose(ds_partial["N_0p0_1p0"].to_numpy(), np.array([1.0, 4.0]))
+        np.testing.assert_allclose(ds_partial["N_1p0_2p0"].to_numpy(), np.array([2.0, 5.0]))
+        np.testing.assert_allclose(ds_partial["N_2p0_3p0"].to_numpy(), np.array([3.0, 6.0]))
+
+        assert ds_partial["N_1p0_2p0"].attrs["units"] == "m-3"
+        assert ds_partial["N_1p0_2p0"].attrs["diameter_lower_bound"] == 1.0
+        assert ds_partial["N_1p0_2p0"].attrs["diameter_upper_bound"] == 2.0
+
+    @pytest.mark.parametrize("array_type", ["numpy", "dask"])
+    def test_get_partial_number_concentrations_unaligned_bins(self, array_type):
+        """Test partial concentrations are named and computed as expected."""
+        nd = create_uniform_bin_nd(values=[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], array_type=array_type)
+        diameter_bin_edges = [0.0, 2.5, 3.0]
+
+        ds_partial = get_partial_number_concentrations(
+            drop_number_concentration=nd,
+            diameter_bin_edges=diameter_bin_edges,
+        )
+
+        expected_vars = ["N_0p0_2p5", "N_2p5_3p0"]
+        assert list(ds_partial.data_vars) == expected_vars
+        assert "diameter_bin_center" not in ds_partial.dims
+        for var in expected_vars:
+            check_datarray_type(ds_partial[var], array_type=array_type)
+
+        np.testing.assert_allclose(ds_partial["N_0p0_2p5"].to_numpy(), np.array([4.5, 12.0]))
+        np.testing.assert_allclose(ds_partial["N_2p5_3p0"].to_numpy(), np.array([1.5, 3.0]))
+
+        assert ds_partial["N_0p0_2p5"].attrs["units"] == "m-3"
+        assert ds_partial["N_0p0_2p5"].attrs["diameter_lower_bound"] == 0.0
+        assert ds_partial["N_0p0_2p5"].attrs["diameter_upper_bound"] == 2.5
+
+    @pytest.mark.parametrize("array_type", ["numpy", "dask"])
+    def test_get_partial_number_concentration_specific_interval(self, array_type):
+        """Test single-interval concentration integrates over requested bounds."""
+        nd = create_uniform_bin_nd(values=[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], array_type=array_type)
+
+        da_partial = get_partial_number_concentration(
+            drop_number_concentration=nd,
+            minimum_diameter=1.0,
+            maximum_diameter=3.0,
+        )
+
+        check_datarray_type(da_partial, array_type=array_type)
+        np.testing.assert_allclose(da_partial.to_numpy(), np.array([5.0, 11.0]))
+
+    def test_get_partial_number_concentration_with_default_maximum(self):
+        """Test default maximum diameter uses the upper edge of the last bin."""
+        nd = create_uniform_bin_nd(values=[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], array_type="numpy")
+
+        da_partial = get_partial_number_concentration(
+            drop_number_concentration=nd,
+            minimum_diameter=1.0,
+            maximum_diameter=None,
+        )
+
+        check_datarray_type(da_partial, array_type="numpy")
+        np.testing.assert_allclose(da_partial.to_numpy(), np.array([5.0, 11.0]))
+
+    @pytest.mark.parametrize("array_type", ["numpy", "dask"])
+    def test_get_nd_from_partial_number_concentrations_round_trip(self, array_type):
+        """Test N(D) can be reconstructed from partial concentrations."""
+        nd = create_uniform_bin_nd(values=[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], array_type=array_type)
+
+        ds_partial = get_partial_number_concentrations(
+            drop_number_concentration=nd,
+            diameter_bin_edges=[0.0, 1.0, 2.0, 3.0],
+        )
+        nd_reconstructed = get_nd_from_partial_number_concentrations(ds_partial)
+        nd_reconstructed = nd_reconstructed.transpose("time", DIAMETER_DIMENSION)
+
+        assert nd_reconstructed.name == "drop_number_concentration"
+        check_datarray_type(nd_reconstructed, array_type=array_type)
+        np.testing.assert_allclose(nd_reconstructed.to_numpy(), nd.to_numpy())
+        np.testing.assert_allclose(nd_reconstructed["diameter_bin_width"].to_numpy(), np.array([1.0, 1.0, 1.0]))
+        np.testing.assert_allclose(nd_reconstructed["diameter_bin_lower"].to_numpy(), np.array([0.0, 1.0, 2.0]))
+        np.testing.assert_allclose(nd_reconstructed["diameter_bin_upper"].to_numpy(), np.array([1.0, 2.0, 3.0]))
+
+    def test_get_nd_from_partial_number_concentrations_no_variables_raise(self):
+        """Test informative error when no partial concentration variables are present."""
+        ds = xr.Dataset({"foo": xr.DataArray([1.0, 2.0], dims=["time"])})
+        with pytest.raises(ValueError):
+            get_nd_from_partial_number_concentrations(ds)
 
 
 class TestKineticEnergyVariables:

@@ -370,6 +370,14 @@ class L2EProductOptions(CustomBaseModel):
         ...,
         description="Whether to compute percentage contribution",
     )
+    compute_partial_number_concentrations: bool = Field(
+        ...,
+        description="Whether to compute partial number concentrations over custom diameter bins",
+    )
+    partial_number_concentration_bins: list[float] | None = Field(
+        ...,
+        description="Diameter bin edges (mm) for partial number concentrations; None uses default bins",
+    )
     minimum_ndrops: int = Field(..., ge=0, description="Minimum number of drops")
     minimum_nbins: int = Field(..., ge=0, description="Minimum number of bins")
     minimum_rain_rate: float = Field(..., ge=0, description="Minimum rain rate threshold")
@@ -407,6 +415,20 @@ class L2EProductOptions(CustomBaseModel):
     def validate_fall_velocity_model(cls, fall_velocity_model):
         """Validate fall velocity model."""
         return check_rain_fall_velocity_model(fall_velocity_model)
+
+    @field_validator("partial_number_concentration_bins")
+    @classmethod
+    def validate_partial_number_concentration_bins(cls, bins):
+        """Validate bins list for partial number concentration computation."""
+        if bins is None:
+            return bins
+        if len(bins) < 2:
+            raise ValueError("partial_number_concentration_bins must contain at least 2 bin edges")
+        if any(b < 0 for b in bins):
+            raise ValueError("partial_number_concentration_bins cannot contain negative values")
+        if any(bins[i + 1] <= bins[i] for i in range(len(bins) - 1)):
+            raise ValueError("partial_number_concentration_bins must be strictly increasing")
+        return bins
 
 
 class L2MProductOptions(CustomBaseModel):

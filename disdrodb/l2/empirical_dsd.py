@@ -21,12 +21,17 @@ Zeros and NaN values input arrays are correctly processed.
 Infinite values should be removed beforehand or otherwise are propagated throughout the computations.
 """
 
+import re
+
 import numpy as np
 import xarray as xr
 
 from disdrodb.api.checks import check_sensor_name
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
-from disdrodb.utils.manipulations import filter_diameter_bins
+from disdrodb.utils.manipulations import (
+    define_diameter_datarray,
+    resample_drop_number_concentration,
+)
 from disdrodb.utils.time import ensure_sample_interval_in_seconds
 from disdrodb.utils.xarray import (
     remove_diameter_coordinates,
@@ -275,8 +280,7 @@ def get_bin_dimensions(xr_obj):
 
 
 def get_particle_number_concentration(particle_number, velocity, diameter_bin_width, sampling_area, sample_interval):
-    r"""
-    Calculate the volumetric particle number concentration \\( N(D) \\) per diameter class.
+    r"""Calculate the volumetric particle number concentration \\( N(D) \\) per diameter class.
 
     Computes the particle number concentration \\( N(D) \\) [m⁻³·mm⁻¹] for each diameter
     class based on the measured particle counts and sensor parameters.
@@ -285,6 +289,9 @@ def get_particle_number_concentration(particle_number, velocity, diameter_bin_wi
 
     Parameters
     ----------
+    particle_number : xarray.DataArray
+        Array of particle counts \\(  n(D) or n(D,v) \\) per diameter (and velocity if available)
+        bins over the measurement interval.
     velocity : xarray.DataArray
         Array of particle fall velocities \\( v(D) \\) corresponding to each diameter bin in meters per second (m/s).
         Typically the estimated fall velocity is used.
@@ -292,9 +299,6 @@ def get_particle_number_concentration(particle_number, velocity, diameter_bin_wi
         along the diameter bin dimension.
     diameter_bin_width : xarray.DataArray
         Width of each diameter bin \\( \\Delta D \\) in millimeters (mm).
-    particle_number : xarray.DataArray
-        Array of particle counts \\(  n(D) or n(D,v) \\) per diameter (and velocity if available)
-        bins over the measurement interval.
     sample_interval : float or xarray.DataArray
         Time over which the particles are counted \\( \\Delta t \\) in seconds (s).
     sampling_area : float or xarray.DataArray
@@ -341,6 +345,90 @@ def get_particle_number_concentration(particle_number, velocity, diameter_bin_wi
     else:
         particle_number_concentration = safe_ratio / (sampling_area * diameter_bin_width * sample_interval)
     return particle_number_concentration
+
+
+def get_particle_counts_from_number_concentration(
+    particle_number_concentration,
+    velocity,
+    diameter_bin_width,
+    sample_interval,
+    sampling_area,
+):
+    r"""Calculate particle counts from particle number concentration.
+
+    Parameters
+    ----------
+    particle_number_concentration : xarray.DataArray
+        Particle number concentration :math:`N(D)` in m\ :sup:`-3` mm\ :sup:`-1`.
+    velocity : xarray.DataArray
+        Particle fall velocity :math:`v(D)` in m s\ :sup:`-1`.
+        The array can already be broadcast on the target dimensions.
+    diameter_bin_width : xarray.DataArray
+        Diameter bin width :math:`\Delta D` in millimeters.
+    sample_interval : float or xarray.DataArray
+        Measurement interval :math:`\Delta t` in seconds.
+    sampling_area : float or xarray.DataArray
+        Effective sensor sampling area :math:`A` in square meters.
+
+    Returns
+    -------
+    xarray.DataArray
+        Particle counts :math:`n(D)` or :math:`n(D, v)` over the measurement interval.
+
+    Notes
+    -----
+    The counts are reconstructed as
+
+    .. math::
+
+        n(D) = N(D) \cdot v(D) \cdot A \cdot \Delta D \cdot \Delta t
+    """
+    particle_number = particle_number_concentration * velocity * (sampling_area * diameter_bin_width * sample_interval)
+    return particle_number
+
+
+def get_drop_counts_from_number_concentration(
+    drop_number_concentration,
+    velocity,
+    diameter_bin_width,
+    sample_interval,
+    sampling_area,
+):
+    r"""
+    Calculate drop counts from drop number concentration.
+
+    Parameters
+    ----------
+    drop_number_concentration : xarray.DataArray
+        Drop number concentration :math:`N(D)` in m\ :sup:`-3` mm\ :sup:`-1`.
+    velocity : xarray.DataArray
+        Drop fall velocity :math:`v(D)` in m s\ :sup:`-1`.
+        The array can already be broadcast on the target dimensions.
+    diameter_bin_width : xarray.DataArray
+        Diameter bin width :math:`\Delta D` in millimeters.
+    sample_interval : float or xarray.DataArray
+        Measurement interval :math:`\Delta t` in seconds.
+    sampling_area : float or xarray.DataArray
+        Effective sensor sampling area :math:`A` in square meters.
+
+    Returns
+    -------
+    xarray.DataArray
+        Drop counts :math:`n(D)` or :math:`n(D, v)` over the measurement interval.
+
+    Notes
+    -----
+    This is a drop-specific wrapper around
+    :func:`get_particle_counts_from_number_concentration`.
+    """
+    drop_counts = get_particle_counts_from_number_concentration(
+        particle_number_concentration=drop_number_concentration,
+        velocity=velocity,
+        diameter_bin_width=diameter_bin_width,
+        sample_interval=sample_interval,
+        sampling_area=sampling_area,
+    )
+    return drop_counts
 
 
 def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sampling_area, sample_interval):
@@ -403,7 +491,175 @@ def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sam
     return drop_number_concentration
 
 
-def compute_Nt_interval(
+def get_partial_number_concentrations(drop_number_concentration, diameter_bin_edges):
+    r"""Compute partial number concentrations over specified diameter intervals.
+
+    The input drop number concentration density, N(D), is first resampled onto
+    the target diameter bins defined by `diameter_bin_edges`. The number
+    concentration in each diameter interval is then obtained by multiplying the
+    resampled density by the corresponding bin width.
+
+    Output variables are named using the convention ``N_<lower>_<upper>``,
+    where decimal points are replaced by ``p``. For example, the variable
+    ``N_0p5_1p0`` represents the number concentration integrated over the
+    diameter interval [0.5, 1.0).
+
+    Parameters
+    ----------
+    drop_number_concentration : xarray.DataArray
+        Drop number concentration density as a function of diameter, i.e. N(D).
+        The diameter coordinate is expected to be expressed in millimeters.
+    diameter_bin_edges : array-like of float
+        Monotonically increasing diameter bin edges in millimeters defining the
+        target diameter intervals. For example,
+        ``[0.5, 1.0, 1.5, 2.0]`` defines the intervals [0.5, 1.0),
+        [1.0, 1.5), and [1.5, 2.0).
+
+    Returns
+    -------
+    xarray.Dataset
+        Dataset containing one variable per diameter interval. Each variable is
+        the partial number concentration integrated over the corresponding
+        diameter range. Variable names follow the pattern
+        ``N_<lower>_<upper>``.
+
+    Notes
+    -----
+    The partial number concentration in each interval [a, b) is computed as
+
+    .. math::
+
+        N_{a-b} = \\int_a^b N(D) \\, dD
+
+    where N(D) is the drop number concentration density.
+
+    Examples
+    --------
+    >>> diameter_bin_edges = [0.5, 1.0, 1.5, 2.0]
+    >>> ds_partial = get_partial_number_concentrations(
+    ...     drop_number_concentration=drop_number_concentration,
+    ...     diameter_bin_edges=diameter_bin_edges,
+    ... )
+    >>> list(ds_partial.data_vars)
+    ['N_0p5_1p0', 'N_1p0_1p5', 'N_1p5_2p0']
+    """
+    nd_binned = resample_drop_number_concentration(
+        drop_number_concentration=drop_number_concentration,
+        diameter_bin_edges=diameter_bin_edges,
+        method="constant",
+    )
+
+    def format_edge(x):
+        return f"{x:.1f}".replace(".", "p")
+
+    def make_name(a, b):
+        return f"N_{format_edge(a)}_{format_edge(b)}"
+
+    # Compute number concentration in each diameter interval
+    N_partial = nd_binned * nd_binned["diameter_bin_width"]
+    partial_labels = [
+        make_name(diameter_bin_edges[i], diameter_bin_edges[i + 1]) for i in range(len(diameter_bin_edges) - 1)
+    ]
+    ds_partial_number_concentration = N_partial.assign_coords({"diameter_bin_center": partial_labels}).to_dataset(
+        dim="diameter_bin_center",
+    )
+    ds_partial_number_concentration = ds_partial_number_concentration.drop_dims("diameter_bin_center")
+
+    # Add CF attributes
+    for i in range(len(diameter_bin_edges) - 1):
+        lower = float(diameter_bin_edges[i])
+        upper = float(diameter_bin_edges[i + 1])
+        var_name = make_name(lower, upper)
+        ds_partial_number_concentration[var_name].attrs = {
+            "long_name": (
+                f"Partial number concentration of raindrops in the " f"diameter interval [{lower:.1f}, {upper:.1f}) mm"
+            ),
+            "standard_name": "number_concentration_of_liquid_water_drops_in_air",
+            "units": "m-3",
+            "comment": (
+                f"Integrated from drop number concentration density over the "
+                f"diameter interval [{lower:.1f}, {upper:.1f}) mm."
+            ),
+            "diameter_lower_bound": lower,
+            "diameter_upper_bound": upper,
+            "diameter_bounds_units": "mm",
+        }
+
+    return ds_partial_number_concentration
+
+
+def identify_partial_number_concentrations_variables(obj):
+    """Identify partial number concentrations variable names."""
+    # Retrieve partial number concentrations variables
+    pattern = re.compile(r"^N_(\d+p\d+)_(\d+p\d+)$")
+    variables = []
+    for var in list(obj):  # this work for pandas.DataFrame and xarray.Dataset
+        match = pattern.match(var)
+        if match is None:
+            continue
+        variables.append(var)
+    if not variables:
+        raise ValueError("No partial number concentration variables found in dataset.")
+    return variables
+
+
+def get_nd_from_partial_number_concentrations(ds):
+    """Reconstruct N(D) from partial number concentration variables.
+
+    Partial number concentration variable are selected by matching
+    the naming convention ``N_<lower>_<upper>``,
+    where decimal points are encoded as ``p``.
+    For example, ``N_0p5_1p0`` and ``N_3p0_4p0``.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Dataset containing partial number concentration variables.
+
+    Returns
+    -------
+    xarray.DataArray
+        DataArray containing the reconstructed drop number concentration.
+
+    """
+    # Retrieve partial number concentrations variables
+    variables = identify_partial_number_concentrations_variables(ds)
+
+    # Extract info from partial number concentrations variables
+    pattern = re.compile(r"^N_(\d+p\d+)_(\d+p\d+)$")
+    records = []
+    for var in variables:
+        match = pattern.match(var)
+        lower = float(match.group(1).replace("p", "."))
+        upper = float(match.group(2).replace("p", "."))
+        center = 0.5 * (lower + upper)
+        records.append((var, lower, upper, center))
+    records.sort(key=lambda x: x[3])
+
+    var_names = [r[0] for r in records]
+    lower_bounds = [r[1] for r in records]
+    upper_bounds = [r[2] for r in records]
+    # centers = [r[3] for r in records]
+    diameter_bin_edges = [*lower_bounds, upper_bounds[-1]]
+
+    da = ds[var_names].to_dataarray(dim="diameter_bin_center")
+    da_coords = define_diameter_datarray(diameter_bin_edges)
+    da = da.assign_coords(da_coords.coords)
+
+    # Convert to N(D)
+    da_nd = da / da["diameter_bin_width"]
+
+    da_nd.name = "drop_number_concentration"
+    da_nd.attrs = {
+        "description": "Number concentration of drops per diameter class per unit volume",
+        "long_name": "Drop number concentration per diameter class",
+        "units": "m-3 mm-1",
+        "comment": "N(D) reconstructed from partial number concentration variables.",
+    }
+    return da_nd
+
+
+def get_partial_number_concentration(
     drop_number_concentration,
     minimum_diameter=0.0,
     maximum_diameter=None,
@@ -422,16 +678,17 @@ def compute_Nt_interval(
 
     Returns
     -------
-    Nt : xarray.DataArray
-        Number concentration N_t [m⁻³] over the specified interval.
+    xarray.DataArray
+        Number concentration [m⁻³] over the specified interval.
     """
-    drop_number_concentration = filter_diameter_bins(
-        drop_number_concentration,
-        minimum_diameter=minimum_diameter,
-        maximum_diameter=maximum_diameter,
+    if maximum_diameter is None:
+        maximum_diameter = np.max(drop_number_concentration["diameter_bin_upper"])
+
+    ds_partial = get_partial_number_concentrations(
+        drop_number_concentration=drop_number_concentration,
+        diameter_bin_edges=[minimum_diameter, maximum_diameter],
     )
-    diameter_bin_width = drop_number_concentration["diameter_bin_width"]
-    return get_total_number_concentration(drop_number_concentration, diameter_bin_width=diameter_bin_width)
+    return ds_partial.to_dataarray().squeeze()
 
 
 def get_total_number_concentration(drop_number_concentration, diameter_bin_width):
@@ -530,9 +787,11 @@ def get_moment(drop_number_concentration, diameter, diameter_bin_width, moment):
 #### Rain Rate and Accumulation
 
 
-def get_rain_rate_from_drop_number(drop_number, sampling_area, diameter, sample_interval):
+def get_rain_rate_from_drop_counts(drop_counts, sampling_area, diameter, sample_interval):
     r"""
-    Compute the rain rate \\( R \\) [mm/h] based on the drop size distribution and drop velocities.
+    Compute the rain rate \\( R \\) [mm/h] based on the drop size distribution.
+
+    Drop velocities are not required to estimate rain rate from drop counts!
 
     This function calculates the rain rate by integrating over the drop size distribution (DSD),
     considering the volume of water falling per unit time and area. It uses the number of drops
@@ -541,9 +800,10 @@ def get_rain_rate_from_drop_number(drop_number, sampling_area, diameter, sample_
 
     Parameters
     ----------
-    drop_number : xarray.DataArray
-        Array representing the number of drops per diameter class
-        and, optionally, velocity class \\( n(D, (v)) \\).
+    drop_counts : xarray.DataArray
+        Array representing the number of drops per diameter class.
+        Passing the drop number array n(D, v) is allowed, but velocity information
+        is not exploited. The derived rain rate will be the same as if n(D) was passed.
     sample_interval : float or xarray.DataArray
         The time duration over which drops are counted \\( \\Delta t \\) in seconds (s).
     sampling_area : float or xarray.DataArray
@@ -588,12 +848,12 @@ def get_rain_rate_from_drop_number(drop_number, sampling_area, diameter, sample_
         \\sum_{\text{bins}} n(D) \cdot A(D) \cdot D^3 \cdot \\Delta t
 
     """
-    dim = get_bin_dimensions(drop_number)
+    dim = get_bin_dimensions(drop_counts)
     rain_rate = (
         np.pi
         / 6
         / sample_interval
-        * (drop_number * (diameter**3 / sampling_area)).sum(dim=dim, skipna=False)
+        * (drop_counts * (diameter**3 / sampling_area)).sum(dim=dim, skipna=False)
         * 3600
         * 1000
     )
@@ -1778,8 +2038,8 @@ def get_kinetic_energy_variables_from_drop_number(
     velocity = xr.ones_like(drop_number) * velocity
 
     # Compute rain rate
-    R = get_rain_rate_from_drop_number(
-        drop_number=drop_number,
+    R = get_rain_rate_from_drop_counts(
+        drop_counts=drop_number,
         sampling_area=sampling_area,
         diameter=diameter,
         sample_interval=sample_interval,

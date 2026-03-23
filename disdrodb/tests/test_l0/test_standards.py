@@ -22,6 +22,7 @@ import disdrodb
 from disdrodb.l0.standards import (
     _ensure_valid_netcdf_encoding_dict,
     get_data_range_dict,
+    get_diameter_bin_edges,
     get_field_nchar_dict,
     get_field_ndigits_decimals_dict,
     get_field_ndigits_dict,
@@ -35,6 +36,7 @@ from disdrodb.l0.standards import (
     get_valid_names,
     get_valid_variable_names,
     get_variables_dimension,
+    get_velocity_bin_edges,
 )
 
 SENSOR_NAMES = disdrodb.available_sensor_names()
@@ -100,6 +102,16 @@ def test_get_valid_dimension_names(sensor_name):
 @pytest.mark.parametrize("sensor_name", SENSOR_NAMES)
 def test_get_valid_coordinates_names(sensor_name):
     assert isinstance(get_valid_coordinates_names(sensor_name), list)
+
+
+@pytest.mark.parametrize("sensor_name", SENSOR_NAMES)
+def test_get_velocity_bin_edges(sensor_name):
+    assert isinstance(get_velocity_bin_edges(sensor_name), list)
+
+
+@pytest.mark.parametrize("sensor_name", SENSOR_NAMES)
+def test_get_diameter_bin_edges(sensor_name):
+    assert isinstance(get_diameter_bin_edges(sensor_name), list)
 
 
 @pytest.mark.parametrize("sensor_name", SENSOR_NAMES)

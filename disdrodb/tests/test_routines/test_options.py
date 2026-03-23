@@ -34,6 +34,7 @@ from disdrodb.routines.options import (
     L1ProcessingOptions,
     L2ProcessingOptions,
     _define_blocks_offsets,
+    _merge_options,
     check_availability_radar_simulations,
     get_l2m_model_settings_directory,
     get_l2m_model_settings_files,
@@ -45,6 +46,8 @@ from disdrodb.routines.options import (
     get_product_temporal_resolutions,
 )
 from disdrodb.tests.test_routines.options_defaults import (
+    ARCHIVE_OPTIONS_EVENT,
+    ARCHIVE_OPTIONS_TIME_BLOCK,
     GAMMA_GS_CONFIG,
     GAMMA_ML_CONFIG,
     L0C_GLOBAL_YAML,
@@ -302,6 +305,8 @@ class TestGetProductOptions:
         assert product_options["maximum_diameter"] == 15
         assert "fall_velocity_model" in product_options
         assert "minimum_nbins" in product_options
+        assert product_options["compute_partial_number_concentrations"] is True
+        assert product_options["partial_number_concentration_bins"] == [0.5, 1, 2, 3, 4, 5, 6, 7, 8]
 
         # Radar_options copied from global
         radar_options = options["radar_options"]
@@ -362,6 +367,46 @@ class TestGetProductOptions:
         assert "product_level" not in product_options
         assert product_options["sensor_level"] == 1
 
+    def test_get_product_options_inherits_missing_sensor_global_keys(self, tmp_products_configs_dir, monkeypatch):
+        """Test sensor-level global YAML inherits unspecified keys from product-level global YAML."""
+        l2e_dir = tmp_products_configs_dir / "L2E"
+        l2e_dir.mkdir(parents=True)
+
+        sensor_name = "PARSIVEL"
+        sensor_dir = l2e_dir / sensor_name
+        sensor_dir.mkdir(parents=True)
+
+        l2e_options = copy.deepcopy(L2E_GLOBAL_YAML)
+        l2e_options["archive_options"]["folder_partitioning"] = "year"
+        l2e_options["product_options"]["global_level"] = 1
+        write_yaml(l2e_options, filepath=(l2e_dir / "global.yaml"))
+
+        sensor_options = {
+            "product_options": {
+                "global_level": 2,
+                "sensor_level": 1,
+            },
+            "radar_enabled": True,
+        }
+        write_yaml(sensor_options, filepath=(sensor_dir / "global.yaml"))
+
+        monkeypatch.setattr(disdrodb, "is_pytmatrix_available", lambda: True)
+
+        options_dict = get_product_options(
+            product="L2E",
+            sensor_name=sensor_name,
+        )
+
+        assert options_dict["temporal_resolutions"] == L2E_GLOBAL_YAML["temporal_resolutions"]
+        assert options_dict["archive_options"]["folder_partitioning"] == "year"
+        assert options_dict["product_options"]["global_level"] == 2
+        assert options_dict["product_options"]["sensor_level"] == 1
+        assert options_dict["product_options"]["minimum_nbins"] == L2E_GLOBAL_YAML["product_options"]["minimum_nbins"]
+        assert options_dict["product_options"]["compute_partial_number_concentrations"] is True
+        assert options_dict["product_options"]["partial_number_concentration_bins"] == [0.5, 1, 2, 3, 4, 5, 6, 7, 8]
+        assert options_dict["radar_options"]["num_points"] == L2E_GLOBAL_YAML["radar_options"]["num_points"]
+        assert options_dict["radar_enabled"] is True
+
     def test_get_model_options_reads_model_yaml(self, tmp_products_configs_dir):
         """Test model options are read from L2M/MODELS/<model>.yaml."""
         models_dir = tmp_products_configs_dir / "L2M" / "MODELS"
@@ -374,6 +419,47 @@ class TestGetProductOptions:
         model_options = get_model_options(model_name=model_name)
 
         assert model_options["param"] == 42
+
+
+def test_merge_options_updates_scalar_and_nested_keys():
+    """Test _merge_options merges nested dicts and overrides scalar keys."""
+    base_options = {
+        "archive_options": {
+            "strategy": "time_block",
+            "folder_partitioning": "year",
+        },
+        "radar_enabled": False,
+        "flat": 1,
+    }
+    override_options = {
+        "archive_options": {
+            "folder_partitioning": "month",
+        },
+        "radar_enabled": True,
+        "flat": 2,
+    }
+
+    merged_options = _merge_options(base_options, override_options)
+
+    assert merged_options["archive_options"]["strategy"] == "time_block"
+    assert merged_options["archive_options"]["folder_partitioning"] == "month"
+    assert merged_options["radar_enabled"] is True
+    assert merged_options["flat"] == 2
+
+
+def test_merge_options_replaces_nested_archive_strategy_options():
+    """Test archive strategy_options are replaced wholesale and not mixed."""
+    base_options = {
+        "archive_options": copy.deepcopy(ARCHIVE_OPTIONS_EVENT),
+    }
+    override_options = {
+        "archive_options": copy.deepcopy(ARCHIVE_OPTIONS_TIME_BLOCK),
+    }
+
+    merged_options = _merge_options(base_options, override_options)
+
+    assert merged_options["archive_options"] == ARCHIVE_OPTIONS_TIME_BLOCK
+    assert set(merged_options["archive_options"]["strategy_options"]) == {"freq"}
 
 
 class TestRadarSimulationsAvailability:

@@ -24,7 +24,7 @@ from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.fall_velocity import get_hail_fall_velocity
 from disdrodb.fall_velocity.graupel import retrieve_graupel_heymsfield2014_fall_velocity
 from disdrodb.fall_velocity.rain import get_rain_fall_velocity
-from disdrodb.l2.empirical_dsd import get_effective_sampling_area, get_rain_rate_from_drop_number
+from disdrodb.l2.empirical_dsd import get_effective_sampling_area, get_rain_rate_from_drop_counts
 from disdrodb.l2.processing import define_rain_spectrum_mask
 from disdrodb.utils.manipulations import filter_diameter_bins, filter_velocity_bins
 from disdrodb.utils.time import ensure_sample_interval_in_seconds
@@ -122,6 +122,11 @@ def get_temperature(ds):
     is_inconsistent = temperature_spread > 10
     temperature = temperature.where(~is_inconsistent)
     snow_temperature_limit = snow_temperature_limit.where(~is_inconsistent)
+
+    # Remove snow_limit coordinate
+    temperature = temperature.drop_vars("snow_limit")
+    snow_temperature_limit = snow_temperature_limit.drop_vars("snow_limit")
+
     return temperature, snow_temperature_limit
 
 
@@ -562,8 +567,8 @@ def classify_raw_spectrum(
     sampling_area = get_effective_sampling_area(sensor_name=sensor_name, diameter=diameter)  # m2
     # - Compute dummy rainfall rate (on D from 0 to 5) to avoid 'hail' contamination
     rainfall_rate_mask = drizzle_mask + drizzle_rain_mask
-    rainfall_rate = get_rain_rate_from_drop_number(
-        drop_number=raw_spectrum.where(rainfall_rate_mask, 0),  # if any NaN --> return NaN
+    rainfall_rate = get_rain_rate_from_drop_counts(
+        drop_counts=raw_spectrum.where(rainfall_rate_mask, 0),  # if any NaN --> return NaN
         sampling_area=sampling_area,
         diameter=diameter,
         sample_interval=sample_interval,
@@ -981,8 +986,16 @@ def classify_raw_spectrum(
     ds_class["n_splashing"] = n_splashing_final
     ds_class["n_wind_artefacts"] = n_wind_artefacts_final
 
-    # fraction_splash
-    # fraction_margin_fallers
+    ds_class["fraction_splashing"] = xr.where(
+        n_particles == 0,
+        0,
+        ds_class["n_splashing"] / n_particles,
+    )
+    ds_class["fraction_margin_fallers"] = xr.where(
+        n_particles == 0,
+        0,
+        ds_class["n_margin_fallers"] / n_particles,
+    )
 
     # ds_class["mask_graupel"] = graupel_mask_without_splash
     # ds_class["mask_splashing"] = mask_splashing
