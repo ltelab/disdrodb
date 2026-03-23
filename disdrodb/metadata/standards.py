@@ -56,10 +56,6 @@ METADATA_KEYS = [
     "time_coverage_end",  # YYYY-MM-DDTHH:MM:SS
     ## DISDRODB data url
     "disdrodb_data_url",
-    ## Source
-    "source",
-    "source_convention",
-    "source_processing_date",
     ## Description
     "title",
     "description",
@@ -78,22 +74,13 @@ METADATA_KEYS = [
     "sensor_manufacturer",
     "sensor_wavelength",
     "sensor_serial_number",
-    "firmware_iop",
-    "firmware_dsp",
-    "firmware_version",
-    "sensor_beam_length",
-    "sensor_beam_width",
-    "sensor_nominal_width",
-    "calibration_sensitivity",
-    "calibration_certification_date",
-    "calibration_certification_url",
     ## Attribution
     "contributors",
     "authors",
     "authors_url",
     "contact",
     "contact_information",
-    "acknowledgement",  # acknowledgements?
+    "acknowledgements",
     "references",
     "documentation",
     "website",
@@ -101,4 +88,17 @@ METADATA_KEYS = [
     "source_repository",
     "license",
     "doi",
+    ## Deprecated fields
+    # "source",
+    # "source_convention",
+    # "source_processing_date",
+    # "firmware_iop",
+    # "firmware_dsp",
+    # "firmware_version",
+    # "sensor_beam_length",
+    # "sensor_beam_width",
+    # "sensor_nominal_width",
+    # "calibration_sensitivity",
+    # "calibration_certification_date",
+    # "calibration_certification_url",
 ]

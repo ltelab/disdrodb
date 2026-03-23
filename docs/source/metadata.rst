@@ -63,13 +63,6 @@ Below is the list and description of DISDRODB metadata keys:
    :header-rows: 1
 
 
-.. csv-table:: Source information
-   :align: left
-   :file: ./metadata_csv/Source_Info.csv
-   :widths: auto
-   :header-rows: 1
-
-
 .. csv-table:: Data Attribution
    :align: left
    :file: ./metadata_csv/Data_Attribution.csv
