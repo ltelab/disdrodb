@@ -31,6 +31,7 @@ from matplotlib.ticker import MaxNLocator
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l2.empirical_dsd import get_drop_average_velocity
 from disdrodb.l2.processing import get_mask_contour, get_spectrum_mask_boundary
+from disdrodb.utils.time import infer_sample_interval
 
 # TODO FIX: XARRAY PCOLORMESH IS CURRENTLY INACCURATE
 
@@ -339,6 +340,7 @@ def plot_dsd(
     norm=None,
     yscale="linear",
     ax=None,
+    d_lim=None,
     velocity_method="theoretical_velocity",
 ):
     """Plot drop number concentration N(D) or drop counts n(D) timeseries.
@@ -433,6 +435,10 @@ def plot_dsd(
 
     # Optional: avoid clipping of labels
     # p.axes.figure.tight_layout()
+
+    # Set axis limits if specified
+    if d_lim is not None:
+        p.axes.set_ylim(d_lim)
 
     return p
 
@@ -701,6 +707,12 @@ def plot_dsd_quicklook(
         if n_total_slices > max_rows:
             last_plotted_end = time_bins[max_rows]
             print(f"Unplotted period  : {last_plotted_end} → {t_end}")
+
+    # ------------------------------------------------------------------------.
+    # If sample interval not available (e.g. L0B product), infer on the fly
+    if "sample_interval" not in ds.coords:
+        sample_interval = infer_sample_interval(ds)
+        ds = ds.assign_coords(sample_interval=sample_interval)
 
     # ------------------------------------------------------------------------.
     # Regularize dataset to match bin start_time and end_time
@@ -1259,6 +1271,8 @@ def plot_spectrum(
     cbar_kwargs=None,
     title=None,
     plot_hc_rain_mask_boundary=False,
+    d_lim=None,
+    v_lim=None,
     **plot_kwargs,
 ):
     """Plot the spectrum.
@@ -1329,6 +1343,9 @@ def plot_spectrum(
     elif title is None:
         title = f"{start_time}" if start_time is not None else ""
 
+    # Ensure drop number is in memory for subsequent operations
+    drop_number = drop_number.compute()
+
     # Define default cbar_kwargs if not specified
     if cbar_kwargs is None:
         cbar_kwargs = {"label": "Number of particles"}
@@ -1344,6 +1361,11 @@ def plot_spectrum(
     # Remove cbar_kwargs if add_colorbar=False
     if not add_colorbar:
         cbar_kwargs = None
+
+    # Set array all to NaN if no particles to avoid plotting empty spectrum with vmin color
+    n_particles = drop_number.sum().item()
+    if n_particles == 0:
+        drop_number.data[:] = np.nan
 
     # Plot
     p = drop_number.plot.pcolormesh(
@@ -1377,6 +1399,12 @@ def plot_spectrum(
         p.axes.set_title(title)
     else:
         p.set_axis_labels("Diameter [mm]", "Fall velocity [m/s]")
+
+    # Set axis limits if specified
+    if v_lim is not None:
+        p.axes.set_ylim(v_lim)
+    if d_lim is not None:
+        p.axes.set_xlim(d_lim)
     return p
 
 

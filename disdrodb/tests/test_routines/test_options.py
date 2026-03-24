@@ -607,7 +607,7 @@ def l1_filepaths(tmp_path):
     for hour in (0, 12):
         start = dt.datetime(2020, 1, 1, hour, 1, 0)
         end = dt.datetime(2020, 1, 1, hour + 1, 0, 0)
-        fname = f"L1.1MIN.CAMPAIGN_NAME.STATION_NAME.s{start:%Y%m%d%H%M%S}.e{end:%Y%m%d%H%M%S}.{ARCHIVE_VERSION}.nc"
+        fname = f"L1.1MIN.CAMPAIGN_NAME.STATION_NAME.s{start:%Y%m%dT%H%M%S}.e{end:%Y%m%dT%H%M%S}.{ARCHIVE_VERSION}.nc"
         path = data_dir / fname
         path.touch()
         filepaths.append(str(path))
@@ -623,7 +623,7 @@ def l2e_filepaths(tmp_path):
 
     start = dt.datetime(2020, 1, 1, 0, 1, 0)
     end = dt.datetime(2020, 2, 1, 0, 0, 0)
-    fname = f"L2E.1MIN.CAMPAIGN_NAME.STATION_NAME.s{start:%Y%m%d%H%M%S}.e{end:%Y%m%d%H%M%S}.{ARCHIVE_VERSION}.nc"
+    fname = f"L2E.1MIN.CAMPAIGN_NAME.STATION_NAME.s{start:%Y%m%dT%H%M%S}.e{end:%Y%m%dT%H%M%S}.{ARCHIVE_VERSION}.nc"
     path = data_dir / fname
     path.touch()
     return [str(path)]
@@ -638,7 +638,7 @@ def l2m_filepaths(tmp_path):
     start = dt.datetime(2020, 2, 1, 0, 1, 0)
     end = dt.datetime(2020, 3, 1, 0, 0, 0)
     # Pattern: L2M_<subproduct>.{accumulation_acronym}.campaign.station.s...e....version.format
-    fname = f"L2M_GAMMA_ML.1MIN.CAMPAIGN_NAME.STATION_NAME.s{start:%Y%m%d%H%M%S}.e{end:%Y%m%d%H%M%S}.{ARCHIVE_VERSION}.nc"  # noqa
+    fname = f"L2M_GAMMA_ML.1MIN.CAMPAIGN_NAME.STATION_NAME.s{start:%Y%m%dT%H%M%S}.e{end:%Y%m%dT%H%M%S}.{ARCHIVE_VERSION}.nc"  # noqa
     path = data_dir / fname
     path.touch()
     return [str(path)]

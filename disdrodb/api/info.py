@@ -30,16 +30,15 @@ from disdrodb.utils.time import temporal_resolution_to_seconds
 #### FNAME PATTERNS ####
 ########################
 DISDRODB_FNAME_L0_PATTERN = (
-    "{product:s}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
+    "{product:s}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%dT%H%M%S}.e{end_time:%Y%m%dT%H%M%S}"
     ".{version:s}.{data_format:s}"
 )
 DISDRODB_FNAME_L2E_PATTERN = (  # also L0C and L1
-    "{product:s}.{temporal_resolution}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
+    "{product:s}.{temporal_resolution}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%dT%H%M%S}.e{end_time:%Y%m%dT%H%M%S}"
     ".{version:s}.{data_format:s}"
 )
-
 DISDRODB_FNAME_L2M_PATTERN = (
-    "{product:s}_{subproduct:s}.{temporal_resolution}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
+    "{product:s}_{subproduct:s}.{temporal_resolution}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%dT%H%M%S}.e{end_time:%Y%m%dT%H%M%S}"
     ".{version:s}.{data_format:s}"
 )
 

@@ -742,8 +742,8 @@ def define_filename(
     # -----------------------------------------.
     # Add time period information
     if add_time_period:
-        start_time = start_time.strftime("%Y%m%d%H%M%S")
-        end_time = end_time.strftime("%Y%m%d%H%M%S")
+        start_time = start_time.strftime("%Y%m%dT%H%M%S")
+        end_time = end_time.strftime("%Y%m%dT%H%M%S")
         filename = f"{filename}.s{start_time}.e{end_time}"
 
     # -----------------------------------------.

@@ -18,7 +18,7 @@
 
 import importlib
 
-ARCHIVE_VERSION = "V0"
+ARCHIVE_VERSION = "V1"
 SOFTWARE_VERSION = "V" + importlib.metadata.version("disdrodb")
 CONVENTIONS = "CF-1.10, ACDD-1.3"
 
