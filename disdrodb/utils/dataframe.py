@@ -16,6 +16,8 @@
 # -----------------------------------------------------------------------------.
 """Dataframe utilities."""
 
+import warnings
+
 import numpy as np
 import pandas as pd
 
@@ -373,9 +375,13 @@ def compute_2d_histogram(
     y_coords = y_labels if y_labels is not None else y_centers
 
     # Reset index and set new coordinates
-    df_stats = df_stats.reset_index()
-    df_stats[f"{x}"] = pd.Categorical(df_stats[f"{x}_binned"].map(dict(zip(x_intervals, x_coords, strict=True))))
-    df_stats[f"{y}"] = pd.Categorical(df_stats[f"{y}_binned"].map(dict(zip(y_intervals, y_coords, strict=True))))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
+        df_stats = df_stats.reset_index()
+        xmap = dict(zip(x_intervals, x_coords, strict=True))
+        ymap = dict(zip(y_intervals, y_coords, strict=True))
+        df_stats[f"{x}"] = pd.Categorical(df_stats[f"{x}_binned"].map(xmap))
+        df_stats[f"{y}"] = pd.Categorical(df_stats[f"{y}_binned"].map(ymap))
 
     # Set new MultiIndex with coordinates
     df_stats = df_stats.set_index([f"{x}", f"{y}"])
