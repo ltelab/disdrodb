@@ -86,6 +86,15 @@ def log_linspace(start, stop, n_bins, base=10):
     return base**log_values
 
 
+def safe_ratio(num, den):
+    """Compute the ratio of two arrays while handling division by zero."""
+    return np.where(
+        den == 0,
+        np.where(num == 0, 0, np.nan),
+        num / den,
+    )
+
+
 def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefix_name=True, include_quantiles=False):
     """Compute conditional univariate statistics.
 
@@ -169,7 +178,10 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
             )
             # Define other stats to compute
             list_stats = [
+                (f"{prefix}mean", "mean"),
                 (f"{prefix}std", "std"),
+                (f"{prefix}skew", "skew"),
+                (f"{prefix}kurtosis", "kurt"),
                 (f"{prefix}min", "min"),
                 (f"{prefix}max", "max"),
                 (f"{prefix}mad", lambda s: (s - s.median()).abs().median()),
@@ -183,13 +195,26 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
         with suppress_warnings():
             df_stats = df_grouped[var].agg(list_stats)
 
+        # Deal with group with just 1 count
+        # df_stats.loc[df_stats["count"] == 1, f"{prefix}std"] = 0.0
+        # df_stats.loc[df_stats["count"] == 1, f"{prefix}kurtosis"] = 0.0
+        # df_stats.loc[df_stats["count"] == 1, f"{prefix}skew"] = 0.0
+
         # Compute other variable statistics
         if variables_specified:
+            # Compute percentile range
             df_stats[f"{prefix}range"] = df_stats[f"{prefix}max"] - df_stats[f"{prefix}min"]
             df_stats[f"{prefix}iqr"] = df_stats_quantiles[f"{prefix}Q75"] - df_stats_quantiles[f"{prefix}Q25"]
             df_stats[f"{prefix}ipr80"] = df_stats_quantiles[f"{prefix}Q90"] - df_stats_quantiles[f"{prefix}Q10"]
             df_stats[f"{prefix}ipr90"] = df_stats_quantiles[f"{prefix}Q95"] - df_stats_quantiles[f"{prefix}Q5"]
             df_stats[f"{prefix}ipr98"] = df_stats_quantiles[f"{prefix}Q99"] - df_stats_quantiles[f"{prefix}Q1"]
+
+            # Compute coefficient of variation
+            # - if both mean and std are 0 --> 0
+            # - if mean is 0 but std not 0 --> NaN
+            df_stats[f"{prefix}cv"] = safe_ratio(df_stats[f"{prefix}std"], df_stats[f"{prefix}mean"])
+            df_stats[f"{prefix}robcv"] = safe_ratio(df_stats[f"{prefix}mad"], df_stats_quantiles[f"{prefix}median"])
+
             if include_quantiles:
                 df_stats = pd.concat((df_stats, df_stats_quantiles), axis=1)
             else:
@@ -334,7 +359,10 @@ def compute_2d_histogram(
             )
             # Define other stats to compute
             list_stats = [
+                (f"{prefix}mean", "mean"),
                 (f"{prefix}std", "std"),
+                (f"{prefix}skew", "skew"),
+                (f"{prefix}kurtosis", "kurt"),
                 (f"{prefix}min", "min"),
                 (f"{prefix}max", "max"),
                 (f"{prefix}mad", lambda s: np.median(np.abs(s - np.median(s)))),
@@ -347,13 +375,24 @@ def compute_2d_histogram(
         # Compute statistics
         df_stats = df_grouped[var].agg(list_stats)
 
+        # Deal with group with just 1 count
+        # df_stats.loc[df_stats["count"] == 1, f"{prefix}std"] = 0.0
+
         # Compute other variable statistics
         if variables_specified:
+            # Compute percentile ranges
             df_stats[f"{prefix}range"] = df_stats[f"{prefix}max"] - df_stats[f"{prefix}min"]
             df_stats[f"{prefix}iqr"] = df_stats_quantiles[f"{prefix}Q75"] - df_stats_quantiles[f"{prefix}Q25"]
             df_stats[f"{prefix}ipr80"] = df_stats_quantiles[f"{prefix}Q90"] - df_stats_quantiles[f"{prefix}Q10"]
             df_stats[f"{prefix}ipr90"] = df_stats_quantiles[f"{prefix}Q95"] - df_stats_quantiles[f"{prefix}Q5"]
             df_stats[f"{prefix}ipr98"] = df_stats_quantiles[f"{prefix}Q99"] - df_stats_quantiles[f"{prefix}Q1"]
+
+            # Compute coefficient of variation
+            # - if both mean and std are 0 --> 0
+            # - if mean is 0 but std not 0 --> NaN
+            df_stats[f"{prefix}cv"] = safe_ratio(df_stats[f"{prefix}std"], df_stats[f"{prefix}mean"])
+            df_stats[f"{prefix}robcv"] = safe_ratio(df_stats[f"{prefix}mad"], df_stats_quantiles[f"{prefix}median"])
+
             if include_quantiles:
                 df_stats = pd.concat((df_stats, df_stats_quantiles), axis=1)
             else:

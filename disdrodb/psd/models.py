@@ -348,6 +348,36 @@ def compute_Dc(i, j, Mi, Mj):
     return (Mj / Mi) ** exponent
 
 
+def compute_gamma_psd_moment(mu, Lambda, N0, order):
+    """Compute Gamma PSD moment from PSD parameters.
+
+    Parameters
+    ----------
+    mu : float or array-like
+        Shape parameter [-].
+    Lambda : float or array-like
+        Inverse scale parameter [mm^-1].
+    N0 : float or array-like
+        Intercept parameter [m^-3 mm^(-1-mu)].
+    order: float or array-like
+        Moment order
+
+    Returns
+    -------
+    float or array-like
+        Rayleigh reflectivity z [mm^6/m^3].
+
+    References
+    ----------
+    Steiner, M., J. A. Smith, and R. Uijlenhoet, 2004.
+    A Microphysical Interpretation of Radar Reflectivity-Rain Rate
+    Relationships.
+    J. Atmos. Sci., 61, 1114-1131,
+    https://doi.org/10.1175/1520-0469(2004)061<1114:AMIORR>2.0.CO;2.
+    """
+    return N0 / Lambda ** (mu + order + 1) * gamma_f(mu + order + 1)
+
+
 class XarrayPSD(PSD):
     """PSD class template allowing vectorized computations with xarray.
 
@@ -932,7 +962,122 @@ class GammaPSD(ExponentialPSD):
         float or array-like
             Standard deviation sigma_m [mm].
         """
+        # sigma_m = Dm/(mu+4)**0.5
         return (mu + 4) ** 0.5 / Lambda
+
+    @staticmethod
+    def compute_R(mu, Lambda, N0, v0=3.778, p=3.67):
+        """Compute rainfall rate from PSD parameters.
+
+        Parameters
+        ----------
+        mu : float or array-like
+            Shape parameter [-].
+        Lambda : float or array-like
+            Inverse scale parameter [mm^-1].
+        N0 : float or array-like
+             Intercept parameter [m^-3 mm^(-1-mu)].
+
+        Returns
+        -------
+        float or array-like
+            Rainfall rate R [mm/hr].
+
+        References
+        ----------
+        Steiner, M., J. A. Smith, and R. Uijlenhoet, 2004.
+        A Microphysical Interpretation of Radar Reflectivity-Rain Rate
+        Relationships.
+        J. Atmos. Sci., 61, 1114-1131,
+        https://doi.org/10.1175/1520-0469(2004)061<1114:AMIORR>2.0.CO;2.
+        """
+        return 6 * np.pi * v0 / 1e4 * gamma_f(4 + p + mu) * N0 / Lambda ** (4 + p + mu)
+
+    @staticmethod
+    def compute_M(mu, Lambda, N0, order):
+        """Compute Gamma PSD moment from PSD parameters.
+
+        Parameters
+        ----------
+        mu : float or array-like
+            Shape parameter [-].
+        Lambda : float or array-like
+            Inverse scale parameter [mm^-1].
+        N0 : float or array-like
+            Intercept parameter [m^-3 mm^(-1-mu)].
+        order: float or array-like
+            Moment order
+
+        Returns
+        -------
+        float or array-like
+            PSD moment [mm^order/m^3].
+
+        References
+        ----------
+        Steiner, M., J. A. Smith, and R. Uijlenhoet, 2004.
+        A Microphysical Interpretation of Radar Reflectivity-Rain Rate
+        Relationships.
+        J. Atmos. Sci., 61, 1114-1131,
+        https://doi.org/10.1175/1520-0469(2004)061<1114:AMIORR>2.0.CO;2.
+        """
+        return compute_gamma_psd_moment(mu=mu, Lambda=Lambda, N0=N0, order=order)
+
+    @staticmethod
+    def compute_Nt(mu, Lambda, N0):
+        """Compute total concentration from PSD parameters.
+
+        Parameters
+        ----------
+        mu : float or array-like
+            Shape parameter [-].
+        Lambda : float or array-like
+            Inverse scale parameter [mm^-1].
+        N0 : float or array-like
+             Intercept parameter [m^-3 mm^(-1-mu)].
+
+        Returns
+        -------
+        float or array-like
+            Total concentration Nt [1/m3].
+
+        References
+        ----------
+        Steiner, M., J. A. Smith, and R. Uijlenhoet, 2004.
+        A Microphysical Interpretation of Radar Reflectivity-Rain Rate
+        Relationships.
+        J. Atmos. Sci., 61, 1114-1131,
+        https://doi.org/10.1175/1520-0469(2004)061<1114:AMIORR>2.0.CO;2.
+        """
+        return compute_gamma_psd_moment(mu=mu, Lambda=Lambda, N0=N0, order=0)
+
+    @staticmethod
+    def compute_z(mu, Lambda, N0):
+        """Compute rayleigh reflectivity from PSD parameters.
+
+        Parameters
+        ----------
+        mu : float or array-like
+            Shape parameter [-].
+        Lambda : float or array-like
+            Inverse scale parameter [mm^-1].
+        N0 : float or array-like
+             Intercept parameter [m^-3 mm^(-1-mu)].
+
+        Returns
+        -------
+        float or array-like
+            Rayleigh reflectivity z [mm^6/m^3].
+
+        References
+        ----------
+        Steiner, M., J. A. Smith, and R. Uijlenhoet, 2004.
+        A Microphysical Interpretation of Radar Reflectivity-Rain Rate
+        Relationships.
+        J. Atmos. Sci., 61, 1114-1131,
+        https://doi.org/10.1175/1520-0469(2004)061<1114:AMIORR>2.0.CO;2.
+        """
+        return compute_gamma_psd_moment(mu=mu, Lambda=Lambda, N0=N0, order=6)
 
 
 class NormalizedGammaPSD(XarrayPSD):

@@ -38,12 +38,22 @@ def _get_query_index(values):
     return index if isinstance(index, pd.Index) else None
 
 
-def _discard_nan_value_rows(df, columns):
-    """Discard rows with NaNs in the selected value columns."""
+def _discard_nan_value_rows(df, core_columns, coordinate_columns=None):
+    """Discard rows with NaNs in the coordinate or core columns."""
+    if coordinate_columns is None:
+        coordinate_columns = []
+    columns = list(dict.fromkeys([*coordinate_columns, *core_columns]))
     if len(columns) == 0:
         return df
     valid_rows = df[columns].notna().all(axis=1)
     return df.loc[valid_rows]
+
+
+def _check_columns_in_dataframe(df, columns, variable_name):
+    """Check that columns are available in the DataFrame."""
+    if not np.all(np.isin(columns, df.columns)):
+        missing = np.setdiff1d(columns, df.columns).tolist()
+        raise ValueError(f"{missing} {variable_name} not found in DataFrame")
 
 
 class NearestNeighbourLUT1D:
@@ -63,30 +73,37 @@ class NearestNeighbourLUT1D:
         If None, all columns are included. Default is None.
     dtype : numpy.dtype, optional
         Data type for storing points and values. Default is np.float32.
+    core_columns : list of str, optional
+        List of column names required to contain valid values.
+        Rows with NaNs in these columns or the coordinate column are discarded.
+        If None, it defaults to ``columns`` and preserves the previous behavior.
+        Default is None.
 
     Notes
     -----
-    Rows with NaNs in the selected value columns are discarded before
+    Rows with NaNs in the coordinate or core columns are discarded before
     constructing the lookup table.
     """
 
-    def __init__(self, df, x, columns=None, dtype=np.float32):
+    def __init__(self, df, x, columns=None, dtype=np.float32, core_columns=None):
         if columns is None:
             columns = list(df.columns)
+        if core_columns is None:
+            core_columns = columns
         if x in df.index.names:
             df = df.reset_index()
 
         if x not in df:
             raise ValueError(f"{x=} is not a column of df.")
 
-        if not np.all(np.isin(columns, df.columns)):
-            missing = np.setdiff1d(columns, df.columns).tolist()
-            raise ValueError(f"{missing} columns not found in DataFrame")
+        _check_columns_in_dataframe(df, columns, "columns")
+        _check_columns_in_dataframe(df, core_columns, "core_columns")
 
-        df = _discard_nan_value_rows(df, columns)
+        df = _discard_nan_value_rows(df, core_columns, coordinate_columns=[x])
 
         self.x = x
         self.columns = columns
+        self.core_columns = core_columns
         self.dtype = dtype
         self.points = df[[x]].to_numpy(dtype=dtype)
         self.values = df[columns].to_numpy(dtype=dtype)
@@ -214,6 +231,11 @@ class NearestNeighbourLUT2D:
         If None, all columns are included. Default is None.
     dtype : numpy.dtype, optional
         Data type for storing points and values. Default is np.float32.
+    core_columns : list of str, optional
+        List of column names required to contain valid values.
+        Rows with NaNs in these columns or the coordinate columns are discarded.
+        If None, it defaults to ``columns`` and preserves the previous behavior.
+        Default is None.
 
     Attributes
     ----------
@@ -223,6 +245,8 @@ class NearestNeighbourLUT2D:
         Name of the y-coordinate column.
     columns : list of str
         Column names for the lookup values.
+    core_columns : list of str
+        Column names required to contain valid values.
     dtype : numpy.dtype
         Data type used for storage.
     points : numpy.ndarray
@@ -241,20 +265,22 @@ class NearestNeighbourLUT2D:
 
     Notes
     -----
-    Rows with NaNs in the selected value columns are discarded before
+    Rows with NaNs in the coordinate or core columns are discarded before
     constructing the lookup table.
 
     Examples
     --------
     >>> import pandas as pd
-    >>> df = pd.DataFrame({'x': [0, 1, 2], 'y': [0, 1, 2], 'value': [10, 20, 30]})
-    >>> lut = NearestNeighbourLUT2D(df, 'x', 'y', columns=['value'])
+    >>> df = pd.DataFrame({"x": [0, 1, 2], "y": [0, 1, 2], "value": [10, 20, 30]})
+    >>> lut = NearestNeighbourLUT2D(df, "x", "y", columns=["value"])
     >>> lut.predict([0.5], [0.5])
     """
 
-    def __init__(self, df, x, y, columns=None, dtype=np.float32):
+    def __init__(self, df, x, y, columns=None, dtype=np.float32, core_columns=None):
         if columns is None:
             columns = list(df.columns)
+        if core_columns is None:
+            core_columns = columns
         if x in df.index.names:
             df = df.reset_index()
         # Check x and y
@@ -263,16 +289,16 @@ class NearestNeighbourLUT2D:
         if y not in df:
             raise ValueError(f"{y=} is not a column of df.")
 
-        # Subset columns
-        if not np.all(np.isin(columns, df.columns)):
-            missing = np.setdiff1d(columns, df.columns).tolist()
-            raise ValueError(f"{missing} columns not found in DataFrame")
+        # Check columns
+        _check_columns_in_dataframe(df, columns, "columns")
+        _check_columns_in_dataframe(df, core_columns, "core_columns")
 
-        df = _discard_nan_value_rows(df, columns)
+        df = _discard_nan_value_rows(df, core_columns, coordinate_columns=[x, y])
 
         self.x = x
         self.y = y
         self.columns = columns
+        self.core_columns = core_columns
         self.dtype = dtype
         self.points = df[[x, y]].to_numpy(dtype=dtype)
         self.values = df[columns].to_numpy(dtype=dtype)

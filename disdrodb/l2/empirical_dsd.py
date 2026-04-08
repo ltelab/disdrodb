@@ -603,7 +603,7 @@ def identify_partial_number_concentrations_variables(obj):
     return variables
 
 
-def get_nd_from_partial_number_concentrations(ds):
+def get_dsd_from_partial_number_concentrations(ds):
     """Reconstruct N(D) from partial number concentration variables.
 
     Partial number concentration variable are selected by matching

@@ -1244,7 +1244,7 @@ def _define_coeff_string(a):
     return a_str
 
 
-def define_powerlaw_legend_str(x_symbol, y_symbol, a, b):
+def define_powerlaw_legend_str(x_symbol, y_symbol, a, b, add_inverse=True):
     r"""Build two-line LaTeX legend string for y = a x^b and x = A y^B.
 
     Parameters
@@ -1270,9 +1270,9 @@ def define_powerlaw_legend_str(x_symbol, y_symbol, a, b):
     a_str = _define_coeff_string(a)
     A_str = _define_coeff_string(A)
 
-    legend_str = (
-        rf"${y_symbol} = {a_str}\, {x_symbol}^{{{b:.2f}}}$" "\n" rf"${x_symbol} = {A_str}\, {y_symbol}^{{{B:.2f}}}$"
-    )
+    legend_str = rf"${y_symbol} = {a_str}\, {x_symbol}^{{{b:.2f}}}$"
+    if add_inverse:
+        legend_str += "\n" rf"${x_symbol} = {A_str}\, {y_symbol}^{{{B:.2f}}}$"
     return legend_str
 
 
@@ -2629,9 +2629,9 @@ def plot_dmax_relationships(df, diameter_bin_edges, dmax="Dmax", diameter_max=10
 #### Radar plots
 
 
-def add_legend_powerlaw(ax, legend_str, legend_fontsize):
+def add_legend_powerlaw(ax, legend_str, legend_fontsize, add_box=True):
     """Add legend fitted powerlaw relationship to plot."""
-    legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7}
+    legend_bbox_dict = {"facecolor": "white", "edgecolor": "black", "alpha": 0.7} if add_box else None
     ax.text(
         0.05,
         0.955,

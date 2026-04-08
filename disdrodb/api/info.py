@@ -33,12 +33,24 @@ DISDRODB_FNAME_L0_PATTERN = (
     "{product:s}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%dT%H%M%S}.e{end_time:%Y%m%dT%H%M%S}"
     ".{version:s}.{data_format:s}"
 )
+DISDRODB_FNAME_L0_LEGACY_PATTERN = (
+    "{product:s}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
+    ".{version:s}.{data_format:s}"
+)
 DISDRODB_FNAME_L2E_PATTERN = (  # also L0C and L1
     "{product:s}.{temporal_resolution}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%dT%H%M%S}.e{end_time:%Y%m%dT%H%M%S}"
     ".{version:s}.{data_format:s}"
 )
+DISDRODB_FNAME_L2E_LEGACY_PATTERN = (  # also L0C and L1
+    "{product:s}.{temporal_resolution}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
+    ".{version:s}.{data_format:s}"
+)
 DISDRODB_FNAME_L2M_PATTERN = (
     "{product:s}_{subproduct:s}.{temporal_resolution}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%dT%H%M%S}.e{end_time:%Y%m%dT%H%M%S}"
+    ".{version:s}.{data_format:s}"
+)
+DISDRODB_FNAME_L2M_LEGACY_PATTERN = (
+    "{product:s}_{subproduct:s}.{temporal_resolution}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
     ".{version:s}.{data_format:s}"
 )
 
@@ -48,20 +60,27 @@ DISDRODB_FNAME_L2M_PATTERN = (
 ##########################
 
 
+def _parse_filename_with_patterns(filename, patterns):
+    """Parse a filename against the provided current and legacy patterns."""
+    for pattern in patterns:
+        try:
+            return Parser(pattern).parse(filename)
+        except ValueError:
+            continue
+    raise ValueError(f"{filename} can not be parsed.")
+
+
 def _parse_filename(filename):
     """Parse the filename with trollsift."""
     if filename.startswith("L0A") or filename.startswith("L0B"):
-        p = Parser(DISDRODB_FNAME_L0_PATTERN)
-        info_dict = p.parse(filename)
+        patterns = [DISDRODB_FNAME_L0_PATTERN, DISDRODB_FNAME_L0_LEGACY_PATTERN]
     elif filename.startswith("L2E") or filename.startswith("L1") or filename.startswith("L0C"):
-        p = Parser(DISDRODB_FNAME_L2E_PATTERN)
-        info_dict = p.parse(filename)
+        patterns = [DISDRODB_FNAME_L2E_PATTERN, DISDRODB_FNAME_L2E_LEGACY_PATTERN]
     elif filename.startswith("L2M"):
-        p = Parser(DISDRODB_FNAME_L2M_PATTERN)
-        info_dict = p.parse(filename)
+        patterns = [DISDRODB_FNAME_L2M_PATTERN, DISDRODB_FNAME_L2M_LEGACY_PATTERN]
     else:
         raise ValueError("Not a DISDRODB product file.")
-    return info_dict
+    return _parse_filename_with_patterns(filename, patterns)
 
 
 def _get_info_from_filename(filename):
