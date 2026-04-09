@@ -61,7 +61,18 @@ def plot_loss_function(loss_function, q=(0, 0.8), s=15, cmap="Spectral_r", marke
 
 
 def plot_normalized_dsd_and_ngg_fits(
-    ds_dsd_norm_stats, c, mu, i, j, x_norm, xlims, ylims, add_ng_fits=True, cmap="Spectral_r", norm=None, ax=None
+    ds_dsd_norm_stats,
+    c,
+    mu,
+    i,
+    j,
+    x_norm,
+    xlims,
+    ylims,
+    add_ng_fits=True,
+    cmap="Spectral_r",
+    norm=None,
+    ax=None,
 ):
     # Define colormap and norm
     cmap = plt.get_cmap(cmap)

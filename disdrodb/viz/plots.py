@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 import psutil
 import xarray as xr
+from matplotlib.collections import LineCollection
 from matplotlib.colors import BoundaryNorm, ListedColormap, LogNorm, Normalize
 from matplotlib.gridspec import GridSpec
 from matplotlib.lines import Line2D
@@ -1510,6 +1511,145 @@ def plot_mask_contour(mask, ax=None, **kwargs):
         if label is not None and i == len(contour) - 1:
             kwargs["label"] = label
         ax.plot(seg[:, 0], seg[:, 1], **kwargs)
+
+
+####-------------------------------------------------------------------------.
+#### Plot colored line
+
+
+def plot_colored_line(
+    ds,
+    var,
+    hue,
+    x=None,
+    ax=None,
+    cmap="turbo",
+    vmin=None,
+    vmax=None,
+    mask=None,
+    linewidth=1,
+    add_colorbar=True,
+):
+    """
+    Plot a 1D variable as a line colored by another variable, preserving gaps at NaNs.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+    var : str
+        Variable for y-axis.
+    hue : str
+        Variable controlling line color.
+    x : str, optional
+        X coordinate name. If None, inferred from `var`.
+    ax : matplotlib.axes.Axes, optional
+        Axis to plot on.
+    cmap : str, default "turbo"
+        Colormap for hue.
+    vmin, vmax : float, optional
+        Color limits.
+    mask : xarray.DataArray or array-like, optional
+        Boolean mask. False values become NaN.
+    linewidth : float, default 2
+        Line width.
+    add_colorbar : bool, default True
+        Whether to add a colorbar.
+
+    Returns
+    -------
+    ax : matplotlib.axes.Axes
+    lc : matplotlib.collections.LineCollection
+    """
+    da = ds[var]
+    hue_da = ds[hue]
+
+    if x is None:
+        if da.ndim != 1:
+            raise ValueError(
+                f"{var!r} is {da.ndim}D with dims {da.dims}; specify x explicitly after slicing to 1D.",
+            )
+        x_name = da.dims[0]
+    else:
+        x_name = x
+
+    x_vals = np.asarray(ds[x_name].to_numpy())
+    y_vals = np.asarray(da.to_numpy())
+    z_vals = np.asarray(hue_da.to_numpy())
+
+    if x_vals.ndim != 1 or y_vals.ndim != 1 or z_vals.ndim != 1:
+        raise ValueError("x, var, and hue must all be 1D after any slicing/selection.")
+
+    if not (len(x_vals) == len(y_vals) == len(z_vals)):
+        raise ValueError("x, var, and hue must have the same length.")
+
+    if mask is not None:
+        mask_vals = np.asarray(mask.to_numpy() if hasattr(mask, "values") else mask, dtype=bool)
+        if mask_vals.shape != y_vals.shape:
+            raise ValueError("mask must have the same shape as the plotted variable.")
+        y_vals = np.where(mask_vals, y_vals, np.nan)
+        z_vals = np.where(mask_vals, z_vals, np.nan)
+
+    # Handle datetime x-axis
+    if np.issubdtype(x_vals.dtype, np.datetime64):
+        x_plot = plt.matplotlib.dates.date2num(x_vals.astype("datetime64[ns]").astype(object))
+        is_datetime = True
+    else:
+        x_plot = x_vals.astype(float, copy=False)
+        is_datetime = False
+
+    # Build point pairs for consecutive samples
+    p0 = np.column_stack([x_plot[:-1], y_vals[:-1]])
+    p1 = np.column_stack([x_plot[1:], y_vals[1:]])
+    segments = np.stack([p0, p1], axis=1)
+
+    # Color each segment by hue at the left endpoint
+    seg_colors = z_vals[:-1]
+
+    # Keep only segments where both endpoints and hue are finite
+    valid_segments = (
+        np.isfinite(x_plot[:-1])
+        & np.isfinite(x_plot[1:])
+        & np.isfinite(y_vals[:-1])
+        & np.isfinite(y_vals[1:])
+        & np.isfinite(seg_colors)
+    )
+
+    segments = segments[valid_segments]
+    seg_colors = seg_colors[valid_segments]
+
+    if len(segments) == 0:
+        raise ValueError("No valid contiguous segments to plot after masking/NaN removal.")
+
+    if ax is None:
+        _, ax = plt.subplots()
+
+    lc = LineCollection(segments, cmap=cmap, linewidth=linewidth)
+    lc.set_array(seg_colors)
+
+    if vmin is not None or vmax is not None:
+        lc.set_clim(vmin, vmax)
+
+    ax.add_collection(lc)
+
+    # Limits from valid points only
+    valid_points = np.isfinite(x_plot) & np.isfinite(y_vals) & np.isfinite(z_vals)
+    xv = x_plot[valid_points]
+    yv = y_vals[valid_points]
+
+    ax.set_xlim(xv.min(), xv.max())
+    ax.set_ylim(yv.min(), yv.max())
+
+    if is_datetime:
+        ax.xaxis_date()
+
+    ax.set_xlabel(x_name)
+    ax.set_ylabel(var)
+
+    if add_colorbar:
+        cbar = plt.colorbar(lc, ax=ax)
+        cbar.set_label(hue)
+
+    return ax, lc
 
 
 ####-------------------------------------------------------------------------------------------------------

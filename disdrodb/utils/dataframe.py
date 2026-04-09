@@ -95,7 +95,16 @@ def safe_ratio(num, den):
     )
 
 
-def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefix_name=True, include_quantiles=False):
+def compute_1d_histogram(
+    df,
+    column,
+    variables=None,
+    bins=10,
+    labels=None,
+    prefix_name=True,
+    include_quantiles=False,
+    quantiles=None,
+):
     """Compute conditional univariate statistics.
 
     Parameters
@@ -119,6 +128,8 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
     # Copy data
     df = df.copy()
 
+    # TODO: check column and variables are valid
+
     # Ensure `variables` is a list of variables
     # - If no variable specified, create dummy variable
     if variables is None:
@@ -128,11 +139,14 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
     elif isinstance(variables, str):
         variables = [variables]
         variables_specified = True
-    elif isinstance(variables, list):
+    elif isinstance(variables, np.ndarray) and variables.ndim == 1:
+        variables = variables.tolist()
+    elif isinstance(variables, (list, set)):
         variables_specified = True
+        variables = list(set(variables) - set([column]))
+
     else:
         raise TypeError("`variables` must be a string, list of strings, or None.")
-    variables = np.unique(variables)
 
     # Handle column binning
     if isinstance(bins, int):
@@ -168,7 +182,9 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
         # Define statistics to compute
         if variables_specified:
             # Compute quantiles
-            quantiles = [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
+            if quantiles is None:
+                quantiles = [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
+
             df_stats_quantiles = df_grouped[var].quantile(quantiles).unstack(level=-1)  # noqa: PD010
             df_stats_quantiles.columns = [f"{prefix}Q{int(q*100)}" for q in df_stats_quantiles.columns]
             df_stats_quantiles = df_stats_quantiles.rename(
@@ -252,6 +268,7 @@ def compute_2d_histogram(
     y_labels=None,
     prefix_name=True,
     include_quantiles=False,
+    quantiles=None,
 ):
     """Compute conditional bivariate statistics.
 
@@ -285,6 +302,8 @@ def compute_2d_histogram(
     # if isinstance(df, pl.DataFrame):
     #     df = df.to_pandas()
 
+    # TODO: check variables,x, y valid,
+
     # Copy data
     df = df.copy()
 
@@ -297,11 +316,13 @@ def compute_2d_histogram(
     elif isinstance(variables, str):
         variables = [variables]
         variables_specified = True
-    elif isinstance(variables, list):
+    elif isinstance(variables, np.ndarray) and variables.ndim == 1:
+        variables = variables.tolist()
+    elif isinstance(variables, (list, set)):
         variables_specified = True
+        variables = list(set(variables) - set([x, y]))
     else:
         raise TypeError("`variables` must be a string, list of strings, or None.")
-    variables = np.unique(variables)
 
     # Handle x-axis binning
     if isinstance(x_bins, int):
@@ -349,7 +370,9 @@ def compute_2d_histogram(
         # Define statistics to compute
         if variables_specified:
             # Compute quantiles
-            quantiles = [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
+            if quantiles is None:
+                quantiles = [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
+
             df_stats_quantiles = df_grouped[var].quantile(quantiles).unstack(level=-1)  # noqa: PD010
             df_stats_quantiles.columns = [f"{prefix}Q{int(q*100)}" for q in df_stats_quantiles.columns]
             df_stats_quantiles = df_stats_quantiles.rename(

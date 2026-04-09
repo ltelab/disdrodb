@@ -88,18 +88,27 @@ class NearestNeighbourLUT1D:
     def __init__(self, df, x, columns=None, dtype=np.float32, core_columns=None):
         if columns is None:
             columns = list(df.columns)
-        if core_columns is None:
-            core_columns = columns
         if x in df.index.names:
             df = df.reset_index()
-
         if x not in df:
             raise ValueError(f"{x=} is not a column of df.")
 
+        # Remove x from columns and core columns
+        columns = list(set(columns) - set([x]))
+        if core_columns is None:
+            core_columns = columns
+        core_columns = list(set(core_columns) - set([x]))
+
+        # Check columns validity
         _check_columns_in_dataframe(df, columns, "columns")
         _check_columns_in_dataframe(df, core_columns, "core_columns")
 
+        # Remove rows with core columns having NaN
         df = _discard_nan_value_rows(df, core_columns, coordinate_columns=[x])
+
+        # Sort columns alphabetically
+        columns = sorted(columns)
+        core_columns = sorted(core_columns)
 
         self.x = x
         self.columns = columns
@@ -279,8 +288,6 @@ class NearestNeighbourLUT2D:
     def __init__(self, df, x, y, columns=None, dtype=np.float32, core_columns=None):
         if columns is None:
             columns = list(df.columns)
-        if core_columns is None:
-            core_columns = columns
         if x in df.index.names:
             df = df.reset_index()
         # Check x and y
@@ -289,11 +296,22 @@ class NearestNeighbourLUT2D:
         if y not in df:
             raise ValueError(f"{y=} is not a column of df.")
 
+        # Remove x and y from columns and core columns
+        columns = list(set(columns) - set([x, y]))
+        if core_columns is None:
+            core_columns = columns
+        core_columns = list(set(core_columns) - set([x, y]))
+
         # Check columns
         _check_columns_in_dataframe(df, columns, "columns")
         _check_columns_in_dataframe(df, core_columns, "core_columns")
 
+        # Remove rows with core columns having NaN
         df = _discard_nan_value_rows(df, core_columns, coordinate_columns=[x, y])
+
+        # Sort columns alphabetically
+        columns = sorted(columns)
+        core_columns = sorted(core_columns)
 
         self.x = x
         self.y = y

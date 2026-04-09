@@ -33,7 +33,7 @@ class DISDRODB_Base_Accessor:
         from disdrodb.api.checks import check_time
 
         if "time" in self._obj.coords:
-            start_time = self._obj["time"].to_numpy().min()
+            start_time = self._obj["time"].min(skipna=True).to_numpy()
         else:
             raise ValueError("Time coordinate not found")
         return check_time(start_time)
@@ -44,7 +44,7 @@ class DISDRODB_Base_Accessor:
         from disdrodb.api.checks import check_time
 
         if "time" in self._obj.coords:
-            end_time = self._obj["time"].to_numpy().max()
+            end_time = self._obj["time"].max(skipna=True).to_numpy()
         else:
             raise ValueError("Time coordinate not found")
         return check_time(end_time)
