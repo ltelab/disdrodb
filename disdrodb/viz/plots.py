@@ -334,6 +334,17 @@ def get_dsd_variable(xr_obj, variable=None, diameter_dim=DIAMETER_DIMENSION):
     return da
 
 
+def get_cmap_alpha(vmin=0, vmax=1, color=(1, 1, 1)):
+    colors = np.ones((256, 4))
+    colors[:, 0] = color[0]
+    colors[:, 1] = color[1]
+    colors[:, 2] = color[2]
+    colors[:, 3] = np.linspace(vmin, vmax, 256)  # # Set alpha channe
+    cmap_alpha = plt.matplotlib.colors.ListedColormap(colors)
+    cmap_alpha.set_bad((0, 0, 0, 0))
+    return cmap_alpha
+
+
 def plot_dsd(
     xr_obj,
     variable=None,
@@ -342,6 +353,11 @@ def plot_dsd(
     yscale="linear",
     ax=None,
     d_lim=None,
+    alpha=None,
+    alpha_color=(1, 1, 1),
+    add_colorbar=True,
+    add_ylabel=True,
+    add_time_axis=True,
     velocity_method="theoretical_velocity",
 ):
     """Plot drop number concentration N(D) or drop counts n(D) timeseries.
@@ -378,6 +394,7 @@ def plot_dsd(
     # Retrieve N(D) or n(D)
     da_dsd = get_dsd_variable(xr_obj, variable=variable)
     da_dsd = da_dsd.compute()
+    da_dsd.attrs["disdrodb_rolled_product"] = xr_obj.attrs.get("disdrodb_rolled_product", "False")
 
     # Check not empty object
     if da_dsd.size == 0:
@@ -419,20 +436,57 @@ def plot_dsd(
         norm = Normalize() if np.isnan(vmin) else LogNorm(vmin, None)
 
     # Plot N(D) or drop counts
-    cbar_kwargs = {"label": labels["cbar_label"]}
-    p = da_dsd.plot.pcolormesh(x="time", norm=norm, cmap=cmap, extend="max", cbar_kwargs=cbar_kwargs, ax=ax)
+    if add_colorbar:
+        cbar_kwargs = {"label": labels["cbar_label"]}
+    else:
+        cbar_kwargs = None
+    p = da_dsd.plot.pcolormesh(
+        x="time",
+        norm=norm,
+        cmap=cmap,
+        add_colorbar=add_colorbar,
+        extend="max",
+        cbar_kwargs=cbar_kwargs,
+        ax=ax,
+    )
+    # Add transparency if asked
+    # - Where alpha 1, pcolormesh should not plot !
+    # - Where alpha is 0, pcolormesh should plot alpha_color (e.g. white) without transparency
+    # - Where alpha is 0.2, pcolormesh should plot alpha_color with 0.8
+    if alpha is not None:
+        alpha = xr.ones_like(da_dsd) * alpha
+        alpha = alpha.where(alpha != 1)
+        alpha = 1 - alpha
+        cmap_alpha = get_cmap_alpha(color=alpha_color)
+        alpha.plot.pcolormesh(
+            x="time",
+            vmin=0,
+            vmax=1,
+            cmap=cmap_alpha,
+            add_colorbar=False,
+            ax=ax,
+        )
+
+    # Add title and labels
     p.axes.set_title(labels["title"])
-    p.axes.set_ylabel("Drop diameter (mm)")
+    p.axes.set_xlabel("")
+    if add_ylabel:
+        p.axes.set_ylabel("Drop diameter (mm)")
+    else:
+        p.axes.set_ylabel("")
 
-    # Improve time axis ticks/labels ---
-    locator = mdates.AutoDateLocator(minticks=4, maxticks=8)
-    formatter = mdates.ConciseDateFormatter(locator)  # compact, avoids repetition
+    if add_time_axis:
+        # Improve time axis ticks/labels ---
+        locator = mdates.AutoDateLocator(minticks=4, maxticks=8)
+        formatter = mdates.ConciseDateFormatter(locator)  # compact, avoids repetition
 
-    p.axes.xaxis.set_major_locator(locator)
-    p.axes.xaxis.set_major_formatter(formatter)
+        p.axes.xaxis.set_major_locator(locator)
+        p.axes.xaxis.set_major_formatter(formatter)
 
-    # Nice rotation/alignment if still dense
-    p.axes.figure.autofmt_xdate(rotation=30, ha="right")
+        # Nice rotation/alignment if still dense
+        p.axes.figure.autofmt_xdate(rotation=30, ha="right")
+    else:
+        p.axes.tick_params(axis="x", which="both", bottom=False, labelbottom=False)
 
     # Optional: avoid clipping of labels
     # p.axes.figure.tight_layout()
