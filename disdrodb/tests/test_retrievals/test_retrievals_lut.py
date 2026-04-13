@@ -40,11 +40,11 @@ class TestNearestNeighbourLUT1D:
     @pytest.fixture
     def lut(self, sample_df):
         """Create a NearestNeighbourLUT1D instance for testing."""
-        return NearestNeighbourLUT1D(sample_df, "x", columns=["value1", "value2"])
+        return NearestNeighbourLUT1D(sample_df, x="x", columns=["value1", "value2"])
 
     def test_init_with_valid_dataframe(self, sample_df):
         """Test initialization with valid DataFrame and parameters."""
-        lut = NearestNeighbourLUT1D(sample_df, "x", columns=["value1", "value2"])
+        lut = NearestNeighbourLUT1D(sample_df, x="x", columns=["value1", "value2"])
         assert lut.x == "x"
         assert lut.columns == ["value1", "value2"]
         assert lut.core_columns == ["value1", "value2"]
@@ -54,12 +54,12 @@ class TestNearestNeighbourLUT1D:
 
     def test_init_with_default_columns(self, sample_df):
         """Test initialization with default columns (all columns)."""
-        lut = NearestNeighbourLUT1D(sample_df, "x")
-        assert set(lut.columns) == {"x", "value1", "value2"}
+        lut = NearestNeighbourLUT1D(sample_df, x="x")
+        assert set(lut.columns) == {"value1", "value2"}
 
     def test_init_with_custom_dtype(self, sample_df):
         """Test initialization with custom dtype."""
-        lut = NearestNeighbourLUT1D(sample_df, "x", columns=["value1"], dtype=np.float64)
+        lut = NearestNeighbourLUT1D(sample_df, x="x", columns=["value1"], dtype=np.float64)
         assert lut.dtype == np.float64
         assert lut.points.dtype == np.float64
         assert lut.values.dtype == np.float64  # noqa: PD011
@@ -68,7 +68,7 @@ class TestNearestNeighbourLUT1D:
         """Test initialization when x is in DataFrame index."""
         df = pd.DataFrame({"value": [10, 20, 30]})
         df = df.set_index(pd.Index([0.0, 1.0, 2.0], name="x"))
-        lut = NearestNeighbourLUT1D(df, "x", columns=["value"])
+        lut = NearestNeighbourLUT1D(df, x="x", columns=["value"])
         assert lut.x == "x"
         assert lut.points.shape == (3, 1)
 
@@ -81,7 +81,7 @@ class TestNearestNeighbourLUT1D:
                 "value2": [100.0, 200.0, 300.0],
             },
         )
-        lut = NearestNeighbourLUT1D(df, "x", columns=["value1", "value2"])
+        lut = NearestNeighbourLUT1D(df, x="x", columns=["value1", "value2"])
         assert len(lut) == 2
         assert np.array_equal(lut.points.ravel(), np.array([0.0, 2.0], dtype=lut.dtype))
         assert not np.isnan(lut.values).any()
@@ -95,7 +95,7 @@ class TestNearestNeighbourLUT1D:
                 "value2": [100.0, np.nan, 300.0],
             },
         )
-        lut = NearestNeighbourLUT1D(df, "x", columns=["value1", "value2"], core_columns=["value1"])
+        lut = NearestNeighbourLUT1D(df, x="x", columns=["value1", "value2"], core_columns=["value1"])
         assert len(lut) == 3
         assert lut.core_columns == ["value1"]
         assert np.array_equal(lut.points.ravel(), np.array([0.0, 1.0, 2.0], dtype=lut.dtype))
@@ -110,7 +110,7 @@ class TestNearestNeighbourLUT1D:
                 "value2": [100.0, 200.0, np.nan],
             },
         )
-        lut = NearestNeighbourLUT1D(df, "x", columns=["value1", "value2"], core_columns=["value1"])
+        lut = NearestNeighbourLUT1D(df, x="x", columns=["value1", "value2"], core_columns=["value1"])
         assert len(lut) == 2
         assert np.array_equal(lut.points.ravel(), np.array([0.0, 2.0], dtype=lut.dtype))
         assert np.isnan(lut.values[1, 1])  # noqa: PD011
@@ -118,17 +118,17 @@ class TestNearestNeighbourLUT1D:
     def test_init_raises_error_for_missing_x_column(self, sample_df):
         """Test that ValueError is raised when x column is missing."""
         with pytest.raises(ValueError, match="x='nonexistent' is not a column of df."):
-            NearestNeighbourLUT1D(sample_df, "nonexistent")
+            NearestNeighbourLUT1D(sample_df, x="nonexistent")
 
     def test_init_raises_error_for_missing_value_columns(self, sample_df):
         """Test that ValueError is raised when specified columns are missing."""
         with pytest.raises(ValueError, match="columns not found in DataFrame"):
-            NearestNeighbourLUT1D(sample_df, "x", columns=["nonexistent"])
+            NearestNeighbourLUT1D(sample_df, x="x", columns=["nonexistent"])
 
     def test_init_raises_error_for_missing_core_columns(self, sample_df):
         """Test that ValueError is raised when specified core columns are missing."""
         with pytest.raises(ValueError, match="core_columns not found in DataFrame"):
-            NearestNeighbourLUT1D(sample_df, "x", columns=["value1"], core_columns=["nonexistent"])
+            NearestNeighbourLUT1D(sample_df, x="x", columns=["value1"], core_columns=["nonexistent"])
 
     def test_predict_with_scalar_inputs(self, lut):
         """Test predict method with scalar coordinates."""
@@ -228,9 +228,9 @@ class TestNearestNeighbourLUT1D:
     def test_empty_columns_list_uses_all_columns(self):
         """Test initialization with None columns parameter includes all columns."""
         df = pd.DataFrame({"x": [0.0, 1.0], "val": [10, 20]})
-        lut = NearestNeighbourLUT1D(df, "x", columns=None)
+        lut = NearestNeighbourLUT1D(df, x="x", columns=None)
         assert "val" in lut.columns
-        assert "x" in lut.columns
+        assert "x" not in lut.columns
 
     def test_predict_with_nan_input_x(self, lut):
         """Test that NaN x-coordinate returns NaN values."""
@@ -348,12 +348,12 @@ class TestNearestNeighbourLUT2D:
 
     def test_init_with_default_columns(self, sample_df):
         """Test initialization with default columns (all columns)."""
-        lut = NearestNeighbourLUT2D(sample_df, "x", "y")
-        assert set(lut.columns) == {"x", "y", "value1", "value2"}
+        lut = NearestNeighbourLUT2D(sample_df, x="x", y="y", columns=["value1", "value2"])
+        assert set(lut.columns) == {"value1", "value2"}
 
     def test_init_with_custom_dtype(self, sample_df):
         """Test initialization with custom dtype."""
-        lut = NearestNeighbourLUT2D(sample_df, "x", "y", columns=["value1"], dtype=np.float64)
+        lut = NearestNeighbourLUT2D(sample_df, x="x", y="y", columns=["value1"], dtype=np.float64)
         assert lut.dtype == np.float64
         assert lut.points.dtype == np.float64
         assert lut.values.dtype == np.float64  # noqa: PD011
@@ -367,15 +367,16 @@ class TestNearestNeighbourLUT2D:
             },
         )
         df = df.set_index(pd.Index([0.0, 1.0, 2.0], name="x"))
-        lut = NearestNeighbourLUT2D(df, "x", "y", columns=["value"])
+        lut = NearestNeighbourLUT2D(df, x="x", y="y", columns=["value"])
         assert lut.x == "x"
+        assert lut.y == "y"
         assert lut.points.shape == (3, 2)
 
     def test_init_discards_rows_with_nan_values(self, sample_df):
         """Test initialization discards rows with NaN selected values."""
         df = sample_df.copy()
         df.loc[4, "value1"] = np.nan
-        lut = NearestNeighbourLUT2D(df, "x", "y", columns=["value1", "value2"])
+        lut = NearestNeighbourLUT2D(df, x="x", y="y", columns=["value1", "value2"])
         assert len(lut) == 5
         assert not np.isnan(lut.values).any()
         assert not np.any(np.all(lut.points == np.array([1.0, 1.0], dtype=lut.dtype), axis=1))
@@ -384,7 +385,7 @@ class TestNearestNeighbourLUT2D:
         """Test initialization keeps rows with NaNs outside core columns."""
         df = sample_df.copy()
         df.loc[4, "value2"] = np.nan
-        lut = NearestNeighbourLUT2D(df, "x", "y", columns=["value1", "value2"], core_columns=["value1"])
+        lut = NearestNeighbourLUT2D(df, x="x", y="y", columns=["value1", "value2"], core_columns=["value1"])
         assert len(lut) == 6
         assert lut.core_columns == ["value1"]
         assert np.isnan(lut.values[4, 1])  # noqa: PD011
@@ -395,7 +396,7 @@ class TestNearestNeighbourLUT2D:
         df = sample_df.copy()
         df.loc[4, "y"] = np.nan
         df.loc[5, "value2"] = np.nan
-        lut = NearestNeighbourLUT2D(df, "x", "y", columns=["value1", "value2"], core_columns=["value1"])
+        lut = NearestNeighbourLUT2D(df, x="x", y="y", columns=["value1", "value2"], core_columns=["value1"])
         assert len(lut) == 5
         assert np.isnan(lut.values[4, 1])  # noqa: PD011
         assert not np.any(np.isnan(lut.points))
@@ -404,22 +405,22 @@ class TestNearestNeighbourLUT2D:
     def test_init_raises_error_for_missing_x_column(self, sample_df):
         """Test that ValueError is raised when x column is missing."""
         with pytest.raises(ValueError, match="x='nonexistent' is not a column of df."):
-            NearestNeighbourLUT2D(sample_df, "nonexistent", "y")
+            NearestNeighbourLUT2D(sample_df, x="nonexistent", y="y")
 
     def test_init_raises_error_for_missing_y_column(self, sample_df):
         """Test that ValueError is raised when y column is missing."""
         with pytest.raises(ValueError, match="y='nonexistent' is not a column of df."):
-            NearestNeighbourLUT2D(sample_df, "x", "nonexistent")
+            NearestNeighbourLUT2D(sample_df, x="x", y="nonexistent")
 
     def test_init_raises_error_for_missing_value_columns(self, sample_df):
         """Test that ValueError is raised when specified columns are missing."""
         with pytest.raises(ValueError, match="columns not found in DataFrame"):
-            NearestNeighbourLUT2D(sample_df, "x", "y", columns=["nonexistent"])
+            NearestNeighbourLUT2D(sample_df, x="x", y="y", columns=["nonexistent"])
 
     def test_init_raises_error_for_missing_core_columns(self, sample_df):
         """Test that ValueError is raised when specified core columns are missing."""
         with pytest.raises(ValueError, match="core_columns not found in DataFrame"):
-            NearestNeighbourLUT2D(sample_df, "x", "y", columns=["value1"], core_columns=["nonexistent"])
+            NearestNeighbourLUT2D(sample_df, x="x", y="y", columns=["value1"], core_columns=["nonexistent"])
 
     def test_predict_with_scalar_inputs(self, lut):
         """Test predict method with scalar x and y coordinates."""
@@ -538,10 +539,10 @@ class TestNearestNeighbourLUT2D:
                 "val": [10, 20],
             },
         )
-        lut = NearestNeighbourLUT2D(df, "x", "y", columns=None)
+        lut = NearestNeighbourLUT2D(df, x="x", y="y", columns=None)
         assert "val" in lut.columns
-        assert "x" in lut.columns
-        assert "y" in lut.columns
+        assert "x" not in lut.columns
+        assert "y" not in lut.columns
 
     def test_predict_with_nan_input_x(self, lut):
         """Test that NaN x-coordinate returns NaN values."""

@@ -26,6 +26,7 @@ from disdrodb.psd.models import (
 
 
 def plot_loss_function(loss_function, q=(0, 0.8), s=15, cmap="Spectral_r", marker="x", c="black", **kwargs):
+    """Plot loss function."""
     # List dimensions
     loss_function = loss_function.squeeze()
     dims = list(loss_function.dims)
@@ -74,6 +75,7 @@ def plot_normalized_dsd_and_ngg_fits(
     norm=None,
     ax=None,
 ):
+    """Plot normalized DSD and fitted NormalizedGeneralizedGammaPSD."""
     # Define colormap and norm
     cmap = plt.get_cmap(cmap)
     cmap.set_under(alpha=0)
@@ -105,10 +107,7 @@ def plot_normalized_dsd_and_ngg_fits(
 
     # --------------------------------------------------------------------------.
     # Add fitted NormalizedGeneralizedGammaPSD
-    if c == 1 and i == 3 and j == 4:
-        model_prefix = "NG"
-    else:
-        model_prefix = "NGG"
+    model_prefix = "NG" if c == 1 and i == 3 and j == 4 else "NGG"
     nd_norm = NormalizedGeneralizedGammaPSD.normalized_formula(x=x_norm, i=i, j=j, c=c, mu=mu)
     ax.plot(
         x_norm,

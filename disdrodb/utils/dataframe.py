@@ -143,7 +143,7 @@ def compute_1d_histogram(
         variables = variables.tolist()
     elif isinstance(variables, (list, set)):
         variables_specified = True
-        variables = list(set(variables) - set([column]))
+        variables = list(set(variables) - {column})
 
     else:
         raise TypeError("`variables` must be a string, list of strings, or None.")
@@ -320,7 +320,7 @@ def compute_2d_histogram(
         variables = variables.tolist()
     elif isinstance(variables, (list, set)):
         variables_specified = True
-        variables = list(set(variables) - set([x, y]))
+        variables = list(set(variables) - {x, y})
     else:
         raise TypeError("`variables` must be a string, list of strings, or None.")
 

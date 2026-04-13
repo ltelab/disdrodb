@@ -335,11 +335,15 @@ def get_dsd_variable(xr_obj, variable=None, diameter_dim=DIAMETER_DIMENSION):
 
 
 def get_cmap_alpha(vmin=0, vmax=1, color=(1, 1, 1)):
+    """Create a single color colormap with linear gradient in alpha values.
+
+    Default color is white.
+    """
     colors = np.ones((256, 4))
     colors[:, 0] = color[0]
     colors[:, 1] = color[1]
     colors[:, 2] = color[2]
-    colors[:, 3] = np.linspace(vmin, vmax, 256)  # # Set alpha channe
+    colors[:, 3] = np.linspace(vmin, vmax, 256)  # # Set alpha channel
     cmap_alpha = plt.matplotlib.colors.ListedColormap(colors)
     cmap_alpha.set_bad((0, 0, 0, 0))
     return cmap_alpha
@@ -436,10 +440,7 @@ def plot_dsd(
         norm = Normalize() if np.isnan(vmin) else LogNorm(vmin, None)
 
     # Plot N(D) or drop counts
-    if add_colorbar:
-        cbar_kwargs = {"label": labels["cbar_label"]}
-    else:
-        cbar_kwargs = None
+    cbar_kwargs = {"label": labels["cbar_label"]} if add_colorbar else None
     p = da_dsd.plot.pcolormesh(
         x="time",
         norm=norm,

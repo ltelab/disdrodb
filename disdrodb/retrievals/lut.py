@@ -94,10 +94,10 @@ class NearestNeighbourLUT1D:
             raise ValueError(f"{x=} is not a column of df.")
 
         # Remove x from columns and core columns
-        columns = list(set(columns) - set([x]))
+        columns = list(set(columns) - {x})
         if core_columns is None:
             core_columns = columns
-        core_columns = list(set(core_columns) - set([x]))
+        core_columns = list(set(core_columns) - {x})
 
         # Check columns validity
         _check_columns_in_dataframe(df, columns, "columns")
@@ -297,10 +297,10 @@ class NearestNeighbourLUT2D:
             raise ValueError(f"{y=} is not a column of df.")
 
         # Remove x and y from columns and core columns
-        columns = list(set(columns) - set([x, y]))
+        columns = list(set(columns) - {x, y})
         if core_columns is None:
             core_columns = columns
-        core_columns = list(set(core_columns) - set([x, y]))
+        core_columns = list(set(core_columns) - {x, y})
 
         # Check columns
         _check_columns_in_dataframe(df, columns, "columns")

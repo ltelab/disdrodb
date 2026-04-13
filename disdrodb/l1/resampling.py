@@ -162,7 +162,6 @@ def _preprocess_dataset(ds, add_qc_resampling=True, mask_invalid_timesteps=True)
         "raw_particle_counts",
     ]:
         if var in ds:
-            print(var)
             data_var = ds[var].compute()
             dims = set(data_var.dims) - {"time"}
             invalid_timesteps = data_var.isnull().any(dim=dims)  # noqa PD003
