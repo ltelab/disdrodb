@@ -141,6 +141,17 @@ def get_precipitation_legend_style(name):
     return colors, labels
 
 
+def define_event_title_string(start_time, end_time):
+    """Create title string based on start_time and end_time."""
+    if start_time.date() == end_time.date():
+        # Same date: show "YYYY-MM-DD HH:MM - HH:MM UTC"
+        title_str = f"{start_time.strftime('%Y-%m-%d %H:%M')} - {end_time.strftime('%H:%M')} UTC"
+    else:
+        # Different dates: show full datetime for both
+        title_str = f"{start_time.strftime('%Y-%m-%d %H:%M')} - {end_time.strftime('%Y-%m-%d %H:%M')} UTC"
+    return title_str
+
+
 ####-------------------------------------------------------------------------------------------------------
 #### N(D) and n(D) visualizations
 
@@ -363,6 +374,7 @@ def plot_dsd(
     add_ylabel=True,
     add_time_axis=True,
     velocity_method="theoretical_velocity",
+    **plot_kwargs,
 ):
     """Plot drop number concentration N(D) or drop counts n(D) timeseries.
 
@@ -398,7 +410,9 @@ def plot_dsd(
     # Retrieve N(D) or n(D)
     da_dsd = get_dsd_variable(xr_obj, variable=variable)
     da_dsd = da_dsd.compute()
-    da_dsd.attrs["disdrodb_rolled_product"] = xr_obj.attrs.get("disdrodb_rolled_product", "False")
+
+    if "disdrodb_rolled_product" in xr_obj.attrs:
+        da_dsd.attrs["disdrodb_rolled_product"] = xr_obj.attrs["disdrodb_rolled_product"]
 
     # Check not empty object
     if da_dsd.size == 0:
@@ -449,6 +463,7 @@ def plot_dsd(
         extend="max",
         cbar_kwargs=cbar_kwargs,
         ax=ax,
+        **plot_kwargs,
     )
     # Add transparency if asked
     # - Where alpha 1, pcolormesh should not plot !
@@ -535,6 +550,9 @@ def plot_l2_dsd_quicklook(
             secondary_yscale = secondary_yscale if secondary_yscale is not None else "log"
             secondary_label = secondary_label if secondary_label is not None else r"R [$mm hr^{-1}$]"
             secondary_hlines = secondary_hlines if secondary_hlines is not None else (1, 10, 100)
+        if secondary_yscale is None:
+            secondary_yscale = "linear"
+
         # Compute precipitation type
         if precipitation_type is not None:
             if precipitation_type == "rain_type" and precipitation_type not in xr_obj:
@@ -1010,14 +1028,7 @@ def plot_dsd_quicklook(
     duration_str = f"{hours}H{minutes:02d}MIN" if hours > 0 else f"{minutes}MIN"
 
     # Format title based on whether dates are the same
-    t_start_dt = time_bins[0]
-    t_end_dt = time_bins[n_slices]
-    if t_start_dt.date() == t_end_dt.date():
-        # Same date: show "YYYY-MM-DD HH:MM - HH:MM UTC"
-        title_str = f"{t_start_dt.strftime('%Y-%m-%d %H:%M')} - {t_end_dt.strftime('%H:%M')} UTC"
-    else:
-        # Different dates: show full datetime for both
-        title_str = f"{t_start_dt.strftime('%Y-%m-%d %H:%M')} - {t_end_dt.strftime('%Y-%m-%d %H:%M')} UTC"
+    title_str = define_event_title_string(start_time=time_bins[0], end_time=time_bins[n_slices])
 
     # Set center title
     axes[0].set_title(
@@ -1131,7 +1142,7 @@ def plot_dsd_quicklook(
         )
         cbar.set_label(cbar_label, fontsize=cbar_fontsize)
 
-    #### Add classification legend
+    #### - Add classification legend
     if add_precipitation_legend:
         legend_patches = [
             Patch(facecolor=precipitation_legend_colors[k], edgecolor="black", label=precipitation_legend_labels[k])
@@ -1646,7 +1657,7 @@ def plot_colored_line(
 
     # Handle datetime x-axis
     if np.issubdtype(x_vals.dtype, np.datetime64):
-        x_plot = plt.matplotlib.dates.date2num(x_vals.astype("datetime64[ns]").astype(object))
+        x_plot = mdates.date2num(pd.to_datetime(x_vals).to_pydatetime())
         is_datetime = True
     else:
         x_plot = x_vals.astype(float, copy=False)
@@ -1694,11 +1705,17 @@ def plot_colored_line(
     ax.set_xlim(xv.min(), xv.max())
     ax.set_ylim(yv.min(), yv.max())
 
-    if is_datetime:
-        ax.xaxis_date()
-
     ax.set_xlabel(x_name)
     ax.set_ylabel(var)
+
+    if is_datetime:
+        # - Format x-axis as hours (and minutes if needed)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))  # or "%H" for hours only
+        # - Cleaner tick spacing
+        ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+        # - Rotate
+        plt.setp(ax.get_xticklabels(), rotation=90)
+        ax.set_xlabel("")
 
     if add_colorbar:
         cbar = plt.colorbar(lc, ax=ax)
