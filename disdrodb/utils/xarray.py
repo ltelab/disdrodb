@@ -260,7 +260,7 @@ def define_dataset_fill_value_dictionary(ds):
     """
     fill_value_dict = {}
     # Retrieve fill values for numerical variables and coordinates
-    for var in list(ds.variables):  # usign variables because da.coords.variables exist !
+    for var in list(ds.variables):  # using variables because da.coords.variables exist !
         fill_value_array = define_dataarray_fill_value(ds[var])
         if fill_value_array is not None:
             fill_value_dict[var] = fill_value_array

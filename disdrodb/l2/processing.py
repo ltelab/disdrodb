@@ -794,11 +794,13 @@ def generate_l2e(
 def _get_default_optimization(psd_model):
     """PSD model defaults."""
     defaults = {
+        "LognormalPSD": "GS",
         "ExponentialPSD": "GS",
         "GammaPSD": "GS",
-        "LognormalPSD": "GS",
-        "NormalizedGammaPSD": "GS",
         "GeneralizedGammaPSD": "GS",
+        "NormalizedGammaDmNwPSD": "GS",
+        "NormalizedGammaD50NwPSD": "GS",
+        "NormalizedGammaDmNtPSD": "GS",
         "NormalizedGeneralizedGammaPSD": "GS",
     }
     optimization = defaults[psd_model]
@@ -904,7 +906,7 @@ def generate_l2m(
     """
     ####------------------------------------------------------.
     #### Define default PSD model and optimization
-    psd_model = "NormalizedGammaPSD" if psd_model is None else psd_model
+    psd_model = "NormalizedGammaD50NwPSD" if psd_model is None else psd_model
     optimization = _get_default_optimization(psd_model) if optimization is None else optimization
 
     # ----------------------------------------------------------------------------.

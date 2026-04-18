@@ -48,7 +48,7 @@ CASES = [
     ("LognormalPSD", {"Nt": 800, "mu": 0, "sigma": 1}, ["GS", "ML", "MOM"]),
     ("ExponentialPSD", {"N0": 500, "Lambda": 1}, ["GS", "ML", "MOM"]),
     ("GammaPSD", {"N0": 500, "mu": 1.0, "Lambda": 1}, ["GS", "ML", "MOM"]),
-    ("NormalizedGammaPSD", {"Nw": 10_000, "D50": 1, "mu": 2}, ["GS"]),  # ML not implemented
+    ("NormalizedGammaD50NwPSD", {"Nw": 10_000, "D50": 1, "mu": 2}, ["GS"]),  # ML not implemented
     ("GeneralizedGammaPSD", {"Nt": 800, "mu": 0, "c": 1, "Lambda": 1}, ["GS"]),
     ("NormalizedGeneralizedGammaPSD", {"i": 3, "j": 4, "Nc": 250, "Dc": 3, "mu": 0, "c": 1}, ["GS"]),
 ]
@@ -566,8 +566,8 @@ def test_available_mom_methods():
     assert "M234" in mom_methods
 
     # Assert raise error
-    with pytest.raises(NotImplementedError, match="NormalizedGammaPSD"):
-        available_mom_methods("NormalizedGammaPSD")
+    with pytest.raises(NotImplementedError, match="NormalizedGammaD50NwPSD"):
+        available_mom_methods("NormalizedGammaD50NwPSD")
 
 
 @pytest.mark.parametrize("psd_model", available_psd_models())
@@ -706,10 +706,10 @@ class TestEstimateModelParameters:
 
         # Test raise error
         with pytest.raises(NotImplementedError, match="ML optimization is not available"):
-            estimate_model_parameters(ds, psd_model="NormalizedGammaPSD", optimization="ML")
+            estimate_model_parameters(ds, psd_model="NormalizedGammaD50NwPSD", optimization="ML")
 
         with pytest.raises(NotImplementedError, match="MOM optimization is not available"):
-            estimate_model_parameters(ds, psd_model="NormalizedGammaPSD", optimization="MOM")
+            estimate_model_parameters(ds, psd_model="NormalizedGammaD50NwPSD", optimization="MOM")
 
     def test_GeneralizedGammaPSD_fitting(self):
         """Test Generalized Gamma PSD fitting."""
@@ -722,26 +722,26 @@ class TestEstimateModelParameters:
 
         # Test raise error
         with pytest.raises(NotImplementedError, match="ML optimization is not available"):
-            estimate_model_parameters(ds, psd_model="NormalizedGammaPSD", optimization="ML")
+            estimate_model_parameters(ds, psd_model="NormalizedGammaD50NwPSD", optimization="ML")
 
         with pytest.raises(NotImplementedError, match="MOM optimization is not available"):
-            estimate_model_parameters(ds, psd_model="NormalizedGammaPSD", optimization="MOM")
+            estimate_model_parameters(ds, psd_model="NormalizedGammaD50NwPSD", optimization="MOM")
 
-    def test_NormalizedGammaPSD_fitting(self):
+    def test_NormalizedGammaD50NwPSD_fitting(self):
         """Test Normalized Gamma PSD fitting."""
         ds = create_template_l2e_dataset()
 
-        ds_out = estimate_model_parameters(ds, psd_model="NormalizedGammaPSD", optimization="GS")
-        assert ds_out.attrs["disdrodb_psd_model"] == "NormalizedGammaPSD"
+        ds_out = estimate_model_parameters(ds, psd_model="NormalizedGammaD50NwPSD", optimization="GS")
+        assert ds_out.attrs["disdrodb_psd_model"] == "NormalizedGammaD50NwPSD"
         assert "disdrodb_psd_optimization" in ds_out.attrs
         assert "disdrodb_psd_optimization_settings" in ds_out.attrs
 
         # Test raise error
         with pytest.raises(NotImplementedError, match="ML optimization is not available"):
-            estimate_model_parameters(ds, psd_model="NormalizedGammaPSD", optimization="ML")
+            estimate_model_parameters(ds, psd_model="NormalizedGammaD50NwPSD", optimization="ML")
 
         with pytest.raises(NotImplementedError, match="MOM optimization is not available"):
-            estimate_model_parameters(ds, psd_model="NormalizedGammaPSD", optimization="MOM")
+            estimate_model_parameters(ds, psd_model="NormalizedGammaD50NwPSD", optimization="MOM")
 
     def test_GammaPSD_fitting(self):
         """Test Gamma PSD fitting."""
