@@ -62,6 +62,8 @@ frequency_dict = {
     "W": 94.05,  # e.g. CloudSat, EarthCare
 }
 
+SPEED_OF_LIGHT = 299_792_458  # m/s
+
 
 def available_radar_bands():
     """Return a list of the available radar bands."""
@@ -109,14 +111,14 @@ def ensure_numerical_frequency(frequency):
 # Wavelength, Frequency Conversion
 def wavelength_to_frequency(wavelength):
     """Convert wavelength in millimeters to frequency in GHz."""
-    c = 299_792_458  # speed of light in m/s
+    c = SPEED_OF_LIGHT  # speed of light in m/s
     frequency = c / np.array(wavelength) / 1e6
     return frequency
 
 
 def frequency_to_wavelength(frequency):
     """Convert frequency in GHz to wavelength millimeters."""
-    c = 299_792_458  # speed of light in m/s
+    c = SPEED_OF_LIGHT  # speed of light in m/s
     wavelength = c / np.array(frequency) / 1e6
     return wavelength
 

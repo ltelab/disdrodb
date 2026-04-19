@@ -492,7 +492,7 @@ def get_rain_fall_velocity(diameter, model, ds_env=None):
     Returns
     -------
     fall_velocity : xarray.DataArray
-        The calculated raindrop fall velocities per diameter.
+        The calculated raindrop fall velocities per diameter (in m/s).
 
     Notes
     -----
