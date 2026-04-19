@@ -348,36 +348,6 @@ def compute_Dc(i, j, Mi, Mj):
     return (Mj / Mi) ** exponent
 
 
-def compute_gamma_psd_moment(mu, Lambda, N0, order):
-    """Compute Gamma PSD moment from PSD parameters.
-
-    Parameters
-    ----------
-    mu : float or array-like
-        Shape parameter [-].
-    Lambda : float or array-like
-        Inverse scale parameter [mm^-1].
-    N0 : float or array-like
-        Intercept parameter [m^-3 mm^(-1-mu)].
-    order: float or array-like
-        Moment order
-
-    Returns
-    -------
-    float or array-like
-        Rayleigh reflectivity z [mm^6/m^3].
-
-    References
-    ----------
-    Steiner, M., J. A. Smith, and R. Uijlenhoet, 2004.
-    A Microphysical Interpretation of Radar Reflectivity-Rain Rate
-    Relationships.
-    J. Atmos. Sci., 61, 1114-1131,
-    https://doi.org/10.1175/1520-0469(2004)061<1114:AMIORR>2.0.CO;2.
-    """
-    return N0 / Lambda ** (mu + order + 1) * gamma_f(mu + order + 1)
-
-
 class XarrayPSD(PSD):
     """PSD class template allowing vectorized computations with xarray.
 
@@ -565,6 +535,9 @@ class LognormalPSD(XarrayPSD):
 
         N(D) = \frac{N_t}{\sqrt{2\pi} \sigma D} \exp\left(-\frac{(\ln(D) - \mu)^2}{2\sigma^2}\right)
 
+    mu and sigma are the mean and standard deviation of ln(D)
+    Dm is related to mu and sigma by ln(Dm) = mu + 3.5*sigma**2.
+
     Parameters
     ----------
     Nt : float or xarray.DataArray, optional
@@ -592,6 +565,13 @@ class LognormalPSD(XarrayPSD):
     -----
     The lognormal distribution is characterized by the fact that the logarithm
     of the variable follows a normal distribution.
+
+    References
+    ----------
+    Tian, L., G. M. Heymsfield, L. Li, A. J. Heymsfield, A. Bansemer,
+    C. H. Twohy, and R. C. Srivastava, 2010.
+    A Study of Cirrus Ice Particle Size Distribution Using TC4 Observations.
+    J. Atmos. Sci., 67, 195-216, https://doi.org/10.1175/2009JAS3114.1.
     """
 
     def __init__(self, Nt=1.0, mu=0.0, sigma=1.0):
@@ -847,7 +827,7 @@ class GammaPSD(ExponentialPSD):
         self.N0 = N0
         self.Lambda = Lambda
         self.mu = mu
-        self.parameters = {"N0": self.N0, "mu": self.mu, "Lambda": self.Lambda}
+        self.parameters = {"N0": self.N0, "Lambda": self.Lambda, "mu": self.mu}
         check_input_parameters(self.parameters)
 
     @property
@@ -966,8 +946,38 @@ class GammaPSD(ExponentialPSD):
         return (mu + 4) ** 0.5 / Lambda
 
     @staticmethod
-    def compute_R(mu, Lambda, N0, v0=3.778, p=3.67):
-        """Compute rainfall rate from PSD parameters.
+    def compute_M(N0, Lambda, mu, n):
+        """Compute Gamma PSD moment from PSD parameters.
+
+        Parameters
+        ----------
+        mu : float or array-like
+            Shape parameter [-].
+        Lambda : float or array-like
+            Inverse scale parameter [mm^-1].
+        N0 : float or array-like
+            Intercept parameter [m^-3 mm^(-1-mu)].
+        n: float or array-like
+            Moment order
+
+        Returns
+        -------
+        float or array-like
+            PSD moment [mm^order/m^3].
+
+        References
+        ----------
+        Steiner, M., J. A. Smith, and R. Uijlenhoet, 2004.
+        A Microphysical Interpretation of Radar Reflectivity-Rain Rate
+        Relationships.
+        J. Atmos. Sci., 61, 1114-1131,
+        https://doi.org/10.1175/1520-0469(2004)061<1114:AMIORR>2.0.CO;2.
+        """
+        return N0 / Lambda ** (mu + n + 1) * gamma_f(mu + n + 1)
+
+    @staticmethod
+    def compute_R(N0, Lambda, mu, v0=3.778, p=3.67):
+        """Compute rainfall rate from PSD parameters assumig v(D)=v0*D**p powerlaw.
 
         Parameters
         ----------
@@ -991,40 +1001,11 @@ class GammaPSD(ExponentialPSD):
         J. Atmos. Sci., 61, 1114-1131,
         https://doi.org/10.1175/1520-0469(2004)061<1114:AMIORR>2.0.CO;2.
         """
-        return 6 * np.pi * v0 / 1e4 * gamma_f(4 + p + mu) * N0 / Lambda ** (4 + p + mu)
+        moment_p = GammaPSD.compute_M(N0=N0, Lambda=Lambda, mu=mu, n=3 + p)
+        return 6 * np.pi / 1e4 * v0 * moment_p
 
     @staticmethod
-    def compute_M(mu, Lambda, N0, order):
-        """Compute Gamma PSD moment from PSD parameters.
-
-        Parameters
-        ----------
-        mu : float or array-like
-            Shape parameter [-].
-        Lambda : float or array-like
-            Inverse scale parameter [mm^-1].
-        N0 : float or array-like
-            Intercept parameter [m^-3 mm^(-1-mu)].
-        order: float or array-like
-            Moment order
-
-        Returns
-        -------
-        float or array-like
-            PSD moment [mm^order/m^3].
-
-        References
-        ----------
-        Steiner, M., J. A. Smith, and R. Uijlenhoet, 2004.
-        A Microphysical Interpretation of Radar Reflectivity-Rain Rate
-        Relationships.
-        J. Atmos. Sci., 61, 1114-1131,
-        https://doi.org/10.1175/1520-0469(2004)061<1114:AMIORR>2.0.CO;2.
-        """
-        return compute_gamma_psd_moment(mu=mu, Lambda=Lambda, N0=N0, order=order)
-
-    @staticmethod
-    def compute_Nt(mu, Lambda, N0):
+    def compute_Nt(N0, Lambda, mu):
         """Compute total concentration from PSD parameters.
 
         Parameters
@@ -1049,10 +1030,46 @@ class GammaPSD(ExponentialPSD):
         J. Atmos. Sci., 61, 1114-1131,
         https://doi.org/10.1175/1520-0469(2004)061<1114:AMIORR>2.0.CO;2.
         """
-        return compute_gamma_psd_moment(mu=mu, Lambda=Lambda, N0=N0, order=0)
+        return GammaPSD.compute_M(N0=N0, Lambda=Lambda, mu=mu, n=0)
 
     @staticmethod
-    def compute_z(mu, Lambda, N0):
+    def compute_LWC(N0, Lambda, mu, water_density=1000):
+        """Compute liquid water content from PSD parameters.
+
+        Parameters
+        ----------
+        mu : float or array-like
+            Shape parameter [-].
+        Lambda : float or array-like
+            Inverse scale parameter [mm^-1].
+        N0 : float or array-like
+             Intercept parameter [m^-3 mm^(-1-mu)].
+        water_density : float, optional
+            The density of water in kilograms per cubic meter (kg/m³).
+            Default is 1000 kg/m³ (approximate density of water at 20°C).
+
+        Returns
+        -------
+        float or array-like
+            Liquid water content in grams per cubic meter (g/m³).
+
+        References
+        ----------
+        Steiner, M., J. A. Smith, and R. Uijlenhoet, 2004.
+        A Microphysical Interpretation of Radar Reflectivity-Rain Rate
+        Relationships.
+        J. Atmos. Sci., 61, 1114-1131,
+        https://doi.org/10.1175/1520-0469(2004)061<1114:AMIORR>2.0.CO;2.
+        """
+        moment_3 = GammaPSD.compute_M(N0=N0, Lambda=Lambda, mu=mu, n=3)
+        # Convert water density from kg/m³ to g/mm³
+        water_density = water_density * 1e-6  # [kg/m³] * 1e-6 = [g/mm³]
+        # Calculate LWC [g/m3]
+        lwc = (np.pi * water_density / 6) * moment_3  # [g/mm³] * [m⁻³·mm³] = [g/m³]
+        return lwc
+
+    @staticmethod
+    def compute_Z(N0, Lambda, mu):
         """Compute rayleigh reflectivity from PSD parameters.
 
         Parameters
@@ -1067,7 +1084,7 @@ class GammaPSD(ExponentialPSD):
         Returns
         -------
         float or array-like
-            Rayleigh reflectivity z [mm^6/m^3].
+            Rayleigh reflectivity Z [dBZ].
 
         References
         ----------
@@ -1077,7 +1094,266 @@ class GammaPSD(ExponentialPSD):
         J. Atmos. Sci., 61, 1114-1131,
         https://doi.org/10.1175/1520-0469(2004)061<1114:AMIORR>2.0.CO;2.
         """
-        return compute_gamma_psd_moment(mu=mu, Lambda=Lambda, N0=N0, order=6)
+        import disdrodb
+
+        return disdrodb.decibel(GammaPSD.compute_M(N0=N0, Lambda=Lambda, mu=mu, n=6))
+
+
+class NormalizedGammaDmNwPSD(XarrayPSD):
+    r"""Normalized Gamma PSD using :math:`D_m` and :math:`N_w`.
+
+    This formulation is the standard normalized-gamma representation based on
+    mass-weighted mean diameter :math:`D_m` and normalized intercept
+    :math:`N_w` (liquid-water-content normalization).
+
+    The distribution is:
+
+    .. math::
+
+        N(D) = N_w \, f(\mu) \left(\frac{D}{D_m}\right)^{\mu}
+        \exp\!\left[-(\mu + 4)\frac{D}{D_m}\right]
+
+    where
+
+    .. math::
+
+        f(\mu) = \frac{6}{4^4}
+        \frac{(\mu + 4)^{\mu + 4}}{\Gamma(\mu + 4)}.
+
+    The associated normalized shape (returned by ``normalized_formula``) is
+    :math:`H(x) = N(D)/N_w` with :math:`x = D/D_m`.
+
+    Parameters
+    ----------
+    Nw : float or xarray.DataArray, optional
+        Normalized intercept parameter [m^-3 mm^-1].
+        Default is 1.0.
+    Dm : float or xarray.DataArray, optional
+        Mass-weighted mean diameter [mm].
+        Default is 1.0.
+    mu : float or xarray.DataArray, optional
+        Dimensionless shape parameter [-].
+        Default is 0.0.
+
+    Attributes
+    ----------
+    Nw : float or xarray.DataArray
+        Normalized intercept parameter.
+    Dm : float or xarray.DataArray
+        Mass-weighted mean diameter.
+    mu : float or xarray.DataArray
+        Shape parameter.
+    parameters : dict
+        Dictionary containing ``Nw``, ``Dm``, and ``mu``.
+
+    Notes
+    -----
+    Related normalized-gamma formulations implemented in this module are:
+
+    - :class:`NormalizedGammaD50NwPSD` (normalization with :math:`D_50` and :math:`N_w`)
+    - :class:`NormalizedGammaDmNtPSD` (normalization with :math:`D_m` and :math:`N_t`)
+
+    References
+    ----------
+    Testud, J., S. Oury, R. A. Black, P. Amayenc, and X. Dou, 2001:
+    The Concept of "Normalized" Distribution to Describe Raindrop Spectra:
+    A Tool for Cloud Physics and Cloud Remote Sensing.
+    J. Appl. Meteor. Climatol., 40, 1118-1140,
+    https://doi.org/10.1175/1520-0450(2001)040<1118:TCONDT>2.0.CO;2
+
+    Bringi, V. N., V. Chandrasekar, J. Hubbert, E. Gorgucci,
+    W. L. Randeu, and M. Schoenhuber, 2003:
+    Raindrop Size Distribution in Different Climatic Regimes from Disdrometer
+    and Dual-Polarized Radar Analysis.
+    J. Atmos. Sci., 60, 354-365,
+    https://doi.org/10.1175/1520-0469(2003)060<0354:RSDIDC>2.0.CO;2
+    """
+
+    def __init__(self, Nw=1.0, Dm=1.0, mu=0.0):
+        self.Dm = Dm
+        self.mu = mu
+        self.Nw = Nw
+        self.parameters = {"Nw": Nw, "Dm": Dm, "mu": mu}
+        check_input_parameters(self.parameters)
+
+    @property
+    def name(self):
+        """Return the PSD name."""
+        return "NormalizedGammaDmNwPSD"
+
+    @staticmethod
+    def normalized_formula(x, mu):
+        """Calculate the normalized shape N(D)/Nw from x=D/Dm."""
+        f = 6.0 / 4.0**4 * (4.0 + mu) ** (mu + 4) / gamma_f(mu + 4)
+        return f * np.exp(mu * np.log(x) - (4.0 + mu) * x)
+
+    @staticmethod
+    def formula(D, Nw, Dm, mu):
+        """Calculate the NormalizedGammaDmNwPSD values."""
+        x = D / Dm
+        return Nw * NormalizedGammaDmNwPSD.normalized_formula(x=x, mu=mu)
+
+    @staticmethod
+    def from_parameters(parameters):
+        """Initialize NormalizedGammaDmNwPSD from a dictionary or xarray.Dataset."""
+        Dm = parameters["Dm"]
+        Nw = parameters["Nw"]
+        mu = parameters["mu"]
+        return NormalizedGammaDmNwPSD(Dm=Dm, Nw=Nw, mu=mu)
+
+    @staticmethod
+    def required_parameters():
+        """Return the required parameters of the PSD."""
+        return ["Nw", "Dm", "mu"]
+
+    def parameters_summary(self):
+        """Return a string with the parameter summary."""
+        if self.has_scalar_parameters():
+            summary = "".join(
+                [
+                    f"{self.name}\n",
+                    f"$\\mu = {self.mu:.2f}$\n",
+                    f"$N_w= {self.Nw:.2f}$\n",
+                    f"$D_m = {self.Dm:.2f}$\n",
+                ],
+            )
+        else:
+            summary = "" f"{self.name} with N-d parameters \n"
+        return summary
+
+    @staticmethod
+    def compute_sigma_m(mu, Dm):
+        """Compute standard deviation of mass-weighted distribution.
+
+        Parameters
+        ----------
+        mu : float or array-like
+            Shape parameter [-].
+        Dm : float or array-like
+            Mass-weighted mean diameter [mm].
+
+        Returns
+        -------
+        float or array-like
+            Standard deviation sigma_m [mm].
+        """
+        return Dm / (mu + 4) ** 0.5
+
+    @staticmethod
+    def compute_M(Nw, Dm, mu, n):
+        """Compute Gamma PSD moment from PSD parameters.
+
+        Parameters
+        ----------
+        Nw : float or xarray.DataArray
+            Normalized intercept parameter.
+        Dm : float or xarray.DataArray
+            Mass-weighted mean diameter.
+        mu : float or xarray.DataArray
+            Shape parameter.
+        n: float or array-like
+            Moment order
+
+        Returns
+        -------
+        float or array-like
+            PSD moment [mm^order/m^3].
+
+        """
+        return (6 / 4**4) * Nw * Dm ** (n + 1) * (mu + 4) ** (3 - n) * gamma_f(mu + n + 1) / gamma_f(mu + 4)
+
+    @staticmethod
+    def compute_Nt(Nw, Dm, mu):
+        """Compute total concentration from PSD parameters.
+
+        Parameters
+        ----------
+        Nw : float or xarray.DataArray
+            Normalized intercept parameter.
+        Dm : float or xarray.DataArray
+            Mass-weighted mean diameter.
+        mu : float or xarray.DataArray
+            Shape parameter.
+
+        Returns
+        -------
+        float or array-like
+            Total concentration Nt [1/m3].
+
+        """
+        return NormalizedGammaDmNwPSD.compute_M(Nw=Nw, Dm=Dm, mu=mu, n=0)
+
+    @staticmethod
+    def compute_R(Nw, Dm, mu, v0=3.778, p=3.67):
+        """Compute rainfall rate from PSD parameters assumig v(D)=v0*D**p powerlaw.
+
+        Parameters
+        ----------
+        Nw : float or xarray.DataArray
+            Normalized intercept parameter.
+        Dm : float or xarray.DataArray
+            Mass-weighted mean diameter.
+        mu : float or xarray.DataArray
+            Shape parameter.
+
+        Returns
+        -------
+        float or array-like
+            Rainfall rate R [mm/hr].
+        """
+        moment_p = NormalizedGammaDmNwPSD.compute_M(Nw=Nw, Dm=Dm, mu=mu, n=3 + p)
+        return 6 * np.pi / 1e4 * v0 * moment_p
+
+    @staticmethod
+    def compute_LWC(Nw, Dm, mu, water_density=1000):
+        """Compute liquid water content from PSD parameters.
+
+        Parameters
+        ----------
+        Nw : float or xarray.DataArray
+            Normalized intercept parameter.
+        Dm : float or xarray.DataArray
+            Mass-weighted mean diameter.
+        mu : float or xarray.DataArray
+            Shape parameter.
+        water_density : float, optional
+            The density of water in kilograms per cubic meter (kg/m³).
+            Default is 1000 kg/m³ (approximate density of water at 20°C).
+
+        Returns
+        -------
+        float or array-like
+            Liquid water content in grams per cubic meter (g/m³).
+
+        """
+        moment_3 = NormalizedGammaDmNwPSD.compute_M(Nw=Nw, Dm=Dm, mu=mu, N=3)
+        # Convert water density from kg/m³ to g/mm³
+        water_density = water_density * 1e-6  # [kg/m³] * 1e-6 = [g/mm³]
+        # Calculate LWC [g/m3]
+        lwc = (np.pi * water_density / 6) * moment_3  # [g/mm³] * [m⁻³·mm³] = [g/m³]
+        return lwc
+
+    @staticmethod
+    def compute_Z(Nw, Dm, mu):
+        """Compute rayleigh reflectivity from PSD parameters.
+
+        Parameters
+        ----------
+        Nw : float or xarray.DataArray
+            Normalized intercept parameter.
+        Dm : float or xarray.DataArray
+            Mass-weighted mean diameter.
+        mu : float or xarray.DataArray
+            Shape parameter.
+
+        Returns
+        -------
+        float or array-like
+            Rayleigh reflectivity Z [dBZ].
+        """
+        import disdrodb
+
+        return disdrodb.decibel(NormalizedGammaDmNwPSD.compute_M(Nw=Nw, Dm=Dm, mu=mu, n=6))
 
 
 class NormalizedGammaD50NwPSD(XarrayPSD):
@@ -1193,8 +1469,8 @@ class NormalizedGammaD50NwPSD(XarrayPSD):
         array-like
             Normalized shape N(D)/Nw [mm^-1].
         """
-        nf = 6.0 / 3.67**4 * (3.67 + mu) ** (mu + 4) / gamma_f(mu + 4)
-        return nf * np.exp(mu * np.log(x) - (3.67 + mu) * x)
+        f = 6.0 / 3.67**4 * (3.67 + mu) ** (mu + 4) / gamma_f(mu + 4)
+        return f * np.exp(mu * np.log(x) - (3.67 + mu) * x)
 
     @staticmethod
     def formula(D, Nw, D50, mu):
@@ -1265,129 +1541,6 @@ class NormalizedGammaD50NwPSD(XarrayPSD):
         return summary
 
 
-class NormalizedGammaDmNwPSD(XarrayPSD):
-    r"""Normalized Gamma PSD using :math:`D_m` and :math:`N_w`.
-
-    This formulation is the standard normalized-gamma representation based on
-    mass-weighted mean diameter :math:`D_m` and normalized intercept
-    :math:`N_w` (liquid-water-content normalization).
-
-    The distribution is:
-
-    .. math::
-
-        N(D) = N_w \, f(\mu) \left(\frac{D}{D_m}\right)^{\mu}
-        \exp\!\left[-(\mu + 4)\frac{D}{D_m}\right]
-
-    where
-
-    .. math::
-
-        f(\mu) = \frac{6}{4^4}
-        \frac{(\mu + 4)^{\mu + 4}}{\Gamma(\mu + 4)}.
-
-    The associated normalized shape (returned by ``normalized_formula``) is
-    :math:`H(x) = N(D)/N_w` with :math:`x = D/D_m`.
-
-    Parameters
-    ----------
-    Nw : float or xarray.DataArray, optional
-        Normalized intercept parameter [m^-3 mm^-1].
-        Default is 1.0.
-    Dm : float or xarray.DataArray, optional
-        Mass-weighted mean diameter [mm].
-        Default is 1.0.
-    mu : float or xarray.DataArray, optional
-        Dimensionless shape parameter [-].
-        Default is 0.0.
-
-    Attributes
-    ----------
-    Nw : float or xarray.DataArray
-        Normalized intercept parameter.
-    Dm : float or xarray.DataArray
-        Mass-weighted mean diameter.
-    mu : float or xarray.DataArray
-        Shape parameter.
-    parameters : dict
-        Dictionary containing ``Nw``, ``Dm``, and ``mu``.
-
-    Notes
-    -----
-    Related normalized-gamma formulations implemented in this module are:
-
-    - :class:`NormalizedGammaD50NwPSD` (normalization with :math:`D_50` and :math:`N_w`)
-    - :class:`NormalizedGammaDmNtPSD` (normalization with :math:`D_m` and :math:`N_t`)
-
-    References
-    ----------
-    Testud, J., S. Oury, R. A. Black, P. Amayenc, and X. Dou, 2001:
-    The Concept of "Normalized" Distribution to Describe Raindrop Spectra:
-    A Tool for Cloud Physics and Cloud Remote Sensing.
-    J. Appl. Meteor. Climatol., 40, 1118-1140,
-    https://doi.org/10.1175/1520-0450(2001)040<1118:TCONDT>2.0.CO;2
-
-    Bringi, V. N., V. Chandrasekar, J. Hubbert, E. Gorgucci,
-    W. L. Randeu, and M. Schoenhuber, 2003:
-    Raindrop Size Distribution in Different Climatic Regimes from Disdrometer
-    and Dual-Polarized Radar Analysis.
-    J. Atmos. Sci., 60, 354-365,
-    https://doi.org/10.1175/1520-0469(2003)060<0354:RSDIDC>2.0.CO;2
-    """
-
-    def __init__(self, Nw=1.0, Dm=1.0, mu=0.0):
-        self.Dm = Dm
-        self.mu = mu
-        self.Nw = Nw
-        self.parameters = {"Nw": Nw, "Dm": Dm, "mu": mu}
-        check_input_parameters(self.parameters)
-
-    @property
-    def name(self):
-        """Return the PSD name."""
-        return "NormalizedGammaDmNwPSD"
-
-    @staticmethod
-    def normalized_formula(x, mu):
-        """Calculate the normalized shape N(D)/Nw from x=D/Dm."""
-        nf = 6.0 / 4.0**4 * (4.0 + mu) ** (mu + 4) / gamma_f(mu + 4)
-        return nf * np.exp(mu * np.log(x) - (4.0 + mu) * x)
-
-    @staticmethod
-    def formula(D, Nw, Dm, mu):
-        """Calculate the NormalizedGammaDmNwPSD values."""
-        x = D / Dm
-        return Nw * NormalizedGammaDmNwPSD.normalized_formula(x=x, mu=mu)
-
-    @staticmethod
-    def from_parameters(parameters):
-        """Initialize NormalizedGammaDmNwPSD from a dictionary or xarray.Dataset."""
-        Dm = parameters["Dm"]
-        Nw = parameters["Nw"]
-        mu = parameters["mu"]
-        return NormalizedGammaDmNwPSD(Dm=Dm, Nw=Nw, mu=mu)
-
-    @staticmethod
-    def required_parameters():
-        """Return the required parameters of the PSD."""
-        return ["Nw", "Dm", "mu"]
-
-    def parameters_summary(self):
-        """Return a string with the parameter summary."""
-        if self.has_scalar_parameters():
-            summary = "".join(
-                [
-                    f"{self.name}\n",
-                    f"$\\mu = {self.mu:.2f}$\n",
-                    f"$N_w= {self.Nw:.2f}$\n",
-                    f"$D_m = {self.Dm:.2f}$\n",
-                ],
-            )
-        else:
-            summary = "" f"{self.name} with N-d parameters \n"
-        return summary
-
-
 class NormalizedGammaDmNtPSD(XarrayPSD):
     r"""Normalized Gamma PSD using :math:`D_m` and :math:`N_t`.
 
@@ -1398,7 +1551,7 @@ class NormalizedGammaDmNtPSD(XarrayPSD):
 
     .. math::
 
-        N(D) = N_t \, f(\mu) \left(\frac{D}{D_m}\right)^{\mu}
+        N(D) = \frac{N_t}{D_m} \, f(\mu) \left(\frac{D}{D_m}\right)^{\mu}
         \exp\!\left[-(\mu + 4)\frac{D}{D_m}\right]
 
     where
@@ -1469,14 +1622,14 @@ class NormalizedGammaDmNtPSD(XarrayPSD):
     @staticmethod
     def normalized_formula(x, mu):
         """Calculate the normalized shape N(D)/Nt from x=D/Dm."""
-        nf = (4.0 + mu) ** (mu + 1) / gamma_f(mu + 1)
-        return nf * np.exp(mu * np.log(x) - (4.0 + mu) * x)
+        f = (4.0 + mu) ** (mu + 1) / gamma_f(mu + 1)
+        return f * np.exp(mu * np.log(x) - (4.0 + mu) * x)
 
     @staticmethod
     def formula(D, Nt, Dm, mu):
         """Calculate the NormalizedGammaDmNtPSD values."""
         x = D / Dm
-        return Nt * NormalizedGammaDmNtPSD.normalized_formula(x=x, mu=mu)
+        return Nt / Dm * NormalizedGammaDmNtPSD.normalized_formula(x=x, mu=mu)
 
     @staticmethod
     def from_parameters(parameters):
@@ -1656,6 +1809,173 @@ class GeneralizedGammaPSD(XarrayPSD):
         else:
             summary = "" f"{self.name} with N-d parameters \n"
         return summary
+
+    @staticmethod
+    def compute_Dm(Lambda, mu, c):
+        """Compute mass-weighted diameter from PSD parameters.
+
+        D_m  does not depend on Nt.
+
+        Parameters
+        ----------
+        Lambda : float or xarray.DataArray
+            Slope parameter.
+        mu : float or xarray.DataArray
+            Shape parameter.
+        c : float or xarray.DataArray
+            Shape parameter.
+
+        Returns
+        -------
+        float or array-like
+            Mass weighted mean diameter [mm].
+
+        """
+        # m3 = GeneralizedGammaPSD.compute_M(Nt=Nt, Lambda=Lambda, mu=mu, c=c, n=3)
+        # m4 = GeneralizedGammaPSD.compute_M(Nt=Nt, Lambda=Lambda, mu=mu, c=c, n=4)
+        # return m4/m3
+
+        g4 = gamma_f(mu + 1.0 + 4.0 / c)
+        g3 = gamma_f(mu + 1.0 + 3.0 / c)
+        return (g4 / g3) / Lambda
+
+    @staticmethod
+    def compute_sigma_m(Lambda, mu, c):
+        """Compute standard deviation of mass-weighted distribution.
+
+        sigma_m  does not depend on Nt.
+
+        Parameters
+        ----------
+        Lambda : float or xarray.DataArray
+            Slope parameter.
+        mu : float or xarray.DataArray
+            Shape parameter.
+        c : float or xarray.DataArray
+            Shape parameter.
+
+        Returns
+        -------
+        float or array-like
+            Standard deviation of mass-weighted distribution [mm].
+
+        """
+        g3 = gamma_f(mu + 1 + 3.0 / c)
+        g4 = gamma_f(mu + 1 + 4.0 / c)
+        g5 = gamma_f(mu + 1 + 5.0 / c)
+
+        variance_m = (g5 / g3 - (g4 / g3) ** 2) / (Lambda**2)
+        return np.sqrt(variance_m)
+
+    @staticmethod
+    def compute_M(Nt, Lambda, mu, c, n):
+        """Compute Generalized Gamma PSD moment from PSD parameters.
+
+        Parameters
+        ----------
+        Nt : float or xarray.DataArray
+            Total concentration [m-3].
+        Lambda : float or xarray.DataArray
+            Slope parameter.
+        mu : float or xarray.DataArray
+            Shape parameter.
+        c : float or xarray.DataArray
+            Shape parameter.
+        n: float or array-like
+            Moment order
+
+        Returns
+        -------
+        float or array-like
+            PSD moment [mm^order/m^3].
+
+        """
+        return Nt * Lambda ** (-n) * gamma_f(mu + 1 + n / c) / gamma_f(mu + 1)
+
+    @staticmethod
+    def compute_R(Nt, Lambda, mu, c, v0=3.778, p=3.67):
+        """Compute rainfall rate from PSD parameters assumig v(D)=v0*D**p powerlaw.
+
+        Parameters
+        ----------
+        Nt : float or xarray.DataArray
+            Total concentration [m-3].
+        Lambda : float or xarray.DataArray
+            Slope parameter.
+        mu : float or xarray.DataArray
+            Shape parameter.
+        c : float or xarray.DataArray
+            Shape parameter.
+
+        Returns
+        -------
+        float or array-like
+            Rainfall rate R [mm/hr].
+        """
+        moment_p = GeneralizedGammaPSD.compute_M(Nt=Nt, Lambda=Lambda, mu=mu, c=c, n=3 + p)
+        return 6 * np.pi / 1e4 * v0 * moment_p
+
+    @staticmethod
+    def compute_LWC(Nt, Lambda, mu, c, water_density=1000):
+        """Compute liquid water content from PSD parameters.
+
+        Parameters
+        ----------
+        Nt : float or xarray.DataArray
+            Total concentration [m-3].
+        Lambda : float or xarray.DataArray
+            Slope parameter.
+        mu : float or xarray.DataArray
+            Shape parameter.
+        c : float or xarray.DataArray
+            Shape parameter.
+        water_density : float, optional
+            The density of water in kilograms per cubic meter (kg/m³).
+            Default is 1000 kg/m³ (approximate density of water at 20°C).
+
+        Returns
+        -------
+        float or array-like
+            Liquid water content in grams per cubic meter (g/m³).
+        """
+        moment_3 = GeneralizedGammaPSD.compute_M(Nt=Nt, Lambda=Lambda, mu=mu, c=c, n=3)
+        # Convert water density from kg/m³ to g/mm³
+        water_density = water_density * 1e-6  # [kg/m³] * 1e-6 = [g/mm³]
+        # Calculate LWC [g/m3]
+        lwc = (np.pi * water_density / 6) * moment_3  # [g/mm³] * [m⁻³·mm³] = [g/m³]
+        return lwc
+
+    @staticmethod
+    def compute_Z(Nt, Lambda, mu, c):
+        """Compute rayleigh reflectivity from PSD parameters.
+
+        Parameters
+        ----------
+        Nt : float or xarray.DataArray
+            Total concentration [m-3].
+        Lambda : float or xarray.DataArray
+            Slope parameter.
+        mu : float or xarray.DataArray
+            Shape parameter.
+        c : float or xarray.DataArray
+            Shape parameter.
+
+        Returns
+        -------
+        float or array-like
+            Rayleigh reflectivity Z [dBZ].
+
+        References
+        ----------
+        Steiner, M., J. A. Smith, and R. Uijlenhoet, 2004.
+        A Microphysical Interpretation of Radar Reflectivity-Rain Rate
+        Relationships.
+        J. Atmos. Sci., 61, 1114-1131,
+        https://doi.org/10.1175/1520-0469(2004)061<1114:AMIORR>2.0.CO;2.
+        """
+        import disdrodb
+
+        return disdrodb.decibel(GeneralizedGammaPSD.compute_M(Nt=Nt, Lambda=Lambda, mu=mu, c=c, n=6))
 
 
 class NormalizedGeneralizedGammaPSD(XarrayPSD):
@@ -1972,6 +2292,190 @@ class NormalizedGeneralizedGammaPSD(XarrayPSD):
         else:
             summary = "" f"{self.name} with N-d parameters \n"
         return summary
+
+    @staticmethod
+    def compute_Dm(Dc, i, j, mu, c):
+        """Compute mass-weighted diameter from PSD parameters."""
+        g_i = mu + 1.0 + i / c
+        g_j = mu + 1.0 + j / c
+        g_4 = mu + 1.0 + 4.0 / c
+        g_3 = mu + 1.0 + 3.0 / c
+
+        prefactor = np.exp((gammaln(g_j) - gammaln(g_i)) / (i - j))
+        ratio_43 = np.exp(gammaln(g_4) - gammaln(g_3))
+
+        return Dc * prefactor * ratio_43
+
+    @staticmethod
+    def compute_sigma_m(Dc, i, j, mu, c):
+        """Compute standard deviation of mass-weighted distribution."""
+        g_i = mu + 1.0 + i / c
+        g_j = mu + 1.0 + j / c
+        g_3 = mu + 1.0 + 3.0 / c
+        g_4 = mu + 1.0 + 4.0 / c
+        g_5 = mu + 1.0 + 5.0 / c
+
+        prefactor = np.exp((gammaln(g_j) - gammaln(g_i)) / (i - j))
+        ratio_43 = np.exp(gammaln(g_4) - gammaln(g_3))
+        ratio_53 = np.exp(gammaln(g_5) - gammaln(g_3))
+
+        variance_factor = ratio_53 - ratio_43**2
+        return Dc * prefactor * np.sqrt(variance_factor)
+
+    def compute_M(n, Nc, Dc, i, j, mu, c):
+        """Compute the n-th moment.
+
+        Parameters
+        ----------
+        n : float
+            Moment order
+        Nc : float or array-like
+            General characteristic intercept
+        Dc : float or array-like
+            General characteristic diameter
+        i : float
+            First normalization moment index
+        j : float
+            Second normalization moment index
+        mu : float or array-like
+            Shape parameter
+        c : float or array-like
+            Shape parameter
+
+        Returns
+        -------
+        float or array-like
+            n-th moment
+        """
+        g_i = mu + 1.0 + i / c
+        g_j = mu + 1.0 + j / c
+        g_n = mu + 1.0 + n / c
+
+        log_Mn = (
+            np.log(Nc)
+            + (n + 1.0) * np.log(Dc)
+            + ((j - n) / (i - j)) * gammaln(g_i)
+            + ((n - i) / (i - j)) * gammaln(g_j)
+            + gammaln(g_n)
+        )
+        return np.exp(log_Mn)
+
+    @staticmethod
+    def compute_Nt(Nc, Dc, i, j, mu, c):
+        """Compute total concentration from PSD parameters.
+
+        Parameters
+        ----------
+        Nc : float or array-like
+            General characteristic intercept
+        Dc : float or array-like
+            General characteristic diameter
+        i : float
+            First normalization moment index
+        j : float
+            Second normalization moment index
+        mu : float or array-like
+            Shape parameter
+        c : float or array-like
+            Shape parameter
+
+        Returns
+        -------
+        float or array-like
+            Total concentration Nt [1/m3].
+
+        """
+        return NormalizedGeneralizedGammaPSD.compute_M(Nc=Nc, Dc=Dc, i=i, j=j, mu=mu, c=c, n=0)
+
+    @staticmethod
+    def compute_R(Nc, Dc, i, j, mu, c, v0=3.778, p=3.67):
+        """Compute rainfall rate from PSD parameters assumig v(D)=v0*D**p powerlaw.
+
+        Parameters
+        ----------
+         Nc : float or array-like
+             General characteristic intercept
+         Dc : float or array-like
+             General characteristic diameter
+         i : float
+             First normalization moment index
+         j : float
+             Second normalization moment index
+         mu : float or array-like
+             Shape parameter
+         c : float or array-like
+             Shape parameter
+
+        Returns
+        -------
+        float or array-like
+            Rainfall rate R [mm/hr].
+        """
+        moment_p = NormalizedGeneralizedGammaPSD.compute_M(Nc=Nc, Dc=Dc, i=i, j=j, mu=mu, c=c, n=3 + p)
+        return 6 * np.pi / 1e4 * v0 * moment_p
+
+    @staticmethod
+    def compute_LWC(Nc, Dc, i, j, mu, c, water_density=1000):
+        """Compute liquid water content from PSD parameters.
+
+        Parameters
+        ----------
+        Nc : float or array-like
+            General characteristic intercept
+        Dc : float or array-like
+            General characteristic diameter
+        i : float
+            First normalization moment index
+        j : float
+            Second normalization moment index
+        mu : float or array-like
+            Shape parameter
+        c : float or array-like
+            Shape parameter
+        water_density : float, optional
+            The density of water in kilograms per cubic meter (kg/m³).
+            Default is 1000 kg/m³ (approximate density of water at 20°C).
+
+        Returns
+        -------
+        float or array-like
+            Liquid water content in grams per cubic meter (g/m³).
+
+        """
+        m3 = NormalizedGeneralizedGammaPSD.compute_M(Nc=Nc, Dc=Dc, i=i, j=j, mu=mu, c=c, N=3)
+        # Convert water density from kg/m³ to g/mm³
+        water_density = water_density * 1e-6  # [kg/m³] * 1e-6 = [g/mm³]
+        # Calculate LWC [g/m3]
+        lwc = (np.pi * water_density / 6) * m3  # [g/mm³] * [m⁻³·mm³] = [g/m³]
+        return lwc
+
+    @staticmethod
+    def compute_Z(Nc, Dc, i, j, mu, c):
+        """Compute rayleigh reflectivity from PSD parameters.
+
+        Parameters
+        ----------
+        Nc : float or array-like
+            General characteristic intercept
+        Dc : float or array-like
+            General characteristic diameter
+        i : float
+            First normalization moment index
+        j : float
+            Second normalization moment index
+        mu : float or array-like
+            Shape parameter
+        c : float or array-like
+            Shape parameter
+
+        Returns
+        -------
+        float or array-like
+            Rayleigh reflectivity Z [dBZ].
+        """
+        import disdrodb
+
+        return disdrodb.decibel(NormalizedGeneralizedGammaPSD.compute_M(Nc=Nc, Dc=Dc, i=i, j=j, mu=mu, c=c, n=6))
 
 
 ####-------------------------------------------------------------------------.
