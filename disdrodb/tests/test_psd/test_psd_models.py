@@ -422,6 +422,23 @@ class TestGammaPSD:
         assert psd1 != psd3, "Different PSDs should not be equal."
         assert psd1 != None, "Comparison against None should return False."  # noqa: E711
 
+    def test_gamma_compute_methods_classical_values(self):
+        """Check GammaPSD compute methods against simple factorial moments."""
+        N0 = 4.0
+        Lambda = 2.0
+        mu = 1.0
+
+        np.testing.assert_allclose(GammaPSD.compute_Dm(mu=mu, Lambda=Lambda), 2.5)
+        np.testing.assert_allclose(GammaPSD.compute_sigma_m(mu=mu, Lambda=Lambda), np.sqrt(5) / 2)
+        np.testing.assert_allclose(GammaPSD.compute_M(N0=N0, Lambda=Lambda, mu=mu, n=0), 1.0)
+        np.testing.assert_allclose(GammaPSD.compute_M(N0=N0, Lambda=Lambda, mu=mu, n=3), 3.0)
+        np.testing.assert_allclose(GammaPSD.compute_M(N0=N0, Lambda=Lambda, mu=mu, n=4), 7.5)
+        np.testing.assert_allclose(GammaPSD.compute_M(N0=N0, Lambda=Lambda, mu=mu, n=6), 78.75)
+        np.testing.assert_allclose(GammaPSD.compute_Nt(N0=N0, Lambda=Lambda, mu=mu), 1.0)
+        np.testing.assert_allclose(GammaPSD.compute_LWC(N0=N0, Lambda=Lambda, mu=mu), np.pi / 2000)
+        np.testing.assert_allclose(GammaPSD.compute_R(N0=N0, Lambda=Lambda, mu=mu, v0=1.0, p=0.0), 18 * np.pi / 1e4)
+        np.testing.assert_allclose(GammaPSD.compute_Z(N0=N0, Lambda=Lambda, mu=mu), 10 * np.log10(78.75))
+
 
 class TestExponentialPSD:
     """Test suite for the ExponentialPSD class."""
@@ -907,6 +924,41 @@ class TestGeneralizedGammaPSD:
         assert psd1 != psd3, "Different PSDs should not be equal."
         assert psd1 != None, "Comparison against None should return False."  # noqa: E711
 
+    def test_generalized_gamma_c1_matches_gamma_compute_methods(self):
+        """Check GeneralizedGammaPSD with c=1 is consistent with GammaPSD."""
+        N0 = 4.0
+        Lambda = 2.0
+        mu = 1.0
+        c = 1.0
+        Nt = GammaPSD.compute_Nt(N0=N0, Lambda=Lambda, mu=mu)
+
+        np.testing.assert_allclose(Nt, 1.0)
+        np.testing.assert_allclose(
+            GeneralizedGammaPSD.compute_Dm(Lambda=Lambda, mu=mu, c=c),
+            GammaPSD.compute_Dm(mu=mu, Lambda=Lambda),
+        )
+        np.testing.assert_allclose(
+            GeneralizedGammaPSD.compute_sigma_m(Lambda=Lambda, mu=mu, c=c),
+            GammaPSD.compute_sigma_m(mu=mu, Lambda=Lambda),
+        )
+        for n in [0, 3, 4, 6]:
+            np.testing.assert_allclose(
+                GeneralizedGammaPSD.compute_M(Nt=Nt, Lambda=Lambda, mu=mu, c=c, n=n),
+                GammaPSD.compute_M(N0=N0, Lambda=Lambda, mu=mu, n=n),
+            )
+        np.testing.assert_allclose(
+            GeneralizedGammaPSD.compute_LWC(Nt=Nt, Lambda=Lambda, mu=mu, c=c),
+            GammaPSD.compute_LWC(N0=N0, Lambda=Lambda, mu=mu),
+        )
+        np.testing.assert_allclose(
+            GeneralizedGammaPSD.compute_R(Nt=Nt, Lambda=Lambda, mu=mu, c=c, v0=1.0, p=0.0),
+            GammaPSD.compute_R(N0=N0, Lambda=Lambda, mu=mu, v0=1.0, p=0.0),
+        )
+        np.testing.assert_allclose(
+            GeneralizedGammaPSD.compute_Z(Nt=Nt, Lambda=Lambda, mu=mu, c=c),
+            GammaPSD.compute_Z(N0=N0, Lambda=Lambda, mu=mu),
+        )
+
 
 class TestNormalizedGeneralizedGammaPSD:
     """Test suite for the NormalizedGeneralizedGammaPSD class."""
@@ -1127,6 +1179,51 @@ class TestNormalizedGeneralizedGammaPSD:
         assert psd1 == psd4, "Identical PSDs should be equal."  # Dc scalar vs Dc xarray with equal values
         assert psd1 != psd3, "Different PSDs should not be equal."
         assert psd1 != None, "Comparison against None should return False."  # noqa: E711
+
+    def test_normalized_generalized_gamma_matches_gamma_compute_methods(self):
+        """Check NormalizedGeneralizedGammaPSD compute methods match an equivalent GammaPSD."""
+        N0 = 4.0
+        Lambda = 2.0
+        mu = 1.0
+        c = 1.0
+        i = 3
+        j = 4
+        Mi = GammaPSD.compute_M(N0=N0, Lambda=Lambda, mu=mu, n=i)
+        Mj = GammaPSD.compute_M(N0=N0, Lambda=Lambda, mu=mu, n=j)
+        Nc = NormalizedGeneralizedGammaPSD.compute_Nc(i=i, j=j, Mi=Mi, Mj=Mj)
+        Dc = NormalizedGeneralizedGammaPSD.compute_Dc(i=i, j=j, Mi=Mi, Mj=Mj)
+
+        np.testing.assert_allclose(Nc, 0.0768)
+        np.testing.assert_allclose(Dc, 2.5)
+        np.testing.assert_allclose(
+            NormalizedGeneralizedGammaPSD.compute_Dm(Dc=Dc, i=i, j=j, mu=mu, c=c),
+            GammaPSD.compute_Dm(mu=mu, Lambda=Lambda),
+        )
+        np.testing.assert_allclose(
+            NormalizedGeneralizedGammaPSD.compute_sigma_m(Dc=Dc, i=i, j=j, mu=mu, c=c),
+            GammaPSD.compute_sigma_m(mu=mu, Lambda=Lambda),
+        )
+        for n in [0, 3, 4, 6]:
+            np.testing.assert_allclose(
+                NormalizedGeneralizedGammaPSD.compute_M(Nc=Nc, Dc=Dc, i=i, j=j, mu=mu, c=c, n=n),
+                GammaPSD.compute_M(N0=N0, Lambda=Lambda, mu=mu, n=n),
+            )
+        np.testing.assert_allclose(
+            NormalizedGeneralizedGammaPSD.compute_Nt(Nc=Nc, Dc=Dc, i=i, j=j, mu=mu, c=c),
+            GammaPSD.compute_Nt(N0=N0, Lambda=Lambda, mu=mu),
+        )
+        np.testing.assert_allclose(
+            NormalizedGeneralizedGammaPSD.compute_LWC(Nc=Nc, Dc=Dc, i=i, j=j, mu=mu, c=c),
+            GammaPSD.compute_LWC(N0=N0, Lambda=Lambda, mu=mu),
+        )
+        np.testing.assert_allclose(
+            NormalizedGeneralizedGammaPSD.compute_R(Nc=Nc, Dc=Dc, i=i, j=j, mu=mu, c=c, v0=1.0, p=0.0),
+            GammaPSD.compute_R(N0=N0, Lambda=Lambda, mu=mu, v0=1.0, p=0.0),
+        )
+        np.testing.assert_allclose(
+            NormalizedGeneralizedGammaPSD.compute_Z(Nc=Nc, Dc=Dc, i=i, j=j, mu=mu, c=c),
+            GammaPSD.compute_Z(N0=N0, Lambda=Lambda, mu=mu),
+        )
 
 
 class TestBinnedPSD:

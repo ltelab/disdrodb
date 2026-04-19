@@ -1326,7 +1326,7 @@ class NormalizedGammaDmNwPSD(XarrayPSD):
             Liquid water content in grams per cubic meter (g/m³).
 
         """
-        moment_3 = NormalizedGammaDmNwPSD.compute_M(Nw=Nw, Dm=Dm, mu=mu, N=3)
+        moment_3 = NormalizedGammaDmNwPSD.compute_M(Nw=Nw, Dm=Dm, mu=mu, n=3)
         # Convert water density from kg/m³ to g/mm³
         water_density = water_density * 1e-6  # [kg/m³] * 1e-6 = [g/mm³]
         # Calculate LWC [g/m3]
@@ -2322,6 +2322,7 @@ class NormalizedGeneralizedGammaPSD(XarrayPSD):
         variance_factor = ratio_53 - ratio_43**2
         return Dc * prefactor * np.sqrt(variance_factor)
 
+    @staticmethod
     def compute_M(n, Nc, Dc, i, j, mu, c):
         """Compute the n-th moment.
 
@@ -2442,7 +2443,7 @@ class NormalizedGeneralizedGammaPSD(XarrayPSD):
             Liquid water content in grams per cubic meter (g/m³).
 
         """
-        m3 = NormalizedGeneralizedGammaPSD.compute_M(Nc=Nc, Dc=Dc, i=i, j=j, mu=mu, c=c, N=3)
+        m3 = NormalizedGeneralizedGammaPSD.compute_M(Nc=Nc, Dc=Dc, i=i, j=j, mu=mu, c=c, n=3)
         # Convert water density from kg/m³ to g/mm³
         water_density = water_density * 1e-6  # [kg/m³] * 1e-6 = [g/mm³]
         # Calculate LWC [g/m3]
