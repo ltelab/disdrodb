@@ -16,6 +16,9 @@
 # -----------------------------------------------------------------------------.
 """Testing PSD models classes."""
 
+import importlib.util
+from pathlib import Path
+
 import dask.array
 import numpy as np
 import pytest
@@ -35,6 +38,12 @@ from disdrodb.psd.models import (
     available_psd_models,
     check_psd_model,
     create_psd,
+    create_psd_from_dataset,
+    get_exponential_moment,
+    get_gamma_moment_v1,
+    get_gamma_moment_v2,
+    get_lognormal_moment,
+    get_parameters_from_dataset,
     get_psd_model,
     get_psd_model_formula,
     get_required_parameters,
@@ -95,6 +104,74 @@ class TestPSDUtilityFunctions:
         assert required_params == ["Nt", "mu", "sigma"]
         with pytest.raises(KeyError):
             get_required_parameters("InvalidPSD")
+
+    def test_create_psd_from_dataset(self):
+        """Check PSD creation from a dataset with model metadata."""
+        ds = xr.Dataset(
+            data_vars={
+                "Nt": 1.0,
+                "mu": 0.0,
+                "sigma": 1.0,
+            },
+            attrs={"disdrodb_psd_model": "LognormalPSD"},
+        )
+        psd = create_psd_from_dataset(ds)
+        assert isinstance(psd, LognormalPSD)
+        assert psd.Nt.item() == 1.0
+        assert psd.mu.item() == 0.0
+        assert psd.sigma.item() == 1.0
+
+        with pytest.raises(ValueError):
+            create_psd_from_dataset(xr.Dataset())
+
+    def test_get_parameters_from_dataset(self):
+        """Check extraction of PSD parameters from a dataset."""
+        ds = xr.Dataset(
+            data_vars={
+                "N0": 1.0,
+                "Lambda": 2.0,
+                "mu": 3.0,
+                "unused": 4.0,
+            },
+            attrs={"disdrodb_psd_model": "GammaPSD"},
+        )
+        ds_params = get_parameters_from_dataset(ds)
+        assert set(ds_params) == {"N0", "Lambda", "mu"}
+
+        ds = xr.Dataset(
+            data_vars={
+                "i": 3,
+                "j": 4,
+                "Nc": 250.0,
+                "Dc": 3.0,
+                "mu": 0.0,
+                "c": 1.0,
+            },
+            attrs={"disdrodb_psd_model": "NormalizedGeneralizedGammaPSD"},
+        )
+        ds_params = get_parameters_from_dataset(ds)
+        assert set(ds_params) == {"Nc", "Dc", "mu", "c"}
+
+        with pytest.raises(ValueError):
+            get_parameters_from_dataset(xr.Dataset())
+
+    def test_pytmatrix_missing_fallback_psd_class(self, monkeypatch):
+        """Check module import fallback when pytmatrix is unavailable."""
+        real_find_spec = importlib.util.find_spec
+
+        def mocked_find_spec(name, *args, **kwargs):
+            if name == "pytmatrix":
+                return None
+            return real_find_spec(name, *args, **kwargs)
+
+        monkeypatch.setattr(importlib.util, "find_spec", mocked_find_spec)
+        module_path = Path(__file__).parents[2] / "psd" / "models.py"
+        spec = importlib.util.spec_from_file_location("_disdrodb_psd_models_without_pytmatrix", module_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        assert module.PSD.__name__ == "PSD"
+        assert isinstance(module.PSD(), module.PSD)
 
 
 class TestXarrayPSD:
@@ -718,6 +795,14 @@ class TestNormalizedGammaD50NwPSD:
 class TestNormalizedGammaDmNwPSD:
     """Test suite for the NormalizedGammaDmNwPSD class."""
 
+    def test_init(self):
+        """Check PSD initialization."""
+        psd = NormalizedGammaDmNwPSD(Nw=3.0, Dm=2.0, mu=1.0)
+        assert psd.Nw == 3.0
+        assert psd.Dm == 2.0
+        assert psd.mu == 1.0
+        assert psd.parameters == {"Nw": 3.0, "Dm": 2.0, "mu": 1.0}
+
     def test_formula_and_normalized_formula_consistency(self):
         """Check formula and normalized_formula consistency for Nw normalization."""
         x = np.array([0.5, 1.0, 2.0])
@@ -726,14 +811,81 @@ class TestNormalizedGammaDmNwPSD:
         full_vals = NormalizedGammaDmNwPSD.formula(D=x, Nw=1.0, Dm=1.0, mu=mu)
         np.testing.assert_allclose(norm_vals, full_vals, atol=1e-12)
 
+    def test_compute_methods_classical_values(self):
+        """Check compute methods against an equivalent GammaPSD with simple moments."""
+        N0 = 4.0
+        Lambda = 2.0
+        mu = 1.0
+        Dm = GammaPSD.compute_Dm(mu=mu, Lambda=Lambda)
+        Nw = 3.2768
+
+        np.testing.assert_allclose(NormalizedGammaDmNwPSD.compute_sigma_m(Dm=Dm, mu=mu), np.sqrt(5) / 2)
+        np.testing.assert_allclose(NormalizedGammaDmNwPSD.compute_M(Nw=Nw, Dm=Dm, mu=mu, n=0), 1.0)
+        np.testing.assert_allclose(NormalizedGammaDmNwPSD.compute_M(Nw=Nw, Dm=Dm, mu=mu, n=3), 3.0)
+        np.testing.assert_allclose(NormalizedGammaDmNwPSD.compute_M(Nw=Nw, Dm=Dm, mu=mu, n=4), 7.5)
+        np.testing.assert_allclose(NormalizedGammaDmNwPSD.compute_M(Nw=Nw, Dm=Dm, mu=mu, n=6), 78.75)
+        np.testing.assert_allclose(NormalizedGammaDmNwPSD.compute_Nt(Nw=Nw, Dm=Dm, mu=mu), 1.0)
+        np.testing.assert_allclose(NormalizedGammaDmNwPSD.compute_LWC(Nw=Nw, Dm=Dm, mu=mu), np.pi / 2000)
+        np.testing.assert_allclose(
+            NormalizedGammaDmNwPSD.compute_R(Nw=Nw, Dm=Dm, mu=mu, v0=1.0, p=0.0),
+            GammaPSD.compute_R(N0=N0, Lambda=Lambda, mu=mu, v0=1.0, p=0.0),
+        )
+        np.testing.assert_allclose(
+            NormalizedGammaDmNwPSD.compute_Z(Nw=Nw, Dm=Dm, mu=mu),
+            GammaPSD.compute_Z(N0=N0, Lambda=Lambda, mu=mu),
+        )
+
     def test_required_parameters(self):
         """Check required parameter names."""
         req = NormalizedGammaDmNwPSD.required_parameters()
         assert set(req) == {"Nw", "Dm", "mu"}
 
+    def test_name(self):
+        """Check the 'name' property."""
+        psd = NormalizedGammaDmNwPSD(Nw=1.0, Dm=1.0, mu=1.0)
+        assert psd.name == "NormalizedGammaDmNwPSD"
+
+    def test_from_parameters(self):
+        """Check PSD creation from parameters."""
+        params = {"Nw": 3.0, "Dm": 2.0, "mu": 1.0}
+        psd = NormalizedGammaDmNwPSD.from_parameters(params)
+        assert psd.Nw == 3.0
+        assert psd.Dm == 2.0
+        assert psd.mu == 1.0
+        assert psd.parameters == params
+
+    def test_parameters_summary(self):
+        """Check parameters summary handling."""
+        psd = NormalizedGammaDmNwPSD(Nw=3.0, Dm=2.0, mu=1.0)
+        summary = psd.parameters_summary()
+        assert isinstance(summary, str)
+        assert "NormalizedGammaDmNwPSD" in summary
+
+        psd = NormalizedGammaDmNwPSD(Nw=xr.DataArray([1.0, 1.0], dims="time"), Dm=1.0, mu=1.0)
+        summary = psd.parameters_summary()
+        assert isinstance(summary, str)
+        assert summary == "NormalizedGammaDmNwPSD with N-d parameters \n"
+
+    def test_eq(self):
+        """Check equality of two PSD objects."""
+        psd1 = NormalizedGammaDmNwPSD(Nw=1.0, Dm=1.0, mu=1.0)
+        psd2 = NormalizedGammaDmNwPSD(Nw=1.0, Dm=1.0, mu=1.0)
+        psd3 = NormalizedGammaDmNwPSD(Nw=2.0, Dm=1.0, mu=1.0)
+        assert psd1 == psd2, "Identical PSDs should be equal."
+        assert psd1 != psd3, "Different PSDs should not be equal."
+        assert psd1 != None, "Comparison against None should return False."  # noqa: E711
+
 
 class TestNormalizedGammaDmNtPSD:
     """Test suite for the NormalizedGammaDmNtPSD class."""
+
+    def test_init(self):
+        """Check PSD initialization."""
+        psd = NormalizedGammaDmNtPSD(Nt=3.0, Dm=2.0, mu=1.0)
+        assert psd.Nt == 3.0
+        assert psd.Dm == 2.0
+        assert psd.mu == 1.0
+        assert psd.parameters == {"Nt": 3.0, "Dm": 2.0, "mu": 1.0}
 
     def test_formula_and_normalized_formula_consistency(self):
         """Check formula and normalized_formula consistency for Nt normalization."""
@@ -747,6 +899,41 @@ class TestNormalizedGammaDmNtPSD:
         """Check required parameter names."""
         req = NormalizedGammaDmNtPSD.required_parameters()
         assert set(req) == {"Nt", "Dm", "mu"}
+
+    def test_name(self):
+        """Check the 'name' property."""
+        psd = NormalizedGammaDmNtPSD(Nt=1.0, Dm=1.0, mu=1.0)
+        assert psd.name == "NormalizedGammaDmNtPSD"
+
+    def test_from_parameters(self):
+        """Check PSD creation from parameters."""
+        params = {"Nt": 3.0, "Dm": 2.0, "mu": 1.0}
+        psd = NormalizedGammaDmNtPSD.from_parameters(params)
+        assert psd.Nt == 3.0
+        assert psd.Dm == 2.0
+        assert psd.mu == 1.0
+        assert psd.parameters == params
+
+    def test_parameters_summary(self):
+        """Check parameters summary handling."""
+        psd = NormalizedGammaDmNtPSD(Nt=3.0, Dm=2.0, mu=1.0)
+        summary = psd.parameters_summary()
+        assert isinstance(summary, str)
+        assert "NormalizedGammaDmNtPSD" in summary
+
+        psd = NormalizedGammaDmNtPSD(Nt=xr.DataArray([1.0, 1.0], dims="time"), Dm=1.0, mu=1.0)
+        summary = psd.parameters_summary()
+        assert isinstance(summary, str)
+        assert summary == "NormalizedGammaDmNtPSD with N-d parameters \n"
+
+    def test_eq(self):
+        """Check equality of two PSD objects."""
+        psd1 = NormalizedGammaDmNtPSD(Nt=1.0, Dm=1.0, mu=1.0)
+        psd2 = NormalizedGammaDmNtPSD(Nt=1.0, Dm=1.0, mu=1.0)
+        psd3 = NormalizedGammaDmNtPSD(Nt=2.0, Dm=1.0, mu=1.0)
+        assert psd1 == psd2, "Identical PSDs should be equal."
+        assert psd1 != psd3, "Different PSDs should not be equal."
+        assert psd1 != None, "Comparison against None should return False."  # noqa: E711
 
 
 class TestGeneralizedGammaPSD:
@@ -1102,6 +1289,23 @@ class TestNormalizedGeneralizedGammaPSD:
         assert psd.c == 1.0
         assert psd.parameters == params
 
+        ds = xr.Dataset(
+            data_vars={
+                "Nc": 250.0,
+                "Dc": 3.0,
+                "mu": 0.0,
+                "c": 1.0,
+            },
+            attrs={"disdrodb_psd_model_kwargs": "{'i': 3, 'j': 4}"},
+        )
+        psd = NormalizedGeneralizedGammaPSD.from_parameters(ds)
+        assert psd.i == 3
+        assert psd.j == 4
+        assert psd.Nc.item() == 250.0
+        assert psd.Dc.item() == 3.0
+        assert psd.mu.item() == 0.0
+        assert psd.c.item() == 1.0
+
     def test_required_parameters(self):
         """Check the required parameters list."""
         req = NormalizedGeneralizedGammaPSD.required_parameters()
@@ -1276,3 +1480,25 @@ class TestBinnedPSD:
         psd3 = BinnedPSD([0.0, 1.0, 2.0, 3.0], [10.0, 20.0, 40.0])
         assert psd1 == psd2, "Identical BinnedPSD objects should be equal."
         assert psd1 != psd3, "Different BinnedPSD objects should not be equal."
+        assert psd1 != None, "Comparison against None should return False."  # noqa: E711
+        assert psd1 != "dummy_test", "Comparison against other types should return False."
+
+
+class TestPSDMomentFunctions:
+    """Test suite for standalone PSD moment functions."""
+
+    def test_get_exponential_moment(self):
+        """Check exponential moment computation."""
+        np.testing.assert_allclose(get_exponential_moment(N0=2.0, Lambda=2.0, moment=3), 0.75)
+
+    def test_get_gamma_moment_v1(self):
+        """Check gamma moment computation from N0 parameterization."""
+        np.testing.assert_allclose(get_gamma_moment_v1(N0=4.0, mu=1.0, Lambda=2.0, moment=3), 3.0)
+
+    def test_get_gamma_moment_v2(self):
+        """Check gamma moment computation from Nt parameterization."""
+        np.testing.assert_allclose(get_gamma_moment_v2(Nt=1.0, mu=1.0, Lambda=2.0, moment=3), 3.0)
+
+    def test_get_lognormal_moment(self):
+        """Check lognormal moment computation."""
+        np.testing.assert_allclose(get_lognormal_moment(Nt=2.0, mu=1.0, sigma=0.5, moment=2), 2.0 * np.exp(2.25))
