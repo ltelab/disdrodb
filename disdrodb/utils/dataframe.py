@@ -28,6 +28,9 @@ def log_arange(start, stop, log_step=0.1, base=10):
     """
     Return numbers spaced evenly on a log scale (similar to np.arange but in log space).
 
+    For base=10, log_step=0.1 means 10 bins per decade,
+    log_step=0.05 means 20 bins per decade.
+
     Parameters
     ----------
     start : float

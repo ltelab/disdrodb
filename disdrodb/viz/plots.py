@@ -26,6 +26,7 @@ from matplotlib.collections import LineCollection
 from matplotlib.colors import BoundaryNorm, ListedColormap, LogNorm, Normalize
 from matplotlib.gridspec import GridSpec
 from matplotlib.lines import Line2D
+from matplotlib.offsetbox import AnchoredText
 from matplotlib.patches import Patch
 from matplotlib.ticker import MaxNLocator
 
@@ -45,6 +46,47 @@ from disdrodb.utils.time import infer_sample_interval
 
 # TODO: plot_l0_quicklook
 ## - plot_l0_quicklook   # remap weather codes to hydrometeor_type, find R if available
+
+####-------------------------------------------------------------------------------------------------------
+
+
+def add_panel_label(
+    *,
+    ax,
+    text,
+    loc="upper left",
+    prop=None,
+    frameon=True,
+    borderpad=0.3,
+    pad=0.0,
+    boxstyle="square",
+    alpha=1,
+    facecolor="white",
+    edgecolor="black",
+    linewidth=0.4,
+    **kwargs,
+):
+    """Add panel label within subplot."""
+    if prop is None:
+        prop = {"size": 7}
+    at = AnchoredText(
+        text,
+        loc=loc,
+        prop=prop,
+        pad=pad,
+        frameon=frameon,
+        borderpad=borderpad,
+        **kwargs,
+    )
+
+    # style the box
+    at.patch.set_boxstyle(boxstyle)
+    at.patch.set_facecolor(facecolor)
+    at.patch.set_alpha(alpha)
+    at.patch.set_edgecolor(edgecolor)
+    at.patch.set_linewidth(linewidth)
+    ax.add_artist(at)
+    return at
 
 
 ####-------------------------------------------------------------------------------------------------------
