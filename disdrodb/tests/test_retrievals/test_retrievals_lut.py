@@ -466,6 +466,46 @@ class TestNearestNeighbourLUT2D:
         # Should be closest to (0, 0) or (0, 1) or (1, 0)
         assert result["value1"].iloc[0] in [10, 20, 40]
 
+    def test_predict_distance_grid(self):
+        """Test grid distance snaps x and y coordinates independently."""
+        df = pd.DataFrame(
+            {
+                "x": [0.0, 0.0, 10.0, 10.0],
+                "y": [0.0, 10.0, 0.0, 10.0],
+                "value": [10, 20, 30, 40],
+            },
+        )
+        lut = NearestNeighbourLUT2D(df, "x", "y", columns=["value"])
+
+        result = lut.predict(6.0, 1.0, return_distance=True)
+
+        assert result["value"].iloc[0] == 30
+        assert result["distance"].iloc[0] == pytest.approx(np.sqrt(17))
+
+    def test_predict_distance_euclidean_and_manhattan(self):
+        """Test explicit Euclidean and Manhattan distances."""
+        df = pd.DataFrame(
+            {
+                "x": [4.0, 6.0],
+                "y": [4.0, 0.0],
+                "value": [10, 20],
+            },
+        )
+        lut = NearestNeighbourLUT2D(df, "x", "y", columns=["value"])
+
+        euclidean_result = lut.predict(0.0, 0.0, return_distance=True, distance="euclidean")
+        manhattan_result = lut.predict(0.0, 0.0, return_distance=True, distance="manhattan")
+
+        assert euclidean_result["value"].iloc[0] == 10
+        assert euclidean_result["distance"].iloc[0] == pytest.approx(np.sqrt(32))
+        assert manhattan_result["value"].iloc[0] == 20
+        assert manhattan_result["distance"].iloc[0] == 6.0
+
+    def test_predict_invalid_distance(self, lut):
+        """Test that invalid distance values raise ValueError."""
+        with pytest.raises(ValueError, match="distance must be one of"):
+            lut.predict(0.5, 0.5, distance="chebyshev")
+
     def test_predict_raises_error_for_mismatched_shapes(self, lut):
         """Test that ValueError is raised when x and y have different shapes."""
         with pytest.raises(ValueError, match="x and y must have the same shape"):

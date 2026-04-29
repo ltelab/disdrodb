@@ -22,6 +22,8 @@ import numpy as np
 import pandas as pd
 from scipy.spatial import cKDTree
 
+_VALID_2D_DISTANCES = {"grid", "euclidean", "manhattan"}
+
 ### in predict()
 # - if input NaN, return NaN in predict()
 # - add argument max_distance(). If distance > specified, set to np.nan
@@ -54,6 +56,18 @@ def _check_columns_in_dataframe(df, columns, variable_name):
     if not np.all(np.isin(columns, df.columns)):
         missing = np.setdiff1d(columns, df.columns).tolist()
         raise ValueError(f"{missing} {variable_name} not found in DataFrame")
+
+
+def _get_nearest_sorted_values(values, query):
+    """Return nearest values from a sorted 1D array for each query value."""
+    idx_upper = np.searchsorted(values, query)
+    idx_upper = np.clip(idx_upper, 0, len(values) - 1)
+    idx_lower = np.clip(idx_upper - 1, 0, len(values) - 1)
+
+    lower_values = values[idx_lower]
+    upper_values = values[idx_upper]
+    use_upper = np.abs(query - upper_values) < np.abs(query - lower_values)
+    return np.where(use_upper, upper_values, lower_values)
 
 
 class NearestNeighbourLUT1D:
@@ -322,6 +336,11 @@ class NearestNeighbourLUT2D:
         self.values = df[columns].to_numpy(dtype=dtype)
 
         self.tree = cKDTree(self.points)
+        self._grid_x = np.unique(self.points[:, 0])
+        self._grid_y = np.unique(self.points[:, 1])
+        self._grid_indices = {}
+        for i, point in enumerate(self.points):
+            self._grid_indices.setdefault((point[0], point[1]), i)
 
     # ------------------
     # Persistence
@@ -361,7 +380,31 @@ class NearestNeighbourLUT2D:
     # ------------------
     # Query
     # ------------------
-    def predict(self, x, y, return_distance=False, max_distance=None):
+    def _query_grid(self, pts_valid):
+        """Return grid nearest-neighbour distances and indices."""
+        grid_x = getattr(self, "_grid_x", np.unique(self.points[:, 0]))
+        grid_y = getattr(self, "_grid_y", np.unique(self.points[:, 1]))
+        grid_indices = getattr(self, "_grid_indices", None)
+        if grid_indices is None:
+            grid_indices = {}
+            for i, point in enumerate(self.points):
+                grid_indices.setdefault((point[0], point[1]), i)
+
+        nearest_x = _get_nearest_sorted_values(grid_x, pts_valid[:, 0])
+        nearest_y = _get_nearest_sorted_values(grid_y, pts_valid[:, 1])
+
+        idx = np.full(len(pts_valid), -1, dtype=int)
+        for i, point in enumerate(zip(nearest_x, nearest_y, strict=True)):
+            idx[i] = grid_indices.get(point, -1)
+
+        dist = np.full(len(pts_valid), np.nan, dtype=self.dtype)
+        found_mask = idx >= 0
+        if np.any(found_mask):
+            nearest_points = self.points[idx[found_mask]]
+            dist[found_mask] = np.linalg.norm(pts_valid[found_mask] - nearest_points, axis=1)
+        return dist, idx
+
+    def predict(self, x, y, return_distance=False, max_distance=None, distance="grid"):
         """Query the lookup table for nearest neighbor values.
 
         Parameters
@@ -377,10 +420,18 @@ class NearestNeighbourLUT2D:
             Maximum distance threshold for valid predictions.
 
             - If None: no distance masking is applied.
-            - If float: points with Euclidean distance > max_distance are set to NaN.
+            - If float: points with the selected distance > max_distance are set to NaN.
             - If tuple (dx, dy): points are masked if |x - x_nearest| > dx OR |y - y_nearest| > dy.
 
             Default is None.
+        distance : {"grid", "euclidean", "manhattan"}, optional
+            Nearest-neighbour distance strategy.
+
+            - "grid": snap x and y independently to their closest LUT coordinate.
+            - "euclidean": select the closest LUT point by Euclidean distance.
+            - "manhattan": select the closest LUT point by Manhattan distance.
+
+            Default is "grid".
 
         Returns
         -------
@@ -393,12 +444,17 @@ class NearestNeighbourLUT2D:
         ------
         ValueError
             If x and y do not have the same shape.
+        ValueError
+            If distance is not one of "grid", "euclidean", or "manhattan".
 
         Notes
         -----
         The method automatically converts scalar inputs to 1D arrays.
         Input values that are NaN or inf will produce NaN output rows.
         """
+        if distance not in _VALID_2D_DISTANCES:
+            raise ValueError("distance must be one of 'grid', 'euclidean', or 'manhattan'")
+
         # Preserve index if x/y are pandas objects
         index = _get_query_index(x)
         if index is None:
@@ -424,8 +480,16 @@ class NearestNeighbourLUT2D:
         valid_mask = ~invalid_mask
         if np.any(valid_mask):
             pts_valid = np.column_stack([x[valid_mask], y[valid_mask]])
-            dist_valid, idx_valid = self.tree.query(pts_valid)
-            data_valid = self.values[idx_valid]
+            if distance == "grid":
+                dist_valid, idx_valid = self._query_grid(pts_valid)
+            else:
+                p = 2 if distance == "euclidean" else 1
+                dist_valid, idx_valid = self.tree.query(pts_valid, p=p)
+
+            data_valid = np.full((len(pts_valid), n_columns), np.nan, dtype=self.dtype)
+            found_mask = idx_valid >= 0
+            if np.any(found_mask):
+                data_valid[found_mask] = self.values[idx_valid[found_mask]]
 
             # Apply max_distance masking if specified
             if max_distance is not None:
@@ -436,14 +500,16 @@ class NearestNeighbourLUT2D:
                     dx_max, dy_max = max_distance
 
                     # Get nearest neighbor coordinates
-                    nearest_points = self.points[idx_valid]
+                    nearest_points = np.full((len(pts_valid), 2), np.nan, dtype=self.dtype)
+                    if np.any(found_mask):
+                        nearest_points[found_mask] = self.points[idx_valid[found_mask]]
                     dx = np.abs(x[valid_mask] - nearest_points[:, 0])
                     dy = np.abs(y[valid_mask] - nearest_points[:, 1])
 
                     # Mask points exceeding either threshold
                     distance_mask = (dx > dx_max) | (dy > dy_max)
                 else:
-                    # Euclidean distance masking
+                    # Selected distance masking
                     distance_mask = dist_valid > max_distance
 
                 # Set masked values to NaN
