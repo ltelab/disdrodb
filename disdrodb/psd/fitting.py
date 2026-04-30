@@ -3168,7 +3168,8 @@ def fit_ngg_on_normalized_space(
     mu=None,
     c=None,
     # Optimization options
-    transformation="log",
+    x_lim=None,
+    transformation="log10",
     loss="SSE",
     # Output options
     return_loss=False,
@@ -3236,6 +3237,21 @@ def fit_ngg_on_normalized_space(
     ND_norm = ND_norm[valid_data]
     x = x[valid_data]
 
+    # Select only values within specified x_lim
+    if x_lim is not None:
+        xmin, xmax = x_lim
+
+        mask = np.ones_like(x, dtype=bool)
+
+        if xmin is not None:
+            mask &= x >= xmin
+
+        if xmax is not None:
+            mask &= x <= xmax
+
+        x = x[mask]
+        ND_norm = ND_norm[mask]
+
     # Define search space
     if mu is None:
         mu = np.arange(-1, 20, step=0.1)
@@ -3263,6 +3279,7 @@ def fit_ngg_on_normalized_space(
             "censoring": "none",  # dummy. Do not change
             "transformation": transformation,
             "loss": loss,
+            "clip_lower": 1e-6,  # important. Default for N(D) is 1e-3 !!!
         },
     ]
 
