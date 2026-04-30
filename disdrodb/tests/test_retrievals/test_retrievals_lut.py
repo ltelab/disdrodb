@@ -426,9 +426,10 @@ class TestNearestNeighbourLUT2D:
         """Test predict method with scalar x and y coordinates."""
         result = lut.predict(0.5, 0.5)
         assert isinstance(result, pd.DataFrame)
-        assert result.shape == (1, 4)  # x, y, value1, value2
+        assert result.shape == (1, 5)  # x, y, out_of_bound, value1, value2
         assert "x" in result.columns
         assert "y" in result.columns
+        assert "out_of_bound" in result.columns
         assert "value1" in result.columns
         assert "value2" in result.columns
 
@@ -437,7 +438,7 @@ class TestNearestNeighbourLUT2D:
         x_query = [0.5, 1.5]
         y_query = [0.5, 0.5]
         result = lut.predict(x_query, y_query)
-        assert result.shape == (2, 4)
+        assert result.shape == (2, 5)
         assert np.array_equal(result["x"].values, x_query)
         assert np.array_equal(result["y"].values, y_query)
 
@@ -482,6 +483,38 @@ class TestNearestNeighbourLUT2D:
         assert result["value"].iloc[0] == 30
         assert result["distance"].iloc[0] == pytest.approx(np.sqrt(17))
 
+    def test_predict_distance_grid_outside_sparse_grid_returns_nearest_available_point(self):
+        """Test grid distance falls back when the independently snapped point is missing."""
+        df = pd.DataFrame(
+            {
+                "x": [0.0, 2.0, 0.0],
+                "y": [0.0, 0.0, 3.0],
+                "value": [10, 20, 30],
+            },
+        )
+        lut = NearestNeighbourLUT2D(df, "x", "y", columns=["value"])
+
+        result = lut.predict(2.2, 2.8, return_distance=True, distance="grid")
+
+        assert result["value"].iloc[0] == 30
+        assert result["out_of_bound"].iloc[0]
+        assert result["distance"].iloc[0] == pytest.approx(np.sqrt((2.2 - 0.0) ** 2 + (2.8 - 3.0) ** 2))
+
+    def test_predict_out_of_bound_identifies_points_outside_convex_hull(self):
+        """Test out_of_bound marks finite points outside the points convex hull."""
+        df = pd.DataFrame(
+            {
+                "x": [0.0, 1.0, 1.0, 0.0],
+                "y": [0.0, 0.0, 1.0, 1.0],
+                "value": [10, 20, 30, 40],
+            },
+        )
+        lut = NearestNeighbourLUT2D(df, "x", "y", columns=["value"])
+
+        result = lut.predict([0.5, 1.0, 1.5], [0.5, 0.5, 0.5])
+
+        assert result["out_of_bound"].tolist() == [False, False, True]
+
     def test_predict_distance_euclidean_and_manhattan(self):
         """Test explicit Euclidean and Manhattan distances."""
         df = pd.DataFrame(
@@ -514,7 +547,7 @@ class TestNearestNeighbourLUT2D:
     def test_predict_column_order(self, lut):
         """Test that predict returns columns in correct order."""
         result = lut.predict(1.0, 1.0)
-        expected_columns = ["x", "y", "value1", "value2"]
+        expected_columns = ["x", "y", "out_of_bound", "value1", "value2"]
         assert list(result.columns) == expected_columns
 
     def test_predict_dict_with_scalar_inputs(self, lut):

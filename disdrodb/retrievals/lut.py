@@ -20,7 +20,7 @@ import pickle
 
 import numpy as np
 import pandas as pd
-from scipy.spatial import cKDTree
+from scipy.spatial import Delaunay, QhullError, cKDTree
 
 _VALID_2D_DISTANCES = {"grid", "euclidean", "manhattan"}
 
@@ -68,6 +68,58 @@ def _get_nearest_sorted_values(values, query):
     upper_values = values[idx_upper]
     use_upper = np.abs(query - upper_values) < np.abs(query - lower_values)
     return np.where(use_upper, upper_values, lower_values)
+
+
+def _get_points_tolerance(points):
+    """Return a coordinate-scaled tolerance for geometric point checks."""
+    dtype = points.dtype if np.issubdtype(points.dtype, np.floating) else float
+    eps = np.finfo(dtype).eps
+    scale = max(float(np.ptp(points, axis=0).max()), 1.0)
+    return 100 * eps * scale
+
+
+def _get_convex_hull(points):
+    """Return a Delaunay triangulation for non-degenerate 2D points."""
+    unique_points = np.unique(points, axis=0)
+    if len(unique_points) < 3:
+        return None
+    try:
+        return Delaunay(unique_points)
+    except QhullError:
+        return None
+
+
+def _points_in_degenerate_hull(query_points, points, atol):
+    """Return whether query points lie inside a degenerate 2D convex hull."""
+    unique_points = np.unique(points, axis=0)
+    if len(unique_points) == 0:
+        return np.zeros(len(query_points), dtype=bool)
+    if len(unique_points) == 1:
+        return np.linalg.norm(query_points - unique_points[0], axis=1) <= atol
+
+    center = np.mean(unique_points, axis=0)
+    _, _, vh = np.linalg.svd(unique_points - center, full_matrices=False)
+    direction = vh[0]
+
+    point_proj = (unique_points - center) @ direction
+    query_proj = (query_points - center) @ direction
+    query_reconstructed = center + np.outer(query_proj, direction)
+
+    on_line = np.linalg.norm(query_points - query_reconstructed, axis=1) <= atol
+    within_segment = (query_proj >= np.min(point_proj) - atol) & (query_proj <= np.max(point_proj) + atol)
+    return on_line & within_segment
+
+
+def _points_in_convex_hull(query_points, points, hull=None):
+    """Return whether query points lie inside the convex hull of points."""
+    if len(query_points) == 0:
+        return np.array([], dtype=bool)
+    if len(points) == 0:
+        return np.zeros(len(query_points), dtype=bool)
+    atol = _get_points_tolerance(points)
+    if hull is not None:
+        return hull.find_simplex(query_points, tol=atol) >= 0
+    return _points_in_degenerate_hull(query_points, points, atol=atol)
 
 
 class NearestNeighbourLUT1D:
@@ -341,6 +393,7 @@ class NearestNeighbourLUT2D:
         self._grid_indices = {}
         for i, point in enumerate(self.points):
             self._grid_indices.setdefault((point[0], point[1]), i)
+        self._convex_hull = _get_convex_hull(self.points)
 
     # ------------------
     # Persistence
@@ -397,12 +450,23 @@ class NearestNeighbourLUT2D:
         for i, point in enumerate(zip(nearest_x, nearest_y, strict=True)):
             idx[i] = grid_indices.get(point, -1)
 
+        missing_mask = idx < 0
+        if np.any(missing_mask):
+            snapped_points = np.column_stack([nearest_x[missing_mask], nearest_y[missing_mask]])
+            _, idx[missing_mask] = self.tree.query(snapped_points)
+
         dist = np.full(len(pts_valid), np.nan, dtype=self.dtype)
         found_mask = idx >= 0
         if np.any(found_mask):
             nearest_points = self.points[idx[found_mask]]
             dist[found_mask] = np.linalg.norm(pts_valid[found_mask] - nearest_points, axis=1)
         return dist, idx
+
+    def _query_out_of_bound(self, pts_valid):
+        """Return True for points outside the LUT points convex hull."""
+        if not hasattr(self, "_convex_hull"):
+            self._convex_hull = _get_convex_hull(self.points)
+        return ~_points_in_convex_hull(pts_valid, self.points, hull=self._convex_hull)
 
     def predict(self, x, y, return_distance=False, max_distance=None, distance="grid"):
         """Query the lookup table for nearest neighbor values.
@@ -437,8 +501,10 @@ class NearestNeighbourLUT2D:
         -------
         pandas.DataFrame
             DataFrame containing the nearest neighbor values for each query point.
-            Columns include x, y coordinates, the lookup values, and optionally
-            the distance to the nearest neighbor. Values beyond max_distance are NaN.
+            Columns include x, y coordinates, an out_of_bound flag indicating
+            whether the query point is outside the LUT points convex hull, the
+            lookup values, and optionally the distance to the nearest neighbor.
+            Values beyond max_distance are NaN.
 
         Raises
         ------
@@ -475,11 +541,13 @@ class NearestNeighbourLUT2D:
         n_columns = len(self.columns)
         data = np.full((n_points, n_columns), np.nan, dtype=self.dtype)
         dist = np.full(n_points, np.nan, dtype=self.dtype)
+        out_of_bound = np.zeros(n_points, dtype=bool)
 
         # Only process valid points
         valid_mask = ~invalid_mask
         if np.any(valid_mask):
             pts_valid = np.column_stack([x[valid_mask], y[valid_mask]])
+            out_of_bound[valid_mask] = self._query_out_of_bound(pts_valid)
             if distance == "grid":
                 dist_valid, idx_valid = self._query_grid(pts_valid)
             else:
@@ -528,9 +596,10 @@ class NearestNeighbourLUT2D:
         # Add coordinates
         df_out[self.x] = x
         df_out[self.y] = y
+        df_out["out_of_bound"] = out_of_bound
 
         # Keep original order
-        df_out = df_out[[self.x, self.y, *self.columns]]
+        df_out = df_out[[self.x, self.y, "out_of_bound", *self.columns]]
 
         if return_distance:
             df_out["distance"] = dist
