@@ -402,6 +402,39 @@ def get_cmap_alpha(vmin=0, vmax=1, color=(1, 1, 1)):
     return cmap_alpha
 
 
+def ensure_numeric_dimension_coordinate(da, dim, new_dim="sample_index"):
+    """Ensure numeric dimension coordinate.
+
+    If dim is non-numeric / non-datetime, create a numeric coordinate,
+    swap dimensions, and return updated da and dim.
+    """
+    coord = da[dim]
+
+    is_numeric = np.issubdtype(coord.dtype, np.number)
+    is_datetime = np.issubdtype(coord.dtype, np.datetime64)
+
+    if is_numeric or is_datetime:
+        return da, dim
+
+    # dim must be an actual dimension to swap
+    if dim not in da.dims:
+        raise ValueError(f"{dim!r} must be a dimension to swap.")
+
+    # create dummy numeric coordinate along dim
+    da = da.assign_coords(
+        {
+            new_dim: (dim, np.arange(da.sizes[dim])),
+        },
+    )
+
+    # swap dimension: old non-numeric dim -> numeric sample_index
+    da = da.swap_dims({dim: new_dim})
+
+    # update plotting dimension
+    dim = new_dim
+    return da, dim
+
+
 def plot_dsd(
     xr_obj,
     variable=None,
@@ -416,6 +449,7 @@ def plot_dsd(
     add_ylabel=True,
     add_time_axis=True,
     velocity_method="theoretical_velocity",
+    time_dim="time",
     **plot_kwargs,
 ):
     """Plot drop number concentration N(D) or drop counts n(D) timeseries.
@@ -465,7 +499,7 @@ def plot_dsd(
     labels = _get_dsd_labels(variable_name, da=da_dsd)
 
     # Check only time and diameter dimensions are specified
-    if "time" not in da_dsd.dims:
+    if time_dim not in da_dsd.dims:
         ax = _single_plot_dsd_distribution(
             data=da_dsd.isel(velocity_method=0, missing_dims="ignore"),
             diameter=(
@@ -495,10 +529,13 @@ def plot_dsd(
         vmin = np.maximum(da_dsd.min().item(), 1e-1)  # 0 is set to np.nan before
         norm = Normalize() if np.isnan(vmin) else LogNorm(vmin, None)
 
+    # Ensure x is a numeric or datetime coordinate (otherwise set dummy index)
+    da_dsd, time_dim_plot = ensure_numeric_dimension_coordinate(da_dsd, dim=time_dim)
+
     # Plot N(D) or drop counts
     cbar_kwargs = {"label": labels["cbar_label"]} if add_colorbar else None
     p = da_dsd.plot.pcolormesh(
-        x="time",
+        x=time_dim_plot,
         norm=norm,
         cmap=cmap,
         add_colorbar=add_colorbar,
@@ -517,7 +554,7 @@ def plot_dsd(
         alpha = 1 - alpha
         cmap_alpha = get_cmap_alpha(color=alpha_color)
         alpha.plot.pcolormesh(
-            x="time",
+            x=time_dim_plot,
             vmin=0,
             vmax=1,
             cmap=cmap_alpha,
@@ -533,7 +570,7 @@ def plot_dsd(
     else:
         p.axes.set_ylabel("")
 
-    if add_time_axis:
+    if add_time_axis and np.issubdtype(da_dsd[time_dim].dtype, np.datetime64):
         # Improve time axis ticks/labels ---
         locator = mdates.AutoDateLocator(minticks=4, maxticks=8)
         formatter = mdates.ConciseDateFormatter(locator)  # compact, avoids repetition
