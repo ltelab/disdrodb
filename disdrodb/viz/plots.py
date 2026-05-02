@@ -16,23 +16,31 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB Plotting Tools."""
 
+import matplotlib.colors as mcolors
 import matplotlib.dates as mdates
+import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import psutil
 import xarray as xr
 from matplotlib.collections import LineCollection
-from matplotlib.colors import BoundaryNorm, ListedColormap, LogNorm, Normalize
+from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap, ListedColormap, LogNorm, Normalize
 from matplotlib.gridspec import GridSpec
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import AnchoredText
-from matplotlib.patches import Patch
+from matplotlib.patches import Patch, Rectangle
 from matplotlib.ticker import MaxNLocator
 
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l2.empirical_dsd import get_drop_average_velocity
 from disdrodb.l2.processing import get_mask_contour, get_spectrum_mask_boundary
+from disdrodb.utils.manipulations import (
+    compute_normalized_dsd_datarray,
+    infer_dsd_sample_dim,
+    resample_drop_number_concentration,
+    xr_sample,
+)
 from disdrodb.utils.time import infer_sample_interval
 
 # TODO FIX: XARRAY PCOLORMESH IS CURRENTLY INACCURATE
@@ -1803,7 +1811,59 @@ def plot_colored_line(
     return ax, lc
 
 
-####-------------------------------------------------------------------------------------------------------
+####---------------------------------------------------------------------------
+#### Other utilities
+
+
+def draw_box(ax, x_box, y_box, facecolor="none", edgecolor="black", linewidth=1):
+    """Draw rectangle box."""
+    # Add rectangle
+    rect = Rectangle(
+        (x_box[0], y_box[0]),  # bottom-left corner
+        x_box[1] - x_box[0],  # width
+        y_box[1] - y_box[0],  # height
+        linewidth=linewidth,
+        edgecolor=edgecolor,
+        facecolor=facecolor,
+    )
+    ax.add_patch(rect)
+    return rect
+
+
+def draw_boxes(ax, boxes, fontsize, colors_dict=None, add_label=True):
+    """Draw boxes with label on top."""
+    for label, (x_box, y_box) in boxes.items():
+        facecolor = colors_dict[label] if colors_dict is not None else "none"
+        draw_box(
+            ax=ax,
+            x_box=x_box,
+            y_box=y_box,
+            facecolor=facecolor,
+            edgecolor="black",
+            linewidth=0.8,
+        )
+        # Add label on top of box
+        if add_label:
+            x_center = 0.5 * (x_box[0] + x_box[1])
+            ax.text(
+                x_center,
+                y_box[1] * 1.2,
+                label,
+                color="black",
+                fontsize=fontsize,
+                ha="center",
+            )
+
+
+def add_dm_nw_cs_boundaries(ax):
+    """Add C/S boundary on Dm-Nw plots."""
+    xx = np.linspace(0, 8, 300)
+    yy = 10 ** (6.3 - 1.6 * xx)
+    ax.plot(xx, yy, color="black", linewidth=0.8, linestyle="--")
+    ax.axhline(y=10**3.85, color="black", linewidth=0.8, linestyle=":")
+
+
+####---------------------------------------------------------------------------
 #### Confusion matrix
 
 
@@ -2228,3 +2288,608 @@ def compute_dense_lines(
 
     # Return 2D histogram
     return out
+
+
+####--------------------------------------------------------------------------.
+#### DSD and Normalized DSD plotting functions
+
+
+def _make_monochrome_cmap(color, n=256, min_mix=0.15):
+    """Create a white-to-color colormap from a single matplotlib color."""
+    base = np.array(mcolors.to_rgba(color))
+    white = np.array([1, 1, 1, 1])
+
+    colors = []
+    for t in np.linspace(min_mix, 1.0, n):
+        c = white * (1 - t) + base * t
+        c[3] = 1.0
+        colors.append(c)
+    return ListedColormap(colors)
+
+
+def _as_cmap(color_or_cmap):
+    """Accept a colormap object, colormap name, or plain color."""
+    if isinstance(color_or_cmap, (ListedColormap, LinearSegmentedColormap)):
+        return color_or_cmap
+
+    if isinstance(color_or_cmap, str):
+        try:
+            return plt.get_cmap(color_or_cmap)
+        except ValueError:
+            return _make_monochrome_cmap(color_or_cmap)
+
+    return _make_monochrome_cmap(color_or_cmap)
+
+
+def _check_dsd_lines_input(xr_obj, *, dsd_var, cat_var, coord, category_order, category_colors, category_labels):
+
+    if not isinstance(xr_obj, (xr.DataArray, xr.Dataset)):
+        raise ValueError("Expecting xarray object.")
+
+    if isinstance(xr_obj, xr.Dataset):
+        if dsd_var is None:
+            raise ValueError("If a Dataset is passed, dsd_var must be specified.")
+        # -------------------------------------
+        # Checks
+        if dsd_var not in xr_obj.data_vars:
+            raise ValueError(f"{dsd_var} is not a xr.Dataset variable.")
+
+        if cat_var is not None and cat_var not in xr_obj.data_vars:
+            raise ValueError(f"{cat_var} is not a xr.Dataset variable.")
+
+        if coord not in xr_obj[dsd_var].dims:
+            raise ValueError(f"{coord} is not a dimension of {dsd_var} DataArray.")
+
+        # -------------------------------------
+        # Define categorical options
+        if cat_var is not None:
+            if category_order is None:
+                category_order = np.unique(xr_obj[cat_var])
+
+            if category_colors is None:
+                raise ValueError("When cat_var is provided, category_colors must be specified.")
+
+            if category_labels is None:
+                category_labels = {cat: str(cat) for cat in category_order}
+
+        # -------------------------------------
+        # Define sample dimensions
+        sample_dim = infer_dsd_sample_dim(xr_obj[dsd_var], diameter_dim=coord)
+        is_dataset = True
+
+    else:  # DataArray
+        if dsd_var is not None:
+            raise ValueError("If a DataArray is passed, dsd_var must not be specified.")
+        if cat_var is not None:
+            raise ValueError("If a DataArray is passed, plot by category is not possible.")
+        if coord not in xr_obj.dims:
+            raise ValueError(f"{coord} is not a dimension of {dsd_var} DataArray.")
+        sample_dim = infer_dsd_sample_dim(xr_obj, diameter_dim=coord)
+        is_dataset = False
+
+    return sample_dim, is_dataset, category_order, category_labels
+
+
+def _create_plotting_groups(
+    *,
+    xr_obj,
+    da_dsd,
+    dsd_var,
+    cat_var,
+    sample_dim,
+    default_label,
+    default_color,
+    category_order,
+    category_colors,
+    category_labels,
+):
+    groups = []
+    if cat_var is None:
+        groups.append(
+            {
+                "key": "all",
+                "da": da_dsd,
+                "color": default_color,
+                "label": default_label if default_label is not None else dsd_var,
+            },
+        )
+    else:
+        ds_work = xr.Dataset(
+            {
+                dsd_var: da_dsd,
+                cat_var: xr_obj[cat_var].compute(),
+            },
+        )
+
+        for cat in category_order:
+            mask = ds_work[cat_var] == cat
+            da_subset = ds_work[dsd_var].isel({sample_dim: mask})
+            if da_subset.sizes.get(sample_dim, 0) == 0:
+                continue
+
+            groups.append(
+                {
+                    "key": cat,
+                    "da": da_subset,
+                    "color": category_colors[cat],
+                    "label": category_labels.get(cat, str(cat)),
+                },
+            )
+
+    if len(groups) == 0:
+        raise ValueError("No data available to plot.")
+    return groups
+
+
+def plot_dsd_dense_lines(
+    xr_obj,
+    *,
+    dsd_var=None,
+    cat_var=None,
+    category_order=None,
+    category_colors=None,
+    category_labels=None,
+    n_samples=None,
+    random_state=None,
+    diameter_bin_edges=None,
+    y_bins=None,
+    coord="diameter_bin_center",
+    x_bins=None,
+    ax=None,
+    figsize=(3.4, 3.0),
+    dpi=300,
+    title="DSD",
+    xlabel=r"$D$ [mm]",
+    ylabel=r"$N(D)$ [m$^{-3}$ mm$^{-1}$]",
+    xlim=(0, 8),
+    ylim=(1, 2e4),
+    yscale="log",
+    add_legend=True,
+    legend_title=None,
+    legend_loc="upper right",
+    legend_kwargs=None,
+    dense_lines_normalization="max",
+    rgba_scaling="sqrt",
+    resample=True,
+    default_color="tab:blue",
+    default_label=None,
+):
+    """
+    Plot dense lines for a DSD variable.
+
+    Modes
+    -----
+    1. If cat_var is None:
+      - all samples are plotted together
+      - optional sampling is applied to the full dataset before resampling
+
+    2. If cat_var is provided:
+      - one layer is plotted per category
+      - optional sampling is applied independently within each category
+        before resampling
+    """
+    from disdrodb.summary.routines import log_arange
+
+    legend_kwargs = {} if legend_kwargs is None else legend_kwargs
+    if diameter_bin_edges is None:
+        diameter_bin_edges = np.arange(0, 8, 0.01)
+    # -------------------------------------
+    # Checks
+    sample_dim, is_dataset, category_order, category_labels = _check_dsd_lines_input(
+        xr_obj=xr_obj,
+        coord=coord,
+        dsd_var=dsd_var,
+        cat_var=cat_var,
+        category_order=category_order,
+        category_colors=category_colors,
+        category_labels=category_labels,
+    )
+
+    # Define bins
+    if x_bins is None:
+        x_bins = xr_obj.disdrodb.diameter_bin_edges
+
+    if y_bins is None:
+        y_bins = log_arange(1, 20_000, log_step=0.025, base=10)
+
+    # ------------------------------------------
+    # Sample before resampling
+    if n_samples is not None:
+        xr_obj = xr_sample(
+            xr_obj,
+            dim=sample_dim,
+            random_state=random_state,
+            n=n_samples,
+            cat_var=cat_var,
+            category_order=category_order,
+        )
+
+    # -------------------------------------
+    # Load DSD data
+    da_dsd = xr_obj[dsd_var].compute() if is_dataset else xr_obj.compute()
+
+    # -------------------------------------
+    # Resample if requested
+    if resample:
+        da_dsd = resample_drop_number_concentration(
+            da_dsd,
+            diameter_bin_edges=diameter_bin_edges,
+        )
+        x_bins = diameter_bin_edges
+
+    # -------------------------------------
+    # Define groups
+    groups = _create_plotting_groups(
+        xr_obj=xr_obj,
+        da_dsd=da_dsd,
+        dsd_var=dsd_var,
+        cat_var=cat_var,
+        sample_dim=sample_dim,
+        default_label=default_label,
+        default_color=default_color,
+        category_order=category_order,
+        category_colors=category_colors,
+        category_labels=category_labels,
+    )
+
+    # ------------------------------------------------------------------
+    # Compute dense lines for each group
+    # ------------------------------------------------------------------
+    dict_rgb = {}
+    handles = []
+    labels = []
+
+    for group in groups:
+        da_dense_lines = compute_dense_lines(
+            da=group["da"],
+            coord=coord,
+            x_bins=x_bins,
+            y_bins=y_bins,
+            normalization=dense_lines_normalization,
+        )
+
+        cmap = _as_cmap(group["color"])
+
+        da_rgb = to_rgba(
+            da_dense_lines,
+            cmap=cmap,
+            scaling=rgba_scaling,
+        )
+
+        dict_rgb[group["key"]] = da_rgb
+
+        handles.append(
+            mlines.Line2D([], [], color=cmap(0.8), alpha=0.8, linewidth=2),
+        )
+        labels.append(group["label"])
+
+    ds_rgb = xr.concat(dict_rgb.values(), dim="group")
+    da_blended = max_blend_images(ds_rgb, dim="group")
+
+    # ------------------------------------------------------------------
+    # Plot
+    # ------------------------------------------------------------------
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    else:
+        fig = ax.figure
+
+    mesh = ax.pcolormesh(
+        da_blended[coord],
+        da_blended[dsd_var],
+        da_blended.data,
+        shading="auto",
+    )
+
+    ax.set_yscale(yscale)
+    ax.set_xlim(*xlim)
+    ax.set_ylim(*ylim)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+
+    # Only show legend if meaningful
+    if len(handles) > 0 and add_legend:
+        ax.legend(handles, labels, title=legend_title, loc=legend_loc, **legend_kwargs)
+
+    return fig, ax, mesh
+
+
+def plot_dsd_lines(
+    xr_obj,
+    *,
+    dsd_var=None,
+    cat_var=None,
+    category_order=None,
+    category_colors=None,
+    category_labels=None,
+    n_samples=None,
+    random_state=None,
+    diameter_bin_edges=None,
+    coord="diameter_bin_center",
+    ax=None,
+    figsize=(3.4, 3.0),
+    dpi=300,
+    title="DSD",
+    xlabel=r"$D$ [mm]",
+    ylabel=r"$N(D)$ [m$^{-3}$ mm$^{-1}$]",
+    xlim=(0, 8),
+    ylim=(1, 2e4),
+    yscale="log",
+    add_legend=True,
+    legend_title=None,
+    legend_loc="upper right",
+    legend_kwargs=None,
+    resample=True,
+    default_color="tab:blue",
+    default_label=None,
+    linewidth=0.15,
+    alpha=0.03,
+):
+    """
+    Plot many individual DSD profiles as very thin lines.
+
+    Modes
+    -----
+    1. If cat_var is None:
+      - all samples are plotted together
+      - optional sampling is applied to the full dataset before resampling
+
+    2. If cat_var is provided:
+      - one line collection is plotted per category
+      - optional sampling is applied independently within each category
+        before resampling
+    """
+    legend_kwargs = {} if legend_kwargs is None else legend_kwargs
+    if diameter_bin_edges is None:
+        diameter_bin_edges = np.arange(0, 8, 0.01)
+
+    # Checks
+    sample_dim, is_dataset, category_order, category_labels = _check_dsd_lines_input(
+        xr_obj=xr_obj,
+        coord=coord,
+        dsd_var=dsd_var,
+        cat_var=cat_var,
+        category_order=category_order,
+        category_colors=category_colors,
+        category_labels=category_labels,
+    )
+
+    # ------------------------------------------
+    # Sample before resampling
+    if n_samples is not None:
+        xr_obj = xr_sample(
+            xr_obj,
+            dim=sample_dim,
+            random_state=random_state,
+            n=n_samples,
+            cat_var=cat_var,
+            category_order=category_order,
+        )
+
+    # -------------------------------------
+    # Load DSD data
+    da_dsd = xr_obj[dsd_var].compute() if is_dataset else xr_obj.compute()
+
+    # -------------------------------------
+    # Resample if requested
+    if resample:
+        da_dsd = resample_drop_number_concentration(
+            da_dsd,
+            diameter_bin_edges=diameter_bin_edges,
+        )
+
+    # -------------------------------------
+    # Define groups
+    groups = _create_plotting_groups(
+        xr_obj=xr_obj,
+        da_dsd=da_dsd,
+        dsd_var=dsd_var,
+        cat_var=cat_var,
+        sample_dim=sample_dim,
+        default_label=default_label,
+        default_color=default_color,
+        category_order=category_order,
+        category_colors=category_colors,
+        category_labels=category_labels,
+    )
+
+    # -------------------------------------
+    # Create figure
+    fig = None
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    else:
+        fig = ax.figure
+
+    # -------------------------------------
+    # Plot thin lines
+    handles = []
+    labels = []
+
+    for group in groups:
+        da_group = group["da"]
+
+        x = da_group[coord].to_numpy()
+        y = da_group.transpose(sample_dim, coord).to_numpy()
+
+        # Plot each profile
+        for row in y:
+            valid = np.isfinite(row) & (row > 0)
+            if np.any(valid):
+                ax.plot(
+                    x[valid],
+                    row[valid],
+                    color=group["color"],
+                    linewidth=linewidth,
+                    alpha=alpha,
+                )
+
+        handles.append(
+            mlines.Line2D([], [], color=group["color"], linewidth=1.0),
+        )
+        labels.append(group["label"])
+
+    # -------------------------------------
+    # Axes styling
+    ax.set_yscale(yscale)
+    ax.set_xlim(*xlim)
+    ax.set_ylim(*ylim)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+
+    if len(handles) > 0 and add_legend:
+        ax.legend(handles, labels, title=legend_title, loc=legend_loc, **legend_kwargs)
+
+    return fig, ax
+
+
+def plot_normalized_dsd_lines(
+    ds,
+    *,
+    dsd_var="drop_number_concentration",
+    Nc="Nw",
+    Dc="Dm",
+    cat_var=None,
+    category_order=None,
+    category_colors=None,
+    category_labels=None,
+    n_samples=None,
+    random_state=None,
+    coord="diameter_bin_center",
+    ax=None,
+    figsize=(3.4, 3.0),
+    dpi=300,
+    title="Normalized DSD",
+    xlabel=r"$D/D_m$ [-]",
+    ylabel=r"$N(D)/N_w$ [-]",
+    xlim=(0, 3),
+    ylim=(1e-4, 10),
+    yscale="log",
+    add_legend=True,
+    legend_title=None,
+    legend_loc="upper right",
+    legend_kwargs=None,
+    default_color="tab:blue",
+    default_label=None,
+    linewidth=0.15,
+    alpha=0.03,
+):
+    """
+    Plot many individual normalized DSD profiles as very thin lines.
+
+    Modes
+    -----
+    1. If cat_var is None:
+      - all samples are plotted together
+      - optional sampling is applied to the full dataset before resampling
+
+    2. If cat_var is provided:
+      - one line collection is plotted per category
+      - optional sampling is applied independently within each category
+        before resampling
+    """
+    legend_kwargs = {} if legend_kwargs is None else legend_kwargs
+
+    # Checks
+    if not isinstance(ds, xr.Dataset):
+        raise ValueError("'plot_normalized_dsd_lines' expects a xr.Dataset as input.")
+    if Dc not in ds:
+        raise ValueError(f"{Dc} is not an xr.Dataset variable.")
+    if Nc not in ds:
+        raise ValueError(f"{Nc} is not an xr.Dataset variable.")
+
+    sample_dim, is_dataset, category_order, category_labels = _check_dsd_lines_input(
+        xr_obj=ds,
+        coord=coord,
+        dsd_var=dsd_var,
+        cat_var=cat_var,
+        category_order=category_order,
+        category_colors=category_colors,
+        category_labels=category_labels,
+    )
+
+    # ------------------------------------------
+    # Sample before resampling
+    if n_samples is not None:
+        ds = xr_sample(
+            ds,
+            dim=sample_dim,
+            n=n_samples,
+            cat_var=cat_var,
+            category_order=category_order,
+            random_state=random_state,
+        )
+
+    # -------------------------------------
+    # Compute normalized DSD
+    ds[dsd_var] = ds[dsd_var].compute()
+    ds[Nc] = ds[Nc].compute()
+    ds[Dc] = ds[Dc].compute()
+    da_dsd_norm = compute_normalized_dsd_datarray(ds, Nc=Nc, Dc=Dc, dsd_var=dsd_var, diameter_dim=coord, method="pchip")
+    coord = "D/Dc"  # new coordinate
+    # -------------------------------------
+    # Define groups
+    groups = _create_plotting_groups(
+        xr_obj=ds,
+        da_dsd=da_dsd_norm,
+        dsd_var=dsd_var,
+        cat_var=cat_var,
+        sample_dim=sample_dim,
+        default_label=default_label,
+        default_color=default_color,
+        category_order=category_order,
+        category_colors=category_colors,
+        category_labels=category_labels,
+    )
+
+    # -------------------------------------
+    # Create figure
+    fig = None
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    else:
+        fig = ax.figure
+
+    # -------------------------------------
+    # Plot thin lines
+    handles = []
+    labels = []
+
+    for group in groups:
+        da_group = group["da"]
+
+        x = da_group[coord].to_numpy()
+        y = da_group.transpose(sample_dim, coord).to_numpy()
+
+        # Plot each profile
+        for row in y:
+            valid = np.isfinite(row) & (row > 0)
+            if np.any(valid):
+                ax.plot(
+                    x[valid],
+                    row[valid],
+                    color=group["color"],
+                    linewidth=linewidth,
+                    alpha=alpha,
+                )
+
+        handles.append(
+            mlines.Line2D([], [], color=group["color"], linewidth=1.0),
+        )
+        labels.append(group["label"])
+
+    # -------------------------------------
+    # Axes styling
+    ax.set_yscale(yscale)
+    ax.set_xlim(*xlim)
+    ax.set_ylim(*ylim)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+
+    if len(handles) > 0 and add_legend:
+        ax.legend(handles, labels, title=legend_title, loc=legend_loc, **legend_kwargs)
+
+    return fig, ax

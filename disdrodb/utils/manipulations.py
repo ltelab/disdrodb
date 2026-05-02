@@ -250,6 +250,101 @@ def get_diameter_coords_dict_from_bin_edges(diameter_bin_edges):
     return coords_dict
 
 
+def infer_dsd_sample_dim(da, diameter_dim):
+    """Infer the sample dimension.
+
+    Typically "time", but could also be sample_id for example.
+    """
+    sample_dim_candidates = set(da.dims) - {diameter_dim}
+    if len(sample_dim_candidates) != 1:
+        raise ValueError(
+            f"Could not infer sample dimension from dims={da.dims}."
+            f"Please adapt the function for your array layout.",
+        )
+    sample_dim = list(sample_dim_candidates)[0]  # noqa
+    return sample_dim
+
+
+def _sample_along_dim(xr_obj, dim, n=None, random_state=None):
+    """
+    Randomly subsample a xarray object along its sample dimension.
+
+    Parameters
+    ----------
+    da : xarray.DataArray or xarray.Dataset
+    n : int or None, optional
+        Number of samples to keep. If None, keep all.
+    dim : str or None, optional
+        Dimension along which to sample. If None, infer it as the only dimension
+        different from `coord_dim`.
+    random_state : int or None, optional
+        Seed for reproducible sampling.
+
+    Returns
+    -------
+    xr.DataArray
+    """
+    if n is None:
+        return xr_obj
+
+    size = xr_obj.sizes.get(dim, 0)
+    if size == 0 or n >= size:
+        return xr_obj
+
+    rng = np.random.default_rng(random_state)
+    idx = np.sort(rng.choice(size, size=n, replace=False))
+    return xr_obj.isel({dim: idx})
+
+
+def xr_sample(xr_obj, dim, n, random_state=19922207, cat_var=None, category_order=None):
+    """Sample an xarray object."""
+    # Checks
+    if not isinstance(xr_obj, (xr.DataArray, xr.Dataset)):
+        raise ValueError("Expecting xarray object.")
+
+    if cat_var is not None and cat_var not in xr_obj:
+        raise ValueError(f"{cat_var} is not a xr.Dataset variable.")
+
+    if cat_var is not None and category_order is None:
+        category_order = np.unique(xr_obj[cat_var])
+
+    # -------------------------------------------------------------------------.
+    # Sampling
+    if cat_var is None:
+        return _sample_along_dim(
+            xr_obj,
+            n=n,
+            dim=dim,
+            random_state=random_state,
+        )
+    dict_cat = {}
+    for i, cat in enumerate(category_order):
+        mask = xr_obj[cat_var] == cat
+        ds_subset = xr_obj.isel({dim: mask})
+        if ds_subset.sizes.get(dim, 0) == 0:
+            continue
+
+        ds_subset = _sample_along_dim(
+            ds_subset,
+            n=n,
+            dim=dim,
+            random_state=None if random_state is None else random_state + i,
+        )
+        dict_cat[cat] = ds_subset
+
+    if len(dict_cat) == 0:
+        raise ValueError("No data available after category-wise sampling.")
+
+    ds = xr.concat(
+        dict_cat.values(),
+        dim=dim,
+        join="outer",
+        coords="minimal",
+        compat="override",
+    )
+    return ds
+
+
 ####---------------------------------------------------------------------------.
 #### Resampling low-level functions
 
@@ -849,15 +944,20 @@ def compute_normalized_dsd_datarray(
     d_max=6,
     d_step=0.001,
     method="linear",
+    diameter_dim="diameter_bin_center",
+    dsd_var="drop_number_concentration",
 ):
     """Compute normalized DSD and remap to regular D/Dc dimension."""
+    # Infer sample dimension (typically time)
+    sample_id = infer_dsd_sample_dim(ds[dsd_var], diameter_dim=diameter_dim)
+
     # Compute Normalized DSD and normalized diameter
-    ds["N(D)/Nc"] = ds["drop_number_concentration"] / ds[Nc]
-    ds["D/Dc"] = ds["diameter_bin_center"] / ds[Dc]
+    ds["N(D)/Nc"] = ds[dsd_var] / ds[Nc]
+    ds["D/Dc"] = ds[diameter_dim] / ds[Dc]
     ds["dD/Dc"] = ds["diameter_bin_width"] / ds[Dc]
 
-    ds["D/Dc"] = ds["D/Dc"].transpose("diameter_bin_center", "time")
-    ds["N(D)/Nc"] = ds["N(D)/Nc"].transpose("diameter_bin_center", "time")
+    ds["D/Dc"] = ds["D/Dc"].transpose(diameter_dim, sample_id)
+    ds["N(D)/Nc"] = ds["N(D)/Nc"].transpose(diameter_dim, sample_id)
 
     # Define normalized diameter coordinate
     da_normalized_diameter = define_diameter_datarray(np.arange(d_min, d_max, d_step), dim="D/Dc")
@@ -867,7 +967,7 @@ def compute_normalized_dsd_datarray(
         da=ds["N(D)/Nc"],
         d_src=ds["D/Dc"],
         d_dst=da_normalized_diameter,
-        dim="diameter_bin_center",
+        dim=diameter_dim,
         new_dim="D/Dc",
         method=method,
     )
