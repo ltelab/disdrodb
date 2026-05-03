@@ -1863,6 +1863,29 @@ def add_dm_nw_cs_boundaries(ax):
     ax.axhline(y=10**3.85, color="black", linewidth=0.8, linestyle=":")
 
 
+def add_one_to_one_line(ax, color="black", linewidth=0.8, linestyle="--", **kwargs):
+    """Add 1:1 line."""
+    x0, x1 = ax.get_xlim()
+    y0, y1 = ax.get_ylim()
+
+    line_min = max(min(x0, x1), min(y0, y1))
+    line_max = min(max(x0, x1), max(y0, y1))
+
+    if line_min >= line_max:
+        return
+
+    ax.plot(
+        [line_min, line_max],
+        [line_min, line_max],
+        color=color,
+        linewidth=linewidth,
+        linestyle=linestyle,
+        **kwargs,
+    )
+    ax.set_xlim(x0, x1)
+    ax.set_ylim(y0, y1)
+
+
 ####---------------------------------------------------------------------------
 #### Confusion matrix
 
