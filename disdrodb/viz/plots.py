@@ -72,6 +72,7 @@ def add_panel_label(
     facecolor="white",
     edgecolor="black",
     linewidth=0.4,
+    zorder=3,
     **kwargs,
 ):
     """Add panel label within subplot."""
@@ -86,7 +87,8 @@ def add_panel_label(
         borderpad=borderpad,
         **kwargs,
     )
-
+    if zorder is not None:
+        at.set_zorder(zorder)
     # style the box
     at.patch.set_boxstyle(boxstyle)
     at.patch.set_facecolor(facecolor)
@@ -94,6 +96,10 @@ def add_panel_label(
     at.patch.set_edgecolor(edgecolor)
     at.patch.set_linewidth(linewidth)
     ax.add_artist(at)
+
+    # Avoid transparency over axis
+    for spine in ax.spines.values():
+        spine.set_zorder(zorder + 2)
     return at
 
 
