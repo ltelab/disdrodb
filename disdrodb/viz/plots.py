@@ -1836,7 +1836,7 @@ def draw_box(ax, x_box, y_box, facecolor="none", edgecolor="black", linewidth=1)
     return rect
 
 
-def draw_boxes(ax, boxes, fontsize, colors_dict=None, add_label=True):
+def draw_boxes(ax, boxes, fontsize, colors_dict=None, yfactor=1.2, add_label=True):
     """Draw boxes with label on top."""
     for label, (x_box, y_box) in boxes.items():
         facecolor = colors_dict[label] if colors_dict is not None else "none"
@@ -1853,7 +1853,7 @@ def draw_boxes(ax, boxes, fontsize, colors_dict=None, add_label=True):
             x_center = 0.5 * (x_box[0] + x_box[1])
             ax.text(
                 x_center,
-                y_box[1] * 1.2,
+                y_box[1] * yfactor,
                 label,
                 color="black",
                 fontsize=fontsize,
