@@ -157,6 +157,14 @@ def plot_colorbar(
     return cbar
 
 
+def cmap_with_alpha(cmap, alpha=0.5, n=256):
+    """Return a copy of a colormap with constant alpha."""
+    cmap = plt.get_cmap(cmap, n).copy()
+    colors = cmap(np.linspace(0, 1, n))
+    colors[:, -1] = alpha
+    return mcolors.ListedColormap(colors)
+
+
 ####-------------------------------------------------------------------------------------------------------
 
 
@@ -1890,7 +1898,7 @@ def draw_box(ax, x_box, y_box, facecolor="none", edgecolor="black", linewidth=1)
     return rect
 
 
-def draw_boxes(ax, boxes, fontsize, colors_dict=None, yfactor=1.2, add_label=True):
+def draw_boxes(ax, boxes, fontsize, colors_dict=None, yoffset=0, yfactor=1, add_label=True):
     """Draw boxes with label on top."""
     for label, (x_box, y_box) in boxes.items():
         facecolor = colors_dict[label] if colors_dict is not None else "none"
@@ -1905,9 +1913,11 @@ def draw_boxes(ax, boxes, fontsize, colors_dict=None, yfactor=1.2, add_label=Tru
         # Add label on top of box
         if add_label:
             x_center = 0.5 * (x_box[0] + x_box[1])
+            y = y_box[1] * yfactor
+            y = y_box[1] + yoffset
             ax.text(
                 x_center,
-                y_box[1] * yfactor,
+                y,
                 label,
                 color="black",
                 fontsize=fontsize,
@@ -2725,7 +2735,7 @@ def _get_color_var_info(
         else:
             norm = mcolors.Normalize(vmin=0.0, vmax=1.0)
 
-    cmap = cm.get_cmap(cmap)
+    cmap = plt.get_cmap(cmap).copy()
     scalar_mappable = cm.ScalarMappable(norm=norm, cmap=cmap)
     colors = scalar_mappable.to_rgba(values)
 
@@ -2743,7 +2753,9 @@ def plot_dsd_lines(
     category_labels=None,
     n_samples=None,
     sample_with_replacement=False,
+    stratify_bins=None,
     stratify_quantiles=None,
+    stratify_order="increasing",
     random_state=None,
     diameter_bin_edges=None,
     coord="diameter_bin_center",
@@ -2831,7 +2843,9 @@ def plot_dsd_lines(
             n=n_samples,
             cat_var=cat_var,
             stratify_var=color_var,
+            stratify_bins=stratify_bins,
             stratify_quantiles=stratify_quantiles,
+            stratify_order=stratify_order,
             replace=sample_with_replacement,
             category_order=category_order,
         )

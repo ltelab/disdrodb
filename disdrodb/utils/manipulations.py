@@ -431,6 +431,7 @@ def xr_sample(
     stratify_var=None,
     stratify_bins=None,
     stratify_quantiles=None,
+    stratify_order="increasing",
     replace=False,
 ):
     """
@@ -464,6 +465,9 @@ def xr_sample(
 
     if stratify_bins is not None and stratify_quantiles is not None:
         raise ValueError("'stratify_bins' and 'stratify_quantiles' are mutually exclusive.")
+
+    if stratify_order not in {"increasing", "decreasing"}:
+        raise ValueError("'stratify_order' must be either 'increasing' or 'decreasing'.")
 
     # ------------------------------------------------------------------
     # Uniform random sampling
@@ -515,6 +519,8 @@ def xr_sample(
         else:
             valid = group_values >= 0
             group_order = np.unique(group_values[valid])
+        if stratify_order == "decreasing":
+            group_order = group_order[::-1]
 
     # ------------------------------------------------------------------
     # Per-group sampling
