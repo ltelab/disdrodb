@@ -1914,7 +1914,7 @@ def draw_boxes(ax, boxes, fontsize, colors_dict=None, yoffset=0, yfactor=1, add_
         if add_label:
             x_center = 0.5 * (x_box[0] + x_box[1])
             y = y_box[1] * yfactor
-            y = y_box[1] + yoffset
+            y = y + yoffset
             ax.text(
                 x_center,
                 y,
