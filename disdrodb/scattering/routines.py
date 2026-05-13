@@ -608,6 +608,251 @@ def create_pytmatrix_lut(
         raise RuntimeError(msg)
 
 
+def simulate_particles_scattering(
+    frequencies,
+    diameter,
+    elevation_angle,
+    water_temperature,
+    axis_ratio_model,
+    permittivity_model,
+    canting_angle_std=0,
+    fixed_orientiation=True,
+):
+    """Simulate backscattering and extinction cross-sections for specified particle sizes."""
+    from pytmatrix import orientation
+    from pytmatrix.radar import ext_xsect, radar_xsect
+    from pytmatrix.tmatrix import Scatterer
+
+    from disdrodb.scattering.axis_ratio import get_axis_ratio
+
+    # Ensure frequencies is an array
+    frequencies = np.array(frequencies)
+
+    # Define wavelength (in mm)
+    wavelengths = frequency_to_wavelength(frequencies)
+
+    # Compute circle area
+    sigma_geom = np.pi * (diameter / 2) ** 2
+
+    # Axis ratio model
+    # -- At high frequency, using spheroidal with large D causes kernel to die !
+    axis_ratio_func = lambda D: 1 / np.clip(get_axis_ratio(D, model=axis_ratio_model), 0.4, 1)
+
+    # Define empty list to fill (per frequency and diameter)
+    list_sigma_b = []
+    list_sigma_b_ray = []
+    list_sigma_b_norm = []
+    list_sigma_b_ray_norm = []
+    list_size_parameter = []
+    list_sigma_ext_norm = []
+    for frequency in frequencies:
+
+        # Define wavelength (in mm)
+        wavelength = frequency_to_wavelength(frequency)
+
+        # Define complex refractive index
+        refractive_index = get_refractive_index(
+            frequency=frequency,
+            temperature=water_temperature,
+            permittivity_model=permittivity_model,
+        )
+
+        # Retrieve custom axis ratio function
+        # axis_ratio_func = get_axis_ratio_model(axis_ratio_model)
+
+        # Define radar dielectric factor
+        Kw_sqr = get_rayleigh_dielectric_factor(refractive_index)
+
+        # Define backward and forward geometries
+        # - Format (thet0, thet0, phi0, phi0, alpha, beta
+        backward_geom = get_backward_geometry(elevation_angle)
+        forward_geom = get_forward_geometry(elevation_angle)
+
+        # Initialize Scatterer class
+        # - By specifying m, we assume same refractive index for all particles diameters
+        scatterer = Scatterer(
+            wavelength=wavelength,
+            m=refractive_index,
+            Kw_sqr=Kw_sqr,
+            # ddelt = 1e-5,
+            # ndgs=10
+        )
+
+        # - Define orientation methods
+        # --> Alternatives: orient_averaged_adaptive, orient_single,
+        # --> Speed: orient_single > orient_averaged_fixed > orient_averaged_adaptive
+        if fixed_orientiation:
+            scatterer.orient = orientation.orient_single
+        else:
+            scatterer.orient = orientation.orient_averaged_fixed
+            # - Define particle orientation PDF for orientational averaging
+            # --> The standard deviation of the angle with respect to vertical orientation (the canting angle).
+            scatterer.or_pdf = orientation.gaussian_pdf(std=canting_angle_std)
+
+        # - Define geometry
+        scatterer.set_geometry(backward_geom)
+
+        # Compute Rayleigh Radar Backscattering Cross Section [mm²]
+        sigma_rayleigh = (np.pi**5 * Kw_sqr / wavelength**4) * diameter**6
+
+        # Compute Normalized Rayleigh Radar Backscattering Cross Section [-]
+        sigma_b_ray_norm = sigma_rayleigh / sigma_geom
+
+        # Compute Radar Backscattering Cross Section [mm²]
+        # --> The Scatterer class expects horizontal to vertical axis ratio
+        # --> Axis ratio model are defined to return vertical to horizontal aspect ratio !
+        sigma_b = []
+        for d in diameter:
+            scatterer.radius = d / 2
+            scatterer.axis_ratio = axis_ratio_func(d)
+            sigma_b.append(radar_xsect(scatterer, h_pol=True))
+
+        # Compute Normalized Radar Backscattering Cross Section [-]
+        sigma_b_norm = np.array(sigma_b) / sigma_geom
+
+        # Compute Extinction Cross Section  [mm²]
+        # --> scattering + absorption
+
+        # - Define geometry
+        scatterer.set_geometry(forward_geom)
+
+        sigma_ext = []
+        for d in diameter:
+            scatterer.radius = d / 2
+            scatterer.axis_ratio = axis_ratio_func(d)
+            sigma_ext.append(ext_xsect(scatterer, h_pol=True))
+
+        # Compute Normalized Radar Extinction Cross Section [-]
+        sigma_ext_norm = np.array(sigma_ext) / sigma_geom
+
+        # Compute size parameter
+        # --> Dimensionless way to express particle size relative to wavelength.
+        # Size parameter << 1: Rayleigh
+        # Size parameter  ~ 1: Mie
+        # Size parameter >> 1: Optical/Geometry
+        x_size = np.pi * diameter / wavelength
+
+        # Append values
+        list_sigma_b.append(sigma_b)
+        list_sigma_b_ray.append(sigma_rayleigh)
+
+        list_sigma_b_norm.append(sigma_b_norm)
+        list_sigma_b_ray_norm.append(sigma_b_ray_norm)
+        list_size_parameter.append(x_size)
+        list_sigma_ext_norm.append(sigma_ext_norm)
+
+    ####---------------------------------------------------------------------------.
+    #### Define Normalized Backscatter DataArrays f(frequency, diameter)
+    sigma_b = np.vstack(list_sigma_b)
+    sigma_b_ray = np.vstack(list_sigma_b_ray)
+    sigma_b_norm = np.vstack(list_sigma_b_norm)
+    sigma_b_ray_norm = np.vstack(list_sigma_b_ray_norm)
+    sigma_ext_norm = np.vstack(list_sigma_ext_norm)
+
+    x_size = np.vstack(list_size_parameter)
+
+    da_x_size = xr.DataArray(
+        x_size,
+        dims=["frequency", "diameter"],
+        coords={"frequency": frequencies, "diameter": diameter},
+        name="x",
+    )
+
+    da_sigma_geom = xr.DataArray(
+        sigma_geom,
+        dims=["diameter"],
+        coords={"diameter": diameter},
+        name=r"$\sigma_{geom}$",
+    )
+
+    da_sigma_b_ray = xr.DataArray(
+        sigma_b_ray,
+        dims=["frequency", "diameter"],
+        coords={"frequency": frequencies, "diameter": diameter, "x": da_x_size},
+        name=r"$\sigma_{b}$",
+        attrs={"units": "mm2"},
+    )
+
+    da_sigma_b_ray_norm = xr.DataArray(
+        sigma_b_ray_norm,
+        dims=["frequency", "diameter"],
+        coords={"frequency": frequencies, "diameter": diameter, "x": da_x_size},
+        name=r"$\sigma_{b, norm}$",
+        attrs={"units": "-"},
+    )
+
+    da_sigma_b = xr.DataArray(
+        sigma_b,
+        dims=["frequency", "diameter"],
+        coords={"frequency": frequencies, "diameter": diameter, "x": da_x_size},
+        name=r"$\sigma_{b}$",
+        attrs={"units": "mm2"},
+    )
+    da_sigma_b_norm = xr.DataArray(
+        sigma_b_norm,
+        dims=["frequency", "diameter"],
+        coords={"frequency": frequencies, "diameter": diameter, "x": da_x_size},
+        name=r"$\sigma_{b, norm}$",
+        attrs={"units": "-"},
+    )
+
+    da_sigma_ext_norm = xr.DataArray(
+        sigma_ext_norm,
+        dims=["frequency", "diameter"],
+        coords={"frequency": frequencies, "diameter": diameter, "x": da_x_size},
+        name=r"$\sigma_{ext, norm}$",
+        attrs={"units": "-"},
+    )
+
+    da_sigma_b_ray_norm_db = 10 * np.log10(da_sigma_b_ray_norm)
+    da_sigma_b_ray_norm_db.attrs["units"] = "dB"
+
+    da_sigma_b_norm_db = 10 * np.log10(da_sigma_b_norm)
+    da_sigma_b_norm_db.attrs["units"] = "dB"
+
+    da_sigma_ext_norm_db = 10 * np.log10(da_sigma_ext_norm)
+    da_sigma_ext_norm_db.attrs["units"] = "dB"
+
+    # Create Dataset
+    ds = xr.Dataset()
+    ds["sigma_geom"] = da_sigma_geom
+    ds["sigma_b_ray"] = da_sigma_b_ray
+    ds["sigma_b_ray_norm"] = da_sigma_b_ray_norm
+    ds["sigma_b_ray_norm_db"] = da_sigma_b_ray_norm_db
+
+    ds["sigma_b"] = da_sigma_b
+    ds["sigma_b_norm"] = da_sigma_b_norm
+    ds["sigma_b_norm_db"] = da_sigma_b_norm_db
+
+    ds["sigma_ext_norm"] = da_sigma_ext_norm
+    ds["sigma_ext_norm_db"] = da_sigma_ext_norm_db
+
+    # Define complex refractive index
+    refractive_indices = get_refractive_index(
+        frequency=frequencies,
+        temperature=water_temperature,
+        permittivity_model=permittivity_model,
+    )
+
+    # Define radar dielectric factor and equivalent factor
+    Kw_sqr = get_rayleigh_dielectric_factor(refractive_indices)
+    equivalent_factor = wavelengths**4 / (np.pi**5 * Kw_sqr)
+    equivalent_factor = xr.DataArray(equivalent_factor, dims="frequency", coords={"frequency": ds["frequency"]})
+
+    # Compute single-particle reflectivity
+    ds["Z_ray"] = 10 * np.log10(ds["sigma_b_ray"] * equivalent_factor)
+    ds["Z_b"] = 10 * np.log10(ds["sigma_b"] * equivalent_factor)
+
+    ds["Z_ray"].attrs["units"] = "dBZ"
+    ds["Z_b"].attrs["units"] = "dBZ"
+
+    # Assign_coordinates
+    ds = ds.assign_coords({"water_temperature": water_temperature})
+    if not fixed_orientiation:
+        ds = ds.assign_coords({"canting_angle_std": canting_angle_std})
+    return ds
+
+
 ####----------------------------------------------------------------------
 #### Scattering functions
 
