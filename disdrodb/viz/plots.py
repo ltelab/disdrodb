@@ -74,12 +74,13 @@ def add_panel_label(
     facecolor="white",
     edgecolor="black",
     linewidth=0.4,
+    fontsize=7,
     zorder=3,
     **kwargs,
 ):
     """Add panel label within subplot."""
     if prop is None:
-        prop = {"size": 7}
+        prop = {"size": fontsize}
     at = AnchoredText(
         text,
         loc=loc,
@@ -116,8 +117,10 @@ def plot_colorbar(
     label_position="left",
     fancybox_lw=0.2,
     fancybox_alpha=0.6,
+    fancy_box_edgecolor="none",
     **cbar_kwargs,
 ):
+    """Add colorbar as inset axes with fancybox."""
     import pycolorbar
 
     cax = ax.inset_axes(cbar_inset_axes)
@@ -142,7 +145,7 @@ def plot_colorbar(
         height=fancy_box_height,
         boxstyle="square,pad=0",
         fc="white",
-        ec="none",
+        ec=fancy_box_edgecolor,
         lw=fancybox_lw,
         alpha=fancybox_alpha,
         transform=ax.transAxes,
@@ -2782,12 +2785,11 @@ def plot_dsd_lines(
     default_label=None,
     linewidth=0.15,
     alpha=0.03,
-    cbar_inset_axes=[0.68, 0.74, 0.3, 0.08],
+    cbar_inset_axes=(0.68, 0.74, 0.3, 0.08),
     x_pad=0.03,
     y_pad=0.17,
 ):
-    """
-    Plot many individual DSD profiles as very thin lines.
+    """Plot many individual DSD profiles as very thin lines.
 
     Coloring modes
     --------------

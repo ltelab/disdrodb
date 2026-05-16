@@ -636,7 +636,7 @@ def simulate_particles_scattering(
 
     # Axis ratio model
     # -- At high frequency, using spheroidal with large D causes kernel to die !
-    axis_ratio_func = lambda D: 1 / np.clip(get_axis_ratio(D, model=axis_ratio_model), 0.4, 1)
+    axis_ratio_func = lambda D: 1 / np.clip(get_axis_ratio(D, model=axis_ratio_model), 0.4, 1)  # noqa
 
     # Define empty list to fill (per frequency and diameter)
     list_sigma_b = []

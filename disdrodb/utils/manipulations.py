@@ -313,9 +313,7 @@ def _sample_along_dim(xr_obj, dim, n=None, random_state=None, replace=False):
 
 
 def _resolve_stratify_bins(values, stratify_bins=None, stratify_quantiles=None):
-    """
-    Resolve stratification bin edges from either explicit bins or quantiles.
-    """
+    """Resolve stratification bin edges from either explicit bins or quantiles."""
     if stratify_bins is not None and stratify_quantiles is not None:
         raise ValueError(
             "'stratify_bins' and 'stratify_quantiles' are mutually exclusive.",
