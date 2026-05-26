@@ -154,7 +154,7 @@ def plot_colorbar(
             clip_on=False,
         )
         ax.add_artist(fancy_patch)
-    
+
         for spine in ax.spines.values():
             spine.set_zorder(fancybox_zorder + 2)
 
