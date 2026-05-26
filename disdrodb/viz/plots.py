@@ -118,6 +118,7 @@ def plot_colorbar(
     fancybox_lw=0.2,
     fancybox_alpha=0.6,
     fancy_box_edgecolor="none",
+    add_fancybox=True,
     **cbar_kwargs,
 ):
     """Add colorbar as inset axes with fancybox."""
@@ -135,27 +136,27 @@ def plot_colorbar(
         label_position=label_position,
         **cbar_kwargs,
     )
-
-    fancy_box_coords = (cbar_inset_axes[0] - x_pad, cbar_inset_axes[1] - y_pad)
-    fancy_box_width = cbar_inset_axes[2] + 2 * x_pad
-    fancy_box_height = cbar_inset_axes[3] + 2 * y_pad
-    fancy_patch = mpatches.FancyBboxPatch(
-        fancy_box_coords,
-        width=fancy_box_width,
-        height=fancy_box_height,
-        boxstyle="square,pad=0",
-        fc="white",
-        ec=fancy_box_edgecolor,
-        lw=fancybox_lw,
-        alpha=fancybox_alpha,
-        transform=ax.transAxes,
-        zorder=fancybox_zorder,
-        clip_on=False,
-    )
-    ax.add_artist(fancy_patch)
-
-    for spine in ax.spines.values():
-        spine.set_zorder(fancybox_zorder + 2)
+    if add_fancybox:
+        fancy_box_coords = (cbar_inset_axes[0] - x_pad, cbar_inset_axes[1] - y_pad)
+        fancy_box_width = cbar_inset_axes[2] + 2 * x_pad
+        fancy_box_height = cbar_inset_axes[3] + 2 * y_pad
+        fancy_patch = mpatches.FancyBboxPatch(
+            fancy_box_coords,
+            width=fancy_box_width,
+            height=fancy_box_height,
+            boxstyle="square,pad=0",
+            fc="white",
+            ec=fancy_box_edgecolor,
+            lw=fancybox_lw,
+            alpha=fancybox_alpha,
+            transform=ax.transAxes,
+            zorder=fancybox_zorder,
+            clip_on=False,
+        )
+        ax.add_artist(fancy_patch)
+    
+        for spine in ax.spines.values():
+            spine.set_zorder(fancybox_zorder + 2)
 
     return cbar
 
