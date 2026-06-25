@@ -164,15 +164,89 @@ def save_table_to_pdf(
 #### Tables summaries
 
 
+def compute_rain_statistics(df, temporal_resolution):
+    """Compute rainy statistics for a dataframe."""
+
+    accumulation_interval, _ = get_sampling_information(temporal_resolution)
+    accumulation_interval_minutes = accumulation_interval / 60
+
+    # Keep only rainy rows
+    df = df[df["R"] > 0]
+
+    # Return zeros if there is no valid rainy timestep
+    table = {
+        "n_rainy_minutes": 0,
+        "n_rainy_minutes_<0.1": 0,
+        "n_rainy_minutes_0.1_1": 0,
+        "n_rainy_minutes_1_10": 0,
+        "n_rainy_minutes_10_25": 0,
+        "n_rainy_minutes_25_50": 0,
+        "n_rainy_minutes_50_100": 0,
+        "n_rainy_minutes_100_200": 0,
+        "n_rainy_minutes_>200": 0,
+        "n_minutes_Dmax_>7": 0,
+        "n_minutes_Dmax_>8": 0,
+        "n_minutes_Dmax_>9": 0,
+    }
+
+    if len(df) == 0:
+        return table
+
+    table["n_rainy_minutes"] = len(df["R"]) * accumulation_interval_minutes
+
+    table["n_rainy_minutes_<0.1"] = (
+        df["R"].between(0, 0.1, inclusive="right").sum().item()
+        * accumulation_interval_minutes
+    )
+    table["n_rainy_minutes_0.1_1"] = (
+        df["R"].between(0.1, 1, inclusive="right").sum().item()
+        * accumulation_interval_minutes
+    )
+    table["n_rainy_minutes_1_10"] = (
+        df["R"].between(1, 10, inclusive="right").sum().item()
+        * accumulation_interval_minutes
+    )
+    table["n_rainy_minutes_10_25"] = (
+        df["R"].between(10, 25, inclusive="right").sum().item()
+        * accumulation_interval_minutes
+    )
+    table["n_rainy_minutes_25_50"] = (
+        df["R"].between(25, 50, inclusive="right").sum().item()
+        * accumulation_interval_minutes
+    )
+    table["n_rainy_minutes_50_100"] = (
+        df["R"].between(50, 100, inclusive="right").sum().item()
+        * accumulation_interval_minutes
+    )
+    table["n_rainy_minutes_100_200"] = (
+        df["R"].between(100, 200, inclusive="right").sum().item()
+        * accumulation_interval_minutes
+    )
+    table["n_rainy_minutes_>200"] = (
+        np.sum(df["R"] > 200).item() * accumulation_interval_minutes
+    )
+
+    table["n_minutes_Dmax_>7"] = (
+        np.sum(df["Dmax"] > 7).item() * accumulation_interval_minutes
+    )
+    table["n_minutes_Dmax_>8"] = (
+        np.sum(df["Dmax"] > 8).item() * accumulation_interval_minutes
+    )
+    table["n_minutes_Dmax_>9"] = (
+        np.sum(df["Dmax"] > 9).item() * accumulation_interval_minutes
+    )
+
+    # Convert minutes to integer
+    table = {key: int(value) for key, value in table.items()}
+
+    return table
+
+
 def create_table_rain_summary(df, temporal_resolution):
     """Create rainy table summary."""
     # Initialize dictionary
     table = {}
-
-    # Retrieve accumulation interval
-    accumulation_interval, _ = get_sampling_information(temporal_resolution)
-    accumulation_interval_minutes = accumulation_interval / 60
-
+ 
     # Keep rows with R > 0
     df = df[df["R"] > 0]
 
@@ -200,39 +274,8 @@ def create_table_rain_summary(df, temporal_resolution):
     table["years_month_coverage"] = years_month_coverage
 
     # Rainy minutes statistics
-    table["n_rainy_minutes"] = len(df["R"]) * accumulation_interval_minutes
-    table["n_rainy_minutes_<0.1"] = (
-        df["R"].between(0, 0.1, inclusive="right").sum().item() * accumulation_interval_minutes
-    )
-    table["n_rainy_minutes_0.1_1"] = (
-        df["R"].between(0.1, 1, inclusive="right").sum().item() * accumulation_interval_minutes
-    )
-    table["n_rainy_minutes_1_10"] = (
-        df["R"].between(1, 10, inclusive="right").sum().item() * accumulation_interval_minutes
-    )
-    table["n_rainy_minutes_10_25"] = (
-        df["R"].between(10, 25, inclusive="right").sum().item() * accumulation_interval_minutes
-    )
-    table["n_rainy_minutes_25_50"] = (
-        df["R"].between(25, 50, inclusive="right").sum().item() * accumulation_interval_minutes
-    )
-    table["n_rainy_minutes_50_100"] = (
-        df["R"].between(50, 100, inclusive="right").sum().item() * accumulation_interval_minutes
-    )
-    table["n_rainy_minutes_100_200"] = (
-        df["R"].between(100, 200, inclusive="right").sum().item() * accumulation_interval_minutes
-    )
-    table["n_rainy_minutes_>200"] = np.sum(df["R"] > 200).item() * accumulation_interval_minutes
-
-    # Minutes with larger Dmax
-    table["n_minutes_Dmax_>7"] = np.sum(df["Dmax"] > 7).item() * accumulation_interval_minutes
-    table["n_minutes_Dmax_>8"] = np.sum(df["Dmax"] > 8).item() * accumulation_interval_minutes
-    table["n_minutes_Dmax_>9"] = np.sum(df["Dmax"] > 9).item() * accumulation_interval_minutes
-
-    # Convert all minutes columns to integer
-    for key in table:
-        if "minutes" in key:
-            table[key] = int(table[key])
+    dict_rain_statistics = compute_rain_statistics(df, temporal_resolution=temporal_resolution)
+    table.update(dict_rain_statistics)
     return table
 
 
