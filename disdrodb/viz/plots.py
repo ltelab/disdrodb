@@ -16,6 +16,9 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB Plotting Tools."""
 
+from contextlib import suppress
+from pathlib import Path
+
 import matplotlib.colors as mcolors
 import matplotlib.dates as mdates
 import matplotlib.lines as mlines
@@ -56,6 +59,39 @@ from disdrodb.utils.time import infer_sample_interval
 
 # TODO: plot_l0_quicklook
 ## - plot_l0_quicklook   # remap weather codes to hydrometeor_type, find R if available
+
+# Pre-parsed variable metadata
+VARIABLE_METADATA = {
+    "Z": {"acronym": r"$Z_{\mathrm{GPM}}$", "unit": "dBZ"},
+    "DBZH": {"acronym": r"$Z_{\mathrm{H}}$", "unit": "dBZ"},
+    "DBZH_X": {"acronym": r"$Z_{\mathrm{H, X}}$", "unit": "dBZ"},
+    "DBZH_C": {"acronym": r"$Z_{\mathrm{H, C}}$", "unit": "dBZ"},
+    "DBZH_S": {"acronym": r"$Z_{\mathrm{H, S}}$", "unit": "dBZ"},
+    "ZDR": {"acronym": r"$Z_{\mathrm{DR}}$", "unit": "dB"},
+    "ZDR_X": {"acronym": r"$Z_{\mathrm{DR, X}}$", "unit": "dB"},
+    "ZDR_C": {"acronym": r"$Z_{\mathrm{DR, C}}$", "unit": "dB"},
+    "ZDR_S": {"acronym": r"$Z_{\mathrm{DR, S}}$", "unit": "dB"},
+    "KDP": {"acronym": r"$K_{\mathrm{DP}}$", "unit": "° km$^{-1}$"},
+    "KDP_X": {"acronym": r"$K_{\mathrm{DP, X}}$", "unit": "° km$^{-1}$"},
+    "KDP_C": {"acronym": r"$K_{\mathrm{DP, C}}$", "unit": "° km$^{-1}$"},
+    "KDP_S": {"acronym": r"$K_{\mathrm{DP, S}}$", "unit": "° km$^{-1}$"},
+    "R": {"acronym": "$R$", "unit": "mm h$^{-1}$"},
+    "Rm": {"acronym": "$R$", "unit": "mm h$^{-1}$"},
+    "Dm": {"acronym": "$D_m$", "unit": "$mm$"},
+    "sigma_m": {"acronym": r"$\sigma_m$", "unit": "$mm$"},
+    "Dmax": {"acronym": r"$D_{\mathrm{max}}$", "unit": "$mm$"},
+    "D50": {"acronym": "$D_{50}$", "unit": "$mm$"},
+    "LWC": {"acronym": "$LWC$", "unit": r"$g \ m^{-3}$"},
+    "Nt": {"acronym": "$N_t$", "unit": "$m^{-3}$"},
+    "N_0p5_1p0": {"acronym": "$N_{t,0.5-1.0}$", "unit": "$m^{-3}$"},
+    "N_2p0_2p5": {"acronym": "$N_{t,2.0-2.5}$", "unit": "$m^{-3}$"},
+    "Nw": {"acronym": "$N_w$", "unit": r"$mm^{-1} \ m^{-3}$"},
+    "M2": {"acronym": "$M_2$", "unit": r"$m^{-3} \ mm^2$"},
+    "M3": {"acronym": "$M_3$", "unit": r"$m^{-3} \ mm^3$"},
+    "M4": {"acronym": "$M_4$", "unit": r"$m^{-3} \ mm^4$"},
+    "M5": {"acronym": "$M_5$", "unit": r"$m^{-3} \ mm^5$"},
+    "M6": {"acronym": "$M_6$", "unit": r"$m^{-3} \ mm^6$"},
+}
 
 ####-------------------------------------------------------------------------------------------------------
 
@@ -1379,10 +1415,13 @@ def _get_spectrum_variable(xr_obj, variable):
 def plot_spectrum_evolution(
     ds,
     legend_variables=None,
+    legend_loc="lower right",
     legend_ncol=1,
     xlim=None,
     ylim=None,
     plot_hc_rain_mask_boundary=False,
+    gif_filepath=None,
+    frame_rate=6,
     **plot_kwargs,
 ):
     """Plot the evolution of disdrodb spectra over time.
@@ -1400,6 +1439,15 @@ def plot_spectrum_evolution(
     plot_kwargs : dict
         Additional keyword arguments passed to plot_spectrum().
     """
+    if gif_filepath is not None:
+        try:
+            from gpm.visualization.animation import create_gifski_gif
+        except ImportError as e:
+            raise ImportError(
+                "The 'create_gifski_gif' function requires the GPM-API and gifski package. "
+                "Please install it with: conda install -c conda-forge gpm-api gifski",
+            ) from e
+
     # Check timestep available
     if "time" not in ds.dims or ds.sizes["time"] == 0:
         raise ValueError("No timesteps available.")
@@ -1438,7 +1486,16 @@ def plot_spectrum_evolution(
             fall_velocity_model="Beard1976",
         )
 
+    # Setup temporary directory if GIF saving is requested
+    tmp_dir = None
+    if gif_filepath is not None:
+        gif_path = Path(gif_filepath)
+        # Create a hidden/temporary directory inside the destination directory
+        tmp_dir = gif_path.parent / "tmp_gif_frames"
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+
     # Loop over time
+    tmp_filepaths = []
     for i in range(ds.sizes["time"]):
         ds_i = ds.isel(time=i)
 
@@ -1461,15 +1518,30 @@ def plot_spectrum_evolution(
             labels = []
             for var in legend_variables:
                 value = ds_i[var].item()
-                dec = decimals[var]
-                label = f"{var}: NaN" if np.isnan(value) else f"{var}: {value:.{dec}f}"
-                # Invisible handle
+
+                # 1. Fetch metadata configuration or use fallbacks
+                meta = VARIABLE_METADATA.get(var, {"acronym": var, "unit": ""})
+                acronym = meta["acronym"]
+                unit = f" {meta['unit']}" if meta["unit"] else ""
+
+                # 2. Determine formatting (NaN, Scientific, or Decimal)
+                if np.isnan(value):
+                    label = f"{acronym}: NaN"
+                elif value != 0 and (abs(value) >= 10000 or abs(value) < 0.01) and "dB" not in unit:
+                    # Use scientific notation for extreme values (excluding logarithmic decibel scales)
+                    label = f"{acronym}: {value:.2e}{unit}"
+                else:
+                    dec = decimals.get(var, 2)
+                    label = f"{acronym}: {value:.{dec}f}{unit}"
+
+                # 3. Create invisible legend entry
                 handles.append(Line2D([], [], linestyle="none"))
                 labels.append(label)
+
             ax.legend(
                 handles,
                 labels,
-                loc="upper left",
+                loc=legend_loc,
                 ncol=legend_ncol,
                 frameon=True,
                 handlelength=0,
@@ -1483,7 +1555,31 @@ def plot_spectrum_evolution(
         if ylim is not None:
             plt.ylim(ylim)
 
-        plt.show()
+        # Handle output layout
+        if gif_filepath is not None:
+            # Save frame to the temporary directory
+            frame_path = tmp_dir / f"frame_{i:06d}.png"
+            fig.savefig(frame_path, bbox_inches="tight", dpi=100)
+            tmp_filepaths.append(str(frame_path))
+            plt.close(fig)  # Close to free up memory
+        else:
+            plt.show()
+
+    # Create GIF if filepaths were gathered
+    if gif_filepath is not None and tmp_filepaths:
+
+        create_gifski_gif(
+            image_filepaths=tmp_filepaths,
+            gif_fpath=str(gif_filepath),
+            sort=True,
+            frame_rate=frame_rate,
+            loop=0,
+            delete_inputs=True,
+        )
+
+        # Clean up the temporary directory itself since delete_inputs only removes files
+        with suppress(OSError):
+            tmp_dir.rmdir()
 
 
 def plot_spectrum(
