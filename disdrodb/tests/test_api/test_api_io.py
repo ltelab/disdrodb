@@ -233,8 +233,8 @@ class TestFindFiles:
 
         # Add fake data files
         filenames = [
-            "L0A.1MIN.LOCARNO_2019.61.s20190713134200.e20190714111000.V0.parquet",
-            "L0A.1MIN.LOCARNO_2019.61.s20190714144200.e20190715111000.V0.parquet",
+            f"L0A.1MIN.LOCARNO_2019.61.s20190713T134200.e20190714T111000.{ARCHIVE_VERSION}.parquet",
+            f"L0A.1MIN.LOCARNO_2019.61.s20190714T144200.e20190715T111000.{ARCHIVE_VERSION}.parquet",
         ]
         for filename in filenames:
             _ = create_fake_raw_data_file(
@@ -288,10 +288,10 @@ class TestFindFiles:
 
         # Add fake data files
         filenames = [
-            "L0B.1MIN.LOCARNO_2019.61.s20190713134200.e20190714111000.V0.nc",
-            "L0B.1MIN.LOCARNO_2019.61.s20190714144200.e20190715111000.V0.nc",
-            "L0B.1MIN.LOCARNO_2019.61.s20190715144200.e20190716111000.V0.nc",
-            "L0B.1MIN.LOCARNO_2019.61.s20190716144200.e20190717111000.V0.nc",
+            f"L0B.1MIN.LOCARNO_2019.61.s20190713T134200.e20190714T111000.{ARCHIVE_VERSION}.nc",
+            f"L0B.1MIN.LOCARNO_2019.61.s20190714T144200.e20190715T111000.{ARCHIVE_VERSION}.nc",
+            f"L0B.1MIN.LOCARNO_2019.61.s20190715T144200.e20190716T111000.{ARCHIVE_VERSION}.nc",
+            f"L0B.1MIN.LOCARNO_2019.61.s20190716T144200.e20190717T111000.{ARCHIVE_VERSION}.nc",
         ]
         for filename in filenames:
             _ = create_fake_raw_data_file(
@@ -378,9 +378,9 @@ class TestFindFiles:
 def test_filter_by_time() -> None:
     """Test filter filepaths."""
     filepaths = [
-        "L2E.1MIN.LOCARNO_2019.61.s20190713134200.e20190731111000.V0.nc",
-        "L2E.1MIN.LOCARNO_2019.61.s20190801001100.e20190831231600.V0.nc",
-        "L2E.1MIN.LOCARNO_2019.61.s20200801001100.e20200831231600.V0.nc",
+        f"L2E.1MIN.LOCARNO_2019.61.s20190713T134200.e20190731T111000.{ARCHIVE_VERSION}.nc",
+        f"L2E.1MIN.LOCARNO_2019.61.s20190801T001100.e20190831T231600.{ARCHIVE_VERSION}.nc",
+        f"L2E.1MIN.LOCARNO_2019.61.s20200801T001100.e20200831T231600.{ARCHIVE_VERSION}.nc",
     ]
 
     out = filter_by_time(
@@ -580,13 +580,13 @@ class TestOpenDataset:
         # Create test netCDF with different sample intervals
         ds = create_template_l0c_dataset(with_velocity=True)
         ds["sample_interval"] = 20
-        fpath_20 = tmp_path / "L0C.20S.EPFL_2009.10.s20091215122600.e20091215235940.V0.nc"
+        fpath_20 = tmp_path / f"L0C.20S.EPFL_2009.10.s20091215T122600.e20091215T235940.{ARCHIVE_VERSION}.nc"
         ds.to_netcdf(fpath_20)
 
         ds = create_template_l0c_dataset(with_velocity=True)
         ds["time"] = ds["time"] + np.timedelta64(10, "D")
         ds["sample_interval"] = 30
-        fpath_30 = tmp_path / "L0C.30S.EPFL_2009.10.s20091215122600.e20091215235940.V0.nc"
+        fpath_30 = tmp_path / f"L0C.30S.EPFL_2009.10.s20091215T122600.e20091215T235940.{ARCHIVE_VERSION}.nc"
         ds.to_netcdf(fpath_30)
 
         filepaths = [str(fpath_20), str(fpath_30)]

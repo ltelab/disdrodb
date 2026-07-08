@@ -33,7 +33,7 @@ class DISDRODB_Base_Accessor:
         from disdrodb.api.checks import check_time
 
         if "time" in self._obj.coords:
-            start_time = self._obj["time"].to_numpy().min()
+            start_time = self._obj["time"].min(skipna=True).to_numpy()
         else:
             raise ValueError("Time coordinate not found")
         return check_time(start_time)
@@ -44,7 +44,7 @@ class DISDRODB_Base_Accessor:
         from disdrodb.api.checks import check_time
 
         if "time" in self._obj.coords:
-            end_time = self._obj["time"].to_numpy().max()
+            end_time = self._obj["time"].max(skipna=True).to_numpy()
         else:
             raise ValueError("Time coordinate not found")
         return check_time(end_time)
@@ -74,10 +74,16 @@ class DISDRODB_Base_Accessor:
 
     def regularize(self, **kwargs):
         """Regularize timesteps."""
-        from disdrodb.utils.time import regularize_dataset
+        from disdrodb.utils.time import infer_sample_interval, regularize_dataset
 
-        sample_interval = self._obj.disdrodb.sample_interval
-        return regularize_dataset(self._obj, freq=f"{sample_interval}s", **kwargs)
+        ds = self._obj
+        if ds.attrs.get("disdrodb_rolled_product", "False") == "True":
+            sample_interval = infer_sample_interval(ds)
+        elif "sample_interval" in ds.coords:
+            sample_interval = ds.disdrodb.sample_interval
+        else:
+            sample_interval = infer_sample_interval(ds)
+        return regularize_dataset(ds, freq=f"{sample_interval}s", **kwargs)
 
     def isel(self, indexers=None, drop=False, **indexers_kwargs):
         """Perform index-based dimension selection."""

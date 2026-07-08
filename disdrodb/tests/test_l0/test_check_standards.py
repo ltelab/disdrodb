@@ -24,6 +24,7 @@ import pytest
 
 from disdrodb import package_dir
 from disdrodb.api.configs import available_sensor_names
+from disdrodb.constants import ARCHIVE_VERSION
 from disdrodb.l0.check_standards import (
     _check_raw_fields_available,
     _check_valid_range,
@@ -44,7 +45,7 @@ def test_check_l0a_standards(capfd):
         "PARSIVEL_2007",
         "ground_truth",
         "10",
-        "L0A.PARSIVEL_2007.10.s20070723141530.e20070723141930.V0.parquet",
+        f"L0A.PARSIVEL_2007.10.s20070723T141530.e20070723T141930.{ARCHIVE_VERSION}.parquet",
     )
 
     # Read apache parquet file and check that check pass

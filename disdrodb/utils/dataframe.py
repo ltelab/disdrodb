@@ -16,6 +16,8 @@
 # -----------------------------------------------------------------------------.
 """Dataframe utilities."""
 
+import warnings
+
 import numpy as np
 import pandas as pd
 
@@ -25,6 +27,9 @@ from disdrodb.utils.warnings import suppress_warnings
 def log_arange(start, stop, log_step=0.1, base=10):
     """
     Return numbers spaced evenly on a log scale (similar to np.arange but in log space).
+
+    For base=10, log_step=0.1 means 10 bins per decade,
+    log_step=0.05 means 20 bins per decade.
 
     Parameters
     ----------
@@ -84,7 +89,25 @@ def log_linspace(start, stop, n_bins, base=10):
     return base**log_values
 
 
-def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefix_name=True, include_quantiles=False):
+def safe_ratio(num, den):
+    """Compute the ratio of two arrays while handling division by zero."""
+    return np.where(
+        den == 0,
+        np.where(num == 0, 0, np.nan),
+        num / den,
+    )
+
+
+def compute_1d_histogram(
+    df,
+    column,
+    variables=None,
+    bins=10,
+    labels=None,
+    prefix_name=True,
+    include_quantiles=False,
+    quantiles=None,
+):
     """Compute conditional univariate statistics.
 
     Parameters
@@ -108,6 +131,8 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
     # Copy data
     df = df.copy()
 
+    # TODO: check column and variables are valid
+
     # Ensure `variables` is a list of variables
     # - If no variable specified, create dummy variable
     if variables is None:
@@ -117,11 +142,14 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
     elif isinstance(variables, str):
         variables = [variables]
         variables_specified = True
-    elif isinstance(variables, list):
+    elif isinstance(variables, np.ndarray) and variables.ndim == 1:
+        variables = variables.tolist()
+    elif isinstance(variables, (list, set)):
         variables_specified = True
+        variables = list(set(variables) - {column})
+
     else:
         raise TypeError("`variables` must be a string, list of strings, or None.")
-    variables = np.unique(variables)
 
     # Handle column binning
     if isinstance(bins, int):
@@ -157,7 +185,9 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
         # Define statistics to compute
         if variables_specified:
             # Compute quantiles
-            quantiles = [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
+            if quantiles is None:
+                quantiles = [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
+
             df_stats_quantiles = df_grouped[var].quantile(quantiles).unstack(level=-1)  # noqa: PD010
             df_stats_quantiles.columns = [f"{prefix}Q{int(q*100)}" for q in df_stats_quantiles.columns]
             df_stats_quantiles = df_stats_quantiles.rename(
@@ -167,7 +197,10 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
             )
             # Define other stats to compute
             list_stats = [
+                (f"{prefix}mean", "mean"),
                 (f"{prefix}std", "std"),
+                (f"{prefix}skew", "skew"),
+                (f"{prefix}kurtosis", "kurt"),
                 (f"{prefix}min", "min"),
                 (f"{prefix}max", "max"),
                 (f"{prefix}mad", lambda s: (s - s.median()).abs().median()),
@@ -181,13 +214,26 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
         with suppress_warnings():
             df_stats = df_grouped[var].agg(list_stats)
 
+        # Deal with group with just 1 count
+        # df_stats.loc[df_stats["count"] == 1, f"{prefix}std"] = 0.0
+        # df_stats.loc[df_stats["count"] == 1, f"{prefix}kurtosis"] = 0.0
+        # df_stats.loc[df_stats["count"] == 1, f"{prefix}skew"] = 0.0
+
         # Compute other variable statistics
         if variables_specified:
+            # Compute percentile range
             df_stats[f"{prefix}range"] = df_stats[f"{prefix}max"] - df_stats[f"{prefix}min"]
             df_stats[f"{prefix}iqr"] = df_stats_quantiles[f"{prefix}Q75"] - df_stats_quantiles[f"{prefix}Q25"]
             df_stats[f"{prefix}ipr80"] = df_stats_quantiles[f"{prefix}Q90"] - df_stats_quantiles[f"{prefix}Q10"]
             df_stats[f"{prefix}ipr90"] = df_stats_quantiles[f"{prefix}Q95"] - df_stats_quantiles[f"{prefix}Q5"]
             df_stats[f"{prefix}ipr98"] = df_stats_quantiles[f"{prefix}Q99"] - df_stats_quantiles[f"{prefix}Q1"]
+
+            # Compute coefficient of variation
+            # - if both mean and std are 0 --> 0
+            # - if mean is 0 but std not 0 --> NaN
+            df_stats[f"{prefix}cv"] = safe_ratio(df_stats[f"{prefix}std"], df_stats[f"{prefix}mean"])
+            df_stats[f"{prefix}robcv"] = safe_ratio(df_stats[f"{prefix}mad"], df_stats_quantiles[f"{prefix}median"])
+
             if include_quantiles:
                 df_stats = pd.concat((df_stats, df_stats_quantiles), axis=1)
             else:
@@ -225,6 +271,7 @@ def compute_2d_histogram(
     y_labels=None,
     prefix_name=True,
     include_quantiles=False,
+    quantiles=None,
 ):
     """Compute conditional bivariate statistics.
 
@@ -258,6 +305,8 @@ def compute_2d_histogram(
     # if isinstance(df, pl.DataFrame):
     #     df = df.to_pandas()
 
+    # TODO: check variables,x, y valid,
+
     # Copy data
     df = df.copy()
 
@@ -270,11 +319,13 @@ def compute_2d_histogram(
     elif isinstance(variables, str):
         variables = [variables]
         variables_specified = True
-    elif isinstance(variables, list):
+    elif isinstance(variables, np.ndarray) and variables.ndim == 1:
+        variables = variables.tolist()
+    elif isinstance(variables, (list, set)):
         variables_specified = True
+        variables = list(set(variables) - {x, y})
     else:
         raise TypeError("`variables` must be a string, list of strings, or None.")
-    variables = np.unique(variables)
 
     # Handle x-axis binning
     if isinstance(x_bins, int):
@@ -322,7 +373,9 @@ def compute_2d_histogram(
         # Define statistics to compute
         if variables_specified:
             # Compute quantiles
-            quantiles = [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
+            if quantiles is None:
+                quantiles = [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
+
             df_stats_quantiles = df_grouped[var].quantile(quantiles).unstack(level=-1)  # noqa: PD010
             df_stats_quantiles.columns = [f"{prefix}Q{int(q*100)}" for q in df_stats_quantiles.columns]
             df_stats_quantiles = df_stats_quantiles.rename(
@@ -332,7 +385,10 @@ def compute_2d_histogram(
             )
             # Define other stats to compute
             list_stats = [
+                (f"{prefix}mean", "mean"),
                 (f"{prefix}std", "std"),
+                (f"{prefix}skew", "skew"),
+                (f"{prefix}kurtosis", "kurt"),
                 (f"{prefix}min", "min"),
                 (f"{prefix}max", "max"),
                 (f"{prefix}mad", lambda s: np.median(np.abs(s - np.median(s)))),
@@ -345,13 +401,24 @@ def compute_2d_histogram(
         # Compute statistics
         df_stats = df_grouped[var].agg(list_stats)
 
+        # Deal with group with just 1 count
+        # df_stats.loc[df_stats["count"] == 1, f"{prefix}std"] = 0.0
+
         # Compute other variable statistics
         if variables_specified:
+            # Compute percentile ranges
             df_stats[f"{prefix}range"] = df_stats[f"{prefix}max"] - df_stats[f"{prefix}min"]
             df_stats[f"{prefix}iqr"] = df_stats_quantiles[f"{prefix}Q75"] - df_stats_quantiles[f"{prefix}Q25"]
             df_stats[f"{prefix}ipr80"] = df_stats_quantiles[f"{prefix}Q90"] - df_stats_quantiles[f"{prefix}Q10"]
             df_stats[f"{prefix}ipr90"] = df_stats_quantiles[f"{prefix}Q95"] - df_stats_quantiles[f"{prefix}Q5"]
             df_stats[f"{prefix}ipr98"] = df_stats_quantiles[f"{prefix}Q99"] - df_stats_quantiles[f"{prefix}Q1"]
+
+            # Compute coefficient of variation
+            # - if both mean and std are 0 --> 0
+            # - if mean is 0 but std not 0 --> NaN
+            df_stats[f"{prefix}cv"] = safe_ratio(df_stats[f"{prefix}std"], df_stats[f"{prefix}mean"])
+            df_stats[f"{prefix}robcv"] = safe_ratio(df_stats[f"{prefix}mad"], df_stats_quantiles[f"{prefix}median"])
+
             if include_quantiles:
                 df_stats = pd.concat((df_stats, df_stats_quantiles), axis=1)
             else:
@@ -373,9 +440,13 @@ def compute_2d_histogram(
     y_coords = y_labels if y_labels is not None else y_centers
 
     # Reset index and set new coordinates
-    df_stats = df_stats.reset_index()
-    df_stats[f"{x}"] = pd.Categorical(df_stats[f"{x}_binned"].map(dict(zip(x_intervals, x_coords, strict=True))))
-    df_stats[f"{y}"] = pd.Categorical(df_stats[f"{y}_binned"].map(dict(zip(y_intervals, y_coords, strict=True))))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
+        df_stats = df_stats.reset_index()
+        xmap = dict(zip(x_intervals, x_coords, strict=True))
+        ymap = dict(zip(y_intervals, y_coords, strict=True))
+        df_stats[f"{x}"] = pd.Categorical(df_stats[f"{x}_binned"].map(xmap))
+        df_stats[f"{y}"] = pd.Categorical(df_stats[f"{y}_binned"].map(ymap))
 
     # Set new MultiIndex with coordinates
     df_stats = df_stats.set_index([f"{x}", f"{y}"])

@@ -20,7 +20,9 @@ import pickle
 
 import numpy as np
 import pandas as pd
-from scipy.spatial import cKDTree
+from scipy.spatial import Delaunay, QhullError, cKDTree
+
+_VALID_2D_DISTANCES = {"grid", "euclidean", "manhattan"}
 
 ### in predict()
 # - if input NaN, return NaN in predict()
@@ -38,12 +40,86 @@ def _get_query_index(values):
     return index if isinstance(index, pd.Index) else None
 
 
-def _discard_nan_value_rows(df, columns):
-    """Discard rows with NaNs in the selected value columns."""
+def _discard_nan_value_rows(df, core_columns, coordinate_columns=None):
+    """Discard rows with NaNs in the coordinate or core columns."""
+    if coordinate_columns is None:
+        coordinate_columns = []
+    columns = list(dict.fromkeys([*coordinate_columns, *core_columns]))
     if len(columns) == 0:
         return df
     valid_rows = df[columns].notna().all(axis=1)
     return df.loc[valid_rows]
+
+
+def _check_columns_in_dataframe(df, columns, variable_name):
+    """Check that columns are available in the DataFrame."""
+    if not np.all(np.isin(columns, df.columns)):
+        missing = np.setdiff1d(columns, df.columns).tolist()
+        raise ValueError(f"{missing} {variable_name} not found in DataFrame")
+
+
+def _get_nearest_sorted_values(values, query):
+    """Return nearest values from a sorted 1D array for each query value."""
+    idx_upper = np.searchsorted(values, query)
+    idx_upper = np.clip(idx_upper, 0, len(values) - 1)
+    idx_lower = np.clip(idx_upper - 1, 0, len(values) - 1)
+
+    lower_values = values[idx_lower]
+    upper_values = values[idx_upper]
+    use_upper = np.abs(query - upper_values) < np.abs(query - lower_values)
+    return np.where(use_upper, upper_values, lower_values)
+
+
+def _get_points_tolerance(points):
+    """Return a coordinate-scaled tolerance for geometric point checks."""
+    dtype = points.dtype if np.issubdtype(points.dtype, np.floating) else float
+    eps = np.finfo(dtype).eps
+    scale = max(float(np.ptp(points, axis=0).max()), 1.0)
+    return 100 * eps * scale
+
+
+def _get_convex_hull(points):
+    """Return a Delaunay triangulation for non-degenerate 2D points."""
+    unique_points = np.unique(points, axis=0)
+    if len(unique_points) < 3:
+        return None
+    try:
+        return Delaunay(unique_points)
+    except QhullError:
+        return None
+
+
+def _points_in_degenerate_hull(query_points, points, atol):
+    """Return whether query points lie inside a degenerate 2D convex hull."""
+    unique_points = np.unique(points, axis=0)
+    if len(unique_points) == 0:
+        return np.zeros(len(query_points), dtype=bool)
+    if len(unique_points) == 1:
+        return np.linalg.norm(query_points - unique_points[0], axis=1) <= atol
+
+    center = np.mean(unique_points, axis=0)
+    _, _, vh = np.linalg.svd(unique_points - center, full_matrices=False)
+    direction = vh[0]
+
+    point_proj = (unique_points - center) @ direction
+    query_proj = (query_points - center) @ direction
+    query_reconstructed = center + np.outer(query_proj, direction)
+
+    on_line = np.linalg.norm(query_points - query_reconstructed, axis=1) <= atol
+    within_segment = (query_proj >= np.min(point_proj) - atol) & (query_proj <= np.max(point_proj) + atol)
+    return on_line & within_segment
+
+
+def _points_in_convex_hull(query_points, points, hull=None):
+    """Return whether query points lie inside the convex hull of points."""
+    if len(query_points) == 0:
+        return np.array([], dtype=bool)
+    if len(points) == 0:
+        return np.zeros(len(query_points), dtype=bool)
+    atol = _get_points_tolerance(points)
+    if hull is not None:
+        return hull.find_simplex(query_points, tol=atol) >= 0
+    return _points_in_degenerate_hull(query_points, points, atol=atol)
 
 
 class NearestNeighbourLUT1D:
@@ -63,30 +139,46 @@ class NearestNeighbourLUT1D:
         If None, all columns are included. Default is None.
     dtype : numpy.dtype, optional
         Data type for storing points and values. Default is np.float32.
+    core_columns : list of str, optional
+        List of column names required to contain valid values.
+        Rows with NaNs in these columns or the coordinate column are discarded.
+        If None, it defaults to ``columns`` and preserves the previous behavior.
+        Default is None.
 
     Notes
     -----
-    Rows with NaNs in the selected value columns are discarded before
+    Rows with NaNs in the coordinate or core columns are discarded before
     constructing the lookup table.
     """
 
-    def __init__(self, df, x, columns=None, dtype=np.float32):
+    def __init__(self, df, x, columns=None, dtype=np.float32, core_columns=None):
         if columns is None:
             columns = list(df.columns)
         if x in df.index.names:
             df = df.reset_index()
-
         if x not in df:
             raise ValueError(f"{x=} is not a column of df.")
 
-        if not np.all(np.isin(columns, df.columns)):
-            missing = np.setdiff1d(columns, df.columns).tolist()
-            raise ValueError(f"{missing} columns not found in DataFrame")
+        # Remove x from columns and core columns
+        columns = list(set(columns) - {x})
+        if core_columns is None:
+            core_columns = columns
+        core_columns = list(set(core_columns) - {x})
 
-        df = _discard_nan_value_rows(df, columns)
+        # Check columns validity
+        _check_columns_in_dataframe(df, columns, "columns")
+        _check_columns_in_dataframe(df, core_columns, "core_columns")
+
+        # Remove rows with core columns having NaN
+        df = _discard_nan_value_rows(df, core_columns, coordinate_columns=[x])
+
+        # Sort columns alphabetically
+        columns = sorted(columns)
+        core_columns = sorted(core_columns)
 
         self.x = x
         self.columns = columns
+        self.core_columns = core_columns
         self.dtype = dtype
         self.points = df[[x]].to_numpy(dtype=dtype)
         self.values = df[columns].to_numpy(dtype=dtype)
@@ -214,6 +306,11 @@ class NearestNeighbourLUT2D:
         If None, all columns are included. Default is None.
     dtype : numpy.dtype, optional
         Data type for storing points and values. Default is np.float32.
+    core_columns : list of str, optional
+        List of column names required to contain valid values.
+        Rows with NaNs in these columns or the coordinate columns are discarded.
+        If None, it defaults to ``columns`` and preserves the previous behavior.
+        Default is None.
 
     Attributes
     ----------
@@ -223,6 +320,8 @@ class NearestNeighbourLUT2D:
         Name of the y-coordinate column.
     columns : list of str
         Column names for the lookup values.
+    core_columns : list of str
+        Column names required to contain valid values.
     dtype : numpy.dtype
         Data type used for storage.
     points : numpy.ndarray
@@ -241,18 +340,18 @@ class NearestNeighbourLUT2D:
 
     Notes
     -----
-    Rows with NaNs in the selected value columns are discarded before
+    Rows with NaNs in the coordinate or core columns are discarded before
     constructing the lookup table.
 
     Examples
     --------
     >>> import pandas as pd
-    >>> df = pd.DataFrame({'x': [0, 1, 2], 'y': [0, 1, 2], 'value': [10, 20, 30]})
-    >>> lut = NearestNeighbourLUT2D(df, 'x', 'y', columns=['value'])
+    >>> df = pd.DataFrame({"x": [0, 1, 2], "y": [0, 1, 2], "value": [10, 20, 30]})
+    >>> lut = NearestNeighbourLUT2D(df, "x", "y", columns=["value"])
     >>> lut.predict([0.5], [0.5])
     """
 
-    def __init__(self, df, x, y, columns=None, dtype=np.float32):
+    def __init__(self, df, x, y, columns=None, dtype=np.float32, core_columns=None):
         if columns is None:
             columns = list(df.columns)
         if x in df.index.names:
@@ -263,21 +362,38 @@ class NearestNeighbourLUT2D:
         if y not in df:
             raise ValueError(f"{y=} is not a column of df.")
 
-        # Subset columns
-        if not np.all(np.isin(columns, df.columns)):
-            missing = np.setdiff1d(columns, df.columns).tolist()
-            raise ValueError(f"{missing} columns not found in DataFrame")
+        # Remove x and y from columns and core columns
+        columns = list(set(columns) - {x, y})
+        if core_columns is None:
+            core_columns = columns
+        core_columns = list(set(core_columns) - {x, y})
 
-        df = _discard_nan_value_rows(df, columns)
+        # Check columns
+        _check_columns_in_dataframe(df, columns, "columns")
+        _check_columns_in_dataframe(df, core_columns, "core_columns")
+
+        # Remove rows with core columns having NaN
+        df = _discard_nan_value_rows(df, core_columns, coordinate_columns=[x, y])
+
+        # Sort columns alphabetically
+        columns = sorted(columns)
+        core_columns = sorted(core_columns)
 
         self.x = x
         self.y = y
         self.columns = columns
+        self.core_columns = core_columns
         self.dtype = dtype
         self.points = df[[x, y]].to_numpy(dtype=dtype)
         self.values = df[columns].to_numpy(dtype=dtype)
 
         self.tree = cKDTree(self.points)
+        self._grid_x = np.unique(self.points[:, 0])
+        self._grid_y = np.unique(self.points[:, 1])
+        self._grid_indices = {}
+        for i, point in enumerate(self.points):
+            self._grid_indices.setdefault((point[0], point[1]), i)
+        self._convex_hull = _get_convex_hull(self.points)
 
     # ------------------
     # Persistence
@@ -317,7 +433,42 @@ class NearestNeighbourLUT2D:
     # ------------------
     # Query
     # ------------------
-    def predict(self, x, y, return_distance=False, max_distance=None):
+    def _query_grid(self, pts_valid):
+        """Return grid nearest-neighbour distances and indices."""
+        grid_x = getattr(self, "_grid_x", np.unique(self.points[:, 0]))
+        grid_y = getattr(self, "_grid_y", np.unique(self.points[:, 1]))
+        grid_indices = getattr(self, "_grid_indices", None)
+        if grid_indices is None:
+            grid_indices = {}
+            for i, point in enumerate(self.points):
+                grid_indices.setdefault((point[0], point[1]), i)
+
+        nearest_x = _get_nearest_sorted_values(grid_x, pts_valid[:, 0])
+        nearest_y = _get_nearest_sorted_values(grid_y, pts_valid[:, 1])
+
+        idx = np.full(len(pts_valid), -1, dtype=int)
+        for i, point in enumerate(zip(nearest_x, nearest_y, strict=True)):
+            idx[i] = grid_indices.get(point, -1)
+
+        missing_mask = idx < 0
+        if np.any(missing_mask):
+            snapped_points = np.column_stack([nearest_x[missing_mask], nearest_y[missing_mask]])
+            _, idx[missing_mask] = self.tree.query(snapped_points)
+
+        dist = np.full(len(pts_valid), np.nan, dtype=self.dtype)
+        found_mask = idx >= 0
+        if np.any(found_mask):
+            nearest_points = self.points[idx[found_mask]]
+            dist[found_mask] = np.linalg.norm(pts_valid[found_mask] - nearest_points, axis=1)
+        return dist, idx
+
+    def _query_out_of_bound(self, pts_valid):
+        """Return True for points outside the LUT points convex hull."""
+        if not hasattr(self, "_convex_hull"):
+            self._convex_hull = _get_convex_hull(self.points)
+        return ~_points_in_convex_hull(pts_valid, self.points, hull=self._convex_hull)
+
+    def predict(self, x, y, return_distance=False, max_distance=None, distance="grid"):
         """Query the lookup table for nearest neighbor values.
 
         Parameters
@@ -333,28 +484,43 @@ class NearestNeighbourLUT2D:
             Maximum distance threshold for valid predictions.
 
             - If None: no distance masking is applied.
-            - If float: points with Euclidean distance > max_distance are set to NaN.
+            - If float: points with the selected distance > max_distance are set to NaN.
             - If tuple (dx, dy): points are masked if |x - x_nearest| > dx OR |y - y_nearest| > dy.
 
             Default is None.
+        distance : {"grid", "euclidean", "manhattan"}, optional
+            Nearest-neighbour distance strategy.
+
+            - "grid": snap x and y independently to their closest LUT coordinate.
+            - "euclidean": select the closest LUT point by Euclidean distance.
+            - "manhattan": select the closest LUT point by Manhattan distance.
+
+            Default is "grid".
 
         Returns
         -------
         pandas.DataFrame
             DataFrame containing the nearest neighbor values for each query point.
-            Columns include x, y coordinates, the lookup values, and optionally
-            the distance to the nearest neighbor. Values beyond max_distance are NaN.
+            Columns include x, y coordinates, an out_of_bound flag indicating
+            whether the query point is outside the LUT points convex hull, the
+            lookup values, and optionally the distance to the nearest neighbor.
+            Values beyond max_distance are NaN.
 
         Raises
         ------
         ValueError
             If x and y do not have the same shape.
+        ValueError
+            If distance is not one of "grid", "euclidean", or "manhattan".
 
         Notes
         -----
         The method automatically converts scalar inputs to 1D arrays.
         Input values that are NaN or inf will produce NaN output rows.
         """
+        if distance not in _VALID_2D_DISTANCES:
+            raise ValueError("distance must be one of 'grid', 'euclidean', or 'manhattan'")
+
         # Preserve index if x/y are pandas objects
         index = _get_query_index(x)
         if index is None:
@@ -375,13 +541,23 @@ class NearestNeighbourLUT2D:
         n_columns = len(self.columns)
         data = np.full((n_points, n_columns), np.nan, dtype=self.dtype)
         dist = np.full(n_points, np.nan, dtype=self.dtype)
+        out_of_bound = np.zeros(n_points, dtype=bool)
 
         # Only process valid points
         valid_mask = ~invalid_mask
         if np.any(valid_mask):
             pts_valid = np.column_stack([x[valid_mask], y[valid_mask]])
-            dist_valid, idx_valid = self.tree.query(pts_valid)
-            data_valid = self.values[idx_valid]
+            out_of_bound[valid_mask] = self._query_out_of_bound(pts_valid)
+            if distance == "grid":
+                dist_valid, idx_valid = self._query_grid(pts_valid)
+            else:
+                p = 2 if distance == "euclidean" else 1
+                dist_valid, idx_valid = self.tree.query(pts_valid, p=p)
+
+            data_valid = np.full((len(pts_valid), n_columns), np.nan, dtype=self.dtype)
+            found_mask = idx_valid >= 0
+            if np.any(found_mask):
+                data_valid[found_mask] = self.values[idx_valid[found_mask]]
 
             # Apply max_distance masking if specified
             if max_distance is not None:
@@ -392,14 +568,16 @@ class NearestNeighbourLUT2D:
                     dx_max, dy_max = max_distance
 
                     # Get nearest neighbor coordinates
-                    nearest_points = self.points[idx_valid]
+                    nearest_points = np.full((len(pts_valid), 2), np.nan, dtype=self.dtype)
+                    if np.any(found_mask):
+                        nearest_points[found_mask] = self.points[idx_valid[found_mask]]
                     dx = np.abs(x[valid_mask] - nearest_points[:, 0])
                     dy = np.abs(y[valid_mask] - nearest_points[:, 1])
 
                     # Mask points exceeding either threshold
                     distance_mask = (dx > dx_max) | (dy > dy_max)
                 else:
-                    # Euclidean distance masking
+                    # Selected distance masking
                     distance_mask = dist_valid > max_distance
 
                 # Set masked values to NaN
@@ -418,9 +596,10 @@ class NearestNeighbourLUT2D:
         # Add coordinates
         df_out[self.x] = x
         df_out[self.y] = y
+        df_out["out_of_bound"] = out_of_bound
 
         # Keep original order
-        df_out = df_out[[self.x, self.y, *self.columns]]
+        df_out = df_out[[self.x, self.y, "out_of_bound", *self.columns]]
 
         if return_distance:
             df_out["distance"] = dist

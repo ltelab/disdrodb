@@ -185,7 +185,7 @@ def retrieve_synop_filepaths(df, filepath):
     return synop_filepaths
 
 
-def read_synop_file(filepath, logger=None):
+def read_synop_file(filepath, logger=None):  # noqa: ARG001
     """Read SYNOP 10 min file."""
     ##------------------------------------------------------------------------.
     #### Define column names
@@ -198,52 +198,67 @@ def read_synop_file(filepath, logger=None):
         "wind_speed",
         "wind_direction",
     ]
-    ##------------------------------------------------------------------------.
-    #### Define reader options
-    # - For more info: https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
-    reader_kwargs = {}
-
-    # - Define delimiter
-    reader_kwargs["delimiter"] = r"\s+"
-
-    # - Avoid first column to become df index !!!
-    reader_kwargs["index_col"] = False
-
-    # Since column names are expected to be passed explicitly, header is set to None
-    reader_kwargs["header"] = None
-
-    # - Number of rows to be skipped at the beginning of the file
-    reader_kwargs["skiprows"] = 6
-
-    # - Define behaviour when encountering bad lines
-    reader_kwargs["on_bad_lines"] = "skip"
-
-    # - Define reader engine
-    #   - C engine is faster
-    #   - Python engine is more feature-complete
-    reader_kwargs["engine"] = "python"
-
-    # - Define on-the-fly decompression of on-disk data
-    #   - Available: gzip, bz2, zip
-    reader_kwargs["compression"] = "infer"
-
-    # - Strings to recognize as NA/NaN and replace with standard NA flags
-    #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
-    #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
-    #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
-    reader_kwargs["na_values"] = ["na", "", "error"]
 
     ##------------------------------------------------------------------------.
-    #### Read the data
-    df = read_raw_text_file(
-        filepath=filepath,
-        column_names=column_names,
-        reader_kwargs=reader_kwargs,
-        logger=logger,
+    #### Read data
+    df = pd.read_fwf(
+        filepath,
+        skiprows=6,
+        header=None,
+        names=column_names,
+        infer_nrows=100,
+        na_values=["na", "", "error"],
+        compression="infer",
     )
 
-    # Define datetime "time" column
     df["time"] = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S", errors="coerce")
+
+    # ##------------------------------------------------------------------------.
+    #### Define reader options
+    # - For more info: https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
+    # reader_kwargs = {}
+
+    # # - Define delimiter
+    # reader_kwargs["delimiter"] = r"\s+"
+
+    # # - Avoid first column to become df index !!!
+    # reader_kwargs["index_col"] = False
+
+    # # Since column names are expected to be passed explicitly, header is set to None
+    # reader_kwargs["header"] = None
+
+    # # - Number of rows to be skipped at the beginning of the file
+    # reader_kwargs["skiprows"] = 6
+
+    # # - Define behaviour when encountering bad lines
+    # reader_kwargs["on_bad_lines"] = "skip"
+
+    # # - Define reader engine
+    # #   - C engine is faster
+    # #   - Python engine is more feature-complete
+    # reader_kwargs["engine"] = "python"
+
+    # # - Define on-the-fly decompression of on-disk data
+    # #   - Available: gzip, bz2, zip
+    # reader_kwargs["compression"] = "infer"
+
+    # # - Strings to recognize as NA/NaN and replace with standard NA flags
+    # #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
+    # #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
+    # #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
+    # reader_kwargs["na_values"] = ["na", "", "error"]
+
+    # ##------------------------------------------------------------------------.
+    # #### Read the data
+    # df = read_raw_text_file(
+    #     filepath=filepath,
+    #     column_names=column_names,
+    #     reader_kwargs=reader_kwargs,
+    #     logger=logger,
+    # )
+
+    # # Define datetime "time" column
+    # df["time"] = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S", errors="coerce")
 
     # Return SYNOP dataframe
     return df

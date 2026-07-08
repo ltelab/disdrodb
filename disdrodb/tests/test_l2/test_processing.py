@@ -662,39 +662,39 @@ class TestGenerateL2Model:
         """Dataset without time dimension should still process correctly."""
         ds = create_template_l2e_dataset()
         ds = ds.isel(time=0)
-        ds_out = generate_l2m(ds, psd_model="NormalizedGammaPSD")
+        ds_out = generate_l2m(ds, psd_model="NormalizedGammaD50NwPSD")
         assert isinstance(ds_out, xr.Dataset)
 
     def test_additional_dimension_preserved(self):
         """Additional dimensions should be preserved in output dims."""
         ds = create_template_l2e_dataset()
         ds["drop_number_concentration"] = ds["drop_number_concentration"].expand_dims({"year": [2012, 2013]})
-        ds_out = generate_l2m(ds, psd_model="NormalizedGammaPSD")
+        ds_out = generate_l2m(ds, psd_model="NormalizedGammaD50NwPSD")
         assert "year" in ds_out.dims
         assert "year" in ds_out["mu"].dims
 
     def test_idempotent_generation(self):
         """Regenerating L2M with L2M dataset should produce identical results."""
         ds = create_template_l2e_dataset()
-        ds_out = generate_l2m(ds, psd_model="NormalizedGammaPSD")
-        ds_out2 = generate_l2m(ds_out, psd_model="NormalizedGammaPSD")
+        ds_out = generate_l2m(ds, psd_model="NormalizedGammaD50NwPSD")
+        ds_out2 = generate_l2m(ds_out, psd_model="NormalizedGammaD50NwPSD")
         xr.testing.assert_allclose(ds_out, ds_out2)
 
-    def test_NormalizedGammaPSD_fitting(self):
+    def test_NormalizedGammaD50NwPSD_fitting(self):
         """Test Normalized Gamma PSD fitting."""
         ds = create_template_l2e_dataset()
 
-        ds_out = generate_l2m(ds, psd_model="NormalizedGammaPSD", optimization="GS")
-        assert ds_out.attrs["disdrodb_psd_model"] == "NormalizedGammaPSD"
+        ds_out = generate_l2m(ds, psd_model="NormalizedGammaD50NwPSD", optimization="GS")
+        assert ds_out.attrs["disdrodb_psd_model"] == "NormalizedGammaD50NwPSD"
         assert "disdrodb_psd_optimization" in ds_out.attrs
         assert "disdrodb_psd_optimization_settings" in ds_out.attrs
 
         # Test raise error
         with pytest.raises(NotImplementedError, match="ML optimization is not available"):
-            generate_l2m(ds, psd_model="NormalizedGammaPSD", optimization="ML")
+            generate_l2m(ds, psd_model="NormalizedGammaD50NwPSD", optimization="ML")
 
         with pytest.raises(NotImplementedError, match="MOM optimization is not available"):
-            generate_l2m(ds, psd_model="NormalizedGammaPSD", optimization="MOM")
+            generate_l2m(ds, psd_model="NormalizedGammaD50NwPSD", optimization="MOM")
 
     def test_GammaPSD_fitting(self):
         """Test Gamma PSD fitting."""
