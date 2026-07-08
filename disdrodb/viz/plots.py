@@ -16,6 +16,7 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB Plotting Tools."""
 
+import math
 from contextlib import suppress
 from pathlib import Path
 
@@ -1805,6 +1806,169 @@ def plot_raw_and_filtered_spectra(
         ax2.legend(loc="lower right", frameon=False)
 
     return fig
+
+
+def plot_stations_spectra(
+    list_datasets,
+    *,
+    norm,
+    cmap=None,
+    d_lim=(0, 8),
+    v_lim=(0, 10),
+    base_width=6.9,
+    base_ncols=3,
+    dpi=100,
+    height_per_row=2.3,
+    ncols=None,
+    title_attr="station_name",
+    add_grid=False,
+    add_colorbar=True,
+    cbar_subplot_idx=0,
+    cbar_inset_axes=(0.5, 0.15, 0.40, 0.050),
+    cbar_label="Counts",
+    x_pad=0.02,
+    y_pad=0.12,
+    colorbar_orientation="horizontal",
+    colorbar_label_position="top",
+    cbar_kwargs=None,
+    cbar_labelsize=6,
+    grid_kwargs=None,
+):
+    """
+    Plot disdrometer spectra of various stations a compact panel figure.
+
+    Parameters
+    ----------
+    list_datasets : list
+        List of stations.
+    cmap : str, optional
+        If None, defaults to "Spectral_r".
+    d_lim : tuple
+        Diameter axis limits.
+    v_lim : tuple
+        Fall velocity axis limits.
+    base_width : float
+        Figure width in inches for `base_ncols` columns.
+    base_ncols : int
+        Reference number of columns for `base_width`.
+    height_per_row : float
+        Figure height per row in inches.
+    ncols : int, optional
+        Number of columns. If None, uses min(len(list_datasets), base_ncols).
+    title_attr : str
+        Dataset attribute used for subplot titles.
+    add_colorbar : bool
+        Whether to add one inset colorbar.
+    """
+    cbar_kwargs = {} if cbar_kwargs is None else cbar_kwargs
+    grid_kwargs = {} if grid_kwargs is None else grid_kwargs
+
+    default_grid_kwargs = {
+        "which": "major",
+        "axis": "both",
+        "linestyle": "--",
+        "linewidth": 0.4,
+        "alpha": 0.4,
+    }
+    default_grid_kwargs.update(grid_kwargs)
+
+    n = len(list_datasets)
+
+    if n <= 1:
+        raise ValueError("`list_datasets` must contain at least two elements.")
+
+    if cmap is None:
+        cmap = "Spectral_r"
+
+    if ncols is None:
+        ncols = min(n, base_ncols)
+
+    nrows = math.ceil(n / ncols)
+
+    width = base_width * (ncols / base_ncols)
+    height = height_per_row * nrows
+
+    fig, axes = plt.subplots(
+        nrows=nrows,
+        ncols=ncols,
+        figsize=(width, height),
+        sharex=True,
+        sharey=True,
+        constrained_layout=False,
+        squeeze=False,
+        dpi=dpi,
+    )
+
+    fig.subplots_adjust(wspace=0, hspace=0)
+
+    axes_flat = axes.ravel()
+    p = None
+
+    for i, (ax, ds) in enumerate(zip(axes_flat, list_datasets, strict=True)):
+        p = ds.disdrodb.plot_spectrum(
+            ax=ax,
+            add_colorbar=False,
+            cmap=cmap,
+            norm=norm,
+        )
+
+        ax.set_xlim(*d_lim)
+        ax.set_ylim(*v_lim)
+
+        if add_grid:
+            ax.grid(**default_grid_kwargs)
+
+        title_str = ds.attrs.get(title_attr, "")
+        title_str = str(title_str).replace("_", " ")
+        ax.set_title(title_str)
+
+        row = i // ncols
+        col = i % ncols
+
+        is_bottom = row == nrows - 1
+        is_left = col == 0
+
+        if not is_left:
+            ax.set_ylabel("")
+            ax.tick_params(axis="y", labelleft=False)
+        else:
+            ax.set_ylabel("Fall velocity [m s$^{-1}$]")
+
+        if not is_bottom:
+            ax.set_xlabel("")
+            ax.tick_params(axis="x", labelbottom=False)
+        else:
+            ax.set_xlabel("Diameter [mm]")
+            ax.tick_params(axis="x", labelbottom=True)
+
+    # Hide unused axes when len(list_datasets) is not a perfect grid
+    for ax in axes_flat[n:]:
+        ax.set_visible(False)
+
+    if add_colorbar:
+        if p is None:
+            raise RuntimeError("No spectrum was plotted; colorbar cannot be created.")
+
+        if cbar_subplot_idx >= n:
+            raise ValueError("`cbar_subplot_idx` must point to an existing subplot.")
+
+        cbar = plot_colorbar(
+            p,
+            ax=axes_flat[cbar_subplot_idx],
+            cbar_inset_axes=cbar_inset_axes,
+            label=cbar_label,
+            x_pad=x_pad,
+            y_pad=y_pad,
+            orientation=colorbar_orientation,
+            label_position=colorbar_label_position,
+            **cbar_kwargs,
+        )
+        if cbar_labelsize is not None:
+            if colorbar_orientation == "horizontal":
+                cbar.ax.tick_params(axis="x", labelsize=cbar_labelsize)
+            else:
+                cbar.ax.tick_params(axis="y", labelsize=cbar_labelsize)
+    return fig, axes
 
 
 ####---------------------------------------------------------------------------.
