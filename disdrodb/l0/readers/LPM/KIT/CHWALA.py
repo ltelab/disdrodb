@@ -16,13 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB reader for GID LPM sensors not measuring wind."""
-import os
+"""DISDRODB reader for KIT IMK-IFU Thies LPM disdrometer."""
+import zipfile
 
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
+from disdrodb.utils.logger import log_error
 
 
 @is_documented_by(reader_generic_docstring)
@@ -199,27 +200,22 @@ def reader(
         # Return the dataframe adhering to DISDRODB L0 standards
         return df
 
-    #### TEMPORARY: to read just a single 1-min timestep
-    df = read_txt_file(file=filepath, filename=os.path.basename(filepath))
-
-    #### FUTURE: Iterate over all files (aka 1-min timesteps) in the daily zip archive
-    # - Each file contain a single timestep !
-    # list_df = []
-    # with zipfile.ZipFile(filepath, "r") as zip_ref:
-    #     filenames = sorted(zip_ref.namelist())
-    #     for filename in filenames:
-    #         if filename.endswith(".dat"):
-    #             # Open file
-    #             with zip_ref.open(filename) as file:
-    #                 try:
-    #                     df = read_txt_file(file=file, filename=filename)
-    #                     list_df.append(df)
-    #                 except Exception as e:
-    #                     msg = f"An error occurred while reading {filename}. The error is: {e}."
-    #                     log_error(logger=logger, msg=msg, verbose=True)
+    #### Iterate over all .dat files in the daily zip archive
+    list_df = []
+    with zipfile.ZipFile(filepath, "r") as zip_ref:
+        filenames = sorted(zip_ref.namelist())
+        for filename in filenames:
+            if filename.endswith(".dat"):
+                with zip_ref.open(filename) as file:
+                    try:
+                        df = read_txt_file(file=file, filename=filename)
+                        list_df.append(df)
+                    except Exception as e:
+                        msg = f"An error occurred while reading {filename}. The error is: {e}."
+                        log_error(logger=logger, msg=msg, verbose=True)
 
     # Concatenate all dataframes into a single one
-    # df = pd.concat(list_df)
+    df = pd.concat(list_df)
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df
