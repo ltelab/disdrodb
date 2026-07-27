@@ -326,7 +326,7 @@ def create_table_events_summary(df, temporal_resolution):
     # - Events are separated by 1 hour or more rain-free periods in rain rate time series.
     # - The events that are less than 'min_duration' minutes or the rain total is less than 0.1 mm
     #   are not reported.
-    if accumulation_interval_minutes >= 5 * 60:
+    if accumulation_interval_minutes >= 5:
         neighbor_time_interval = temporal_resolution
         event_min_duration = temporal_resolution
         neighbor_min_size = 1
@@ -365,6 +365,7 @@ def create_table_events_summary(df, temporal_resolution):
     rain_thresholds = [0.1, 1, 5, 10, 20, 50, 100]
     for event in event_list:
         # Retrieve event start_time and end_time
+        # --> These corresponds to the time at the end of the measurement interval
         start, end = event["start_time"], event["end_time"]
         # Retrieve event dataframe
         df_event = df[(df["time"] >= start) & (df["time"] <= end)]
