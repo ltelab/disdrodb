@@ -768,7 +768,7 @@ class TestDefineFilename:
             start_time=start,
             end_time=end,
         )
-        assert fn == f"L0B.CAMPAIGN_NAME.STATION_NAME.s20200101000000.e20200101010000.{ARCHIVE_VERSION}.nc"
+        assert fn == f"L0B.CAMPAIGN_NAME.STATION_NAME.s20200101T000000.e20200101T010000.{ARCHIVE_VERSION}.nc"
 
     def test_l0a_extension_parquet(self):
         """Test L0A product uses parquet extension instead of nc."""
@@ -781,7 +781,7 @@ class TestDefineFilename:
             start_time=start,
             end_time=end,
         )
-        assert fn == f"L0A.CAMPAIGN_NAME.STATION_NAME.s20210501120000.e20210501130000.{ARCHIVE_VERSION}.parquet"
+        assert fn == f"L0A.CAMPAIGN_NAME.STATION_NAME.s20210501T120000.e20210501T130000.{ARCHIVE_VERSION}.parquet"
 
     def test_l0c_with_sample_interval(self):
         """Test L0C filename does not include temporal resolution."""
@@ -795,7 +795,7 @@ class TestDefineFilename:
             end_time=end,
             temporal_resolution="1MIN",
         )
-        assert fn == f"L0C.1MIN.CAMPAIGN_NAME.STATION_NAME.s20220601000000.e20220601001000.{ARCHIVE_VERSION}.nc"
+        assert fn == f"L0C.1MIN.CAMPAIGN_NAME.STATION_NAME.s20220601T000000.e20220601T001000.{ARCHIVE_VERSION}.nc"
 
     def test_l2e_with_rolling(self):
         """Test L2E filename includes rolling temporal resolution."""
@@ -809,7 +809,7 @@ class TestDefineFilename:
             end_time=end,
             temporal_resolution="ROLL5MIN",
         )
-        assert fn == f"L2E.ROLL5MIN.CAMPAIGN_NAME.STATION_NAME.s20220701000000.e20220701003000.{ARCHIVE_VERSION}.nc"
+        assert fn == f"L2E.ROLL5MIN.CAMPAIGN_NAME.STATION_NAME.s20220701T000000.e20220701T003000.{ARCHIVE_VERSION}.nc"
 
     def test_l2m_with_model_name(self):
         """Test L2M filename includes model name and temporal resolution."""
@@ -825,7 +825,8 @@ class TestDefineFilename:
             model_name="GAMMA_ML",
         )
         assert (
-            fn == f"L2M_GAMMA_ML.10MIN.CAMPAIGN_NAME.STATION_NAME.s20220801000000.e20220801010000.{ARCHIVE_VERSION}.nc"
+            fn
+            == f"L2M_GAMMA_ML.10MIN.CAMPAIGN_NAME.STATION_NAME.s20220801T000000.e20220801T010000.{ARCHIVE_VERSION}.nc"
         )
 
     def test_prefix_and_suffix(self):
@@ -841,7 +842,7 @@ class TestDefineFilename:
             prefix="PRE",
             suffix="SUF",
         )
-        assert fn == f"PRE.L0B.CAMPAIGN_NAME.STATION_NAME.s20200901000000.e20200901010000.{ARCHIVE_VERSION}.nc.SUF"
+        assert fn == f"PRE.L0B.CAMPAIGN_NAME.STATION_NAME.s20200901T000000.e20200901T010000.{ARCHIVE_VERSION}.nc.SUF"
 
     def test_without_version_and_extension(self):
         """Test filename without version and extension."""
@@ -856,7 +857,7 @@ class TestDefineFilename:
             add_version=False,
             add_extension=False,
         )
-        assert fn == "L0B.CAMPAIGN_NAME.STATION_NAME.s20210101000000.e20210101003000"
+        assert fn == "L0B.CAMPAIGN_NAME.STATION_NAME.s20210101T000000.e20210101T003000"
 
     def test_missing_time_raises(self):
         """Test ValueError is raised if add_time_period=True but times are missing."""
@@ -879,7 +880,7 @@ def test_define_l0a_filename():
 
     # Define expected results
     expected_name = (
-        f"{product}.{campaign_name}.{station_name}.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.parquet"
+        f"{product}.{campaign_name}.{station_name}.s20190326T000000.e20210208T000000.{ARCHIVE_VERSION}.parquet"
     )
 
     # Test the function
@@ -907,7 +908,7 @@ def test_define_l0b_filename():
 
     # Test the function
     fn = define_l0b_filename(ds, campaign_name, station_name)
-    assert fn == f"L0B.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"
+    assert fn == f"L0B.CAMPAIGN_NAME.STATION_NAME.s20190326T000000.e20210208T000000.{ARCHIVE_VERSION}.nc"
 
 
 def test_define_l0c_filename():
@@ -936,7 +937,7 @@ def test_define_l0c_filename():
         station_name=station_name,
         sample_interval=sample_interval,
     )
-    assert fn == f"L0C.1MIN.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"
+    assert fn == f"L0C.1MIN.CAMPAIGN_NAME.STATION_NAME.s20190326T000000.e20210208T000000.{ARCHIVE_VERSION}.nc"
 
 
 def test_define_l1_filename():
@@ -967,7 +968,7 @@ def test_define_l1_filename():
         station_name=station_name,
         temporal_resolution=temporal_resolution,
     )
-    assert fn == f"L1.1MIN.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"
+    assert fn == f"L1.1MIN.CAMPAIGN_NAME.STATION_NAME.s20190326T000000.e20210208T000000.{ARCHIVE_VERSION}.nc"
 
 
 def test_define_l2e_filename():
@@ -998,7 +999,7 @@ def test_define_l2e_filename():
         station_name=station_name,
         temporal_resolution=temporal_resolution,
     )
-    assert fn == f"L2E.ROLL1MIN.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"
+    assert fn == f"L2E.ROLL1MIN.CAMPAIGN_NAME.STATION_NAME.s20190326T000000.e20210208T000000.{ARCHIVE_VERSION}.nc"
 
 
 def test_define_l2m_filename():
@@ -1033,5 +1034,5 @@ def test_define_l2m_filename():
         model_name=model_name,
     )
     assert (
-        fn == f"L2M_GAMMA_ML.ROLL1MIN.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"
+        fn == f"L2M_GAMMA_ML.ROLL1MIN.CAMPAIGN_NAME.STATION_NAME.s20190326T000000.e20210208T000000.{ARCHIVE_VERSION}.nc"
     )

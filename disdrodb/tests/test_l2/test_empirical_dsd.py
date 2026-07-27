@@ -30,6 +30,7 @@ from disdrodb.l2.empirical_dsd import (
     get_drop_counts_from_number_concentration,
     get_drop_number_concentration,
     get_drop_volume,
+    get_dsd_from_partial_number_concentrations,
     get_effective_sampling_area,
     get_equivalent_reflectivity_factor,
     get_kinetic_energy_variables,
@@ -42,7 +43,6 @@ from disdrodb.l2.empirical_dsd import (
     get_min_max_diameter,
     get_mode_diameter,
     get_moment,
-    get_nd_from_partial_number_concentrations,
     get_normalized_intercept_parameter,
     get_normalized_intercept_parameter_from_moments,
     get_partial_number_concentration,
@@ -1882,7 +1882,7 @@ class TestPartialNumberConcentrations:
         np.testing.assert_allclose(da_partial.to_numpy(), np.array([5.0, 11.0]))
 
     @pytest.mark.parametrize("array_type", ["numpy", "dask"])
-    def test_get_nd_from_partial_number_concentrations_round_trip(self, array_type):
+    def test_get_dsd_from_partial_number_concentrations_round_trip(self, array_type):
         """Test N(D) can be reconstructed from partial concentrations."""
         nd = create_uniform_bin_nd(values=[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], array_type=array_type)
 
@@ -1890,7 +1890,7 @@ class TestPartialNumberConcentrations:
             drop_number_concentration=nd,
             diameter_bin_edges=[0.0, 1.0, 2.0, 3.0],
         )
-        nd_reconstructed = get_nd_from_partial_number_concentrations(ds_partial)
+        nd_reconstructed = get_dsd_from_partial_number_concentrations(ds_partial)
         nd_reconstructed = nd_reconstructed.transpose("time", DIAMETER_DIMENSION)
 
         assert nd_reconstructed.name == "drop_number_concentration"
@@ -1900,11 +1900,11 @@ class TestPartialNumberConcentrations:
         np.testing.assert_allclose(nd_reconstructed["diameter_bin_lower"].to_numpy(), np.array([0.0, 1.0, 2.0]))
         np.testing.assert_allclose(nd_reconstructed["diameter_bin_upper"].to_numpy(), np.array([1.0, 2.0, 3.0]))
 
-    def test_get_nd_from_partial_number_concentrations_no_variables_raise(self):
+    def test_get_dsd_from_partial_number_concentrations_no_variables_raise(self):
         """Test informative error when no partial concentration variables are present."""
         ds = xr.Dataset({"foo": xr.DataArray([1.0, 2.0], dims=["time"])})
         with pytest.raises(ValueError):
-            get_nd_from_partial_number_concentrations(ds)
+            get_dsd_from_partial_number_concentrations(ds)
 
 
 class TestKineticEnergyVariables:

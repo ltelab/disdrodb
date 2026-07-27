@@ -152,6 +152,34 @@ def _initialize_var_to(ds, var_to):
     return list(var_to)
 
 
+def _preprocess_dataset(ds, add_qc_resampling=True, mask_invalid_timesteps=True):
+    for var in [
+        "drop_number",
+        "raw_drop_number",
+        "drop_counts",
+        "raw_drop_counts",
+        "drop_number_concentration",
+        "raw_particle_counts",
+    ]:
+        if var in ds:
+            data_var = ds[var].compute()
+            dims = set(data_var.dims) - {"time"}
+            invalid_timesteps = data_var.isnull().any(dim=dims)  # noqa PD003
+
+            # Raise error if no valid timesteps
+            if np.all(invalid_timesteps).item():
+                raise ValueError("No timesteps with valid spectrum.")
+
+            # Mask invalid timesteps
+            if mask_invalid_timesteps:
+                ds[var] = data_var.where(~invalid_timesteps, 0)
+
+            # Update QC resampling flag
+            if add_qc_resampling:
+                ds["qc_resampling"] = ds["qc_resampling"].where(~invalid_timesteps, 0)
+    return ds
+
+
 def resample_dataset(
     ds,
     sample_interval,
@@ -249,6 +277,7 @@ def resample_dataset(
 
     # If no resampling, return as it is
     if sample_interval == accumulation_interval:
+        ds = _preprocess_dataset(ds, add_qc_resampling=False, mask_invalid_timesteps=False)
         attrs["disdrodb_aggregated_product"] = "False"
         attrs["disdrodb_rolled_product"] = "False"
         attrs["disdrodb_temporal_resolution"] = temporal_resolution
@@ -265,30 +294,7 @@ def resample_dataset(
     #   --> Resampling over missing timesteps will result in NaN drop_number and qc_resampling = 1
     #   --> Resampling over timesteps with NaN in drop_number will result in finite drop_number but qc_resampling > 0
     # - qc_resampling will inform on the amount of timesteps missing
-
-    for var in [
-        "drop_number",
-        "raw_drop_number",
-        "drop_counts",
-        "raw_drop_counts",
-        "drop_number_concentration",
-        "raw_particle_counts",
-    ]:
-        if var in ds:
-            data_var = ds[var]
-            dims = set(data_var.dims) - {"time"}
-            invalid_timesteps = data_var.isnull().any(dim=dims).compute()  # noqa
-            ds[var] = data_var.where(~invalid_timesteps, 0)
-
-            # ds[var] = ds[var].compute()
-            # dims = set(ds[var].dims) - {"time"}
-            # invalid_timesteps = np.isnan(ds[var]).any(dim=dims)
-            # ds[var] = ds[var].where(~invalid_timesteps, 0)
-
-            ds["qc_resampling"] = ds["qc_resampling"].where(~invalid_timesteps, 0)
-
-            if np.all(invalid_timesteps).item():
-                raise ValueError("No timesteps with valid spectrum.")
+    ds = _preprocess_dataset(ds)
 
     # Ensure regular dataset without missing timesteps
     # --> This adds NaN values for missing timesteps

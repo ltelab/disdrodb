@@ -48,20 +48,21 @@ from disdrodb.api.info import (
     infer_path_info_tuple,
 )
 from disdrodb.api.path import define_filename
+from disdrodb.constants import ARCHIVE_VERSION
 
 # Constants for testing
 FILE_INFO = {
     "product": "L0A",
     "campaign_name": "LOCARNO_2018",
     "station_name": "60",
-    "start_time": "20180625004331",
-    "end_time": "20180711010000",
+    "start_time": "20180625T004331",
+    "end_time": "20180711T010000",
     "version": "1",
     "data_format": "parquet",
 }
 
-START_TIME = datetime.datetime.strptime(FILE_INFO["start_time"], "%Y%m%d%H%M%S")
-END_TIME = datetime.datetime.strptime(FILE_INFO["end_time"], "%Y%m%d%H%M%S")
+START_TIME = datetime.datetime.strptime(FILE_INFO["start_time"], "%Y%m%dT%H%M%S")
+END_TIME = datetime.datetime.strptime(FILE_INFO["end_time"], "%Y%m%dT%H%M%S")
 VALID_FNAME = (
     "{product:s}.{campaign_name:s}.{station_name:s}.s{start_time:s}.e{end_time:s}.{version:s}.{data_format:s}".format(
         **FILE_INFO,
@@ -218,7 +219,7 @@ class TestInferPathInfoTuple:
         data_archive_dir = os.path.join(os.sep, "dummy", "DISDRODB")
         data_source = "DATA_SOURCE"
         campaign_name = "CAMPAIGN_NAME"
-        campaign_dir = os.path.join(data_archive_dir, "V0", data_source, campaign_name)
+        campaign_dir = os.path.join(data_archive_dir, ARCHIVE_VERSION, data_source, campaign_name)
 
         # Call function
         result = infer_path_info_tuple(campaign_dir)
@@ -236,7 +237,7 @@ class TestInferPathInfoTuple:
         campaign_name = "CAMPAIGN_NAME"
         file_path = os.path.join(
             data_archive_dir,
-            "V0",
+            ARCHIVE_VERSION,
             data_source,
             campaign_name,
             "PRODUCT",

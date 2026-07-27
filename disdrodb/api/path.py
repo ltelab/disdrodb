@@ -724,7 +724,11 @@ def define_filename(
 
     # Temporal resolution required from L0C onwards
     if product in ["L0C", "L1", "L2E", "L2M"]:
-        check_temporal_resolution(temporal_resolution)
+        if product == "L0C" and temporal_resolution == "XXX":
+            # For summary log of L0C files. Temporal info not available, so we keep the temporal resolution as "XXX".
+            pass
+        else:
+            check_temporal_resolution(temporal_resolution)
         product_name = f"{product}.{temporal_resolution}"
     if product in ["L2M"]:
         model_name = product_kwargs.get("model_name")
@@ -742,8 +746,8 @@ def define_filename(
     # -----------------------------------------.
     # Add time period information
     if add_time_period:
-        start_time = start_time.strftime("%Y%m%d%H%M%S")
-        end_time = end_time.strftime("%Y%m%d%H%M%S")
+        start_time = start_time.strftime("%Y%m%dT%H%M%S")
+        end_time = end_time.strftime("%Y%m%dT%H%M%S")
         filename = f"{filename}.s{start_time}.e{end_time}"
 
     # -----------------------------------------.

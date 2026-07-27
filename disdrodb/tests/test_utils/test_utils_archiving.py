@@ -23,6 +23,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
+from disdrodb.constants import ARCHIVE_VERSION
 from disdrodb.utils import archiving
 from disdrodb.utils.archiving import (
     check_freq,
@@ -430,10 +431,10 @@ class TestIdentifyEvents:
 
 def generate_product_filename(start_time, end_time, product="L1", temporal_resolution="1MIN"):
     """Helper to generate DISDRODB products filenames given a numpy.datetime64 start_time/end_time."""
-    s = np.datetime_as_string(start_time, unit="s").replace("-", "").replace("T", "").replace(":", "")
-    e = np.datetime_as_string(end_time, unit="s").replace("-", "").replace("T", "").replace(":", "")
-    return f"{product}.{temporal_resolution}.campaign.station.s{s}.e{e}.V0.nc"
-    # 'L1.1MIN.UL.Ljubljana.s20180601120000.e20180701120000.V0.nc',
+    s = np.datetime_as_string(start_time, unit="s").replace("-", "").replace(":", "")
+    e = np.datetime_as_string(end_time, unit="s").replace("-", "").replace(":", "")
+    return f"{product}.{temporal_resolution}.campaign.station.s{s}.e{e}.{ARCHIVE_VERSION}.nc"
+    # 'L1.1MIN.UL.Ljubljana.s20180601T120000.e20180701T120000.V1.nc',
 
 
 class TestIdentifyTimePartitionsIntervalStart:
@@ -581,7 +582,9 @@ class TestGroupFilesByTemporalPartitions:
         assert info["start_time"] == np.datetime64("2017-05-22T00:00:00")
         assert info["end_time"] == np.datetime64("2017-05-22T00:05:00")
         assert len(info["filepaths"]) == 3
-        assert info["filepaths"][-1] == "L1.1MIN.campaign.station.s20170522000400.e20170522000500.V0.nc"
+        assert (
+            info["filepaths"][-1] == f"L1.1MIN.campaign.station.s20170522T000400.e20170522T000500.{ARCHIVE_VERSION}.nc"
+        )
 
     def test_single_event_not_rolling_case(self):
         """Test case for rolling=False."""
@@ -603,7 +606,9 @@ class TestGroupFilesByTemporalPartitions:
         assert info["start_time"] == np.datetime64("2017-05-22T00:00:00")
         assert info["end_time"] == np.datetime64("2017-05-22T00:04:00")
         assert len(info["filepaths"]) == 3
-        assert info["filepaths"][-1] == "L1.1MIN.campaign.station.s20170522000400.e20170522000500.V0.nc"
+        assert (
+            info["filepaths"][-1] == f"L1.1MIN.campaign.station.s20170522T000400.e20170522T000500.{ARCHIVE_VERSION}.nc"
+        )
 
         # Extend end_time by 180 seconds
         # --> Include last file based on its end time
@@ -617,7 +622,9 @@ class TestGroupFilesByTemporalPartitions:
         assert info["start_time"] == np.datetime64("2017-05-22T00:00:00")
         assert info["end_time"] == np.datetime64("2017-05-22T00:05:00")
         assert len(info["filepaths"]) == 3
-        assert info["filepaths"][-1] == "L1.1MIN.campaign.station.s20170522000400.e20170522000500.V0.nc"
+        assert (
+            info["filepaths"][-1] == f"L1.1MIN.campaign.station.s20170522T000400.e20170522T000500.{ARCHIVE_VERSION}.nc"
+        )
 
     def test_single_event_rolling_case(self):
         """Test case for rolling=True."""
@@ -639,7 +646,9 @@ class TestGroupFilesByTemporalPartitions:
         assert info["start_time"] == np.datetime64("2017-05-22T00:00:00")
         assert info["end_time"] == np.datetime64("2017-05-22T00:04:00")
         assert len(info["filepaths"]) == 3
-        assert info["filepaths"][-1] == "L1.1MIN.campaign.station.s20170522000400.e20170522000500.V0.nc"
+        assert (
+            info["filepaths"][-1] == f"L1.1MIN.campaign.station.s20170522T000400.e20170522T000500.{ARCHIVE_VERSION}.nc"
+        )
 
         # Extend end_time by 180 seconds
         # --> Include last file based on its end time
@@ -653,7 +662,9 @@ class TestGroupFilesByTemporalPartitions:
         assert info["start_time"] == np.datetime64("2017-05-22T00:00:00")
         assert info["end_time"] == np.datetime64("2017-05-22T00:05:00")
         assert len(info["filepaths"]) == 3
-        assert info["filepaths"][-1] == "L1.1MIN.campaign.station.s20170522000400.e20170522000500.V0.nc"
+        assert (
+            info["filepaths"][-1] == f"L1.1MIN.campaign.station.s20170522T000400.e20170522T000500.{ARCHIVE_VERSION}.nc"
+        )
 
     def test_multiple_event(self):
         """Multiple events with forward 1-min extend map to correct file sets."""
@@ -707,7 +718,7 @@ class TestGroupFilesByTimeBlockIntervalStart:
     def test_group_files_by_time_block_structure(self):
         """Test list structure returned by group_files_by_time_block."""
         filepaths = [
-            "L0B.1MIN.LOCARNO_2019.61.s20190713134200.e20190713161000.V0.nc",
+            f"L0B.1MIN.LOCARNO_2019.61.s20190713T134200.e20190713T161000.{ARCHIVE_VERSION}.nc",
         ]
         list_event_info = group_files_by_time_block(filepaths, freq="day", time_is_interval_end=False)
         assert isinstance(list_event_info, list)
@@ -721,10 +732,10 @@ class TestGroupFilesByTimeBlockIntervalStart:
     def test_files_grouped_per_day(self):
         """Files spanning multiple days should be grouped correctly by day."""
         filepaths = [
-            "L0B.1MIN.LOCARNO_2019.61.s20190713134200.e20190713161000.V0.nc",
-            "L0B.1MIN.LOCARNO_2019.61.s20190714144200.e20190715111000.V0.nc",
-            "L0B.1MIN.LOCARNO_2019.61.s20190715144200.e20190716111000.V0.nc",
-            "L0B.1MIN.LOCARNO_2019.61.s20190716144200.e20190717111000.V0.nc",
+            f"L0B.1MIN.LOCARNO_2019.61.s20190713T134200.e20190713T161000.{ARCHIVE_VERSION}.nc",
+            f"L0B.1MIN.LOCARNO_2019.61.s20190714T144200.e20190715T111000.{ARCHIVE_VERSION}.nc",
+            f"L0B.1MIN.LOCARNO_2019.61.s20190715T144200.e20190716T111000.{ARCHIVE_VERSION}.nc",
+            f"L0B.1MIN.LOCARNO_2019.61.s20190716T144200.e20190717T110000.{ARCHIVE_VERSION}.nc",
         ]
 
         list_event_info = group_files_by_time_block(filepaths, freq="day", time_is_interval_end=False)
@@ -768,7 +779,7 @@ class TestGroupFilesByTimeBlockIntervalStart:
     def test_single_file_spanning_multiple_days(self):
         """A single file spanning multiple days should appear in all those days."""
         filepaths = [
-            "L0B.1MIN.LOCARNO_2019.61.s20190701000000.e20190702235900.V0.nc",
+            f"L0B.1MIN.LOCARNO_2019.61.s20190701T000000.e20190702T235900.{ARCHIVE_VERSION}.nc",
         ]
         list_event_info = group_files_by_time_block(filepaths, time_is_interval_end=False)
 
@@ -791,7 +802,7 @@ class TestGroupFilesByTimeBlockIntervalEnd:
     def test_group_files_by_time_block_structure(self):
         """Test list structure returned by group_files_by_time_block."""
         filepaths = [
-            "L0B.1MIN.LOCARNO_2019.61.s20190713134200.e20190713161000.V0.nc",
+            f"L0B.1MIN.LOCARNO_2019.61.s20190713T134200.e20190713T161000.{ARCHIVE_VERSION}.nc",
         ]
         list_event_info = group_files_by_time_block(filepaths, freq="day", time_is_interval_end=True)
         assert isinstance(list_event_info, list)
@@ -806,10 +817,10 @@ class TestGroupFilesByTimeBlockIntervalEnd:
     def test_files_grouped_per_day(self):
         """Files spanning multiple days should be grouped with shifted day blocks."""
         filepaths = [
-            "L0B.1MIN.LOCARNO_2019.61.s20190713134200.e20190713161000.V0.nc",
-            "L0B.1MIN.LOCARNO_2019.61.s20190714144200.e20190715111000.V0.nc",
-            "L0B.1MIN.LOCARNO_2019.61.s20190715144200.e20190716111000.V0.nc",
-            "L0B.1MIN.LOCARNO_2019.61.s20190716144200.e20190717111000.V0.nc",
+            f"L0B.1MIN.LOCARNO_2019.61.s20190713T134200.e20190713T161000.{ARCHIVE_VERSION}.nc",
+            f"L0B.1MIN.LOCARNO_2019.61.s20190714T144200.e20190715T111000.{ARCHIVE_VERSION}.nc",
+            f"L0B.1MIN.LOCARNO_2019.61.s20190715T144200.e20190716T111000.{ARCHIVE_VERSION}.nc",
+            f"L0B.1MIN.LOCARNO_2019.61.s20190716T144200.e20190717T110000.{ARCHIVE_VERSION}.nc",
         ]
 
         list_event_info = group_files_by_time_block(filepaths, freq="day", time_is_interval_end=True)

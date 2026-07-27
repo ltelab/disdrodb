@@ -16,21 +16,38 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB Plotting Tools."""
 
+import math
+from contextlib import suppress
+from pathlib import Path
+
+import matplotlib.colors as mcolors
 import matplotlib.dates as mdates
+import matplotlib.lines as mlines
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import psutil
 import xarray as xr
-from matplotlib.colors import BoundaryNorm, ListedColormap, LogNorm, Normalize
+from matplotlib import cm
+from matplotlib.collections import LineCollection
+from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap, ListedColormap, LogNorm, Normalize
 from matplotlib.gridspec import GridSpec
 from matplotlib.lines import Line2D
-from matplotlib.patches import Patch
+from matplotlib.offsetbox import AnchoredText
+from matplotlib.patches import Patch, Rectangle
 from matplotlib.ticker import MaxNLocator
 
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l2.empirical_dsd import get_drop_average_velocity
 from disdrodb.l2.processing import get_mask_contour, get_spectrum_mask_boundary
+from disdrodb.utils.manipulations import (
+    compute_normalized_dsd_datarray,
+    infer_dsd_sample_dim,
+    resample_drop_number_concentration,
+    xr_sample,
+)
+from disdrodb.utils.time import infer_sample_interval
 
 # TODO FIX: XARRAY PCOLORMESH IS CURRENTLY INACCURATE
 
@@ -43,6 +60,150 @@ from disdrodb.l2.processing import get_mask_contour, get_spectrum_mask_boundary
 
 # TODO: plot_l0_quicklook
 ## - plot_l0_quicklook   # remap weather codes to hydrometeor_type, find R if available
+
+# Pre-parsed variable metadata
+VARIABLE_METADATA = {
+    "Z": {"acronym": r"$Z_{\mathrm{GPM}}$", "unit": "dBZ"},
+    "DBZH": {"acronym": r"$Z_{\mathrm{H}}$", "unit": "dBZ"},
+    "DBZH_X": {"acronym": r"$Z_{\mathrm{H, X}}$", "unit": "dBZ"},
+    "DBZH_C": {"acronym": r"$Z_{\mathrm{H, C}}$", "unit": "dBZ"},
+    "DBZH_S": {"acronym": r"$Z_{\mathrm{H, S}}$", "unit": "dBZ"},
+    "ZDR": {"acronym": r"$Z_{\mathrm{DR}}$", "unit": "dB"},
+    "ZDR_X": {"acronym": r"$Z_{\mathrm{DR, X}}$", "unit": "dB"},
+    "ZDR_C": {"acronym": r"$Z_{\mathrm{DR, C}}$", "unit": "dB"},
+    "ZDR_S": {"acronym": r"$Z_{\mathrm{DR, S}}$", "unit": "dB"},
+    "KDP": {"acronym": r"$K_{\mathrm{DP}}$", "unit": "° km$^{-1}$"},
+    "KDP_X": {"acronym": r"$K_{\mathrm{DP, X}}$", "unit": "° km$^{-1}$"},
+    "KDP_C": {"acronym": r"$K_{\mathrm{DP, C}}$", "unit": "° km$^{-1}$"},
+    "KDP_S": {"acronym": r"$K_{\mathrm{DP, S}}$", "unit": "° km$^{-1}$"},
+    "R": {"acronym": "$R$", "unit": "mm h$^{-1}$"},
+    "Rm": {"acronym": "$R$", "unit": "mm h$^{-1}$"},
+    "Dm": {"acronym": "$D_m$", "unit": "$mm$"},
+    "sigma_m": {"acronym": r"$\sigma_m$", "unit": "$mm$"},
+    "Dmax": {"acronym": r"$D_{\mathrm{max}}$", "unit": "$mm$"},
+    "D50": {"acronym": "$D_{50}$", "unit": "$mm$"},
+    "LWC": {"acronym": "$LWC$", "unit": r"$g \ m^{-3}$"},
+    "Nt": {"acronym": "$N_t$", "unit": "$m^{-3}$"},
+    "N_0p5_1p0": {"acronym": "$N_{t,0.5-1.0}$", "unit": "$m^{-3}$"},
+    "N_2p0_2p5": {"acronym": "$N_{t,2.0-2.5}$", "unit": "$m^{-3}$"},
+    "Nw": {"acronym": "$N_w$", "unit": r"$mm^{-1} \ m^{-3}$"},
+    "M2": {"acronym": "$M_2$", "unit": r"$m^{-3} \ mm^2$"},
+    "M3": {"acronym": "$M_3$", "unit": r"$m^{-3} \ mm^3$"},
+    "M4": {"acronym": "$M_4$", "unit": r"$m^{-3} \ mm^4$"},
+    "M5": {"acronym": "$M_5$", "unit": r"$m^{-3} \ mm^5$"},
+    "M6": {"acronym": "$M_6$", "unit": r"$m^{-3} \ mm^6$"},
+}
+
+####-------------------------------------------------------------------------------------------------------
+
+
+def add_panel_label(
+    *,
+    ax,
+    text,
+    loc="upper left",
+    prop=None,
+    frameon=True,
+    borderpad=0.3,
+    pad=0.0,
+    boxstyle="square",
+    alpha=1,
+    facecolor="white",
+    edgecolor="black",
+    linewidth=0.4,
+    fontsize=7,
+    zorder=3,
+    **kwargs,
+):
+    """Add panel label within subplot."""
+    if prop is None:
+        prop = {"size": fontsize}
+    at = AnchoredText(
+        text,
+        loc=loc,
+        prop=prop,
+        pad=pad,
+        frameon=frameon,
+        borderpad=borderpad,
+        **kwargs,
+    )
+    if zorder is not None:
+        at.set_zorder(zorder)
+    # style the box
+    at.patch.set_boxstyle(boxstyle)
+    at.patch.set_facecolor(facecolor)
+    at.patch.set_alpha(alpha)
+    at.patch.set_edgecolor(edgecolor)
+    at.patch.set_linewidth(linewidth)
+    ax.add_artist(at)
+
+    # Avoid transparency over axis
+    for spine in ax.spines.values():
+        spine.set_zorder(zorder + 2)
+    return at
+
+
+def plot_colorbar(
+    mappable,
+    *,
+    ax,
+    cbar_inset_axes,
+    x_pad,
+    y_pad,
+    orientation="vertical",
+    label_position="left",
+    fancybox_lw=0.2,
+    fancybox_alpha=0.6,
+    fancy_box_edgecolor="none",
+    add_fancybox=True,
+    **cbar_kwargs,
+):
+    """Add colorbar as inset axes with fancybox."""
+    import pycolorbar
+
+    cax = ax.inset_axes(cbar_inset_axes)
+
+    fancybox_zorder = cax.get_zorder() + 1
+    cax.set_zorder(cax.get_zorder() + 2)
+
+    cbar = pycolorbar.plot_colorbar(
+        mappable,
+        cax=cax,
+        orientation=orientation,
+        label_position=label_position,
+        **cbar_kwargs,
+    )
+    if add_fancybox:
+        fancy_box_coords = (cbar_inset_axes[0] - x_pad, cbar_inset_axes[1] - y_pad)
+        fancy_box_width = cbar_inset_axes[2] + 2 * x_pad
+        fancy_box_height = cbar_inset_axes[3] + 2 * y_pad
+        fancy_patch = mpatches.FancyBboxPatch(
+            fancy_box_coords,
+            width=fancy_box_width,
+            height=fancy_box_height,
+            boxstyle="square,pad=0",
+            fc="white",
+            ec=fancy_box_edgecolor,
+            lw=fancybox_lw,
+            alpha=fancybox_alpha,
+            transform=ax.transAxes,
+            zorder=fancybox_zorder,
+            clip_on=False,
+        )
+        ax.add_artist(fancy_patch)
+
+        for spine in ax.spines.values():
+            spine.set_zorder(fancybox_zorder + 2)
+
+    return cbar
+
+
+def cmap_with_alpha(cmap, alpha=0.5, n=256):
+    """Return a copy of a colormap with constant alpha."""
+    cmap = plt.get_cmap(cmap, n).copy()
+    colors = cmap(np.linspace(0, 1, n))
+    colors[:, -1] = alpha
+    return mcolors.ListedColormap(colors)
 
 
 ####-------------------------------------------------------------------------------------------------------
@@ -137,6 +298,17 @@ def get_precipitation_legend_style(name):
         raise ValueError(f"Unsupported categorical variable: {name}")
 
     return colors, labels
+
+
+def define_event_title_string(start_time, end_time):
+    """Create title string based on start_time and end_time."""
+    if start_time.date() == end_time.date():
+        # Same date: show "YYYY-MM-DD HH:MM - HH:MM UTC"
+        title_str = f"{start_time.strftime('%Y-%m-%d %H:%M')} - {end_time.strftime('%H:%M')} UTC"
+    else:
+        # Different dates: show full datetime for both
+        title_str = f"{start_time.strftime('%Y-%m-%d %H:%M')} - {end_time.strftime('%Y-%m-%d %H:%M')} UTC"
+    return title_str
 
 
 ####-------------------------------------------------------------------------------------------------------
@@ -332,6 +504,54 @@ def get_dsd_variable(xr_obj, variable=None, diameter_dim=DIAMETER_DIMENSION):
     return da
 
 
+def get_cmap_alpha(vmin=0, vmax=1, color=(1, 1, 1)):
+    """Create a single color colormap with linear gradient in alpha values.
+
+    Default color is white.
+    """
+    colors = np.ones((256, 4))
+    colors[:, 0] = color[0]
+    colors[:, 1] = color[1]
+    colors[:, 2] = color[2]
+    colors[:, 3] = np.linspace(vmin, vmax, 256)  # # Set alpha channel
+    cmap_alpha = plt.matplotlib.colors.ListedColormap(colors)
+    cmap_alpha.set_bad((0, 0, 0, 0))
+    return cmap_alpha
+
+
+def ensure_numeric_dimension_coordinate(da, dim, new_dim="sample_index"):
+    """Ensure numeric dimension coordinate.
+
+    If dim is non-numeric / non-datetime, create a numeric coordinate,
+    swap dimensions, and return updated da and dim.
+    """
+    coord = da[dim]
+
+    is_numeric = np.issubdtype(coord.dtype, np.number)
+    is_datetime = np.issubdtype(coord.dtype, np.datetime64)
+
+    if is_numeric or is_datetime:
+        return da, dim
+
+    # dim must be an actual dimension to swap
+    if dim not in da.dims:
+        raise ValueError(f"{dim!r} must be a dimension to swap.")
+
+    # create dummy numeric coordinate along dim
+    da = da.assign_coords(
+        {
+            new_dim: (dim, np.arange(da.sizes[dim])),
+        },
+    )
+
+    # swap dimension: old non-numeric dim -> numeric sample_index
+    da = da.swap_dims({dim: new_dim})
+
+    # update plotting dimension
+    dim = new_dim
+    return da, dim
+
+
 def plot_dsd(
     xr_obj,
     variable=None,
@@ -339,7 +559,15 @@ def plot_dsd(
     norm=None,
     yscale="linear",
     ax=None,
+    d_lim=None,
+    alpha=None,
+    alpha_color=(1, 1, 1),
+    add_colorbar=True,
+    add_ylabel=True,
+    add_time_axis=True,
     velocity_method="theoretical_velocity",
+    time_dim="time",
+    **plot_kwargs,
 ):
     """Plot drop number concentration N(D) or drop counts n(D) timeseries.
 
@@ -376,6 +604,9 @@ def plot_dsd(
     da_dsd = get_dsd_variable(xr_obj, variable=variable)
     da_dsd = da_dsd.compute()
 
+    if "disdrodb_rolled_product" in xr_obj.attrs:
+        da_dsd.attrs["disdrodb_rolled_product"] = xr_obj.attrs["disdrodb_rolled_product"]
+
     # Check not empty object
     if da_dsd.size == 0:
         raise ValueError("No data to plot.")
@@ -385,7 +616,7 @@ def plot_dsd(
     labels = _get_dsd_labels(variable_name, da=da_dsd)
 
     # Check only time and diameter dimensions are specified
-    if "time" not in da_dsd.dims:
+    if time_dim not in da_dsd.dims:
         ax = _single_plot_dsd_distribution(
             data=da_dsd.isel(velocity_method=0, missing_dims="ignore"),
             diameter=(
@@ -415,24 +646,66 @@ def plot_dsd(
         vmin = np.maximum(da_dsd.min().item(), 1e-1)  # 0 is set to np.nan before
         norm = Normalize() if np.isnan(vmin) else LogNorm(vmin, None)
 
+    # Ensure x is a numeric or datetime coordinate (otherwise set dummy index)
+    da_dsd, time_dim_plot = ensure_numeric_dimension_coordinate(da_dsd, dim=time_dim)
+
     # Plot N(D) or drop counts
-    cbar_kwargs = {"label": labels["cbar_label"]}
-    p = da_dsd.plot.pcolormesh(x="time", norm=norm, cmap=cmap, extend="max", cbar_kwargs=cbar_kwargs, ax=ax)
+    cbar_kwargs = {"label": labels["cbar_label"]} if add_colorbar else None
+    p = da_dsd.plot.pcolormesh(
+        x=time_dim_plot,
+        norm=norm,
+        cmap=cmap,
+        add_colorbar=add_colorbar,
+        extend="max",
+        cbar_kwargs=cbar_kwargs,
+        ax=ax,
+        **plot_kwargs,
+    )
+    # Add transparency if asked
+    # - Where alpha 1, pcolormesh should not plot !
+    # - Where alpha is 0, pcolormesh should plot alpha_color (e.g. white) without transparency
+    # - Where alpha is 0.2, pcolormesh should plot alpha_color with 0.8
+    if alpha is not None:
+        alpha = xr.ones_like(da_dsd) * alpha
+        alpha = alpha.where(alpha != 1)
+        alpha = 1 - alpha
+        cmap_alpha = get_cmap_alpha(color=alpha_color)
+        alpha.plot.pcolormesh(
+            x=time_dim_plot,
+            vmin=0,
+            vmax=1,
+            cmap=cmap_alpha,
+            add_colorbar=False,
+            ax=ax,
+        )
+
+    # Add title and labels
     p.axes.set_title(labels["title"])
-    p.axes.set_ylabel("Drop diameter (mm)")
+    p.axes.set_xlabel("")
+    if add_ylabel:
+        p.axes.set_ylabel("Drop diameter (mm)")
+    else:
+        p.axes.set_ylabel("")
 
-    # Improve time axis ticks/labels ---
-    locator = mdates.AutoDateLocator(minticks=4, maxticks=8)
-    formatter = mdates.ConciseDateFormatter(locator)  # compact, avoids repetition
+    if add_time_axis and np.issubdtype(da_dsd[time_dim].dtype, np.datetime64):
+        # Improve time axis ticks/labels ---
+        locator = mdates.AutoDateLocator(minticks=4, maxticks=8)
+        formatter = mdates.ConciseDateFormatter(locator)  # compact, avoids repetition
 
-    p.axes.xaxis.set_major_locator(locator)
-    p.axes.xaxis.set_major_formatter(formatter)
+        p.axes.xaxis.set_major_locator(locator)
+        p.axes.xaxis.set_major_formatter(formatter)
 
-    # Nice rotation/alignment if still dense
-    p.axes.figure.autofmt_xdate(rotation=30, ha="right")
+        # Nice rotation/alignment if still dense
+        p.axes.figure.autofmt_xdate(rotation=30, ha="right")
+    else:
+        p.axes.tick_params(axis="x", which="both", bottom=False, labelbottom=False)
 
     # Optional: avoid clipping of labels
     # p.axes.figure.tight_layout()
+
+    # Set axis limits if specified
+    if d_lim is not None:
+        p.axes.set_ylim(d_lim)
 
     return p
 
@@ -473,6 +746,9 @@ def plot_l2_dsd_quicklook(
             secondary_yscale = secondary_yscale if secondary_yscale is not None else "log"
             secondary_label = secondary_label if secondary_label is not None else r"R [$mm hr^{-1}$]"
             secondary_hlines = secondary_hlines if secondary_hlines is not None else (1, 10, 100)
+        if secondary_yscale is None:
+            secondary_yscale = "linear"
+
         # Compute precipitation type
         if precipitation_type is not None:
             if precipitation_type == "rain_type" and precipitation_type not in xr_obj:
@@ -701,6 +977,12 @@ def plot_dsd_quicklook(
         if n_total_slices > max_rows:
             last_plotted_end = time_bins[max_rows]
             print(f"Unplotted period  : {last_plotted_end} → {t_end}")
+
+    # ------------------------------------------------------------------------.
+    # If sample interval not available (e.g. L0B product), infer on the fly
+    if "sample_interval" not in ds.coords:
+        sample_interval = infer_sample_interval(ds)
+        ds = ds.assign_coords(sample_interval=sample_interval)
 
     # ------------------------------------------------------------------------.
     # Regularize dataset to match bin start_time and end_time
@@ -942,14 +1224,7 @@ def plot_dsd_quicklook(
     duration_str = f"{hours}H{minutes:02d}MIN" if hours > 0 else f"{minutes}MIN"
 
     # Format title based on whether dates are the same
-    t_start_dt = time_bins[0]
-    t_end_dt = time_bins[n_slices]
-    if t_start_dt.date() == t_end_dt.date():
-        # Same date: show "YYYY-MM-DD HH:MM - HH:MM UTC"
-        title_str = f"{t_start_dt.strftime('%Y-%m-%d %H:%M')} - {t_end_dt.strftime('%H:%M')} UTC"
-    else:
-        # Different dates: show full datetime for both
-        title_str = f"{t_start_dt.strftime('%Y-%m-%d %H:%M')} - {t_end_dt.strftime('%Y-%m-%d %H:%M')} UTC"
+    title_str = define_event_title_string(start_time=time_bins[0], end_time=time_bins[n_slices])
 
     # Set center title
     axes[0].set_title(
@@ -1063,7 +1338,7 @@ def plot_dsd_quicklook(
         )
         cbar.set_label(cbar_label, fontsize=cbar_fontsize)
 
-    #### Add classification legend
+    #### - Add classification legend
     if add_precipitation_legend:
         legend_patches = [
             Patch(facecolor=precipitation_legend_colors[k], edgecolor="black", label=precipitation_legend_labels[k])
@@ -1141,10 +1416,13 @@ def _get_spectrum_variable(xr_obj, variable):
 def plot_spectrum_evolution(
     ds,
     legend_variables=None,
+    legend_loc="lower right",
     legend_ncol=1,
     xlim=None,
     ylim=None,
     plot_hc_rain_mask_boundary=False,
+    gif_filepath=None,
+    frame_rate=6,
     **plot_kwargs,
 ):
     """Plot the evolution of disdrodb spectra over time.
@@ -1162,6 +1440,15 @@ def plot_spectrum_evolution(
     plot_kwargs : dict
         Additional keyword arguments passed to plot_spectrum().
     """
+    if gif_filepath is not None:
+        try:
+            from gpm.visualization.animation import create_gifski_gif
+        except ImportError as e:
+            raise ImportError(
+                "The 'create_gifski_gif' function requires the GPM-API and gifski package. "
+                "Please install it with: conda install -c conda-forge gpm-api gifski",
+            ) from e
+
     # Check timestep available
     if "time" not in ds.dims or ds.sizes["time"] == 0:
         raise ValueError("No timesteps available.")
@@ -1200,7 +1487,16 @@ def plot_spectrum_evolution(
             fall_velocity_model="Beard1976",
         )
 
+    # Setup temporary directory if GIF saving is requested
+    tmp_dir = None
+    if gif_filepath is not None:
+        gif_path = Path(gif_filepath)
+        # Create a hidden/temporary directory inside the destination directory
+        tmp_dir = gif_path.parent / "tmp_gif_frames"
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+
     # Loop over time
+    tmp_filepaths = []
     for i in range(ds.sizes["time"]):
         ds_i = ds.isel(time=i)
 
@@ -1223,15 +1519,30 @@ def plot_spectrum_evolution(
             labels = []
             for var in legend_variables:
                 value = ds_i[var].item()
-                dec = decimals[var]
-                label = f"{var}: NaN" if np.isnan(value) else f"{var}: {value:.{dec}f}"
-                # Invisible handle
+
+                # 1. Fetch metadata configuration or use fallbacks
+                meta = VARIABLE_METADATA.get(var, {"acronym": var, "unit": ""})
+                acronym = meta["acronym"]
+                unit = f" {meta['unit']}" if meta["unit"] else ""
+
+                # 2. Determine formatting (NaN, Scientific, or Decimal)
+                if np.isnan(value):
+                    label = f"{acronym}: NaN"
+                elif value != 0 and (abs(value) >= 10000 or abs(value) < 0.01) and "dB" not in unit:
+                    # Use scientific notation for extreme values (excluding logarithmic decibel scales)
+                    label = f"{acronym}: {value:.2e}{unit}"
+                else:
+                    dec = decimals.get(var, 2)
+                    label = f"{acronym}: {value:.{dec}f}{unit}"
+
+                # 3. Create invisible legend entry
                 handles.append(Line2D([], [], linestyle="none"))
                 labels.append(label)
+
             ax.legend(
                 handles,
                 labels,
-                loc="upper left",
+                loc=legend_loc,
                 ncol=legend_ncol,
                 frameon=True,
                 handlelength=0,
@@ -1245,7 +1556,31 @@ def plot_spectrum_evolution(
         if ylim is not None:
             plt.ylim(ylim)
 
-        plt.show()
+        # Handle output layout
+        if gif_filepath is not None:
+            # Save frame to the temporary directory
+            frame_path = tmp_dir / f"frame_{i:06d}.png"
+            fig.savefig(frame_path, bbox_inches="tight", dpi=100)
+            tmp_filepaths.append(str(frame_path))
+            plt.close(fig)  # Close to free up memory
+        else:
+            plt.show()
+
+    # Create GIF if filepaths were gathered
+    if gif_filepath is not None and tmp_filepaths:
+
+        create_gifski_gif(
+            image_filepaths=tmp_filepaths,
+            gif_fpath=str(gif_filepath),
+            sort=True,
+            frame_rate=frame_rate,
+            loop=0,
+            delete_inputs=True,
+        )
+
+        # Clean up the temporary directory itself since delete_inputs only removes files
+        with suppress(OSError):
+            tmp_dir.rmdir()
 
 
 def plot_spectrum(
@@ -1259,6 +1594,8 @@ def plot_spectrum(
     cbar_kwargs=None,
     title=None,
     plot_hc_rain_mask_boundary=False,
+    d_lim=None,
+    v_lim=None,
     **plot_kwargs,
 ):
     """Plot the spectrum.
@@ -1329,6 +1666,9 @@ def plot_spectrum(
     elif title is None:
         title = f"{start_time}" if start_time is not None else ""
 
+    # Ensure drop number is in memory for subsequent operations
+    drop_number = drop_number.compute()
+
     # Define default cbar_kwargs if not specified
     if cbar_kwargs is None:
         cbar_kwargs = {"label": "Number of particles"}
@@ -1344,6 +1684,11 @@ def plot_spectrum(
     # Remove cbar_kwargs if add_colorbar=False
     if not add_colorbar:
         cbar_kwargs = None
+
+    # Set array all to NaN if no particles to avoid plotting empty spectrum with vmin color
+    n_particles = drop_number.sum().item()
+    if n_particles == 0:
+        drop_number.data[:] = np.nan
 
     # Plot
     p = drop_number.plot.pcolormesh(
@@ -1377,6 +1722,12 @@ def plot_spectrum(
         p.axes.set_title(title)
     else:
         p.set_axis_labels("Diameter [mm]", "Fall velocity [m/s]")
+
+    # Set axis limits if specified
+    if v_lim is not None:
+        p.axes.set_ylim(v_lim)
+    if d_lim is not None:
+        p.axes.set_xlim(d_lim)
     return p
 
 
@@ -1457,6 +1808,169 @@ def plot_raw_and_filtered_spectra(
     return fig
 
 
+def plot_stations_spectra(
+    list_datasets,
+    *,
+    norm,
+    cmap=None,
+    d_lim=(0, 8),
+    v_lim=(0, 10),
+    base_width=6.9,
+    base_ncols=3,
+    dpi=100,
+    height_per_row=2.3,
+    ncols=None,
+    title_attr="station_name",
+    add_grid=False,
+    add_colorbar=True,
+    cbar_subplot_idx=0,
+    cbar_inset_axes=(0.5, 0.15, 0.40, 0.050),
+    cbar_label="Counts",
+    x_pad=0.02,
+    y_pad=0.12,
+    colorbar_orientation="horizontal",
+    colorbar_label_position="top",
+    cbar_kwargs=None,
+    cbar_labelsize=6,
+    grid_kwargs=None,
+):
+    """
+    Plot disdrometer spectra of various stations a compact panel figure.
+
+    Parameters
+    ----------
+    list_datasets : list
+        List of stations.
+    cmap : str, optional
+        If None, defaults to "Spectral_r".
+    d_lim : tuple
+        Diameter axis limits.
+    v_lim : tuple
+        Fall velocity axis limits.
+    base_width : float
+        Figure width in inches for `base_ncols` columns.
+    base_ncols : int
+        Reference number of columns for `base_width`.
+    height_per_row : float
+        Figure height per row in inches.
+    ncols : int, optional
+        Number of columns. If None, uses min(len(list_datasets), base_ncols).
+    title_attr : str
+        Dataset attribute used for subplot titles.
+    add_colorbar : bool
+        Whether to add one inset colorbar.
+    """
+    cbar_kwargs = {} if cbar_kwargs is None else cbar_kwargs
+    grid_kwargs = {} if grid_kwargs is None else grid_kwargs
+
+    default_grid_kwargs = {
+        "which": "major",
+        "axis": "both",
+        "linestyle": "--",
+        "linewidth": 0.4,
+        "alpha": 0.4,
+    }
+    default_grid_kwargs.update(grid_kwargs)
+
+    n = len(list_datasets)
+
+    if n <= 1:
+        raise ValueError("`list_datasets` must contain at least two elements.")
+
+    if cmap is None:
+        cmap = "Spectral_r"
+
+    if ncols is None:
+        ncols = min(n, base_ncols)
+
+    nrows = math.ceil(n / ncols)
+
+    width = base_width * (ncols / base_ncols)
+    height = height_per_row * nrows
+
+    fig, axes = plt.subplots(
+        nrows=nrows,
+        ncols=ncols,
+        figsize=(width, height),
+        sharex=True,
+        sharey=True,
+        constrained_layout=False,
+        squeeze=False,
+        dpi=dpi,
+    )
+
+    fig.subplots_adjust(wspace=0, hspace=0)
+
+    axes_flat = axes.ravel()
+    p = None
+
+    for i, (ax, ds) in enumerate(zip(axes_flat, list_datasets, strict=True)):
+        p = ds.disdrodb.plot_spectrum(
+            ax=ax,
+            add_colorbar=False,
+            cmap=cmap,
+            norm=norm,
+        )
+
+        ax.set_xlim(*d_lim)
+        ax.set_ylim(*v_lim)
+
+        if add_grid:
+            ax.grid(**default_grid_kwargs)
+
+        title_str = ds.attrs.get(title_attr, "")
+        title_str = str(title_str).replace("_", " ")
+        ax.set_title(title_str)
+
+        row = i // ncols
+        col = i % ncols
+
+        is_bottom = row == nrows - 1
+        is_left = col == 0
+
+        if not is_left:
+            ax.set_ylabel("")
+            ax.tick_params(axis="y", labelleft=False)
+        else:
+            ax.set_ylabel("Fall velocity [m s$^{-1}$]")
+
+        if not is_bottom:
+            ax.set_xlabel("")
+            ax.tick_params(axis="x", labelbottom=False)
+        else:
+            ax.set_xlabel("Diameter [mm]")
+            ax.tick_params(axis="x", labelbottom=True)
+
+    # Hide unused axes when len(list_datasets) is not a perfect grid
+    for ax in axes_flat[n:]:
+        ax.set_visible(False)
+
+    if add_colorbar:
+        if p is None:
+            raise RuntimeError("No spectrum was plotted; colorbar cannot be created.")
+
+        if cbar_subplot_idx >= n:
+            raise ValueError("`cbar_subplot_idx` must point to an existing subplot.")
+
+        cbar = plot_colorbar(
+            p,
+            ax=axes_flat[cbar_subplot_idx],
+            cbar_inset_axes=cbar_inset_axes,
+            label=cbar_label,
+            x_pad=x_pad,
+            y_pad=y_pad,
+            orientation=colorbar_orientation,
+            label_position=colorbar_label_position,
+            **cbar_kwargs,
+        )
+        if cbar_labelsize is not None:
+            if colorbar_orientation == "horizontal":
+                cbar.ax.tick_params(axis="x", labelsize=cbar_labelsize)
+            else:
+                cbar.ax.tick_params(axis="y", labelsize=cbar_labelsize)
+    return fig, axes
+
+
 ####---------------------------------------------------------------------------.
 #### Mask utilities
 
@@ -1484,7 +1998,229 @@ def plot_mask_contour(mask, ax=None, **kwargs):
         ax.plot(seg[:, 0], seg[:, 1], **kwargs)
 
 
-####-------------------------------------------------------------------------------------------------------
+####-------------------------------------------------------------------------.
+#### Plot colored line
+
+
+def plot_colored_line(
+    ds,
+    var,
+    hue,
+    x=None,
+    ax=None,
+    cmap="turbo",
+    vmin=None,
+    vmax=None,
+    mask=None,
+    linewidth=1,
+    add_colorbar=True,
+):
+    """
+    Plot a 1D variable as a line colored by another variable, preserving gaps at NaNs.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+    var : str
+        Variable for y-axis.
+    hue : str
+        Variable controlling line color.
+    x : str, optional
+        X coordinate name. If None, inferred from `var`.
+    ax : matplotlib.axes.Axes, optional
+        Axis to plot on.
+    cmap : str, default "turbo"
+        Colormap for hue.
+    vmin, vmax : float, optional
+        Color limits.
+    mask : xarray.DataArray or array-like, optional
+        Boolean mask. False values become NaN.
+    linewidth : float, default 2
+        Line width.
+    add_colorbar : bool, default True
+        Whether to add a colorbar.
+
+    Returns
+    -------
+    ax : matplotlib.axes.Axes
+    lc : matplotlib.collections.LineCollection
+    """
+    da = ds[var]
+    hue_da = ds[hue]
+
+    if x is None:
+        if da.ndim != 1:
+            raise ValueError(
+                f"{var!r} is {da.ndim}D with dims {da.dims}; specify x explicitly after slicing to 1D.",
+            )
+        x_name = da.dims[0]
+    else:
+        x_name = x
+
+    x_vals = np.asarray(ds[x_name].to_numpy())
+    y_vals = np.asarray(da.to_numpy())
+    z_vals = np.asarray(hue_da.to_numpy())
+
+    if x_vals.ndim != 1 or y_vals.ndim != 1 or z_vals.ndim != 1:
+        raise ValueError("x, var, and hue must all be 1D after any slicing/selection.")
+
+    if not (len(x_vals) == len(y_vals) == len(z_vals)):
+        raise ValueError("x, var, and hue must have the same length.")
+
+    if mask is not None:
+        mask_vals = np.asarray(mask.to_numpy() if hasattr(mask, "values") else mask, dtype=bool)
+        if mask_vals.shape != y_vals.shape:
+            raise ValueError("mask must have the same shape as the plotted variable.")
+        y_vals = np.where(mask_vals, y_vals, np.nan)
+        z_vals = np.where(mask_vals, z_vals, np.nan)
+
+    # Handle datetime x-axis
+    if np.issubdtype(x_vals.dtype, np.datetime64):
+        x_plot = mdates.date2num(pd.to_datetime(x_vals).to_pydatetime())
+        is_datetime = True
+    else:
+        x_plot = x_vals.astype(float, copy=False)
+        is_datetime = False
+
+    # Build point pairs for consecutive samples
+    p0 = np.column_stack([x_plot[:-1], y_vals[:-1]])
+    p1 = np.column_stack([x_plot[1:], y_vals[1:]])
+    segments = np.stack([p0, p1], axis=1)
+
+    # Color each segment by hue at the left endpoint
+    seg_colors = z_vals[:-1]
+
+    # Keep only segments where both endpoints and hue are finite
+    valid_segments = (
+        np.isfinite(x_plot[:-1])
+        & np.isfinite(x_plot[1:])
+        & np.isfinite(y_vals[:-1])
+        & np.isfinite(y_vals[1:])
+        & np.isfinite(seg_colors)
+    )
+
+    segments = segments[valid_segments]
+    seg_colors = seg_colors[valid_segments]
+
+    if len(segments) == 0:
+        raise ValueError("No valid contiguous segments to plot after masking/NaN removal.")
+
+    if ax is None:
+        _, ax = plt.subplots()
+
+    lc = LineCollection(segments, cmap=cmap, linewidth=linewidth)
+    lc.set_array(seg_colors)
+
+    if vmin is not None or vmax is not None:
+        lc.set_clim(vmin, vmax)
+
+    ax.add_collection(lc)
+
+    # Limits from valid points only
+    valid_points = np.isfinite(x_plot) & np.isfinite(y_vals) & np.isfinite(z_vals)
+    xv = x_plot[valid_points]
+    yv = y_vals[valid_points]
+
+    ax.set_xlim(xv.min(), xv.max())
+    ax.set_ylim(yv.min(), yv.max())
+
+    ax.set_xlabel(x_name)
+    ax.set_ylabel(var)
+
+    if is_datetime:
+        # - Format x-axis as hours (and minutes if needed)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))  # or "%H" for hours only
+        # - Cleaner tick spacing
+        ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+        # - Rotate
+        plt.setp(ax.get_xticklabels(), rotation=90)
+        ax.set_xlabel("")
+
+    if add_colorbar:
+        cbar = plt.colorbar(lc, ax=ax)
+        cbar.set_label(hue)
+
+    return ax, lc
+
+
+####---------------------------------------------------------------------------
+#### Other utilities
+
+
+def draw_box(ax, x_box, y_box, facecolor="none", edgecolor="black", linewidth=1):
+    """Draw rectangle box."""
+    # Add rectangle
+    rect = Rectangle(
+        (x_box[0], y_box[0]),  # bottom-left corner
+        x_box[1] - x_box[0],  # width
+        y_box[1] - y_box[0],  # height
+        linewidth=linewidth,
+        edgecolor=edgecolor,
+        facecolor=facecolor,
+    )
+    ax.add_patch(rect)
+    return rect
+
+
+def draw_boxes(ax, boxes, fontsize, colors_dict=None, yoffset=0, yfactor=1, add_label=True):
+    """Draw boxes with label on top."""
+    for label, (x_box, y_box) in boxes.items():
+        facecolor = colors_dict[label] if colors_dict is not None else "none"
+        draw_box(
+            ax=ax,
+            x_box=x_box,
+            y_box=y_box,
+            facecolor=facecolor,
+            edgecolor="black",
+            linewidth=0.8,
+        )
+        # Add label on top of box
+        if add_label:
+            x_center = 0.5 * (x_box[0] + x_box[1])
+            y = y_box[1] * yfactor
+            y = y + yoffset
+            ax.text(
+                x_center,
+                y,
+                label,
+                color="black",
+                fontsize=fontsize,
+                ha="center",
+            )
+
+
+def add_dm_nw_cs_boundaries(ax):
+    """Add C/S boundary on Dm-Nw plots."""
+    xx = np.linspace(0, 8, 300)
+    yy = 10 ** (6.3 - 1.6 * xx)
+    ax.plot(xx, yy, color="black", linewidth=0.8, linestyle="--")
+    ax.axhline(y=10**3.85, color="black", linewidth=0.8, linestyle=":")
+
+
+def add_one_to_one_line(ax, color="black", linewidth=0.8, linestyle="--", **kwargs):
+    """Add 1:1 line."""
+    x0, x1 = ax.get_xlim()
+    y0, y1 = ax.get_ylim()
+
+    line_min = max(min(x0, x1), min(y0, y1))
+    line_max = min(max(x0, x1), max(y0, y1))
+
+    if line_min >= line_max:
+        return
+
+    ax.plot(
+        [line_min, line_max],
+        [line_min, line_max],
+        color=color,
+        linewidth=linewidth,
+        linestyle=linestyle,
+        **kwargs,
+    )
+    ax.set_xlim(x0, x1)
+    ax.set_ylim(y0, y1)
+
+
+####---------------------------------------------------------------------------
 #### Confusion matrix
 
 
@@ -1909,3 +2645,745 @@ def compute_dense_lines(
 
     # Return 2D histogram
     return out
+
+
+####--------------------------------------------------------------------------.
+#### DSD and Normalized DSD plotting functions
+
+
+def _make_monochrome_cmap(color, n=256, min_mix=0.15):
+    """Create a white-to-color colormap from a single matplotlib color."""
+    base = np.array(mcolors.to_rgba(color))
+    white = np.array([1, 1, 1, 1])
+
+    colors = []
+    for t in np.linspace(min_mix, 1.0, n):
+        c = white * (1 - t) + base * t
+        c[3] = 1.0
+        colors.append(c)
+    return ListedColormap(colors)
+
+
+def _as_cmap(color_or_cmap):
+    """Accept a colormap object, colormap name, or plain color."""
+    if isinstance(color_or_cmap, (ListedColormap, LinearSegmentedColormap)):
+        return color_or_cmap
+
+    if isinstance(color_or_cmap, str):
+        try:
+            return plt.get_cmap(color_or_cmap)
+        except ValueError:
+            return _make_monochrome_cmap(color_or_cmap)
+
+    return _make_monochrome_cmap(color_or_cmap)
+
+
+def _check_dsd_lines_input(xr_obj, *, dsd_var, cat_var, coord, category_order, category_colors, category_labels):
+
+    if not isinstance(xr_obj, (xr.DataArray, xr.Dataset)):
+        raise ValueError("Expecting xarray object.")
+
+    if isinstance(xr_obj, xr.Dataset):
+        if dsd_var is None:
+            raise ValueError("If a Dataset is passed, dsd_var must be specified.")
+        # -------------------------------------
+        # Checks
+        if dsd_var not in xr_obj.data_vars:
+            raise ValueError(f"{dsd_var} is not a xr.Dataset variable.")
+
+        if cat_var is not None and cat_var not in xr_obj.data_vars:
+            raise ValueError(f"{cat_var} is not a xr.Dataset variable.")
+
+        if coord not in xr_obj[dsd_var].dims:
+            raise ValueError(f"{coord} is not a dimension of {dsd_var} DataArray.")
+
+        # -------------------------------------
+        # Define categorical options
+        if cat_var is not None:
+            if category_order is None:
+                category_order = np.unique(xr_obj[cat_var])
+
+            if category_colors is None:
+                raise ValueError("When cat_var is provided, category_colors must be specified.")
+
+            if category_labels is None:
+                category_labels = {cat: str(cat) for cat in category_order}
+
+        # -------------------------------------
+        # Define sample dimensions
+        sample_dim = infer_dsd_sample_dim(xr_obj[dsd_var], diameter_dim=coord)
+        is_dataset = True
+
+    else:  # DataArray
+        if dsd_var is not None:
+            raise ValueError("If a DataArray is passed, dsd_var must not be specified.")
+        if cat_var is not None:
+            raise ValueError("If a DataArray is passed, plot by category is not possible.")
+        if coord not in xr_obj.dims:
+            raise ValueError(f"{coord} is not a dimension of {dsd_var} DataArray.")
+        sample_dim = infer_dsd_sample_dim(xr_obj, diameter_dim=coord)
+        is_dataset = False
+
+    return sample_dim, is_dataset, category_order, category_labels
+
+
+def _create_plotting_groups(
+    *,
+    xr_obj,
+    da_dsd,
+    dsd_var,
+    cat_var,
+    sample_dim,
+    default_label,
+    default_color,
+    category_order,
+    category_colors,
+    category_labels,
+):
+    groups = []
+    if cat_var is None:
+        groups.append(
+            {
+                "key": "all",
+                "da": da_dsd,
+                "color": default_color,
+                "label": default_label if default_label is not None else dsd_var,
+            },
+        )
+    else:
+        ds_work = xr.Dataset(
+            {
+                dsd_var: da_dsd,
+                cat_var: xr_obj[cat_var].compute(),
+            },
+        )
+
+        for cat in category_order:
+            mask = ds_work[cat_var] == cat
+            da_subset = ds_work[dsd_var].isel({sample_dim: mask})
+            if da_subset.sizes.get(sample_dim, 0) == 0:
+                continue
+
+            groups.append(
+                {
+                    "key": cat,
+                    "da": da_subset,
+                    "color": category_colors[cat],
+                    "label": category_labels.get(cat, str(cat)),
+                },
+            )
+
+    if len(groups) == 0:
+        raise ValueError("No data available to plot.")
+    return groups
+
+
+def plot_dsd_dense_lines(
+    xr_obj,
+    *,
+    dsd_var=None,
+    cat_var=None,
+    category_order=None,
+    category_colors=None,
+    category_labels=None,
+    n_samples=None,
+    random_state=None,
+    diameter_bin_edges=None,
+    y_bins=None,
+    coord="diameter_bin_center",
+    x_bins=None,
+    ax=None,
+    figsize=(3.4, 3.0),
+    dpi=300,
+    title="DSD",
+    xlabel=r"$D$ [mm]",
+    ylabel=r"$N(D)$ [m$^{-3}$ mm$^{-1}$]",
+    xlim=(0, 8),
+    ylim=(1, 2e4),
+    yscale="log",
+    add_legend=True,
+    legend_title=None,
+    legend_loc="upper right",
+    legend_kwargs=None,
+    dense_lines_normalization="max",
+    rgba_scaling="sqrt",
+    resample=True,
+    default_color="tab:blue",
+    default_label=None,
+):
+    """
+    Plot dense lines for a DSD variable.
+
+    Modes
+    -----
+    1. If cat_var is None:
+      - all samples are plotted together
+      - optional sampling is applied to the full dataset before resampling
+
+    2. If cat_var is provided:
+      - one layer is plotted per category
+      - optional sampling is applied independently within each category
+        before resampling
+    """
+    from disdrodb.summary.routines import log_arange
+
+    legend_kwargs = {} if legend_kwargs is None else legend_kwargs
+    if diameter_bin_edges is None:
+        diameter_bin_edges = np.arange(0, 8, 0.01)
+    # -------------------------------------
+    # Checks
+    sample_dim, is_dataset, category_order, category_labels = _check_dsd_lines_input(
+        xr_obj=xr_obj,
+        coord=coord,
+        dsd_var=dsd_var,
+        cat_var=cat_var,
+        category_order=category_order,
+        category_colors=category_colors,
+        category_labels=category_labels,
+    )
+
+    # Define bins
+    if x_bins is None:
+        x_bins = xr_obj.disdrodb.diameter_bin_edges
+
+    if y_bins is None:
+        y_bins = log_arange(1, 20_000, log_step=0.025, base=10)
+
+    # ------------------------------------------
+    # Sample before resampling
+    if n_samples is not None:
+        xr_obj = xr_sample(
+            xr_obj,
+            dim=sample_dim,
+            random_state=random_state,
+            n=n_samples,
+            cat_var=cat_var,
+            category_order=category_order,
+        )
+
+    # -------------------------------------
+    # Load DSD data
+    da_dsd = xr_obj[dsd_var].compute() if is_dataset else xr_obj.compute()
+
+    # -------------------------------------
+    # Resample if requested
+    if resample:
+        da_dsd = resample_drop_number_concentration(
+            da_dsd,
+            diameter_bin_edges=diameter_bin_edges,
+        )
+        x_bins = diameter_bin_edges
+
+    # -------------------------------------
+    # Define groups
+    groups = _create_plotting_groups(
+        xr_obj=xr_obj,
+        da_dsd=da_dsd,
+        dsd_var=dsd_var,
+        cat_var=cat_var,
+        sample_dim=sample_dim,
+        default_label=default_label,
+        default_color=default_color,
+        category_order=category_order,
+        category_colors=category_colors,
+        category_labels=category_labels,
+    )
+
+    # ------------------------------------------------------------------
+    # Compute dense lines for each group
+    # ------------------------------------------------------------------
+    dict_rgb = {}
+    handles = []
+    labels = []
+
+    for group in groups:
+        da_dense_lines = compute_dense_lines(
+            da=group["da"],
+            coord=coord,
+            x_bins=x_bins,
+            y_bins=y_bins,
+            normalization=dense_lines_normalization,
+        )
+
+        cmap = _as_cmap(group["color"])
+
+        da_rgb = to_rgba(
+            da_dense_lines,
+            cmap=cmap,
+            scaling=rgba_scaling,
+        )
+
+        dict_rgb[group["key"]] = da_rgb
+
+        handles.append(
+            mlines.Line2D([], [], color=cmap(0.8), alpha=0.8, linewidth=2),
+        )
+        labels.append(group["label"])
+
+    ds_rgb = xr.concat(dict_rgb.values(), dim="group")
+    da_blended = max_blend_images(ds_rgb, dim="group")
+
+    # ------------------------------------------------------------------
+    # Plot
+    # ------------------------------------------------------------------
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    else:
+        fig = ax.figure
+
+    mesh = ax.pcolormesh(
+        da_blended[coord],
+        da_blended[dsd_var],
+        da_blended.data,
+        shading="auto",
+    )
+
+    ax.set_yscale(yscale)
+    ax.set_xlim(*xlim)
+    ax.set_ylim(*ylim)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+
+    # Only show legend if meaningful
+    if len(handles) > 0 and add_legend:
+        ax.legend(handles, labels, title=legend_title, loc=legend_loc, **legend_kwargs)
+
+    return fig, ax, mesh
+
+
+def _get_color_var_info(
+    xr_obj,
+    *,
+    color_var,
+    sample_dim,
+    is_dataset,
+    cmap,
+    norm,
+):
+    """Return per-sample colors and the ScalarMappable for colorbar."""
+    if color_var is None:
+        return None, None, None
+
+    if not is_dataset:
+        raise ValueError("'color_var' can only be used when 'xr_obj' is an xarray.Dataset.")
+
+    if color_var not in xr_obj:
+        raise ValueError(f"'{color_var}' not found in xr_obj.")
+
+    da_color = xr_obj[color_var].compute()
+
+    if sample_dim not in da_color.dims:
+        raise ValueError(
+            f"'{color_var}' must depend on the sample dimension '{sample_dim}'. " f"Got dims {da_color.dims}.",
+        )
+
+    other_dims = [dim for dim in da_color.dims if dim != sample_dim]
+    if other_dims:
+        raise ValueError(
+            f"'{color_var}' must be 1D along '{sample_dim}'. " f"Got extra dims: {other_dims}.",
+        )
+
+    values = da_color.transpose(sample_dim).to_numpy()
+
+    finite = np.isfinite(values)
+    if norm is None:
+        if np.any(finite):
+            vmin = np.nanmin(values)
+            vmax = np.nanmax(values)
+            if vmin == vmax:
+                # avoid singular normalization
+                vmin -= 0.5
+                vmax += 0.5
+            norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+        else:
+            norm = mcolors.Normalize(vmin=0.0, vmax=1.0)
+
+    cmap = plt.get_cmap(cmap).copy()
+    scalar_mappable = cm.ScalarMappable(norm=norm, cmap=cmap)
+    colors = scalar_mappable.to_rgba(values)
+
+    return values, colors, scalar_mappable
+
+
+def plot_dsd_lines(
+    xr_obj,
+    *,
+    dsd_var=None,
+    cat_var=None,
+    color_var=None,
+    category_order=None,
+    category_colors=None,
+    category_labels=None,
+    n_samples=None,
+    sample_with_replacement=False,
+    stratify_bins=None,
+    stratify_quantiles=None,
+    stratify_order="increasing",
+    random_state=None,
+    diameter_bin_edges=None,
+    coord="diameter_bin_center",
+    ax=None,
+    figsize=(3.4, 3.0),
+    dpi=300,
+    title="DSD",
+    xlabel=r"$D$ [mm]",
+    ylabel=r"$N(D)$ [m$^{-3}$ mm$^{-1}$]",
+    xlim=(0, 8),
+    ylim=(1, 2e4),
+    yscale="log",
+    add_legend=True,
+    legend_title=None,
+    legend_loc="upper right",
+    legend_kwargs=None,
+    cmap="viridis",
+    norm=None,
+    add_colorbar=True,
+    colorbar_label=None,
+    colorbar_kwargs=None,
+    resample=True,
+    default_color="tab:blue",
+    default_label=None,
+    linewidth=0.15,
+    alpha=0.03,
+    cbar_inset_axes=(0.68, 0.74, 0.3, 0.08),
+    x_pad=0.03,
+    y_pad=0.17,
+):
+    """Plot many individual DSD profiles as very thin lines.
+
+    Coloring modes
+    --------------
+    1. Default mode:
+       - all profiles use ``default_color``
+
+    2. Category mode (``cat_var``):
+       - one line collection per category
+       - optional sampling is applied independently within each category
+       - a legend can be added
+
+    3. Continuous color mode (``color_var``):
+       - each profile is colored according to a per-sample variable
+       - optional sampling is applied before plotting
+       - a colorbar can be added
+
+    Notes
+    -----
+    ``cat_var`` and ``color_var`` are mutually exclusive.
+    """
+    legend_kwargs = {} if legend_kwargs is None else legend_kwargs
+    colorbar_kwargs = {} if colorbar_kwargs is None else colorbar_kwargs
+
+    if diameter_bin_edges is None:
+        diameter_bin_edges = np.arange(0, 8, 0.01)
+
+    if cat_var is not None and color_var is not None:
+        raise ValueError("'cat_var' and 'color_var' are mutually exclusive.")
+
+    # ------------------------------------------------------------------
+    # Checks
+    sample_dim, is_dataset, category_order, category_labels = _check_dsd_lines_input(
+        xr_obj=xr_obj,
+        coord=coord,
+        dsd_var=dsd_var,
+        cat_var=cat_var,
+        category_order=category_order,
+        category_colors=category_colors,
+        category_labels=category_labels,
+    )
+
+    # Additional checks for color_var
+    if color_var is not None and not is_dataset:
+        raise ValueError("'color_var' requires 'xr_obj' to be an xarray.Dataset.")
+
+    # ------------------------------------------------------------------
+    # Sample before resampling
+    if n_samples is not None:
+        xr_obj = xr_sample(
+            xr_obj,
+            dim=sample_dim,
+            random_state=random_state,
+            n=n_samples,
+            cat_var=cat_var,
+            stratify_var=color_var,
+            stratify_bins=stratify_bins,
+            stratify_quantiles=stratify_quantiles,
+            stratify_order=stratify_order,
+            replace=sample_with_replacement,
+            category_order=category_order,
+        )
+
+    # ------------------------------------------------------------------
+    # Load DSD data
+    da_dsd = xr_obj[dsd_var].compute() if is_dataset else xr_obj.compute()
+
+    # ------------------------------------------------------------------
+    # Resample if requested
+    if resample:
+        da_dsd = resample_drop_number_concentration(
+            da_dsd,
+            diameter_bin_edges=diameter_bin_edges,
+        )
+
+    # ------------------------------------------------------------------
+    # Create figure
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    else:
+        fig = ax.figure
+
+    # ------------------------------------------------------------------
+    # Plot thin lines
+    handles = []
+    labels = []
+
+    # -------------------------
+    # Continuous color mode
+    if color_var is not None:
+        _, line_colors, scalar_mappable = _get_color_var_info(
+            xr_obj=xr_obj,
+            color_var=color_var,
+            sample_dim=sample_dim,
+            is_dataset=is_dataset,
+            cmap=cmap,
+            norm=norm,
+        )
+
+        x = da_dsd[coord].to_numpy()
+        y = da_dsd.transpose(sample_dim, coord).to_numpy()
+
+        for row, color in zip(y, line_colors, strict=False):
+            valid = np.isfinite(row) & (row > 0)
+            if np.any(valid):
+                ax.plot(
+                    x[valid],
+                    row[valid],
+                    color=color,
+                    linewidth=linewidth,
+                    alpha=alpha,
+                )
+
+        if add_colorbar:
+            if colorbar_label is None:
+                colorbar_label = color_var
+            plot_colorbar(
+                scalar_mappable,
+                ax=ax,
+                cbar_inset_axes=cbar_inset_axes,
+                x_pad=x_pad,
+                y_pad=y_pad,
+                orientation="horizontal",
+                label_position="top",
+                fancybox_lw=0.2,
+                fancybox_alpha=0.6,
+                label=colorbar_label,
+                **colorbar_kwargs,
+            )
+
+    # -------------------------
+    # Category mode / default mode
+    else:
+        groups = _create_plotting_groups(
+            xr_obj=xr_obj,
+            da_dsd=da_dsd,
+            dsd_var=dsd_var,
+            cat_var=cat_var,
+            sample_dim=sample_dim,
+            default_label=default_label,
+            default_color=default_color,
+            category_order=category_order,
+            category_colors=category_colors,
+            category_labels=category_labels,
+        )
+
+        for group in groups:
+            da_group = group["da"]
+
+            x = da_group[coord].to_numpy()
+            y = da_group.transpose(sample_dim, coord).to_numpy()
+
+            for row in y:
+                valid = np.isfinite(row) & (row > 0)
+                if np.any(valid):
+                    ax.plot(
+                        x[valid],
+                        row[valid],
+                        color=group["color"],
+                        linewidth=linewidth,
+                        alpha=alpha,
+                    )
+
+            handles.append(
+                mlines.Line2D([], [], color=group["color"], linewidth=1.0),
+            )
+            labels.append(group["label"])
+
+        if len(handles) > 0 and add_legend:
+            ax.legend(
+                handles,
+                labels,
+                title=legend_title,
+                loc=legend_loc,
+                **legend_kwargs,
+            )
+
+    # ------------------------------------------------------------------
+    # Axes styling
+    ax.set_yscale(yscale)
+    ax.set_xlim(*xlim)
+    ax.set_ylim(*ylim)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+
+    return fig, ax
+
+
+def plot_normalized_dsd_lines(
+    ds,
+    *,
+    dsd_var="drop_number_concentration",
+    Nc="Nw",
+    Dc="Dm",
+    cat_var=None,
+    category_order=None,
+    category_colors=None,
+    category_labels=None,
+    n_samples=None,
+    random_state=None,
+    coord="diameter_bin_center",
+    ax=None,
+    figsize=(3.4, 3.0),
+    dpi=300,
+    title="Normalized DSD",
+    xlabel=r"$D/D_m$ [-]",
+    ylabel=r"$N(D)/N_w$ [-]",
+    xlim=(0, 3),
+    ylim=(1e-4, 10),
+    yscale="log",
+    add_legend=True,
+    legend_title=None,
+    legend_loc="upper right",
+    legend_kwargs=None,
+    default_color="tab:blue",
+    default_label=None,
+    linewidth=0.15,
+    alpha=0.03,
+):
+    """
+    Plot many individual normalized DSD profiles as very thin lines.
+
+    Modes
+    -----
+    1. If cat_var is None:
+      - all samples are plotted together
+      - optional sampling is applied to the full dataset before resampling
+
+    2. If cat_var is provided:
+      - one line collection is plotted per category
+      - optional sampling is applied independently within each category
+        before resampling
+    """
+    legend_kwargs = {} if legend_kwargs is None else legend_kwargs
+
+    # Checks
+    if not isinstance(ds, xr.Dataset):
+        raise ValueError("'plot_normalized_dsd_lines' expects a xr.Dataset as input.")
+    if Dc not in ds:
+        raise ValueError(f"{Dc} is not an xr.Dataset variable.")
+    if Nc not in ds:
+        raise ValueError(f"{Nc} is not an xr.Dataset variable.")
+
+    sample_dim, is_dataset, category_order, category_labels = _check_dsd_lines_input(
+        xr_obj=ds,
+        coord=coord,
+        dsd_var=dsd_var,
+        cat_var=cat_var,
+        category_order=category_order,
+        category_colors=category_colors,
+        category_labels=category_labels,
+    )
+
+    # ------------------------------------------
+    # Sample before resampling
+    if n_samples is not None:
+        ds = xr_sample(
+            ds,
+            dim=sample_dim,
+            n=n_samples,
+            cat_var=cat_var,
+            category_order=category_order,
+            random_state=random_state,
+        )
+
+    # -------------------------------------
+    # Compute normalized DSD
+    ds[dsd_var] = ds[dsd_var].compute()
+    ds[Nc] = ds[Nc].compute()
+    ds[Dc] = ds[Dc].compute()
+    da_dsd_norm = compute_normalized_dsd_datarray(ds, Nc=Nc, Dc=Dc, dsd_var=dsd_var, diameter_dim=coord, method="pchip")
+    coord = "D/Dc"  # new coordinate
+    # -------------------------------------
+    # Define groups
+    groups = _create_plotting_groups(
+        xr_obj=ds,
+        da_dsd=da_dsd_norm,
+        dsd_var=dsd_var,
+        cat_var=cat_var,
+        sample_dim=sample_dim,
+        default_label=default_label,
+        default_color=default_color,
+        category_order=category_order,
+        category_colors=category_colors,
+        category_labels=category_labels,
+    )
+
+    # -------------------------------------
+    # Create figure
+    fig = None
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    else:
+        fig = ax.figure
+
+    # -------------------------------------
+    # Plot thin lines
+    handles = []
+    labels = []
+
+    for group in groups:
+        da_group = group["da"]
+
+        x = da_group[coord].to_numpy()
+        y = da_group.transpose(sample_dim, coord).to_numpy()
+
+        # Plot each profile
+        for row in y:
+            valid = np.isfinite(row) & (row > 0)
+            if np.any(valid):
+                ax.plot(
+                    x[valid],
+                    row[valid],
+                    color=group["color"],
+                    linewidth=linewidth,
+                    alpha=alpha,
+                )
+
+        handles.append(
+            mlines.Line2D([], [], color=group["color"], linewidth=1.0),
+        )
+        labels.append(group["label"])
+
+    # -------------------------------------
+    # Axes styling
+    ax.set_yscale(yscale)
+    ax.set_xlim(*xlim)
+    ax.set_ylim(*ylim)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+
+    if len(handles) > 0 and add_legend:
+        ax.legend(handles, labels, title=legend_title, loc=legend_loc, **legend_kwargs)
+
+    return fig, ax

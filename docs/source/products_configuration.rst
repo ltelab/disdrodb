@@ -427,7 +427,7 @@ optimization methods. Models are fit independently, allowing comparison of diffe
 - :class:`ExponentialPSD <disdrodb.psd.models.ExponentialPSD>`
 - :class:`GammaPSD <disdrodb.psd.models.GammaPSD>`
 - :class:`GeneralizedGammaPSD <disdrodb.psd.models.GeneralizedGammaPSD>`
-- :class:`NormalizedGammaPSD <disdrodb.psd.models.NormalizedGammaPSD>`
+- :class:`NormalizedGammaD50NwPSD <disdrodb.psd.models.NormalizedGammaD50NwPSD>`
 - :class:`NormalizedGeneralizedGammaPSD <disdrodb.psd.models.NormalizedGeneralizedGammaPSD>`
 
 **Available Optimization Methods**

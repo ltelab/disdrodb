@@ -250,6 +250,309 @@ def get_diameter_coords_dict_from_bin_edges(diameter_bin_edges):
     return coords_dict
 
 
+def infer_dsd_sample_dim(da, diameter_dim):
+    """Infer the sample dimension.
+
+    Typically "time", but could also be sample_id for example.
+    """
+    sample_dim_candidates = set(da.dims) - {diameter_dim}
+    if len(sample_dim_candidates) != 1:
+        raise ValueError(
+            f"Could not infer sample dimension from dims={da.dims}."
+            f"Please adapt the function for your array layout.",
+        )
+    sample_dim = list(sample_dim_candidates)[0]  # noqa
+    return sample_dim
+
+
+def _sample_along_dim(xr_obj, dim, n=None, random_state=None, replace=False):
+    """
+    Randomly subsample an xarray object along one dimension.
+
+    Parameters
+    ----------
+    xr_obj : xarray.DataArray or xarray.Dataset
+        Object to sample.
+    dim : str
+        Dimension along which to sample.
+    n : int or None
+        Number of samples to draw. If None, return the original object.
+    random_state : int or None
+        Seed for reproducible sampling.
+    replace : bool, default False
+        Whether to sample with replacement.
+
+    Returns
+    -------
+    xarray.DataArray or xarray.Dataset
+        Sampled object.
+
+    Notes
+    -----
+    If ``replace=False`` and ``n >= size``, the original object is returned.
+    If ``replace=True``, exactly ``n`` samples are drawn, even when
+    ``n > size``.
+    """
+    if n is None:
+        return xr_obj
+
+    size = xr_obj.sizes.get(dim, 0)
+    if size == 0:
+        return xr_obj
+
+    if not replace and n >= size:
+        return xr_obj
+
+    rng = np.random.default_rng(random_state)
+    idx = rng.choice(size, size=n, replace=replace)
+
+    if not replace:
+        idx = np.sort(idx)
+
+    return xr_obj.isel({dim: idx})
+
+
+def _resolve_stratify_bins(values, stratify_bins=None, stratify_quantiles=None):
+    """Resolve stratification bin edges from either explicit bins or quantiles."""
+    if stratify_bins is not None and stratify_quantiles is not None:
+        raise ValueError(
+            "'stratify_bins' and 'stratify_quantiles' are mutually exclusive.",
+        )
+
+    if stratify_bins is not None:
+        bins = np.asarray(stratify_bins, dtype=float)
+        if bins.ndim != 1 or bins.size < 2:
+            raise ValueError("'stratify_bins' must be a 1D array with at least 2 edges.")
+        if not np.all(np.diff(bins) > 0):
+            raise ValueError("'stratify_bins' must be strictly increasing.")
+        return bins
+
+    if stratify_quantiles is None:
+        return None
+
+    finite = np.isfinite(values)
+    values = values[finite]
+    if values.size == 0:
+        raise ValueError("Cannot compute quantile bins: no finite values in stratify_var.")
+
+    if np.isscalar(stratify_quantiles):
+        q = int(stratify_quantiles)
+        if q < 1:
+            raise ValueError("'stratify_quantiles' must be >= 1.")
+        quantiles = np.linspace(0, 1, q + 1)
+    else:
+        quantiles = np.asarray(stratify_quantiles, dtype=float)
+        if quantiles.ndim != 1 or quantiles.size < 2:
+            raise ValueError(
+                "'stratify_quantiles' must be an int or a 1D array with at least 2 values.",
+            )
+        if np.any(quantiles < 0) or np.any(quantiles > 1):
+            raise ValueError("Quantiles must lie in the interval [0, 1].")
+        if not np.all(np.diff(quantiles) > 0):
+            raise ValueError("'stratify_quantiles' must be strictly increasing.")
+
+    bins = np.quantile(values, quantiles)
+
+    # Repeated quantiles can happen for discrete/skewed distributions.
+    bins = np.unique(bins)
+    if bins.size < 2:
+        raise ValueError(
+            "Quantile stratification produced fewer than 2 unique bin edges. "
+            "The stratify variable may have too few distinct values.",
+        )
+    return bins
+
+
+def _get_stratification_groups(
+    xr_obj,
+    *,
+    dim,
+    stratify_var,
+    stratify_bins=None,
+    stratify_quantiles=None,
+):
+    """
+    Return grouping labels aligned with `dim`.
+
+    - If neither bins nor quantiles are provided: use exact values as groups
+    - If bins or quantiles are provided: bin continuous values
+    """
+    if not isinstance(xr_obj, xr.Dataset):
+        raise ValueError("Stratified sampling requires an xarray.Dataset.")
+
+    if stratify_var not in xr_obj:
+        raise ValueError(f"{stratify_var!r} is not a variable in xr_obj.")
+
+    da = xr_obj[stratify_var]
+
+    if dim not in da.dims:
+        raise ValueError(
+            f"{stratify_var!r} must depend on dimension {dim!r}. Got dims {da.dims}.",
+        )
+
+    other_dims = [d for d in da.dims if d != dim]
+    if other_dims:
+        raise ValueError(
+            f"{stratify_var!r} must be 1D along {dim!r}. Got extra dims: {other_dims}.",
+        )
+
+    values = da.transpose(dim).to_numpy()
+
+    bins = _resolve_stratify_bins(
+        values,
+        stratify_bins=stratify_bins,
+        stratify_quantiles=stratify_quantiles,
+    )
+
+    if bins is None:
+        return values, None
+
+    groups = np.full(values.shape, fill_value=-1, dtype=int)
+    valid = np.isfinite(values)
+
+    groups[valid] = np.digitize(values[valid], bins, right=False) - 1
+
+    # Keep only samples inside [bins[0], bins[-1]) except digitize's handling of edge cases
+    in_range = valid & (groups >= 0) & (groups < len(bins) - 1)
+    groups[~in_range] = -1
+
+    return groups, bins
+
+
+def xr_sample(
+    xr_obj,
+    dim,
+    n,
+    random_state=19922207,
+    cat_var=None,
+    category_order=None,
+    stratify_var=None,
+    stratify_bins=None,
+    stratify_quantiles=None,
+    stratify_order="increasing",
+    replace=False,
+):
+    """
+    Sample an xarray object.
+
+    Modes
+    -----
+    1. Uniform random sampling
+    2. Category-wise stratified sampling via `cat_var`
+    3. Stratified sampling via `stratify_var`
+       - exact-value groups if no bins/quantiles are provided
+       - bin-based groups if `stratify_bins` or `stratify_quantiles` is provided
+
+    Parameters
+    ----------
+    replace : bool, default False
+        Whether to sample with replacement.
+
+    Notes
+    -----
+    `n` is the maximum number of samples per group/stratum.
+    """
+    if not isinstance(xr_obj, (xr.DataArray, xr.Dataset)):
+        raise ValueError("Expecting xarray object.")
+
+    if n is None:
+        return xr_obj
+
+    if cat_var is not None and stratify_var is not None:
+        raise ValueError("'cat_var' and 'stratify_var' are mutually exclusive.")
+
+    if stratify_bins is not None and stratify_quantiles is not None:
+        raise ValueError("'stratify_bins' and 'stratify_quantiles' are mutually exclusive.")
+
+    if stratify_order not in {"increasing", "decreasing"}:
+        raise ValueError("'stratify_order' must be either 'increasing' or 'decreasing'.")
+
+    # ------------------------------------------------------------------
+    # Uniform random sampling
+    if cat_var is None and stratify_var is None:
+        return _sample_along_dim(
+            xr_obj,
+            n=n,
+            dim=dim,
+            random_state=random_state,
+        )
+
+    # ------------------------------------------------------------------
+    # Category stratified sampling
+    if cat_var is not None:
+        if not isinstance(xr_obj, xr.Dataset):
+            raise ValueError("'cat_var' sampling requires an xarray.Dataset.")
+
+        if cat_var not in xr_obj:
+            raise ValueError(f"{cat_var!r} is not a Dataset variable.")
+
+        group_values = xr_obj[cat_var].transpose(dim).to_numpy()
+
+        if category_order is None:
+            if np.issubdtype(group_values.dtype, np.number):
+                valid = np.isfinite(group_values)
+                category_order = np.unique(group_values[valid])
+            else:
+                category_order = np.unique(group_values)
+
+        group_order = category_order
+
+    # ------------------------------------------------------------------
+    # Generic stratified sampling
+    else:
+        group_values, bins = _get_stratification_groups(
+            xr_obj,
+            dim=dim,
+            stratify_var=stratify_var,
+            stratify_bins=stratify_bins,
+            stratify_quantiles=stratify_quantiles,
+        )
+
+        if bins is None:
+            if np.issubdtype(group_values.dtype, np.number):
+                valid = np.isfinite(group_values)
+                group_order = np.unique(group_values[valid])
+            else:
+                group_order = np.unique(group_values)
+        else:
+            valid = group_values >= 0
+            group_order = np.unique(group_values[valid])
+        if stratify_order == "decreasing":
+            group_order = group_order[::-1]
+
+    # ------------------------------------------------------------------
+    # Per-group sampling
+    subsets = []
+    for i, group in enumerate(group_order):
+        mask = group_values == group
+        if not np.any(mask):
+            continue
+
+        subset = xr_obj.isel({dim: mask})
+        if subset.sizes.get(dim, 0) == 0:
+            continue
+
+        subset = _sample_along_dim(
+            subset,
+            n=n,
+            dim=dim,
+            replace=replace,
+            random_state=None if random_state is None else random_state + i,
+        )
+        subsets.append(subset)
+
+    if len(subsets) == 0:
+        raise ValueError("No data available after stratified sampling.")
+
+    return xr.concat(
+        subsets,
+        dim=dim,
+        join="outer",
+        coords="minimal",
+        compat="override",
+    )
+
+
 ####---------------------------------------------------------------------------.
 #### Resampling low-level functions
 
@@ -849,15 +1152,20 @@ def compute_normalized_dsd_datarray(
     d_max=6,
     d_step=0.001,
     method="linear",
+    diameter_dim="diameter_bin_center",
+    dsd_var="drop_number_concentration",
 ):
     """Compute normalized DSD and remap to regular D/Dc dimension."""
+    # Infer sample dimension (typically time)
+    sample_id = infer_dsd_sample_dim(ds[dsd_var], diameter_dim=diameter_dim)
+
     # Compute Normalized DSD and normalized diameter
-    ds["N(D)/Nc"] = ds["drop_number_concentration"] / ds[Nc]
-    ds["D/Dc"] = ds["diameter_bin_center"] / ds[Dc]
+    ds["N(D)/Nc"] = ds[dsd_var] / ds[Nc]
+    ds["D/Dc"] = ds[diameter_dim] / ds[Dc]
     ds["dD/Dc"] = ds["diameter_bin_width"] / ds[Dc]
 
-    ds["D/Dc"] = ds["D/Dc"].transpose("diameter_bin_center", "time")
-    ds["N(D)/Nc"] = ds["N(D)/Nc"].transpose("diameter_bin_center", "time")
+    ds["D/Dc"] = ds["D/Dc"].transpose(diameter_dim, sample_id)
+    ds["N(D)/Nc"] = ds["N(D)/Nc"].transpose(diameter_dim, sample_id)
 
     # Define normalized diameter coordinate
     da_normalized_diameter = define_diameter_datarray(np.arange(d_min, d_max, d_step), dim="D/Dc")
@@ -867,7 +1175,7 @@ def compute_normalized_dsd_datarray(
         da=ds["N(D)/Nc"],
         d_src=ds["D/Dc"],
         d_dst=da_normalized_diameter,
-        dim="diameter_bin_center",
+        dim=diameter_dim,
         new_dim="D/Dc",
         method=method,
     )

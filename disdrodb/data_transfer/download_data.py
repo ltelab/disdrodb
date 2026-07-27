@@ -405,6 +405,14 @@ def build_webserver_wget_command(url: str, cut_dirs: int, dst_dir: str, verbose:
         "--reject",
         "index.html*",  # avoid to download Apache autoindex index.html
         f"--cut-dirs={cut_dirs}",
+        # Connection fixes
+        "--inet4-only",
+        "--no-check-certificate",
+        "--dns-timeout=10",
+        "--connect-timeout=15",
+        "--read-timeout=30",
+        "--timeout=30",
+        "--tries=2",
         # Downloads just new data without re-downloading existing files
         "--timestamping",  # -N
         # Specify agent

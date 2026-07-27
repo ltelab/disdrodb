@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from disdrodb.api.checks import check_measurement_interval, check_measurement_intervals
 from disdrodb.api.io import open_netcdf_files
 from disdrodb.l0.l0b_processing import set_l0b_encodings
 from disdrodb.l1.resampling import add_sample_interval
@@ -776,6 +777,10 @@ def generate_l0c_datasets(ds, measurement_intervals, ensure_variables_equality=T
     if "sensor_name" not in ds.attrs:
         raise ValueError("Missing 'sensor_name' attribute in the dataset.")
     sensor_name = ds.attrs.get("sensor_name")
+
+    # Ensure measurement intervals is a list
+    measurement_intervals = check_measurement_intervals(measurement_intervals)
+
     # ---------------------------------------------------------------------------------------.
     # If sample interval is a dataset variable, drop timesteps with unexpected measurement intervals !
     if "sample_interval" in ds:
@@ -881,8 +886,7 @@ def generate_l0c(ds, measurement_interval, ensure_variables_equality=True, logge
     generate_l0c_datasets
 
     """
-    if not isinstance(measurement_interval, int):
-        raise TypeError("measurement_interval must be an integer.")
+    measurement_interval = check_measurement_interval(measurement_interval)
     dict_ds = generate_l0c_datasets(
         ds,
         measurement_intervals=measurement_interval,

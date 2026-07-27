@@ -1,4 +1,4 @@
-psd_model: "NormalizedGammaPSD"
+psd_model: "NormalizedGammaD50NwPSD"
 optimization: "GS"
 optimization_settings:
   objectives:

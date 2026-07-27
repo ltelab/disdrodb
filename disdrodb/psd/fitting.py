@@ -28,6 +28,7 @@ from scipy.special import gamma, gammaln  # Regularized lower incomplete gamma f
 from disdrodb.constants import DIAMETER_DIMENSION
 from disdrodb.fall_velocity import get_rain_fall_velocity_from_ds
 from disdrodb.l2.empirical_dsd import (
+    get_mean_volume_drop_diameter,
     get_median_volume_drop_diameter,
     get_moment,
     get_normalized_intercept_parameter_from_moments,
@@ -43,8 +44,8 @@ from disdrodb.psd.models import (
     GammaPSD,
     GeneralizedGammaPSD,
     LognormalPSD,
-    NormalizedGammaPSD,
     NormalizedGeneralizedGammaPSD,
+    get_psd_model,
 )
 from disdrodb.utils.manipulations import get_diameter_bin_edges
 from disdrodb.utils.warnings import suppress_warnings
@@ -1629,8 +1630,8 @@ def apply_lognormal_gs(
 
 
 def apply_normalized_gamma_gs(
-    Nw,
-    D50,
+    Nc,
+    Dc,
     ND_obs,
     V,
     # Coords
@@ -1638,15 +1639,16 @@ def apply_normalized_gamma_gs(
     dD,
     # PSD parameters
     mu,
+    psd_formula,
     # Optimization options
     objectives,
     # Output options
     return_loss=False,
 ):
-    """Estimate NormalizedGammaPSD model parameters using Grid Search.
+    """Estimate NormalizedGamma*PSD model parameters using Grid Search.
 
     This function performs a grid search optimization to find the best parameter
-    (mu) for the NormalizedGammaPSD model by minimizing a weighted
+    (mu) for the NormalizedGamma*PSD model by minimizing a weighted
     cost function across one or more objectives.
 
     Parameters
@@ -1743,8 +1745,8 @@ def apply_normalized_gamma_gs(
     The best parameters correspond to the minimum total weighted loss
     """
     # Ensure input is numpy array
-    Nw = np.asarray(Nw)
-    D50 = np.asarray(D50)
+    Nc = np.asarray(Nc)
+    Dc = np.asarray(Dc)
     ND_obs = np.asarray(ND_obs)
     V = np.asarray(V)
 
@@ -1754,7 +1756,7 @@ def apply_normalized_gamma_gs(
     # Perform grid search
     with suppress_warnings():
         # Compute N(D)
-        ND_preds = NormalizedGammaPSD.formula(D=D[None, :], D50=D50, Nw=Nw, mu=mu_arr[:, None])
+        ND_preds = psd_formula(D[None, :], Nc, Dc, mu=mu_arr[:, None])  # order important !
 
         # Compute loss
         total_loss = compute_weighted_loss(
@@ -1764,14 +1766,14 @@ def apply_normalized_gamma_gs(
             dD=dD,
             V=V,
             objectives=objectives,
-            Nc=Nw,
+            Nc=Nc,
         )
 
     # Define best parameters
     if not np.all(np.isnan(total_loss)):
         best_index = np.nanargmin(total_loss)
         mu_best = mu_arr[best_index].item()
-        parameters = np.array([Nw, D50, mu_best])
+        parameters = np.array([Nc, Dc, mu_best])
     else:
         parameters = np.array([np.nan, np.nan, np.nan])
 
@@ -1780,6 +1782,73 @@ def apply_normalized_gamma_gs(
         return parameters, total_loss
 
     return parameters
+
+
+def compute_ng_scaling_parameters(ds, psd_model):
+    """Compute normalized-gamma scaling parameters (Nc, Dc) from observed PSD.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset containing drop_number_concentration, diameter_bin_center,
+        and diameter_bin_width.
+    psd_model : str
+        Normalized Gamma PSD model name.
+
+    Returns
+    -------
+    tuple
+        A tuple of (Nc, Dc), where Nc is the intercept-like scaling term and Dc
+        is the characteristic diameter-like scaling term.
+    """
+    valid_models = [
+        "NormalizedGammaD50NwPSD",
+        "NormalizedGammaDmNwPSD",
+        "NormalizedGammaDmNtPSD",
+    ]
+    if psd_model not in valid_models:
+        raise ValueError(f"Invalid Normalized Gamma PSD model '{psd_model}'. Valid models are {valid_models}.")
+
+    drop_number_concentration = ds["drop_number_concentration"]
+    diameter_bin_width = ds["diameter_bin_width"]
+    diameter = ds["diameter_bin_center"] / 1000  # conversion from mm to m
+
+    m3 = get_moment(
+        drop_number_concentration=drop_number_concentration,
+        diameter=diameter,  # m
+        diameter_bin_width=diameter_bin_width,  # mm
+        moment=3,
+    )
+    m4 = get_moment(
+        drop_number_concentration=drop_number_concentration,
+        diameter=diameter,  # m
+        diameter_bin_width=diameter_bin_width,  # mm
+        moment=4,
+    )
+
+    if psd_model == "NormalizedGammaD50NwPSD":
+        Nc = get_normalized_intercept_parameter_from_moments(moment_3=m3, moment_4=m4)
+        Dc = get_median_volume_drop_diameter(
+            drop_number_concentration=drop_number_concentration,
+            diameter=diameter,  # m
+            diameter_bin_width=diameter_bin_width,  # mm
+        )
+        return Nc, Dc
+
+    Dc = get_mean_volume_drop_diameter(moment_3=m3, moment_4=m4)
+    if psd_model == "NormalizedGammaDmNwPSD":
+        Nc = get_normalized_intercept_parameter_from_moments(moment_3=m3, moment_4=m4)
+        return Nc, Dc
+
+    # NormalizedGammaDmNtPSD
+    m0 = get_moment(
+        drop_number_concentration=drop_number_concentration,
+        diameter=diameter,  # m
+        diameter_bin_width=diameter_bin_width,  # mm
+        moment=0,
+    )
+    Nc = m0
+    return Nc, Dc
 
 
 def apply_normalized_generalized_gamma_gs(
@@ -2698,6 +2767,7 @@ def get_lognormal_parameters_gs(
 
 def get_normalized_gamma_parameters_gs(
     ds,
+    psd_model="NormalizedGammaD50NwPSD",
     mu=None,
     objectives=None,
     return_loss=False,
@@ -2795,28 +2865,8 @@ def get_normalized_gamma_parameters_gs(
     # Check objectives
     objectives = check_objectives(objectives=objectives)
 
-    # Compute required variables
-    drop_number_concentration = ds["drop_number_concentration"]
-    diameter_bin_width = ds["diameter_bin_width"]
-    diameter = ds["diameter_bin_center"] / 1000  # conversion from mm to m
-    m3 = get_moment(
-        drop_number_concentration=drop_number_concentration,
-        diameter=diameter,  # m
-        diameter_bin_width=diameter_bin_width,  # mm
-        moment=3,
-    )
-    m4 = get_moment(
-        drop_number_concentration=drop_number_concentration,
-        diameter=diameter,  # m
-        diameter_bin_width=diameter_bin_width,  # mm
-        moment=4,
-    )
-    Nw = get_normalized_intercept_parameter_from_moments(moment_3=m3, moment_4=m4)
-    D50 = get_median_volume_drop_diameter(
-        drop_number_concentration=drop_number_concentration,
-        diameter=diameter,  # m
-        diameter_bin_width=diameter_bin_width,  # mm
-    )
+    # Compute scaling parameters
+    Nc, Dc = compute_ng_scaling_parameters(ds=ds, psd_model=psd_model)
 
     # Define search space
     if mu is None:
@@ -2829,18 +2879,26 @@ def get_normalized_gamma_parameters_gs(
         "objectives": objectives,
         "return_loss": return_loss,
         "mu": mu,
+        "psd_formula": get_psd_model(psd_model).formula,
     }
 
     # Define function to create parameters dataset
     def _create_parameters_dataset(da_parameters):
+        if psd_model == "NormalizedGammaD50NwPSD":
+            parameter_names = ["Nw", "D50", "mu"]
+        elif psd_model == "NormalizedGammaDmNwPSD":
+            parameter_names = ["Nw", "Dm", "mu"]
+        else:
+            parameter_names = ["Nt", "Dm", "mu"]
+
         # Add parameters coordinates
-        da_parameters = da_parameters.assign_coords({"parameters": ["Nw", "D50", "mu"]})
+        da_parameters = da_parameters.assign_coords({"parameters": parameter_names})
 
         # Create parameters dataset
         ds_parameters = da_parameters.to_dataset(dim="parameters")
 
         # Add DSD model name to the attribute
-        ds_parameters.attrs["disdrodb_psd_model"] = "NormalizedGammaPSD"
+        ds_parameters.attrs["disdrodb_psd_model"] = psd_model
         return ds_parameters
 
     # Return cost function if asked
@@ -2848,8 +2906,8 @@ def get_normalized_gamma_parameters_gs(
         da_parameters, da_cost_function = xr.apply_ufunc(
             apply_normalized_gamma_gs,
             # Variables varying over time
-            Nw,
-            D50,
+            Nc,
+            Dc,
             ds["drop_number_concentration"],
             ds["fall_velocity"],
             # Other options
@@ -2872,8 +2930,8 @@ def get_normalized_gamma_parameters_gs(
     da_parameters = xr.apply_ufunc(
         apply_normalized_gamma_gs,
         # Variables varying over time
-        Nw,
-        D50,
+        Nc,
+        Dc,
         ds["drop_number_concentration"],
         ds["fall_velocity"],
         # Other options
@@ -3110,7 +3168,8 @@ def fit_ngg_on_normalized_space(
     mu=None,
     c=None,
     # Optimization options
-    transformation="log",
+    x_lim=None,
+    transformation="log10",
     loss="SSE",
     # Output options
     return_loss=False,
@@ -3178,6 +3237,21 @@ def fit_ngg_on_normalized_space(
     ND_norm = ND_norm[valid_data]
     x = x[valid_data]
 
+    # Select only values within specified x_lim
+    if x_lim is not None:
+        xmin, xmax = x_lim
+
+        mask = np.ones_like(x, dtype=bool)
+
+        if xmin is not None:
+            mask &= x >= xmin
+
+        if xmax is not None:
+            mask &= x <= xmax
+
+        x = x[mask]
+        ND_norm = ND_norm[mask]
+
     # Define search space
     if mu is None:
         mu = np.arange(-1, 20, step=0.1)
@@ -3205,6 +3279,7 @@ def fit_ngg_on_normalized_space(
             "censoring": "none",  # dummy. Do not change
             "transformation": transformation,
             "loss": loss,
+            "clip_lower": 1e-6,  # important. Default for N(D) is 1e-3 !!!
         },
     ]
 
@@ -3577,22 +3652,58 @@ ATTRS_PARAMS_DICT = {
             "long_name": "GammaPSD slope parameter",
         },
     },
-    "NormalizedGammaPSD": {
+    "NormalizedGammaD50NwPSD": {
         "Nw": {
             "standard_name": "normalized_intercept_parameter",
             "units": "mm-1 m-3",
-            "long_name": "NormalizedGammaPSD Normalized Intercept Parameter",
+            "long_name": "NormalizedGammaD50NwPSD Normalized Intercept Parameter",
         },
         "mu": {
             "description": "Dimensionless shape parameter controlling the curvature of the Normalized Gamma PSD",
             "standard_name": "particle_size_distribution_shape",
             "units": "",
-            "long_name": "NormalizedGammaPSD Shape Parameter ",
+            "long_name": "NormalizedGammaD50NwPSD Shape Parameter ",
         },
         "D50": {
             "standard_name": "median_volume_diameter",
             "units": "mm",
-            "long_name": "NormalizedGammaPSD Median Volume Drop Diameter",
+            "long_name": "NormalizedGammaD50NwPSD Median Volume Drop Diameter",
+        },
+    },
+    "NormalizedGammaDmNwPSD": {
+        "Nw": {
+            "standard_name": "normalized_intercept_parameter",
+            "units": "mm-1 m-3",
+            "long_name": "NormalizedGammaDmNwPSD Normalized Intercept Parameter",
+        },
+        "mu": {
+            "description": "Dimensionless shape parameter controlling the curvature of the Normalized Gamma PSD",
+            "standard_name": "particle_size_distribution_shape",
+            "units": "",
+            "long_name": "NormalizedGammaDmNwPSD Shape Parameter ",
+        },
+        "Dm": {
+            "standard_name": "mean_volume_diameter",
+            "units": "mm",
+            "long_name": "NormalizedGammaDmNwPSD Mean Volume Drop Diameter",
+        },
+    },
+    "NormalizedGammaDmNtPSD": {
+        "Nt": {
+            "standard_name": "number_concentration_of_particles",
+            "units": "m-3",
+            "long_name": "NormalizedGammaDmNtPSD Total Number Concentration",
+        },
+        "mu": {
+            "description": "Dimensionless shape parameter controlling the curvature of the Normalized Gamma PSD",
+            "standard_name": "particle_size_distribution_shape",
+            "units": "",
+            "long_name": "NormalizedGammaDmNtPSD Shape Parameter ",
+        },
+        "Dm": {
+            "standard_name": "mean_volume_diameter",
+            "units": "mm",
+            "long_name": "NormalizedGammaDmNtPSD Mean Volume Drop Diameter",
         },
     },
     "GeneralizedGammaPSD": {
@@ -3673,7 +3784,21 @@ OPTIMIZATION_ROUTINES_DICT = {
     },
     "GS": {
         "GammaPSD": get_gamma_parameters_gs,
-        "NormalizedGammaPSD": get_normalized_gamma_parameters_gs,
+        "NormalizedGammaD50NwPSD": lambda ds, **kwargs: get_normalized_gamma_parameters_gs(
+            ds,
+            psd_model="NormalizedGammaD50NwPSD",
+            **kwargs,
+        ),
+        "NormalizedGammaDmNwPSD": lambda ds, **kwargs: get_normalized_gamma_parameters_gs(
+            ds,
+            psd_model="NormalizedGammaDmNwPSD",
+            **kwargs,
+        ),
+        "NormalizedGammaDmNtPSD": lambda ds, **kwargs: get_normalized_gamma_parameters_gs(
+            ds,
+            psd_model="NormalizedGammaDmNtPSD",
+            **kwargs,
+        ),
         "LognormalPSD": get_lognormal_parameters_gs,
         "ExponentialPSD": get_exponential_parameters_gs,
         "GeneralizedGammaPSD": get_generalized_gamma_parameters_gs,
@@ -3847,7 +3972,9 @@ def define_gs_parameters(psd_model, fixed_parameters=None, search_space=None):
     # Define parameters dictionary (initialize with None values)
     required_parameters_dict = {
         "NormalizedGeneralizedGammaPSD": ["mu", "c", "i", "j"],
-        "NormalizedGammaPSD": ["mu"],
+        "NormalizedGammaD50NwPSD": ["mu"],
+        "NormalizedGammaDmNwPSD": ["mu"],
+        "NormalizedGammaDmNtPSD": ["mu"],
         "GeneralizedGammaPSD": ["Lambda", "mu", "c"],
         "LognormalPSD": ["mu", "sigma"],
         "GammaPSD": ["Lambda", "mu"],
@@ -4203,7 +4330,7 @@ def get_gs_parameters(ds, psd_model, fixed_parameters=None, objectives=None, sea
         Name of the PSD model to fit. Valid options are:
 
         - ``"GammaPSD"`` : Gamma distribution
-        - ``"NormalizedGammaPSD"`` : Normalized gamma distribution
+        - ``"NormalizedGammaD50NwPSD"`` : Normalized gamma distribution
         - ``"LognormalPSD"`` : Lognormal distribution
         - ``"ExponentialPSD"`` : Exponential distribution
         - ``"NormalizedGeneralizedGammaPSD"`` : Normalized generalized gamma distribution
@@ -4269,7 +4396,7 @@ def get_gs_parameters(ds, psd_model, fixed_parameters=None, objectives=None, sea
         Variables depend on the selected ``psd_model``:
 
         - ``GammaPSD`` : ``N0``, ``mu``, ``Lambda``
-        - ``NormalizedGammaPSD`` : ``Nw``, ``mu``, ``D50``
+        - ``NormalizedGammaD50NwPSD`` : ``Nw``, ``mu``, ``D50``
         - ``LognormalPSD`` : ``Nt``, ``mu``, ``sigma``
         - ``ExponentialPSD`` : ``N0``, ``Lambda``
         - ``NormalizedGeneralizedGammaPSD`` : ``Nc``, ``Dc``, ``mu``, ``c``
@@ -4413,7 +4540,7 @@ def estimate_model_parameters(
         Name of the PSD model to fit. Valid options:
 
         - ``"GammaPSD"`` : Gamma distribution
-        - ``"NormalizedGammaPSD"`` : Normalized gamma distribution
+        - ``"NormalizedGammaD50NwPSD"`` : Normalized gamma distribution
         - ``"LognormalPSD"`` : Lognormal distribution
         - ``"ExponentialPSD"`` : Exponential distribution
 
@@ -4503,7 +4630,7 @@ def estimate_model_parameters(
         Variables depend on the selected ``psd_model``:
 
         - ``GammaPSD`` : ``N0``, ``mu``, ``Lambda``
-        - ``NormalizedGammaPSD`` : ``Nw``, ``mu``, ``Dm``
+        - ``NormalizedGammaD50NwPSD`` : ``Nw``, ``mu``, ``Dm``
         - ``LognormalPSD`` : ``Nt``, ``mu``, ``sigma``
         - ``ExponentialPSD`` : ``N0``, ``Lambda``
 

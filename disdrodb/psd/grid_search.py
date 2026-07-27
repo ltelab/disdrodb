@@ -842,6 +842,7 @@ def compute_loss(
     censoring,
     transformation,
     loss,
+    clip_lower=None,
     check_arguments=True,
 ):
     """Compute loss.
@@ -865,8 +866,11 @@ def compute_loss(
         Target variable: 'Z', 'R', 'LWC', moments ('M0'-'M6'), 'N(D)', or 'H(x)'.
     censoring : str
         Censoring strategy: 'none', 'left', 'right', or 'both'.
+    clip_lower: float
+        Values below which clip N(D) or H(x) to 0 (before transformation)
     transformation : str
         Transformation: 'identity', 'log', or 'sqrt'.
+
     loss : str
         Loss function.
         If target is ``"N(D)"`` or ``"H(x)"``, valid options are:
@@ -902,9 +906,13 @@ def compute_loss(
         censoring = check_censoring(censoring)
         loss = check_valid_loss(loss, target=target)
 
-    # Clip N(D) < 1e-3 to 0
-    ND_obs = np.where(ND_obs < 1e-3, 0.0, ND_obs)
-    ND_preds = np.where(ND_preds < 1e-3, 0.0, ND_preds)
+    # Define clip_lower
+    if clip_lower is None:
+        clip_lower = 1e-03 if target != "H(x)" else 1e-05
+
+    # Clip N(D) below < clip_lower to 0
+    ND_obs = np.where(ND_obs < clip_lower, 0.0, ND_obs)
+    ND_preds = np.where(ND_preds < clip_lower, 0.0, ND_preds)
 
     # Truncate if asked
     left_censored = censoring in {"left", "both"}
@@ -1030,6 +1038,8 @@ def compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives, Nc=None):
         loss = objective.get("loss", None)
         censoring = objective["censoring"]
         transformation = objective["transformation"]
+        clip_lower = objective.get("clip_lower")
+
         if len(objectives) > 1:
             loss_weight = objective["loss_weight"]
             normalize_loss = True  # objective["normalize_loss"]
@@ -1053,6 +1063,7 @@ def compute_weighted_loss(ND_obs, ND_preds, D, dD, V, objectives, Nc=None):
             D=D,
             dD=dD,
             V=V,
+            clip_lower=clip_lower,
             target=target,
             transformation=transformation,
             loss=loss,

@@ -215,6 +215,9 @@ def unstack_datarray_dimension(da, dim, coord_handling="keep", prefix="", suffix
 
 def define_dataarray_fill_value(da):  # noqa: PLR0911
     """Define the fill value for a numerical xarray.DataArray."""
+    # NumPy variable-width strings (NumPy >= 2.0)
+    if isinstance(da.dtype, np.dtypes.StringDType):
+        return ""
     if np.issubdtype(da.dtype, np.floating):
         return dtypes.NA
     if np.issubdtype(da.dtype, np.datetime64):
@@ -257,10 +260,10 @@ def define_dataset_fill_value_dictionary(ds):
     """
     fill_value_dict = {}
     # Retrieve fill values for numerical variables and coordinates
-    for var in list(ds.variables):
-        array_fill_value = define_dataarray_fill_value(ds[var])
-        if array_fill_value is not None:
-            fill_value_dict[var] = array_fill_value
+    for var in list(ds.variables):  # using variables because da.coords.variables exist !
+        fill_value_array = define_dataarray_fill_value(ds[var])
+        if fill_value_array is not None:
+            fill_value_dict[var] = fill_value_array
     # Return fill value dictionary
     return fill_value_dict
 

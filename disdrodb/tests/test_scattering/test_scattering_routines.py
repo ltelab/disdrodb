@@ -558,7 +558,7 @@ class TestGetRadarParameters:
         ds["D50"] = D50.expand_dims({"Nw_c": Nw})
         ds["Nw"] = Nw.expand_dims({"D50_c": D50})
         ds["mu"] = 1
-        ds.attrs["disdrodb_psd_model"] = "NormalizedGammaPSD"
+        ds.attrs["disdrodb_psd_model"] = "NormalizedGammaD50NwPSD"
 
         # Create radar dataset
         ds_radar = get_radar_parameters(
@@ -586,7 +586,7 @@ class TestGetRadarParameters:
         Nw = xr.DataArray(np.linspace(5e2, 2e4, n_timesteps), dims="time", name="Nw")
         ds = xr.Dataset({"D50": D50, "Nw": Nw})
         ds["mu"] = 1
-        ds.attrs["disdrodb_psd_model"] = "NormalizedGammaPSD"
+        ds.attrs["disdrodb_psd_model"] = "NormalizedGammaD50NwPSD"
 
         # Creaze lazy dataset
         ds = ds.chunk({"time": 2})
@@ -637,7 +637,7 @@ class TestGetRadarParameters:
         Nw = xr.DataArray(np.linspace(5e2, 2e4, n_timesteps), dims="time", name="Nw")
         ds = xr.Dataset({"D50": D50, "Nw": Nw})
         ds["mu"] = 1
-        ds.attrs["disdrodb_psd_model"] = "NormalizedGammaPSD"
+        ds.attrs["disdrodb_psd_model"] = "NormalizedGammaD50NwPSD"
 
         # Define defaults
         radar_kwargs = {
@@ -690,9 +690,12 @@ class TestGetRadarParameters:
         D50 = xr.DataArray(np.linspace(0.5, 3.0, n_timesteps), dims="time", name="D50")
         Nw = xr.DataArray(np.linspace(5e2, 2e4, n_timesteps), dims="time", name="Nw")
         ds = xr.Dataset({"D50": D50, "Nw": Nw})
-        ds.attrs["disdrodb_psd_model"] = "NormalizedGammaPSD"
+        ds.attrs["disdrodb_psd_model"] = "NormalizedGammaD50NwPSD"
 
-        with pytest.raises(ValueError, match=re.escape("The NormalizedGammaPSD parameters ['mu'] are not present")):
+        with pytest.raises(
+            ValueError,
+            match=re.escape("The NormalizedGammaD50NwPSD parameters ['mu'] are not present"),
+        ):
             get_radar_parameters(
                 ds=ds,
                 frequency=5.0,  # numeric frequency in GHz
@@ -749,7 +752,7 @@ class TestGetRadarParameters:
         Nw = xr.DataArray(np.linspace(5e2, 2e4, n_timesteps), dims="time", name="Nw")
         ds = xr.Dataset({"D50": D50, "Nw": Nw})
         ds["mu"] = 1
-        ds.attrs["disdrodb_psd_model"] = "NormalizedGammaPSD"
+        ds.attrs["disdrodb_psd_model"] = "NormalizedGammaD50NwPSD"
 
         # Get radar parameters (should handle the RuntimeError gracefully)
         ds_radar = get_radar_parameters(
