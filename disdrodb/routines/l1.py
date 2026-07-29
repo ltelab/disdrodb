@@ -64,8 +64,8 @@ logger = logging.getLogger(__name__)
 
 def define_l1_logs_filename(campaign_name, station_name, start_time, end_time, temporal_resolution):
     """Define L1 logs filename."""
-    starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
-    ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
+    starting_time = pd.to_datetime(start_time).strftime("%Y%m%dT%H%M%S")
+    ending_time = pd.to_datetime(end_time).strftime("%Y%m%dT%H%M%S")
     logs_filename = f"L1.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
     return logs_filename
 
