@@ -16,7 +16,7 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB constants."""
 
-import importlib
+import importlib.metadata
 
 ARCHIVE_VERSION = "V1"
 SOFTWARE_VERSION = "V" + importlib.metadata.version("disdrodb")

@@ -74,8 +74,8 @@ logger = logging.getLogger(__name__)
 
 def define_l2e_logs_filename(campaign_name, station_name, start_time, end_time, temporal_resolution):
     """Define L2E logs filename."""
-    starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
-    ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
+    starting_time = pd.to_datetime(start_time).strftime("%Y%m%dT%H%M%S")
+    ending_time = pd.to_datetime(end_time).strftime("%Y%m%dT%H%M%S")
     logs_filename = f"L2E.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
     return logs_filename
 
@@ -451,8 +451,8 @@ def run_l2e_station(
 #### L2M
 def define_l2m_logs_filename(campaign_name, station_name, start_time, end_time, model_name, temporal_resolution):
     """Define L2M logs filename."""
-    starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
-    ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
+    starting_time = pd.to_datetime(start_time).strftime("%Y%m%dT%H%M%S")
+    ending_time = pd.to_datetime(end_time).strftime("%Y%m%dT%H%M%S")
     logs_filename = (
         f"L2M_{model_name}.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
     )
