@@ -10,6 +10,7 @@ dependencies:
   - xarray
   - jupyter
   - pydantic>=2.0.0
+  - cartopy
   - pip
   - pre-commit
   - pandoc

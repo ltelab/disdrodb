@@ -361,7 +361,7 @@ def _get_dsd_labels(variable_name, da=None):
     ----------
     variable_name : str
         Name of the variable.
-    da : xr.DataArray, optional
+    da : xarray.DataArray, optional
         DataArray to extract units from attributes if variable is generic.
 
     Returns
@@ -462,7 +462,7 @@ def get_dsd_variable(xr_obj, variable=None, diameter_dim=DIAMETER_DIMENSION):
 
     Parameters
     ----------
-    xr_obj : xr.Dataset or xr.DataArray
+    xr_obj : xarray.Dataset or xarray.DataArray
         Input xarray object.
     variable : str, optional
          Variable name to extract from the xarray object.
@@ -573,20 +573,20 @@ def plot_dsd(
 
     Parameters
     ----------
-    xr_obj : xr.Dataset or xr.DataArray
+    xr_obj : xarray.Dataset or xarray.DataArray
         Input xarray object containing drop data.
     variable : str, optional
         Variable name to plot. If None and xr_obj is a Dataset,
         will search for candidate variables in order:
         ['drop_number_concentration', 'raw_particle_counts', 'drop_counts'].
         If xr_obj is a DataArray, it will be plotted directly.
-    cmap : matplotlib colormap, optional
+    cmap : matplotlib.colors.Colormap, optional
         Colormap to use for the plot.
-    norm : matplotlib normalization, optional
+    norm : matplotlib.colors.Norm, optional
         Normalization for the colormap.
     yscale : str, optional
         Scale for y-axis ('linear' or 'log'). Default is 'linear'.
-    ax : matplotlib axes, optional
+    ax : matplotlib.axes.Axes, optional
         Axes to plot on.
     velocity_method : str, optional
         If the dataset has a velocity_method dimension, select the method to use for plotting.
@@ -594,7 +594,7 @@ def plot_dsd(
 
     Returns
     -------
-    matplotlib axes or plot object
+    matplotlib.axes.Axes
     """
     # Select velocity_method=0 if velocity_method dimension exists (e.g. for L2E products)
     if "velocity_method" in xr_obj.dims:
@@ -2029,16 +2029,16 @@ def plot_colored_line(
         X coordinate name. If None, inferred from `var`.
     ax : matplotlib.axes.Axes, optional
         Axis to plot on.
-    cmap : str, default "turbo"
+    cmap : str or matplotlib.colors.Colormap, optional
         Colormap for hue.
     vmin, vmax : float, optional
         Color limits.
     mask : xarray.DataArray or array-like, optional
         Boolean mask. False values become NaN.
-    linewidth : float, default 2
-        Line width.
-    add_colorbar : bool, default True
-        Whether to add a colorbar.
+    linewidth : float, optional
+        Line width. Default is 1.
+    add_colorbar : bool, optional
+        Whether to add a colorbar. Default is True.
 
     Returns
     -------
@@ -2811,19 +2811,21 @@ def plot_dsd_dense_lines(
     default_color="tab:blue",
     default_label=None,
 ):
-    """
-    Plot dense lines for a DSD variable.
+    """Plot dense lines for a DSD variable.
 
     Modes
     -----
     1. If cat_var is None:
+
       - all samples are plotted together
       - optional sampling is applied to the full dataset before resampling
 
     2. If cat_var is provided:
+
       - one layer is plotted per category
       - optional sampling is applied independently within each category
         before resampling
+
     """
     from disdrodb.summary.routines import log_arange
 

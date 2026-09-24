@@ -774,21 +774,21 @@ def resample_counts(
 
     Parameters
     ----------
-    da_counts : xr.DataArray
+    da_counts : xarray.DataArray
         Bin-integrated counts defined on ``dim``.
-    d_src : xr.DataArray
+    d_src : xarray.DataArray
         Source diameter centers associated with ``da_counts``.
-    d_dst : xr.DataArray
+    d_dst : xarray.DataArray
         Destination diameter centers associated with ``new_dim``.
     dim : str
         Source diameter dimension.
     new_dim : str
         Destination diameter dimension.
-    dD_src : xr.DataArray
+    dD_src : xarray.DataArray
         Source bin widths defined on ``dim``.
-    dD_dst : xr.DataArray
+    dD_dst : xarray.DataArray
         Destination bin widths defined on ``new_dim``.
-    method : {"constant", "log_pchip"} or callable, optional
+    method : str or callable, optional
         Remapping strategy used within ``xr.apply_ufunc``.
 
         - ``"constant"``: first-order conservative remapping in count space.
@@ -805,7 +805,7 @@ def resample_counts(
 
     Returns
     -------
-    xr.DataArray
+    xarray.DataArray
         Resampled counts on ``new_dim``.
 
     Notes
@@ -869,19 +869,19 @@ def resample_density(
 
     Parameters
     ----------
-    da_density : xr.DataArray
+    da_density : xarray.DataArray
         Density defined per unit diameter.
-    d_src : xr.DataArray
+    d_src : xarray.DataArray
         Source diameter centers (can be 2D: time, D).
-    d_dst : xr.DataArray
+    d_dst : xarray.DataArray
         Destination diameter centers (1D).
     dim : str
         Source diameter dimension.
     new_dim : str
         Destination dimension name.
-    dD_src : xr.DataArray
+    dD_src : xarray.DataArray
         Source bin widths (same dim as dim).
-    dD_dst : xr.DataArray
+    dD_dst : xarray.DataArray
         Destination bin widths (same dim as new_dim).
     method : str or callable
         Remapping strategy used within ``xr.apply_ufunc``.
@@ -902,7 +902,7 @@ def resample_density(
 
     Returns
     -------
-    xr.DataArray
+    xarray.DataArray
         Remapped density conserving integrated amount.
 
     Notes
@@ -959,7 +959,7 @@ def resample_drop_counts(drop_counts, diameter_bin_edges, method="constant"):
 
     Parameters
     ----------
-    drop_counts : xr.DataArray
+    drop_counts : xarray.DataArray
         Bin-integrated counts (for example ``drop_counts`` or ``drop_number``) defined on
         ``diameter_bin_center`` and carrying ``diameter_bin_width`` coordinates.
         Additional dimensions (for example ``time`` or ``velocity_bin_center``)
@@ -967,7 +967,7 @@ def resample_drop_counts(drop_counts, diameter_bin_edges, method="constant"):
     diameter_bin_edges : array-like
         Destination diameter bin edges. The destination bins do not need to be
         aligned with source bins.
-    method : {"constant", "log_pchip"} or callable, optional
+    method : str, optional
         Remapping method passed to :func:`resample_counts`.
 
         - ``"constant"``: first-order conservative remapping in count space.
@@ -981,7 +981,7 @@ def resample_drop_counts(drop_counts, diameter_bin_edges, method="constant"):
 
     Returns
     -------
-    xr.DataArray
+    xarray.DataArray
         Resampled counts on destination ``diameter_bin_center`` with updated
         ``diameter_bin_width``, ``diameter_bin_lower`` and
         ``diameter_bin_upper`` coordinates.
@@ -1014,12 +1014,12 @@ def resample_drop_number_concentration(
 
     Parameters
     ----------
-    drop_number_concentration : xr.DataArray
+    drop_number_concentration : xarray.DataArray
         Drop number concentration defined per unit diameter on
         ``diameter_bin_center`` and carrying ``diameter_bin_width``.
     diameter_bin_edges : array-like
         Destination diameter bin edges.
-    method : {"constant", "log_pchip"} or callable, optional
+    method : str or callable, optional
         Remapping method passed to :func:`resample_density`.
 
         - ``"constant"``: first-order conservative remapping. Recommended for
@@ -1033,7 +1033,7 @@ def resample_drop_number_concentration(
 
     Returns
     -------
-    xr.DataArray
+    xarray.DataArray
         Resampled ``N(D)`` on destination ``diameter_bin_center`` with updated
         diameter-bin coordinates.
     """
@@ -1068,23 +1068,24 @@ def remap_to_diameter(
 
     Parameters
     ----------
-    da : xr.DataArray
+    da : xarray.DataArray
         DataArray with dimension `dim` and typically another dim (e.g., time).
-    d_src : xr.DataArray
+    d_src : xarray.DataArray
         Source diameter coordinate (can be 2D, e.g., D/Dm (time, D)).
         Must share dimensions with da.
-    d_dst : xr.DataArray
+    d_dst : xarray.DataArray
         1D target coordinate.
     dim : str
         Original diameter dimension.
     new_dim : str
         Name of output diameter dimension.
-    method : {"linear", "pchip"}
+    method : str or callable.
         Interpolation method used for remapping.
+        Valid options are: "linear", "pchip".
 
     Returns
     -------
-    xr.DataArray
+    xarray.DataArray
     """
     if method not in {"linear", "pchip"}:
         msg = f"Unknown {method!r}. Valid options are: linear, pchip."
