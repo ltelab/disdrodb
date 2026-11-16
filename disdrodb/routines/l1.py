@@ -409,8 +409,7 @@ def run_l1_station(
                 force=force,
                 verbose=verbose,
                 parallel=parallel,
-            )
-            for event_info in files_partitions
+            ) for event_info in files_partitions
         ]
         list_logs = execute_tasks_safely(list_tasks=list_tasks, parallel=parallel, logs_dir=logs_dir)
 
