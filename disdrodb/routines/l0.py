@@ -585,8 +585,7 @@ def run_l0a_station(
             force=force,
             verbose=verbose,
             parallel=parallel,
-        )
-        for filepath in filepaths
+        ) for filepath in filepaths
     ]
     list_logs = execute_tasks_safely(list_tasks=list_tasks, parallel=parallel, logs_dir=logs_dir)
 
@@ -958,8 +957,7 @@ def run_l0c_station(
             force=force,
             verbose=verbose,
             parallel=parallel,
-        )
-        for event_info in list_event_info
+        ) for event_info in list_event_info
     ]
     list_logs = execute_tasks_safely(list_tasks=list_tasks, parallel=parallel, logs_dir=logs_dir)
 
